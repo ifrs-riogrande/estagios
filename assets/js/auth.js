@@ -27,7 +27,7 @@
 const AUTH_CONFIG = {
   // Substitua pelo Client ID real do Google Cloud Console
   // Tipo: "Aplicativo da Web" com origins do GitHub Pages
-  CLIENT_ID: 'SEU_CLIENT_ID_AQUI.apps.googleusercontent.com',
+  CLIENT_ID: '913495304278-opds2dsajahcl5khbs1qsqae1dmg4ggg.apps.googleusercontent.com',
   SCOPES: 'openid email profile',
 
   // Domínios permitidos para cada tipo de acesso
