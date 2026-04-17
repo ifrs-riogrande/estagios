@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Relatório Final — Central de Estágios IFRS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/base.css">
+  <link rel="stylesheet" href="../assets/css/components.css">
+  <link rel="stylesheet" href="../assets/css/layout.css">
+</head>
+<body>
+  <header id="app-header">
+    <div class="container">
+      <div class="header-inner">
+        <a href="../index.html" class="header-brand">
+          <div class="header-logo-fallback" aria-hidden="true">IFRS</div>
+          <div class="header-brand-text">
+            <span class="header-brand-name">Central de Estágios</span>
+            <span class="header-brand-sub">IFRS Campus Rio Grande</span>
+          </div>
+        </a>
+        <div style="display:flex;align-items:center;gap:var(--space-3);">
+          <div id="header-user-area"></div>
+          <a href="index.html" class="back-link">
+            <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd"/></svg>
+            Estudantes
+          </a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="form-page" id="main-content">
+    <div class="container">
+      <div class="form-wrapper">
+        <div class="form-page-header">
+          <h1>Relatório Final de Estágio</h1>
+          <p>Relatório de conclusão do estágio. Deve ser entregue após o encerramento do período de estágio para formalizar a conclusão.</p>
+        </div>
+
+        <div class="info-banner" role="note">
+          Informe o ID do estágio recebido no e-mail de aprovação (<strong>formato: RG25-XXXX-XXXX</strong>).
+        </div>
+
+        <form id="form-relatorio-final" novalidate>
+
+          <div class="form-section">
+            <h2 class="form-section-title">
+              <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"/></svg>
+              Identificação
+            </h2>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label required" for="id-estagio">ID do estágio</label>
+                <input type="text" id="id-estagio" name="idEstagio" class="form-control"
+                  placeholder="RG25-XXXX-XXXX" required aria-required="true"
+                  style="text-transform:uppercase" aria-describedby="id-estagio-hint id-estagio-error">
+                <span id="id-estagio-hint" class="form-hint">Recebido no e-mail de aprovação.</span>
+                <span id="id-estagio-error" class="form-error hidden" role="alert"></span>
+              </div>
+              <div class="form-group">
+                <label class="form-label required" for="data-encerramento">Data de encerramento efetivo</label>
+                <input type="date" id="data-encerramento" name="dataEncerramento" class="form-control"
+                  required aria-required="true" aria-describedby="data-encerramento-error">
+                <span id="data-encerramento-error" class="form-error hidden" role="alert"></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-section">
+            <h2 class="form-section-title">
+              <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"/></svg>
+              Relatório de Conclusão
+            </h2>
+
+            <div class="form-group">
+              <label class="form-label required" for="resumo-atividades">Resumo das atividades realizadas</label>
+              <textarea id="resumo-atividades" name="resumoAtividades" class="form-control" rows="5"
+                required aria-required="true" minlength="150"
+                placeholder="Descreva de forma abrangente todas as atividades desenvolvidas durante o estágio."
+                aria-describedby="resumo-atividades-hint resumo-atividades-error"></textarea>
+              <span id="resumo-atividades-hint" class="form-hint">Mínimo 8 linhas. Inclua todas as áreas e tarefas que desenvolveu.</span>
+              <span id="resumo-atividades-error" class="form-error hidden" role="alert"></span>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label required" for="competencias-desenvolvidas">Competências técnicas e comportamentais desenvolvidas</label>
+              <textarea id="competencias-desenvolvidas" name="competenciasDesenvolvidas" class="form-control" rows="4"
+                required aria-required="true"
+                placeholder="Liste e descreva as competências adquiridas ou aprimoradas durante o estágio."
+                aria-describedby="competencias-desenvolvidas-error"></textarea>
+              <span id="competencias-desenvolvidas-error" class="form-error hidden" role="alert"></span>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label required" for="contribuicao-formacao">Contribuição do estágio para a formação profissional</label>
+              <textarea id="contribuicao-formacao" name="contribuicaoFormacao" class="form-control" rows="4"
+                required aria-required="true"
+                placeholder="Como o estágio contribuiu para sua formação? Relacione com os conteúdos do curso."
+                aria-describedby="contribuicao-formacao-error"></textarea>
+              <span id="contribuicao-formacao-error" class="form-error hidden" role="alert"></span>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label required" for="avaliacao-concedente">Avaliação da empresa concedente</label>
+                <select id="avaliacao-concedente" name="avaliacaoConcedente" class="form-control"
+                  required aria-required="true" aria-describedby="avaliacao-concedente-error">
+                  <option value="">Selecione...</option>
+                  <option value="Muito satisfatório">Muito satisfatório</option>
+                  <option value="Satisfatório">Satisfatório</option>
+                  <option value="Regular">Regular</option>
+                  <option value="Insatisfatório">Insatisfatório</option>
+                </select>
+                <span id="avaliacao-concedente-error" class="form-error hidden" role="alert"></span>
+              </div>
+              <div class="form-group">
+                <label class="form-label required" for="avaliacao-orientador">Avaliação do orientador</label>
+                <select id="avaliacao-orientador" name="avaliacaoOrientador" class="form-control"
+                  required aria-required="true" aria-describedby="avaliacao-orientador-error">
+                  <option value="">Selecione...</option>
+                  <option value="Muito satisfatório">Muito satisfatório</option>
+                  <option value="Satisfatório">Satisfatório</option>
+                  <option value="Regular">Regular</option>
+                  <option value="Insatisfatório">Insatisfatório</option>
+                </select>
+                <span id="avaliacao-orientador-error" class="form-error hidden" role="alert"></span>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label required" for="recomendaria">Recomendaria esta empresa para outros estagiários?</label>
+              <select id="recomendaria" name="recomendaria" class="form-control"
+                required aria-required="true" aria-describedby="recomendaria-error">
+                <option value="">Selecione...</option>
+                <option value="Sim, com certeza">Sim, com certeza</option>
+                <option value="Sim, com ressalvas">Sim, com ressalvas</option>
+                <option value="Não">Não</option>
+              </select>
+              <span id="recomendaria-error" class="form-error hidden" role="alert"></span>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="consideracoes-finais">Considerações finais</label>
+              <textarea id="consideracoes-finais" name="consideracoesFinais" class="form-control" rows="3"
+                placeholder="Observações adicionais, agradecimentos ou sugestões para o programa de estágios (opcional)."></textarea>
+            </div>
+          </div>
+
+          <div class="form-section">
+            <h2 class="form-section-title">
+              <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+              Declaração
+            </h2>
+            <div class="declaration-box">
+              <p>Declaro que as informações prestadas são verdadeiras e que conclui o período de estágio conforme os termos estabelecidos no Termo de Compromisso de Estágio.</p>
+              <div class="form-check">
+                <input type="checkbox" id="declaracao" name="declaracao" required aria-required="true" aria-describedby="declaracao-error">
+                <label class="form-check-label required" for="declaracao">Declaro a veracidade das informações e a conclusão do estágio.</label>
+              </div>
+              <span id="declaracao-error" class="form-error hidden" role="alert" style="margin-top:var(--space-2);display:block;"></span>
+            </div>
+          </div>
+
+          <div id="form-feedback" class="form-feedback" role="status" aria-live="polite"></div>
+
+          <div class="form-actions form-actions--between">
+            <button type="button" id="btn-limpar" class="btn btn-ghost">Limpar</button>
+            <button type="submit" id="btn-enviar" class="btn btn-primary btn-lg">
+              <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z"/></svg>
+              Enviar Relatório Final
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </main>
+
+  <footer id="app-footer">
+    <div class="container">
+      <div class="footer-inner">
+        <span class="footer-copy">&copy; <script>document.write(new Date().getFullYear())</script> Central de Estágios — IFRS Campus Rio Grande</span>
+        <nav class="footer-links"><a href="mailto:estagios@riogrande.ifrs.edu.br">estagios@riogrande.ifrs.edu.br</a></nav>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://accounts.google.com/gsi/client" async></script>
+  <script src="../assets/js/utils.js"></script>
+  <script src="../assets/js/auth.js"></script>
+  <script src="../assets/js/api.js"></script>
+  <script>
+    'use strict';
+    document.addEventListener('DOMContentLoaded', function () { requireStudentAuth(); });
+
+    const form = document.getElementById('form-relatorio-final');
+    const btnEnviar = document.getElementById('btn-enviar');
+
+    function validateForm() {
+      let valid = true, firstInvalid = null;
+      function fail(id, msg) { showFieldError(id, msg); if (!firstInvalid) firstInvalid = id; valid = false; }
+
+      const id = document.getElementById('id-estagio').value.trim().toUpperCase();
+      if (!id || !id.match(/^RG\d{2}-[A-Z0-9]{4}-[A-Z0-9]{4}$/)) fail('id-estagio', 'ID inválido. Formato: RG25-XXXX-XXXX.');
+      if (!document.getElementById('data-encerramento').value) fail('data-encerramento', 'Informe a data de encerramento.');
+
+      const resumo = document.getElementById('resumo-atividades').value.trim();
+      if (!resumo) fail('resumo-atividades', 'Descreva as atividades realizadas.');
+      else if (resumo.length < 120) fail('resumo-atividades', 'Descrição muito curta. Seja mais detalhado.');
+
+      if (!document.getElementById('competencias-desenvolvidas').value.trim()) fail('competencias-desenvolvidas', 'Descreva as competências desenvolvidas.');
+      if (!document.getElementById('contribuicao-formacao').value.trim()) fail('contribuicao-formacao', 'Descreva a contribuição para sua formação.');
+      if (!document.getElementById('avaliacao-concedente').value) fail('avaliacao-concedente', 'Avalie a empresa concedente.');
+      if (!document.getElementById('avaliacao-orientador').value) fail('avaliacao-orientador', 'Avalie o orientador.');
+      if (!document.getElementById('recomendaria').value) fail('recomendaria', 'Informe se recomendaria a empresa.');
+      if (!document.getElementById('declaracao').checked) fail('declaracao', 'Aceite a declaração para enviar.');
+
+      if (firstInvalid) { document.getElementById(firstInvalid)?.focus(); document.getElementById(firstInvalid)?.scrollIntoView({ behavior:'smooth', block:'center' }); }
+      return valid;
+    }
+
+    form.addEventListener('submit', async function (e) {
+      e.preventDefault();
+      hideFormFeedback('form-feedback');
+      if (!validateForm()) return;
+
+      const dados = {
+        idEstagio:               document.getElementById('id-estagio').value.trim().toUpperCase(),
+        dataEncerramento:        document.getElementById('data-encerramento').value,
+        resumoAtividades:        document.getElementById('resumo-atividades').value.trim(),
+        competenciasDesenvolvidas:document.getElementById('competencias-desenvolvidas').value.trim(),
+        contribuicaoFormacao:    document.getElementById('contribuicao-formacao').value.trim(),
+        avaliacaoConcedente:     document.getElementById('avaliacao-concedente').value,
+        avaliacaoOrientador:     document.getElementById('avaliacao-orientador').value,
+        recomendaria:            document.getElementById('recomendaria').value,
+        consideracoesFinais:     document.getElementById('consideracoes-finais').value.trim(),
+        declaracao:              'Sim',
+      };
+
+      await submitWithFeedback(
+        () => apiEnviarRelatorioFinal(dados),
+        btnEnviar, 'form-feedback',
+        'Relatório final enviado com sucesso!',
+        'Seu relatório final foi recebido. O setor de estágios e seu orientador serão notificados para concluir o processo.',
+        () => { form.querySelectorAll('input,select,textarea,button').forEach(el => el.disabled = true); }
+      );
+    });
+
+    document.getElementById('btn-limpar')?.addEventListener('click', function () {
+      form.reset();
+      form.querySelectorAll('.form-control').forEach(el => { el.classList.remove('is-invalid','is-valid'); el.removeAttribute('aria-invalid'); });
+      form.querySelectorAll('.form-error').forEach(el => { el.textContent = ''; el.classList.add('hidden'); });
+      hideFormFeedback('form-feedback');
+    });
+  </script>
+</body>
+</html>

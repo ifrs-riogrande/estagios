@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Solicitação de Estágio — Central de Estágios IFRS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/base.css">
+  <link rel="stylesheet" href="../assets/css/components.css">
+  <link rel="stylesheet" href="../assets/css/layout.css">
+</head>
+<body>
+
+  <header id="app-header">
+    <div class="container">
+      <div class="header-inner">
+        <a href="../index.html" class="header-brand">
+          <div class="header-logo-fallback" aria-hidden="true">IFRS</div>
+          <div class="header-brand-text">
+            <span class="header-brand-name">Central de Estágios</span>
+            <span class="header-brand-sub">IFRS Campus Rio Grande</span>
+          </div>
+        </a>
+        <div style="display:flex;align-items:center;gap:var(--space-3);">
+          <div id="header-user-area"></div>
+          <a href="index.html" class="back-link">
+            <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd"/></svg>
+            Estudantes
+          </a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="form-page" id="main-content">
+    <div class="container">
+      <div class="form-wrapper">
+
+        <div class="form-page-header">
+          <h1>Solicitação de Estágio</h1>
+          <p>Preencha com atenção. O estágio só pode iniciar após todas as assinaturas do TCE e retorno do setor liberando o início.</p>
+        </div>
+
+        <div class="info-banner" role="note">
+          <strong>Pré-requisitos:</strong>
+          <ul>
+            <li>Ter cadastro ativo no sistema (você recebeu um e-mail com seu <strong>código de acesso</strong>)</li>
+            <li>A empresa concedente estar cadastrada e <strong>validada</strong> pelo setor</li>
+            <li>O supervisor estar cadastrado e <strong>validado</strong> pelo setor</li>
+            <li>O professor orientador estar cadastrado e <strong>validado</strong> pelo setor</li>
+            <li>Solicitar com mínimo de <strong>7 dias corridos</strong> antes da data de início desejada</li>
+          </ul>
+        </div>
+
+        <form id="form-solicitacao" novalidate>
+
+          <!-- ── Seção 1: Identificação ── -->
+          <div class="form-section">
+            <h2 class="form-section-title">
+              <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"/></svg>
+              Seção 1 — Identificação do Estudante
+            </h2>
+            <div class="form-group">
+              <label class="form-label required" for="codigo-acesso">Código de acesso</label>
+              <input type="text" id="codigo-acesso" name="codigoAcesso" class="form-control"
+                placeholder="EST-AAAA-XXXXXX" required aria-required="true" style="text-transform:uppercase;"
+                aria-describedby="codigo-acesso-hint codigo-acesso-error">
+              <span id="codigo-acesso-hint" class="form-hint">Código recebido por e-mail ao se cadastrar. Formato: EST-AAAA-XXXXXX. Sem código? Contate o setor.</span>
+              <span id="codigo-acesso-error" class="form-error hidden" role="alert"></span>
+            </div>
+          </div>
+
+          <!-- ── Seção 2: Dados acadêmicos ── -->
+          <div class="form-section">
+            <h2 class="form-section-title">
+              <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3z"/></svg>
+              Seção 2 — Dados Acadêmicos
+            </h2>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label required" for="semestre-atual">Semestre ou ano atual no curso</label>
+                <select id="semestre-atual" name="semestreAtual" class="form-control" required aria-required="true" aria-describedby="semestre-atual-error">
+                  <option value="">Selecione...</option>
+                  <option value="1">1º semestre / 1º ano</option>
+                  <option value="2">2º semestre / 2º ano</option>
+                  <option value="3">3º semestre / 3º ano</option>
+                  <option value="4">4º semestre / 4º ano</option>
+                  <option value="5">5º semestre / 5º ano</option>
+                  <option value="6">6º semestre / 6º ano</option>
+                  <option value="7">7º semestre</option>
+                  <option value="8">8º semestre</option>
+                  <option value="9">9º semestre</option>
+                  <option value="10">10º semestre</option>
+                </select>
+                <span id="semestre-atual-error" class="form-error hidden" role="alert"></span>
+              </div>
+              <div class="form-group">
+                <label class="form-label required" for="formando">É formando(a) neste semestre/ano letivo?</label>
+                <select id="formando" name="formando" class="form-control" required aria-required="true" aria-describedby="formando-hint formando-error">
+                  <option value="">Selecione...</option>
+                  <option value="Não">Não</option>
+                  <option value="Sim">Sim — estou no último semestre/ano</option>
+                </select>
+                <span id="formando-hint" class="form-hint">Formando: último semestre ou ano do curso. O término do estágio deve ocorrer até 15 dias antes do encerramento do período letivo.</span>
+                <span id="formando-error" class="form-error hidden" role="alert"></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- ── Seção 3: Tipo de estágio ── -->
+          <div class="form-section">
+            <h2 class="form-section-title">
+              <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/></svg>
+              Seção 3 — Tipo de Estágio
+            </h2>
+            <div class="form-group">
+              <label class="form-label required" for="tipo-estagio">Tipo de estágio solicitado</label>
+              <select id="tipo-estagio" name="tipoEstagio" class="form-control" required aria-required="true" aria-describedby="tipo-estagio-error">
+                <option value="">Selecione...</option>
+                <option value="Obrigatório">Estágio Obrigatório</option>
+                <option value="Não Obrigatório">Estágio Não Obrigatório</option>
+              </select>
+              <span id="tipo-estagio-error" class="form-error hidden" role="alert"></span>
+            </div>
+          </div>
+
+          <!-- ── Seção 4A: Remuneração — Obrigatório (condicional) ── -->
+          <div id="secao-rem-obrig" class="form-section hidden">
+            <h2 class="form-section-title">
+              <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z"/><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z" clip-rule="evenodd"/></svg>
+              Seção 4A — Remuneração (Estágio Obrigatório)
+            </h2>
+            <div class="alert alert-info" style="margin-bottom:var(--space-5);">
+              <svg class="alert-icon" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/></svg>
+              <div class="alert-content">No estágio obrigatório, o pagamento de bolsa e auxílio-transporte é <strong>opcional</strong>, podendo ser oferecido pela concedente.</div>
+            </div>
+            <div class="form-row-3">
+              <div class="form-group">
+                <label class="form-label" for="bolsa-obrig">Valor da bolsa (R$)</label>
+                <input type="text" id="bolsa-obrig" name="bolsaObrig" class="form-control" placeholder="Ex.: 800,00">
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="transp-obrig">Auxílio-transporte (R$)</label>
+                <input type="text" id="transp-obrig" name="transpObrig" class="form-control" placeholder="Ex.: 150,00">
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="outro-aux-obrig">Outro auxílio</label>
+                <input type="text" id="outro-aux-obrig" name="outroAuxObrig" class="form-control" placeholder="Descreva se houver">
+              </div>
+            </div>
+          </div>
+
+          <!-- ── Seção 4B: Remuneração — Não Obrigatório (condicional) ── -->
+          <div id="secao-rem-naobrig" class="form-section hidden">
+            <h2 class="form-section-title">
+              <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z"/><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z" clip-rule="evenodd"/></svg>
+              Seção 4B — Remuneração (Estágio Não Obrigatório)
+            </h2>
+            <div class="alert alert-warning" style="margin-bottom:var(--space-5);">
+              <svg class="alert-icon" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+              <div class="alert-content">No estágio não obrigatório, a <strong>bolsa e o auxílio-transporte são obrigatórios</strong>.</div>
+            </div>
+            <div class="form-row-3">
+              <div class="form-group">
+                <label class="form-label required" for="bolsa-naobrig">Valor da bolsa (R$)</label>
+                <input type="text" id="bolsa-naobrig" name="bolsaNaoObrig" class="form-control" placeholder="Ex.: 800,00" aria-describedby="bolsa-naobrig-error">
+                <span id="bolsa-naobrig-error" class="form-error hidden" role="alert"></span>
+              </div>
+              <div class="form-group">
+                <label class="form-label required" for="transp-naobrig">Auxílio-transporte (R$)</label>
+                <input type="text" id="transp-naobrig" name="transpNaoObrig" class="form-control" placeholder="Ex.: 150,00" aria-describedby="transp-naobrig-error">
+                <span id="transp-naobrig-error" class="form-error hidden" role="alert"></span>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="outro-aux-naobrig">Outro auxílio</label>
+                <input type="text" id="outro-aux-naobrig" name="outroAuxNaoObrig" class="form-control" placeholder="Descreva se houver">
+              </div>
+            </div>
+          </div>
+
+          <!-- ── Seção 5: Empresa concedente ── -->
+          <div class="form-section">
+            <h2 class="form-section-title">
+              <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a1 1 0 110 2h-3a1 1 0 01-1-1v-2a1 1 0 00-1-1H9a1 1 0 00-1 1v2a1 1 0 01-1 1H4a1 1 0 110-2V4zm3 1h2v2H7V5zm2 4H7v2h2V9zm2-4h2v2h-2V5zm2 4h-2v2h2V9z" clip-rule="evenodd"/></svg>
+              Seção 5 — Empresa / Entidade Concedente
+            </h2>
+            <div class="form-group">
+              <label class="form-label required" for="empresa">Selecione a concedente de estágio</label>
+              <select id="empresa" name="empresa" class="form-control" required aria-required="true" aria-describedby="empresa-hint empresa-error" disabled>
+                <option value="">Carregando empresas...</option>
+              </select>
+              <span id="empresa-hint" class="form-hint">Se a empresa não constar, ela não foi cadastrada ou está aguardando validação.</span>
+              <span id="empresa-error" class="form-error hidden" role="alert"></span>
+            </div>
+          </div>
+
+          <!-- ── Seção 6: Supervisor ── -->
+          <div class="form-section">
+            <h2 class="form-section-title">
+              <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"/></svg>
+              Seção 6 — Supervisor do Estágio
+            </h2>
+            <div class="form-group">
+              <label class="form-label required" for="supervisor">Selecione o supervisor</label>
+              <select id="supervisor" name="supervisor" class="form-control" required aria-required="true" aria-describedby="supervisor-hint supervisor-error" disabled>
+                <option value="">Selecione primeiro a empresa...</option>
+              </select>
+              <span id="supervisor-hint" class="form-hint">Lista filtrada pela empresa selecionada. Se vazio, o supervisor ainda não foi cadastrado para essa empresa.</span>
+              <span id="supervisor-error" class="form-error hidden" role="alert"></span>
+            </div>
+          </div>
+
+          <!-- ── Seção 7: Orientador ── -->
+          <div class="form-section">
+            <h2 class="form-section-title">
+              <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3z"/></svg>
+              Seção 7 — Orientador(a)
+            </h2>
+            <div class="form-group">
+              <label class="form-label required" for="orientador">Professor orientador</label>
+              <select id="orientador" name="orientador" class="form-control" required aria-required="true" aria-describedby="orientador-hint orientador-error" disabled>
+                <option value="">Selecione primeiro o curso (cadastro)...</option>
+              </select>
+              <span id="orientador-hint" class="form-hint">Lista filtrada pelo curso do seu cadastro. Se vazio, entre em contato com o setor.</span>
+              <span id="orientador-error" class="form-error hidden" role="alert"></span>
+            </div>
+          </div>
+
+          <!-- ── Seção 8: Dados do estágio ── -->
+          <div class="form-section">
+            <h2 class="form-section-title">
+              <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"/></svg>
+              Seção 8 — Dados do Estágio
+            </h2>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label required" for="data-inicio">Data de início</label>
+                <input type="date" id="data-inicio" name="dataInicio" class="form-control" required aria-required="true" aria-describedby="data-inicio-hint data-inicio-error">
+                <span id="data-inicio-hint" class="form-hint">Mínimo 7 dias corridos a partir de hoje. O estágio só inicia após liberação do setor.</span>
+                <span id="data-inicio-error" class="form-error hidden" role="alert"></span>
+              </div>
+              <div class="form-group">
+                <label class="form-label required" for="data-termino">Data de término</label>
+                <input type="date" id="data-termino" name="dataTermino" class="form-control" required aria-required="true" aria-describedby="data-termino-hint data-termino-error">
+                <span id="data-termino-hint" class="form-hint">Duração máxima: 2 anos na mesma concedente.</span>
+                <span id="data-termino-error" class="form-error hidden" role="alert"></span>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label required" for="carga-horaria">Carga horária semanal (horas)</label>
+                <select id="carga-horaria" name="cargaHoraria" class="form-control" required aria-required="true" aria-describedby="carga-horaria-hint carga-horaria-error">
+                  <option value="">Selecione...</option>
+                  <option value="20h">20h semanais (máx. NEE)</option>
+                  <option value="25h">25h semanais</option>
+                  <option value="30h">30h semanais (máx. regular)</option>
+                  <option value="40h">40h semanais (alternância, se previsto no PPC)</option>
+                </select>
+                <span id="carga-horaria-hint" class="form-hint">Máx.: 20h (NEE) · 30h (regular) · 40h (alternância, se previsto no PPC). Vedado período noturno (22h–6h).</span>
+                <span id="carga-horaria-error" class="form-error hidden" role="alert"></span>
+              </div>
+              <div class="form-group">
+                <label class="form-label required" for="area-setor">Área / Setor do estágio</label>
+                <input type="text" id="area-setor" name="areaSetor" class="form-control" placeholder="Ex.: Setor de TI, Laboratório de Química" required aria-required="true" aria-describedby="area-setor-error">
+                <span id="area-setor-error" class="form-error hidden" role="alert"></span>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label required" for="dias-horarios">Dias e horários de estágio</label>
+              <input type="text" id="dias-horarios" name="diasHorarios" class="form-control" placeholder="Ex.: Segunda a Sexta, das 08h às 12h" required aria-required="true" aria-describedby="dias-horarios-error">
+              <span id="dias-horarios-error" class="form-error hidden" role="alert"></span>
+            </div>
+            <div class="form-group">
+              <label class="form-label required" for="objetivos">Objetivos do estágio</label>
+              <textarea id="objetivos" name="objetivos" class="form-control" rows="3" required aria-required="true" placeholder="Descreva os principais objetivos de aprendizado do estágio." aria-describedby="objetivos-error"></textarea>
+              <span id="objetivos-error" class="form-error hidden" role="alert"></span>
+            </div>
+            <div class="form-group">
+              <label class="form-label required" for="atividades-prev">Atividades previstas</label>
+              <textarea id="atividades-prev" name="atividadesPrevistas" class="form-control" rows="3" required aria-required="true" placeholder="Liste as atividades que serão desenvolvidas durante o estágio." aria-describedby="atividades-prev-error"></textarea>
+              <span id="atividades-prev-error" class="form-error hidden" role="alert"></span>
+            </div>
+          </div>
+
+          <!-- ── Seção 9: Agente de integração ── -->
+          <div class="form-section">
+            <h2 class="form-section-title">
+              <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M13.5 16.875h3.375m0 0h3.375m-3.375 0V13.5m0 3.375v3.375M6 10.5h2.25a2.25 2.25 0 002.25-2.25V6a2.25 2.25 0 00-2.25-2.25H6A2.25 2.25 0 003.75 6v2.25A2.25 2.25 0 006 10.5z" clip-rule="evenodd"/></svg>
+              Seção 9 — Agente de Integração
+            </h2>
+            <div class="form-group">
+              <label class="form-label required" for="agente">O estágio será intermediado por Agente de Integração?</label>
+              <select id="agente" name="agente" class="form-control" required aria-required="true" aria-describedby="agente-error" disabled>
+                <option value="">Carregando...</option>
+              </select>
+              <span id="agente-error" class="form-error hidden" role="alert"></span>
+            </div>
+          </div>
+
+          <!-- ── Seção 10: Uploads ── -->
+          <div class="form-section">
+            <h2 class="form-section-title">
+              <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clip-rule="evenodd"/></svg>
+              Seção 10 — Upload de Documentos
+            </h2>
+
+            <div class="form-group">
+              <label class="form-label required" for="comprovante-matricula">Comprovante de matrícula atualizado (PDF)</label>
+              <div class="file-input-wrapper">
+                <label class="file-input-label" for="comprovante-matricula">
+                  <svg class="file-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/></svg>
+                  <span class="file-text">Selecionar comprovante de matrícula (PDF)</span>
+                  <span class="file-selected" id="matricula-doc-name"></span>
+                  <span class="file-types">PDF — máx. 5 MB</span>
+                </label>
+                <input type="file" class="form-control-file" id="comprovante-matricula" name="comprovanteMatricula" accept=".pdf" required aria-required="true" aria-describedby="comprovante-matricula-error">
+              </div>
+              <span id="comprovante-matricula-error" class="form-error hidden" role="alert"></span>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label required" for="doc-identidade">Documento de identidade (RG/CPF) em PDF ou imagem</label>
+              <div class="file-input-wrapper">
+                <label class="file-input-label" for="doc-identidade">
+                  <svg class="file-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/></svg>
+                  <span class="file-text">Selecionar documento de identidade</span>
+                  <span class="file-selected" id="identidade-doc-name"></span>
+                  <span class="file-types">PDF, JPG ou PNG — máx. 5 MB</span>
+                </label>
+                <input type="file" class="form-control-file" id="doc-identidade" name="docIdentidade" accept=".pdf,.jpg,.jpeg,.png" required aria-required="true" aria-describedby="doc-identidade-error">
+              </div>
+              <span id="doc-identidade-error" class="form-error hidden" role="alert"></span>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="boletim">Boletim atualizado (PDF — opcional)</label>
+              <div class="file-input-wrapper">
+                <label class="file-input-label" for="boletim">
+                  <svg class="file-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/></svg>
+                  <span class="file-text">Selecionar boletim (opcional)</span>
+                  <span class="file-selected" id="boletim-name"></span>
+                  <span class="file-types">PDF — máx. 5 MB</span>
+                </label>
+                <input type="file" class="form-control-file" id="boletim" name="boletim" accept=".pdf">
+              </div>
+            </div>
+          </div>
+
+          <!-- ── Seção 11: Declarações finais ── -->
+          <div class="form-section">
+            <h2 class="form-section-title">
+              <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+              Seção 11 — Declarações Finais
+            </h2>
+            <div class="declaration-box">
+              <div class="form-check-group">
+                <div class="form-check">
+                  <input type="checkbox" id="decl-assinaturas" name="declAssinaturas" required aria-required="true" aria-describedby="decl-assinaturas-error">
+                  <label class="form-check-label required" for="decl-assinaturas">
+                    Declaro estar ciente de que o estágio só pode iniciar após todas as assinaturas do Termo de Compromisso, do Plano de Atividades e da comprovação do seguro.
+                  </label>
+                </div>
+                <span id="decl-assinaturas-error" class="form-error hidden" role="alert"></span>
+
+                <div class="form-check">
+                  <input type="checkbox" id="decl-relatorios" name="declRelatorios" required aria-required="true" aria-describedby="decl-relatorios-error">
+                  <label class="form-check-label required" for="decl-relatorios">
+                    Estou ciente de que devo apresentar relatórios semestrais e finais, conforme o tipo de estágio.
+                  </label>
+                </div>
+                <span id="decl-relatorios-error" class="form-error hidden" role="alert"></span>
+
+                <div class="form-check">
+                  <input type="checkbox" id="decl-comunicacoes" name="declComunicacoes" required aria-required="true" aria-describedby="decl-comunicacoes-error">
+                  <label class="form-check-label required" for="decl-comunicacoes">
+                    Concordo em receber comunicações da Central de Estágios pelo e-mail institucional informado.
+                  </label>
+                </div>
+                <span id="decl-comunicacoes-error" class="form-error hidden" role="alert"></span>
+              </div>
+            </div>
+          </div>
+
+          <div id="form-feedback" class="form-feedback" role="status" aria-live="polite"></div>
+
+          <div class="form-actions form-actions--between">
+            <button type="button" id="btn-limpar" class="btn btn-ghost">Limpar</button>
+            <button type="submit" id="btn-enviar" class="btn btn-primary btn-lg">
+              <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z"/></svg>
+              Enviar Solicitação
+            </button>
+          </div>
+
+        </form>
+      </div>
+    </div>
+  </main>
+
+  <footer id="app-footer">
+    <div class="container">
+      <div class="footer-inner">
+        <span class="footer-copy">&copy; <script>document.write(new Date().getFullYear())</script> Central de Estágios — IFRS Campus Rio Grande</span>
+        <nav class="footer-links"><a href="mailto:estagios@riogrande.ifrs.edu.br">estagios@riogrande.ifrs.edu.br</a></nav>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://accounts.google.com/gsi/client" async></script>
+  <script src="../assets/js/utils.js"></script>
+  <script src="../assets/js/auth.js"></script>
+  <script src="../assets/js/api.js"></script>
+  <script>
+    'use strict';
+
+    const form = document.getElementById('form-solicitacao');
+    const btnEnviar = document.getElementById('btn-enviar');
+
+    // ── Autenticação ──
+    document.addEventListener('DOMContentLoaded', async function () {
+      if (!requireStudentAuth()) return;
+      // Define mínimo de 7 dias para início
+      document.getElementById('data-inicio').min = getMinDateString(7);
+      await Promise.all([carregarEmpresas(), carregarAgentes()]);
+    });
+
+    // ── Tipo de estágio → exibe seção de remuneração correta ──
+    document.getElementById('tipo-estagio').addEventListener('change', function () {
+      const isObrig = this.value === 'Obrigatório';
+      const isNaoObrig = this.value === 'Não Obrigatório';
+      toggleSection('secao-rem-obrig', isObrig);
+      toggleSection('secao-rem-naobrig', isNaoObrig);
+      // Campos obrigatórios condicionais de remuneração não obrigatória
+      document.getElementById('bolsa-naobrig').required = isNaoObrig;
+      document.getElementById('transp-naobrig').required = isNaoObrig;
+    });
+
+    // ── Empresa → carrega supervisores em cascata ──
+    document.getElementById('empresa').addEventListener('change', async function () {
+      const cnpj = this.value;
+      const selectSup = document.getElementById('supervisor');
+      selectSup.disabled = true;
+      populateSelect('supervisor', [], 'Carregando supervisores...');
+
+      if (!cnpj) {
+        populateSelect('supervisor', [], 'Selecione primeiro a empresa...');
+        return;
+      }
+      try {
+        const supervisores = await apiListarSupervisores(cnpj);
+        if (!supervisores || supervisores.length === 0) {
+          populateSelect('supervisor', [], 'Nenhum supervisor validado para esta empresa');
+        } else {
+          populateSelect('supervisor',
+            supervisores.map(s => ({ value: s.cpf, label: s.nome + (s.cargo ? ' — ' + s.cargo : '') })),
+            'Selecione o supervisor...'
+          );
+          selectSup.disabled = false;
+        }
+      } catch (e) {
+        populateSelect('supervisor', [], 'Erro ao carregar supervisores');
+        console.error(e);
+      }
+    });
+
+    // ── Carrega empresas ──
+    async function carregarEmpresas() {
+      const select = document.getElementById('empresa');
+      try {
+        const empresas = await apiListarEmpresas();
+        if (empresas && empresas.length > 0) {
+          populateSelect('empresa', empresas.map(e => ({ value: e.cnpj, label: e.razaoSocial })), 'Selecione a empresa...');
+          select.disabled = false;
+        } else {
+          populateSelect('empresa', [], 'Nenhuma empresa validada disponível');
+        }
+      } catch (e) {
+        populateSelect('empresa', [], 'Erro ao carregar empresas — recarregue a página');
+      }
+    }
+
+    // ── Carrega orientadores pelo curso do estudante ──
+    async function carregarOrientadores() {
+      // O curso vem dos dados do estudante obtidos pelo código de acesso
+      // Por ora carregamos todos e o backend filtra pelo curso
+      const select = document.getElementById('orientador');
+      try {
+        const orientadores = await API.get('listarOrientadores');
+        if (orientadores && orientadores.length > 0) {
+          populateSelect('orientador', orientadores.map(o => ({ value: o.siape, label: o.nome })), 'Selecione o orientador...');
+          select.disabled = false;
+        } else {
+          populateSelect('orientador', [], 'Nenhum orientador disponível — contate o setor');
+        }
+      } catch (e) {
+        populateSelect('orientador', [], 'Erro ao carregar orientadores');
+      }
+    }
+
+    // ── Carrega agentes ──
+    async function carregarAgentes() {
+      try {
+        const agentes = await apiListarAgentes();
+        const opcoes = [{ value: 'Não', label: 'Não — sem agente de integração' }];
+        if (agentes && agentes.length > 0) {
+          agentes.forEach(a => opcoes.push({ value: a.cnpj, label: a.sigla + ' — ' + a.nome }));
+        }
+        populateSelect('agente', opcoes, 'Selecione...');
+        document.getElementById('agente').disabled = false;
+      } catch (e) {
+        populateSelect('agente', [{ value: 'Não', label: 'Não — sem agente de integração' }], 'Selecione...');
+        document.getElementById('agente').disabled = false;
+      }
+    }
+
+    // Ao confirmar código de acesso (blur), carrega orientadores pelo curso vinculado
+    document.getElementById('codigo-acesso').addEventListener('blur', async function () {
+      const cod = this.value.trim().toUpperCase();
+      if (!cod || !cod.startsWith('EST-')) return;
+      await carregarOrientadores();
+    });
+
+    // Exibe nomes de arquivos selecionados
+    [['comprovante-matricula','matricula-doc-name'],
+     ['doc-identidade','identidade-doc-name'],
+     ['boletim','boletim-name']].forEach(([inputId, nameId]) => {
+      document.getElementById(inputId)?.addEventListener('change', function () {
+        const nameEl = document.getElementById(nameId);
+        const textEl = this.closest('.file-input-label')?.querySelector('.file-text');
+        if (this.files && this.files[0] && nameEl) {
+          nameEl.textContent = this.files[0].name;
+          nameEl.style.display = 'block';
+          if (textEl) textEl.style.display = 'none';
+        }
+      });
+    });
+
+    // ── Validação ──
+    function validateForm() {
+      let valid = true, firstInvalid = null;
+      function fail(id, msg) { showFieldError(id, msg); if (!firstInvalid) firstInvalid = id; valid = false; }
+
+      const cod = document.getElementById('codigo-acesso').value.trim().toUpperCase();
+      if (!cod || !cod.match(/^EST-[A-Z0-9]{4}-[A-Z0-9]{6}$/)) {
+        fail('codigo-acesso', 'Código de acesso inválido. Formato esperado: EST-AAAA-XXXXXX.');
+      }
+      if (!document.getElementById('semestre-atual').value)    fail('semestre-atual', 'Selecione o semestre atual.');
+      if (!document.getElementById('formando').value)          fail('formando', 'Informe se é formando(a).');
+      if (!document.getElementById('tipo-estagio').value)      fail('tipo-estagio', 'Selecione o tipo de estágio.');
+
+      if (document.getElementById('tipo-estagio').value === 'Não Obrigatório') {
+        if (!document.getElementById('bolsa-naobrig').value.trim()) fail('bolsa-naobrig', 'Informe o valor da bolsa.');
+        if (!document.getElementById('transp-naobrig').value.trim()) fail('transp-naobrig', 'Informe o valor do auxílio-transporte.');
+      }
+
+      if (!document.getElementById('empresa').value)           fail('empresa', 'Selecione a empresa concedente.');
+      if (!document.getElementById('supervisor').value)        fail('supervisor', 'Selecione o supervisor.');
+      if (!document.getElementById('orientador').value)        fail('orientador', 'Selecione o professor orientador.');
+
+      const dataInicio = document.getElementById('data-inicio').value;
+      if (!dataInicio) {
+        fail('data-inicio', 'Informe a data de início.');
+      } else if (!validateMinDate(dataInicio, 7)) {
+        fail('data-inicio', 'A data de início deve ser mínimo 7 dias a partir de hoje.');
+      }
+
+      if (!document.getElementById('data-termino').value)      fail('data-termino', 'Informe a data de término.');
+      if (!document.getElementById('carga-horaria').value)     fail('carga-horaria', 'Selecione a carga horária.');
+      if (!document.getElementById('area-setor').value.trim()) fail('area-setor', 'Informe a área/setor do estágio.');
+      if (!document.getElementById('dias-horarios').value.trim()) fail('dias-horarios', 'Informe os dias e horários.');
+      if (!document.getElementById('objetivos').value.trim())  fail('objetivos', 'Descreva os objetivos do estágio.');
+      if (!document.getElementById('atividades-prev').value.trim()) fail('atividades-prev', 'Descreva as atividades previstas.');
+      if (!document.getElementById('agente').value)            fail('agente', 'Informe se há agente de integração.');
+
+      if (!document.getElementById('comprovante-matricula').files?.length) fail('comprovante-matricula', 'Anexe o comprovante de matrícula.');
+      if (!document.getElementById('doc-identidade').files?.length)        fail('doc-identidade', 'Anexe o documento de identidade.');
+
+      if (!document.getElementById('decl-assinaturas').checked)  fail('decl-assinaturas', 'Aceite esta declaração para continuar.');
+      if (!document.getElementById('decl-relatorios').checked)   fail('decl-relatorios', 'Aceite esta declaração para continuar.');
+      if (!document.getElementById('decl-comunicacoes').checked) fail('decl-comunicacoes', 'Aceite esta declaração para continuar.');
+
+      if (firstInvalid) {
+        document.getElementById(firstInvalid)?.focus();
+        document.getElementById(firstInvalid)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      return valid;
+    }
+
+    // ── Envio (sem upload binário — envia metadados; o GAS gerencia Drive separadamente) ──
+    form.addEventListener('submit', async function (e) {
+      e.preventDefault();
+      hideFormFeedback('form-feedback');
+      if (!validateForm()) return;
+
+      const dados = {
+        codigoAcesso:       document.getElementById('codigo-acesso').value.trim().toUpperCase(),
+        semestreAtual:      document.getElementById('semestre-atual').value,
+        formando:           document.getElementById('formando').value,
+        tipoEstagio:        document.getElementById('tipo-estagio').value,
+        bolsa:              document.getElementById('tipo-estagio').value === 'Obrigatório'
+                              ? document.getElementById('bolsa-obrig').value.trim()
+                              : document.getElementById('bolsa-naobrig').value.trim(),
+        auxTransporte:      document.getElementById('tipo-estagio').value === 'Obrigatório'
+                              ? document.getElementById('transp-obrig').value.trim()
+                              : document.getElementById('transp-naobrig').value.trim(),
+        empresa:            document.getElementById('empresa').value,
+        empresaNome:        document.getElementById('empresa').options[document.getElementById('empresa').selectedIndex]?.text,
+        supervisor:         document.getElementById('supervisor').value,
+        supervisorNome:     document.getElementById('supervisor').options[document.getElementById('supervisor').selectedIndex]?.text,
+        orientador:         document.getElementById('orientador').value,
+        orientadorNome:     document.getElementById('orientador').options[document.getElementById('orientador').selectedIndex]?.text,
+        dataInicio:         document.getElementById('data-inicio').value,
+        dataTermino:        document.getElementById('data-termino').value,
+        cargaHoraria:       document.getElementById('carga-horaria').value,
+        diasHorarios:       document.getElementById('dias-horarios').value.trim(),
+        areaSetor:          document.getElementById('area-setor').value.trim(),
+        objetivos:          document.getElementById('objetivos').value.trim(),
+        atividadesPrevistas:document.getElementById('atividades-prev').value.trim(),
+        agente:             document.getElementById('agente').value,
+        agentNome:          document.getElementById('agente').options[document.getElementById('agente').selectedIndex]?.text,
+        // Arquivos: informamos apenas os nomes — o upload binário é feito via link Drive gerado pelo GAS
+        nomeComprovanteMatricula: document.getElementById('comprovante-matricula').files[0]?.name || '',
+        nomeDocIdentidade:        document.getElementById('doc-identidade').files[0]?.name || '',
+        nomeBoletim:              document.getElementById('boletim').files[0]?.name || '',
+        declaracoes: 'Todas aceitas',
+      };
+
+      await submitWithFeedback(
+        () => apiSolicitarEstagio(dados),
+        btnEnviar,
+        'form-feedback',
+        'Solicitação enviada com sucesso!',
+        'Sua solicitação foi recebida. Você receberá instruções sobre o envio dos documentos físicos e os próximos passos por e-mail.',
+        () => { form.querySelectorAll('input,select,textarea,button').forEach(el => el.disabled = true); }
+      );
+    });
+
+    document.getElementById('btn-limpar')?.addEventListener('click', function () {
+      form.reset();
+      form.querySelectorAll('.form-control').forEach(el => { el.classList.remove('is-invalid','is-valid'); el.removeAttribute('aria-invalid'); });
+      form.querySelectorAll('.form-error').forEach(el => { el.textContent = ''; el.classList.add('hidden'); });
+      hideFormFeedback('form-feedback');
+      toggleSection('secao-rem-obrig', false);
+      toggleSection('secao-rem-naobrig', false);
+    });
+  </script>
+</body>
+</html>

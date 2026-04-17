@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cadastro de Empresa — Central de Estágios IFRS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/base.css">
+  <link rel="stylesheet" href="../assets/css/components.css">
+  <link rel="stylesheet" href="../assets/css/layout.css">
+</head>
+<body>
+
+  <header id="app-header">
+    <div class="container">
+      <div class="header-inner">
+        <a href="../index.html" class="header-brand">
+          <div class="header-logo-fallback" aria-hidden="true">IFRS</div>
+          <div class="header-brand-text">
+            <span class="header-brand-name">Central de Estágios</span>
+            <span class="header-brand-sub">IFRS Campus Rio Grande</span>
+          </div>
+        </a>
+        <a href="index.html" class="back-link">
+          <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+            <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd"/>
+          </svg>
+          Empresas
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <main class="form-page">
+    <div class="container">
+      <div class="form-wrapper">
+
+        <!-- Cabeçalho da página -->
+        <div class="form-page-header">
+          <h1>Cadastro de Empresa Concedente</h1>
+          <p>
+            Formulário destinado ao cadastro de empresas, instituições e profissionais liberais que
+            ofertarão vagas de estágio a estudantes do IFRS Campus Rio Grande.
+          </p>
+        </div>
+
+        <!-- Aviso informativo -->
+        <div class="info-banner" role="note">
+          <strong>Atenção:</strong>
+          <ul>
+            <li>O cadastro é único por empresa. Verifique se já não está registrada antes de prosseguir.</li>
+            <li>Se sua empresa já está registrada, selecione <strong>Atualização de cadastro existente</strong>.</li>
+            <li>Após validação pelo setor, a empresa ficará disponível nos formulários de solicitação de estágio.</li>
+            <li>Dúvidas: <a href="mailto:estagios@riogrande.ifrs.edu.br">estagios@riogrande.ifrs.edu.br</a></li>
+          </ul>
+        </div>
+
+        <!-- FORMULÁRIO -->
+        <form id="form-empresa" novalidate>
+
+          <!-- ── Seção 1: Tipo de preenchimento ── -->
+          <div class="form-section">
+            <h2 class="form-section-title">
+              <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+              </svg>
+              Seção 1 — Tipo de Preenchimento
+            </h2>
+
+            <div class="form-group">
+              <label class="form-label required" for="tipo">Este preenchimento é</label>
+              <select id="tipo" name="tipo" class="form-control" required aria-required="true" aria-describedby="tipo-error">
+                <option value="">Selecione...</option>
+                <option value="Novo cadastro">Novo cadastro</option>
+                <option value="Atualização de cadastro existente">Atualização de cadastro existente</option>
+              </select>
+              <span id="tipo-error" class="form-error hidden" role="alert"></span>
+            </div>
+          </div>
+
+          <!-- ── Seção 2: Identificação ── -->
+          <div class="form-section">
+            <h2 class="form-section-title">
+              <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a1 1 0 110 2h-3a1 1 0 01-1-1v-2a1 1 0 00-1-1H9a1 1 0 00-1 1v2a1 1 0 01-1 1H4a1 1 0 110-2V4zm3 1h2v2H7V5zm2 4H7v2h2V9zm2-4h2v2h-2V5zm2 4h-2v2h2V9z" clip-rule="evenodd"/>
+              </svg>
+              Seção 2 — Identificação da Empresa
+            </h2>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label required" for="razao-social">Razão Social</label>
+                <input type="text" id="razao-social" name="razaoSocial" class="form-control"
+                  placeholder="Conforme Cartão CNPJ" required aria-required="true"
+                  aria-describedby="razao-social-error" autocomplete="organization">
+                <span id="razao-social-error" class="form-error hidden" role="alert"></span>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="nome-fantasia">Nome Fantasia</label>
+                <input type="text" id="nome-fantasia" name="nomeFantasia" class="form-control"
+                  placeholder="Se diferente da razão social" autocomplete="off">
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label required" for="cnpj">CNPJ</label>
+                <input type="text" id="cnpj" name="cnpj" class="form-control"
+                  placeholder="00.000.000/0000-00" required aria-required="true"
+                  data-mask="cnpj" inputmode="numeric"
+                  aria-describedby="cnpj-hint cnpj-error">
+                <span id="cnpj-hint" class="form-hint">Insira o CNPJ com 14 dígitos.</span>
+                <span id="cnpj-error" class="form-error hidden" role="alert"></span>
+              </div>
+              <div class="form-group">
+                <label class="form-label required" for="ramo">Ramo de Atividade</label>
+                <input type="text" id="ramo" name="ramo" class="form-control"
+                  placeholder="Ex.: Tecnologia da Informação, Saúde, Comércio" required
+                  aria-required="true" aria-describedby="ramo-error">
+                <span id="ramo-error" class="form-error hidden" role="alert"></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- ── Seção 3: Localização ── -->
+          <div class="form-section">
+            <h2 class="form-section-title">
+              <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/>
+              </svg>
+              Seção 3 — Localização
+            </h2>
+
+            <div class="form-group">
+              <label class="form-label required" for="endereco">Endereço</label>
+              <input type="text" id="endereco" name="endereco" class="form-control"
+                placeholder="Rua, número, complemento" required aria-required="true"
+                aria-describedby="endereco-error" autocomplete="street-address">
+              <span id="endereco-error" class="form-error hidden" role="alert"></span>
+            </div>
+
+            <div class="form-row-3">
+              <div class="form-group">
+                <label class="form-label required" for="municipio">Município</label>
+                <input type="text" id="municipio" name="municipio" class="form-control"
+                  placeholder="Cidade" required aria-required="true"
+                  aria-describedby="municipio-error" autocomplete="address-level2">
+                <span id="municipio-error" class="form-error hidden" role="alert"></span>
+              </div>
+              <div class="form-group">
+                <label class="form-label required" for="uf">UF</label>
+                <select id="uf" name="uf" class="form-control" required aria-required="true"
+                  aria-describedby="uf-error" autocomplete="address-level1">
+                  <option value="">UF</option>
+                  <option value="AC">AC</option><option value="AL">AL</option>
+                  <option value="AP">AP</option><option value="AM">AM</option>
+                  <option value="BA">BA</option><option value="CE">CE</option>
+                  <option value="DF">DF</option><option value="ES">ES</option>
+                  <option value="GO">GO</option><option value="MA">MA</option>
+                  <option value="MT">MT</option><option value="MS">MS</option>
+                  <option value="MG">MG</option><option value="PA">PA</option>
+                  <option value="PB">PB</option><option value="PR">PR</option>
+                  <option value="PE">PE</option><option value="PI">PI</option>
+                  <option value="RJ">RJ</option><option value="RN">RN</option>
+                  <option value="RS" selected>RS</option>
+                  <option value="RO">RO</option><option value="RR">RR</option>
+                  <option value="SC">SC</option><option value="SP">SP</option>
+                  <option value="SE">SE</option><option value="TO">TO</option>
+                </select>
+                <span id="uf-error" class="form-error hidden" role="alert"></span>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="cep">CEP</label>
+                <input type="text" id="cep" name="cep" class="form-control"
+                  placeholder="00000-000" data-mask="cep" inputmode="numeric"
+                  aria-describedby="cep-hint" autocomplete="postal-code">
+                <span id="cep-hint" class="form-hint">Formato: 99999-999</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- ── Seção 4: Contato ── -->
+          <div class="form-section">
+            <h2 class="form-section-title">
+              <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z"/>
+              </svg>
+              Seção 4 — Contato da Empresa
+            </h2>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label required" for="tel-empresa">Telefone da Empresa</label>
+                <input type="tel" id="tel-empresa" name="telEmpresa" class="form-control"
+                  placeholder="(53)999999999" required aria-required="true"
+                  data-mask="phone" inputmode="tel"
+                  aria-describedby="tel-empresa-hint tel-empresa-error" autocomplete="tel">
+                <span id="tel-empresa-hint" class="form-hint">DDD + número, sem espaços ou traços.</span>
+                <span id="tel-empresa-error" class="form-error hidden" role="alert"></span>
+              </div>
+              <div class="form-group">
+                <label class="form-label required" for="email-empresa">E-mail da Empresa</label>
+                <input type="email" id="email-empresa" name="emailEmpresa" class="form-control"
+                  placeholder="contato@empresa.com.br" required aria-required="true"
+                  aria-describedby="email-empresa-error" autocomplete="email">
+                <span id="email-empresa-error" class="form-error hidden" role="alert"></span>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="site">Site</label>
+              <input type="url" id="site" name="site" class="form-control"
+                placeholder="https://www.empresa.com.br" autocomplete="url"
+                aria-describedby="site-hint">
+              <span id="site-hint" class="form-hint">Opcional. Inclua o http:// ou https://</span>
+            </div>
+          </div>
+
+          <!-- ── Seção 5: Representante Legal ── -->
+          <div class="form-section">
+            <h2 class="form-section-title">
+              <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"/>
+              </svg>
+              Seção 5 — Representante Legal
+            </h2>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label required" for="nome-rep">Nome do Representante Legal</label>
+                <input type="text" id="nome-rep" name="nomeRep" class="form-control"
+                  placeholder="Nome completo, sem abreviações" required aria-required="true"
+                  aria-describedby="nome-rep-error" autocomplete="name">
+                <span id="nome-rep-error" class="form-error hidden" role="alert"></span>
+              </div>
+              <div class="form-group">
+                <label class="form-label required" for="cargo-rep">Cargo</label>
+                <input type="text" id="cargo-rep" name="cargoRep" class="form-control"
+                  placeholder="Ex.: Diretor, Gerente, Sócio" required aria-required="true"
+                  aria-describedby="cargo-rep-error" autocomplete="organization-title">
+                <span id="cargo-rep-error" class="form-error hidden" role="alert"></span>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label required" for="email-rep">E-mail do Representante</label>
+                <input type="email" id="email-rep" name="emailRep" class="form-control"
+                  placeholder="representante@empresa.com.br" required aria-required="true"
+                  aria-describedby="email-rep-hint email-rep-error" autocomplete="email">
+                <span id="email-rep-hint" class="form-hint">Usado para envio de documentos para assinatura.</span>
+                <span id="email-rep-error" class="form-error hidden" role="alert"></span>
+              </div>
+              <div class="form-group">
+                <label class="form-label required" for="cpf-rep">CPF do Representante</label>
+                <input type="text" id="cpf-rep" name="cpfRep" class="form-control"
+                  placeholder="000.000.000-00" required aria-required="true"
+                  data-mask="cpf" inputmode="numeric"
+                  aria-describedby="cpf-rep-error">
+                <span id="cpf-rep-error" class="form-error hidden" role="alert"></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- ── Seção 6: Declaração ── -->
+          <div class="form-section">
+            <h2 class="form-section-title">
+              <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+              </svg>
+              Seção 6 — Declaração
+            </h2>
+
+            <div class="declaration-box">
+              <p>
+                Ao enviar este formulário, o representante legal declara que todas as informações
+                prestadas são verdadeiras e assume a responsabilidade pela veracidade dos dados.
+                A empresa está ciente de que o cadastro passará por validação da Central de Estágios
+                do IFRS Campus Rio Grande antes de ser ativado no sistema.
+              </p>
+              <div class="form-check">
+                <input type="checkbox" id="declaracao" name="declaracao"
+                  required aria-required="true" aria-describedby="declaracao-error">
+                <label class="form-check-label required" for="declaracao">
+                  Declaro que as informações acima são verdadeiras e estou de acordo com os
+                  termos de uso dos dados para fins institucionais de estágio.
+                </label>
+              </div>
+              <span id="declaracao-error" class="form-error hidden" role="alert" style="margin-top: var(--space-2); display: block;"></span>
+            </div>
+          </div>
+
+          <!-- Feedback e ações -->
+          <div id="form-feedback" class="form-feedback" role="status" aria-live="polite"></div>
+
+          <div class="form-actions form-actions--between">
+            <button type="button" id="btn-limpar" class="btn btn-ghost">
+              Limpar formulário
+            </button>
+            <button type="submit" id="btn-enviar" class="btn btn-primary btn-lg">
+              <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z"/>
+              </svg>
+              Enviar Cadastro
+            </button>
+          </div>
+
+        </form><!-- /form-empresa -->
+
+      </div><!-- /form-wrapper -->
+    </div><!-- /container -->
+  </main>
+
+  <footer id="app-footer">
+    <div class="container">
+      <div class="footer-inner">
+        <span class="footer-copy">&copy; <script>document.write(new Date().getFullYear())</script> Central de Estágios — IFRS Campus Rio Grande</span>
+        <nav class="footer-links">
+          <a href="mailto:estagios@riogrande.ifrs.edu.br">estagios@riogrande.ifrs.edu.br</a>
+        </nav>
+      </div>
+    </div>
+  </footer>
+
+  <script src="../assets/js/utils.js"></script>
+  <script src="../assets/js/api.js"></script>
+  <script>
+    'use strict';
+
+    // ──────────────────────────────────────────────
+    //  CADASTRO DE EMPRESA
+    //  Módulo público — sem autenticação necessária.
+    //  Validação inline em tempo real + validação
+    //  completa no submit.
+    // ──────────────────────────────────────────────
+
+    const form = document.getElementById('form-empresa');
+    const btnEnviar = document.getElementById('btn-enviar');
+    const btnLimpar = document.getElementById('btn-limpar');
+
+    // ── Validação em tempo real ──
+
+    // CNPJ: valida ao sair do campo (blur)
+    document.getElementById('cnpj').addEventListener('blur', function () {
+      const val = this.value.replace(/\D/g, '');
+      if (val.length === 0) return; // Vazio — deixa para o submit
+      if (!validateCNPJ(this.value)) {
+        showFieldError('cnpj', 'CNPJ inválido. Verifique os dígitos informados.');
+      } else {
+        clearFieldError('cnpj');
+        markFieldValid('cnpj');
+      }
+    });
+
+    // CPF do representante: valida ao sair do campo
+    document.getElementById('cpf-rep').addEventListener('blur', function () {
+      const val = this.value.replace(/\D/g, '');
+      if (val.length === 0) return;
+      if (!validateCPF(this.value)) {
+        showFieldError('cpf-rep', 'CPF inválido. Verifique os dígitos informados.');
+      } else {
+        clearFieldError('cpf-rep');
+        markFieldValid('cpf-rep');
+      }
+    });
+
+    // E-mails: valida ao sair do campo
+    ['email-empresa', 'email-rep'].forEach(id => {
+      document.getElementById(id).addEventListener('blur', function () {
+        if (!this.value) return;
+        if (!validateEmail(this.value)) {
+          showFieldError(id, 'Informe um e-mail válido.');
+        } else {
+          clearFieldError(id);
+          markFieldValid(id);
+        }
+      });
+    });
+
+    // Campos de texto obrigatórios: limpa erro ao digitar
+    ['razao-social', 'ramo', 'endereco', 'municipio', 'nome-rep', 'cargo-rep'].forEach(id => {
+      document.getElementById(id)?.addEventListener('input', function () {
+        if (this.value.trim()) clearFieldError(id);
+      });
+    });
+
+    // ── Validação completa no submit ──
+
+    /**
+     * Valida todos os campos obrigatórios.
+     * Retorna true se tudo estiver OK, false caso contrário.
+     * Foca no primeiro campo inválido encontrado.
+     */
+    function validateForm() {
+      let valid = true;
+      let firstInvalid = null;
+
+      function fail(id, msg) {
+        showFieldError(id, msg);
+        if (!firstInvalid) firstInvalid = id;
+        valid = false;
+      }
+
+      // Tipo
+      if (!document.getElementById('tipo').value) {
+        fail('tipo', 'Selecione o tipo de preenchimento.');
+      }
+
+      // Razão Social
+      const razaoSocial = document.getElementById('razao-social').value.trim();
+      if (!razaoSocial) {
+        fail('razao-social', 'Informe a razão social da empresa.');
+      } else if (razaoSocial.length < 3) {
+        fail('razao-social', 'Razão social muito curta.');
+      }
+
+      // CNPJ
+      if (!document.getElementById('cnpj').value.trim()) {
+        fail('cnpj', 'Informe o CNPJ.');
+      } else if (!validateCNPJ(document.getElementById('cnpj').value)) {
+        fail('cnpj', 'CNPJ inválido. Verifique os dígitos informados.');
+      }
+
+      // Ramo
+      if (!document.getElementById('ramo').value.trim()) {
+        fail('ramo', 'Informe o ramo de atividade.');
+      }
+
+      // Endereço
+      if (!document.getElementById('endereco').value.trim()) {
+        fail('endereco', 'Informe o endereço da empresa.');
+      }
+
+      // Município
+      if (!document.getElementById('municipio').value.trim()) {
+        fail('municipio', 'Informe o município.');
+      }
+
+      // UF
+      if (!document.getElementById('uf').value) {
+        fail('uf', 'Selecione a UF.');
+      }
+
+      // Telefone
+      const tel = document.getElementById('tel-empresa').value.replace(/\D/g, '');
+      if (!tel) {
+        fail('tel-empresa', 'Informe o telefone da empresa.');
+      } else if (tel.length < 10) {
+        fail('tel-empresa', 'Telefone inválido. Informe DDD + número.');
+      }
+
+      // E-mail empresa
+      if (!document.getElementById('email-empresa').value.trim()) {
+        fail('email-empresa', 'Informe o e-mail da empresa.');
+      } else if (!validateEmail(document.getElementById('email-empresa').value)) {
+        fail('email-empresa', 'Informe um e-mail válido.');
+      }
+
+      // Representante Legal
+      if (!document.getElementById('nome-rep').value.trim()) {
+        fail('nome-rep', 'Informe o nome do representante legal.');
+      }
+
+      if (!document.getElementById('cargo-rep').value.trim()) {
+        fail('cargo-rep', 'Informe o cargo do representante.');
+      }
+
+      if (!document.getElementById('email-rep').value.trim()) {
+        fail('email-rep', 'Informe o e-mail do representante.');
+      } else if (!validateEmail(document.getElementById('email-rep').value)) {
+        fail('email-rep', 'Informe um e-mail válido para o representante.');
+      }
+
+      if (!document.getElementById('cpf-rep').value.trim()) {
+        fail('cpf-rep', 'Informe o CPF do representante.');
+      } else if (!validateCPF(document.getElementById('cpf-rep').value)) {
+        fail('cpf-rep', 'CPF inválido. Verifique os dígitos informados.');
+      }
+
+      // Declaração
+      if (!document.getElementById('declaracao').checked) {
+        fail('declaracao', 'É necessário aceitar a declaração de veracidade para enviar o formulário.');
+      }
+
+      // Foca no primeiro campo inválido
+      if (firstInvalid) {
+        const el = document.getElementById(firstInvalid);
+        el?.focus();
+        el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+
+      return valid;
+    }
+
+    // ── Envio ──
+
+    form.addEventListener('submit', async function (e) {
+      e.preventDefault();
+      hideFormFeedback('form-feedback');
+
+      if (!validateForm()) return;
+
+      const dados = {
+        tipo:          document.getElementById('tipo').value,
+        razaoSocial:   document.getElementById('razao-social').value.trim(),
+        nomeFantasia:  document.getElementById('nome-fantasia').value.trim(),
+        cnpj:          document.getElementById('cnpj').value.trim(),
+        ramo:          document.getElementById('ramo').value.trim(),
+        endereco:      document.getElementById('endereco').value.trim(),
+        municipio:     document.getElementById('municipio').value.trim(),
+        uf:            document.getElementById('uf').value,
+        cep:           document.getElementById('cep').value.trim(),
+        telEmpresa:    document.getElementById('tel-empresa').value.trim(),
+        emailEmpresa:  document.getElementById('email-empresa').value.trim(),
+        site:          document.getElementById('site').value.trim(),
+        nomeRep:       document.getElementById('nome-rep').value.trim(),
+        cargoRep:      document.getElementById('cargo-rep').value.trim(),
+        emailRep:      document.getElementById('email-rep').value.trim(),
+        cpfRep:        document.getElementById('cpf-rep').value.trim(),
+        declaracao:    'Sim',
+      };
+
+      await submitWithFeedback(
+        () => apiCadastrarEmpresa(dados),
+        btnEnviar,
+        'form-feedback',
+        'Cadastro enviado com sucesso!',
+        'Seu cadastro foi recebido pela Central de Estágios. Após validação (prazo: 1 dia útil), você receberá uma confirmação por e-mail.',
+        () => {
+          // Desabilita o form após sucesso para evitar reenvio
+          form.querySelectorAll('input, select, textarea, button').forEach(el => el.disabled = true);
+          btnLimpar.disabled = true;
+        }
+      );
+    });
+
+    // ── Limpar formulário ──
+    btnLimpar.addEventListener('click', function () {
+      form.reset();
+      // Remove estados de validação de todos os campos
+      form.querySelectorAll('.form-control').forEach(el => {
+        el.classList.remove('is-invalid', 'is-valid');
+        el.removeAttribute('aria-invalid');
+      });
+      form.querySelectorAll('.form-error').forEach(el => {
+        el.textContent = '';
+        el.classList.add('hidden');
+      });
+      hideFormFeedback('form-feedback');
+    });
+  </script>
+</body>
+</html>

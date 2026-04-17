@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard — Central de Estágios IFRS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/base.css">
+  <link rel="stylesheet" href="../assets/css/components.css">
+  <link rel="stylesheet" href="../assets/css/layout.css">
+  <style>
+    /* Dashboard-specific styles */
+    .dash-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: var(--space-4);
+      margin-bottom: var(--space-8);
+    }
+    .stat-card {
+      background: var(--white);
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius-lg);
+      padding: var(--space-5);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-2);
+      box-shadow: var(--shadow-sm);
+    }
+    .stat-card__label {
+      font-size: var(--text-sm);
+      color: var(--gray-500);
+      font-weight: 500;
+    }
+    .stat-card__value {
+      font-size: var(--text-3xl);
+      font-weight: 600;
+      color: var(--gray-900);
+      line-height: 1;
+    }
+    .stat-card__sub {
+      font-size: var(--text-xs);
+      color: var(--gray-400);
+    }
+    .stat-card--primary { border-left: 4px solid var(--primary); }
+    .stat-card--success { border-left: 4px solid var(--success); }
+    .stat-card--warning { border-left: 4px solid var(--warning); }
+    .stat-card--info    { border-left: 4px solid var(--info); }
+
+    .dash-section {
+      background: var(--white);
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-sm);
+      margin-bottom: var(--space-6);
+    }
+    .dash-section__header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: var(--space-4) var(--space-5);
+      border-bottom: 1px solid var(--gray-100);
+      gap: var(--space-3);
+    }
+    .dash-section__title {
+      font-size: var(--text-base);
+      font-weight: 600;
+      color: var(--gray-800);
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      margin: 0;
+    }
+    .dash-section__title svg {
+      width: 18px;
+      height: 18px;
+      color: var(--primary);
+      flex-shrink: 0;
+    }
+    .dash-section__body {
+      padding: var(--space-5);
+    }
+
+    .table-responsive {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .dash-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: var(--text-sm);
+    }
+    .dash-table th {
+      text-align: left;
+      padding: var(--space-2) var(--space-3);
+      font-weight: 600;
+      color: var(--gray-500);
+      font-size: var(--text-xs);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      border-bottom: 1px solid var(--gray-200);
+      white-space: nowrap;
+    }
+    .dash-table td {
+      padding: var(--space-3);
+      border-bottom: 1px solid var(--gray-100);
+      color: var(--gray-700);
+      vertical-align: middle;
+    }
+    .dash-table tr:last-child td { border-bottom: none; }
+    .dash-table tr:hover td { background: var(--gray-50); }
+
+    .alert-row {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--space-3);
+      padding: var(--space-3) 0;
+      border-bottom: 1px solid var(--gray-100);
+    }
+    .alert-row:last-child { border-bottom: none; }
+    .alert-row__icon {
+      flex-shrink: 0;
+      width: 36px;
+      height: 36px;
+      border-radius: var(--radius-full);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .alert-row__icon--warning { background: var(--warning-bg, #fffbeb); color: var(--warning); }
+    .alert-row__icon--error   { background: var(--error-bg, #fef2f2);   color: var(--error); }
+    .alert-row__body { flex: 1; min-width: 0; }
+    .alert-row__title { font-weight: 600; font-size: var(--text-sm); color: var(--gray-800); }
+    .alert-row__desc  { font-size: var(--text-xs); color: var(--gray-500); margin-top: 2px; }
+
+    .breakdown-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-6);
+    }
+    @media (max-width: 640px) { .breakdown-grid { grid-template-columns: 1fr; } }
+
+    .breakdown-list { list-style: none; padding: 0; margin: 0; }
+    .breakdown-item {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      padding: var(--space-2) 0;
+      font-size: var(--text-sm);
+    }
+    .breakdown-item__bar-wrap {
+      flex: 1;
+      height: 6px;
+      background: var(--gray-100);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+    .breakdown-item__bar {
+      height: 100%;
+      background: var(--primary);
+      border-radius: 99px;
+      transition: width 0.6s ease;
+    }
+    .breakdown-item__label { flex: 0 0 auto; max-width: 140px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--gray-600); }
+    .breakdown-item__count { flex: 0 0 auto; font-weight: 600; color: var(--gray-800); min-width: 24px; text-align: right; }
+
+    .filters--dash {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-3);
+      margin-bottom: var(--space-5);
+      align-items: flex-end;
+    }
+    .filters--dash .form-group { margin-bottom: 0; }
+    .filters--dash label { font-size: var(--text-xs); color: var(--gray-500); display: block; margin-bottom: var(--space-1); font-weight: 500; }
+    .filters--dash select,
+    .filters--dash input { min-width: 140px; }
+  </style>
+</head>
+<body>
+  <header id="app-header">
+    <div class="container">
+      <div class="header-inner">
+        <a href="../index.html" class="header-brand">
+          <div class="header-logo-fallback" aria-hidden="true">IFRS</div>
+          <div class="header-brand-text">
+            <span class="header-brand-name">Central de Estágios</span>
+            <span class="header-brand-sub">IFRS Campus Rio Grande</span>
+          </div>
+        </a>
+        <div style="display:flex;align-items:center;gap:var(--space-3);">
+          <div id="header-user-area"></div>
+          <a href="../index.html" class="back-link">
+            <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd"/></svg>
+            Início
+          </a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main id="main-content">
+    <section class="page-hero">
+      <div class="container">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:var(--space-3);">
+          <div>
+            <h1>Dashboard</h1>
+            <p>Visão geral dos estágios em andamento — <span id="semestre-atual"></span></p>
+          </div>
+          <button type="button" id="btn-atualizar" class="btn btn-secondary btn-sm" title="Atualizar dados">
+            <svg width="15" height="15" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"/></svg>
+            Atualizar
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <div class="container" style="padding-top:var(--space-7);padding-bottom:var(--space-12);" id="dash-content">
+
+      <!-- Estado de carregamento -->
+      <div id="loading-state" class="empty-state" aria-live="polite">
+        <div class="spinner" aria-hidden="true"></div>
+        <p>Carregando dados do dashboard…</p>
+      </div>
+
+      <!-- Estado de erro -->
+      <div id="error-state" class="hidden">
+        <div class="alert alert-error" role="alert">
+          <strong>Erro ao carregar dados.</strong> Não foi possível buscar as informações do servidor.
+          <button type="button" id="btn-retry" class="btn btn-secondary btn-sm" style="margin-top:var(--space-3);">Tentar novamente</button>
+        </div>
+      </div>
+
+      <!-- Conteúdo principal -->
+      <div id="dash-main" class="hidden">
+
+        <!-- Cards de estatísticas -->
+        <div class="dash-stats" id="stats-cards" aria-label="Resumo de estágios"></div>
+
+        <!-- Alertas e pendências -->
+        <div id="secao-alertas" class="dash-section hidden">
+          <div class="dash-section__header">
+            <h2 class="dash-section__title">
+              <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+              Pendências e Alertas
+            </h2>
+            <span id="alertas-count" class="badge badge-warning"></span>
+          </div>
+          <div class="dash-section__body">
+            <div id="lista-alertas"></div>
+          </div>
+        </div>
+
+        <!-- Filtros -->
+        <div class="dash-section">
+          <div class="dash-section__header">
+            <h2 class="dash-section__title">
+              <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M3 3a1 1 0 011-1h12a1 1 0 011 1v3a1 1 0 01-.293.707L12 11.414V15a1 1 0 01-.293.707l-2 2A1 1 0 018 17v-5.586L3.293 6.707A1 1 0 013 6V3z" clip-rule="evenodd"/></svg>
+              Solicitações Recentes
+            </h2>
+          </div>
+          <div class="dash-section__body">
+            <div class="filters--dash">
+              <div class="form-group">
+                <label for="filtro-curso">Curso</label>
+                <select id="filtro-curso" class="form-control">
+                  <option value="">Todos os cursos</option>
+                  <option value="Técnico em Administração">Téc. Administração</option>
+                  <option value="Técnico em Eletrotécnica">Téc. Eletrotécnica</option>
+                  <option value="Técnico em Informática">Téc. Informática</option>
+                  <option value="Técnico em Química">Téc. Química</option>
+                  <option value="Técnico em Segurança do Trabalho">Téc. Seg. Trabalho</option>
+                  <option value="Análise e Desenvolvimento de Sistemas">ADS</option>
+                  <option value="Engenharia de Computação">Eng. Computação</option>
+                  <option value="Engenharia Elétrica">Eng. Elétrica</option>
+                  <option value="Licenciatura em Computação">Lic. Computação</option>
+                  <option value="Tecnologia em Gestão Pública">Gestão Pública</option>
+                  <option value="Tecnologia em Processos Gerenciais">Proc. Gerenciais</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="filtro-tipo">Tipo</label>
+                <select id="filtro-tipo" class="form-control">
+                  <option value="">Todos</option>
+                  <option value="Obrigatório">Obrigatório</option>
+                  <option value="Não Obrigatório">Não Obrigatório</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="filtro-status">Status</label>
+                <select id="filtro-status" class="form-control">
+                  <option value="">Todos</option>
+                  <option value="Pendente">Pendente</option>
+                  <option value="Em análise">Em análise</option>
+                  <option value="Aprovado">Aprovado</option>
+                  <option value="Ativo">Ativo</option>
+                  <option value="Encerrado">Encerrado</option>
+                  <option value="Cancelado">Cancelado</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="filtro-periodo">Período</label>
+                <input type="text" id="filtro-periodo" class="form-control" placeholder="Ex.: 2025/1" style="min-width:100px;max-width:120px;">
+              </div>
+            </div>
+
+            <div class="table-responsive">
+              <table class="dash-table" aria-label="Tabela de solicitações de estágio">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Estudante</th>
+                    <th>Curso</th>
+                    <th>Empresa</th>
+                    <th>Tipo</th>
+                    <th>Status</th>
+                    <th>Data</th>
+                    <th>Ações</th>
+                  </tr>
+                </thead>
+                <tbody id="tabela-solicitacoes">
+                  <tr><td colspan="8" style="text-align:center;color:var(--gray-400);padding:var(--space-8);">Carregando…</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <p id="tabela-info" class="text-xs text-muted" style="margin-top:var(--space-3);"></p>
+          </div>
+        </div>
+
+        <!-- Breakdown por curso e por empresa -->
+        <div class="breakdown-grid">
+          <div class="dash-section" style="margin-bottom:0;">
+            <div class="dash-section__header">
+              <h2 class="dash-section__title">
+                <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z"/></svg>
+                Estágios por Curso
+              </h2>
+            </div>
+            <div class="dash-section__body">
+              <ul class="breakdown-list" id="breakdown-cursos" aria-label="Estágios ativos por curso"></ul>
+            </div>
+          </div>
+
+          <div class="dash-section" style="margin-bottom:0;">
+            <div class="dash-section__header">
+              <h2 class="dash-section__title">
+                <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm3 1h6v4H7V5zm8 8v2h1v1H4v-1h1v-2a1 1 0 011-1h8a1 1 0 011 1z" clip-rule="evenodd"/></svg>
+                Top Empresas Concedentes
+              </h2>
+            </div>
+            <div class="dash-section__body">
+              <ul class="breakdown-list" id="breakdown-empresas" aria-label="Top empresas por número de estágios"></ul>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /#dash-main -->
+    </div>
+  </main>
+
+  <footer id="app-footer">
+    <div class="container">
+      <div class="footer-inner">
+        <span class="footer-copy">&copy; <script>document.write(new Date().getFullYear())</script> Central de Estágios — IFRS Campus Rio Grande</span>
+        <nav class="footer-links"><a href="mailto:estagios@riogrande.ifrs.edu.br">estagios@riogrande.ifrs.edu.br</a></nav>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://accounts.google.com/gsi/client" async></script>
+  <script src="../assets/js/utils.js"></script>
+  <script src="../assets/js/auth.js"></script>
+  <script src="../assets/js/api.js"></script>
+  <script>
+    'use strict';
+
+    document.addEventListener('DOMContentLoaded', function () {
+      requireStaffAuth();
+      document.getElementById('semestre-atual').textContent = getCurrentSemester();
+      carregarDashboard();
+    });
+
+    // Dados brutos para filtragem local
+    let dadosDash = null;
+
+    async function carregarDashboard() {
+      mostrarEstado('loading');
+      try {
+        dadosDash = await apiDashboard();
+        renderizarDashboard(dadosDash);
+        mostrarEstado('main');
+      } catch (err) {
+        console.error('Erro ao carregar dashboard:', err);
+        mostrarEstado('error');
+      }
+    }
+
+    function mostrarEstado(estado) {
+      document.getElementById('loading-state').classList.toggle('hidden', estado !== 'loading');
+      document.getElementById('error-state').classList.toggle('hidden', estado !== 'error');
+      document.getElementById('dash-main').classList.toggle('hidden', estado !== 'main');
+    }
+
+    function renderizarDashboard(dados) {
+      renderizarStats(dados.stats || {});
+      renderizarAlertas(dados.alertas || []);
+      renderizarTabela(dados.solicitacoes || []);
+      renderizarBreakdownCursos(dados.porCurso || []);
+      renderizarBreakdownEmpresas(dados.topEmpresas || []);
+    }
+
+    // ── Stats cards ──────────────────────────────────────────────────
+    function renderizarStats(stats) {
+      const el = document.getElementById('stats-cards');
+      const cards = [
+        { label: 'Estágios ativos',       value: stats.ativos     ?? '—', sub: 'em andamento atualmente',  mod: 'primary' },
+        { label: 'Solicitações pendentes', value: stats.pendentes  ?? '—', sub: 'aguardando análise',        mod: 'warning' },
+        { label: 'Encerrados este semestre',value: stats.encerrados ?? '—', sub: 'concluídos no período',    mod: 'success' },
+        { label: 'Empresas concedentes',   value: stats.empresas   ?? '—', sub: 'com estágio ativo',         mod: 'info'    },
+      ];
+      el.innerHTML = cards.map(function (c) {
+        return '<div class="stat-card stat-card--' + c.mod + '" role="figure" aria-label="' + c.label + ': ' + c.value + '">'
+          + '<span class="stat-card__label">' + escapeHtml(c.label) + '</span>'
+          + '<span class="stat-card__value">' + escapeHtml(String(c.value)) + '</span>'
+          + '<span class="stat-card__sub">' + escapeHtml(c.sub) + '</span>'
+          + '</div>';
+      }).join('');
+    }
+
+    // ── Alertas ───────────────────────────────────────────────────────
+    function renderizarAlertas(alertas) {
+      const secao = document.getElementById('secao-alertas');
+      if (!alertas || alertas.length === 0) { secao.classList.add('hidden'); return; }
+
+      secao.classList.remove('hidden');
+      document.getElementById('alertas-count').textContent = alertas.length;
+      document.getElementById('lista-alertas').innerHTML = alertas.map(function (a) {
+        const mod = a.nivel === 'error' ? 'error' : 'warning';
+        const icon = a.nivel === 'error'
+          ? '<path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>'
+          : '<path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>';
+        return '<div class="alert-row">'
+          + '<div class="alert-row__icon alert-row__icon--' + mod + '" aria-hidden="true">'
+          + '<svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor">' + icon + '</svg>'
+          + '</div>'
+          + '<div class="alert-row__body">'
+          + '<div class="alert-row__title">' + escapeHtml(a.titulo) + '</div>'
+          + '<div class="alert-row__desc">' + escapeHtml(a.descricao) + '</div>'
+          + '</div>'
+          + '</div>';
+      }).join('');
+    }
+
+    // ── Tabela de solicitações ────────────────────────────────────────
+    const STATUS_BADGE = {
+      'Pendente':   'badge-warning',
+      'Em análise': 'badge-info',
+      'Aprovado':   'badge-success',
+      'Ativo':      'badge-success',
+      'Encerrado':  'badge-neutral',
+      'Cancelado':  'badge-error',
+    };
+
+    function renderizarTabela(solicitacoes) {
+      aplicarFiltrosTabela(solicitacoes);
+    }
+
+    function aplicarFiltrosTabela(base) {
+      const lista = base !== undefined ? base : (dadosDash ? dadosDash.solicitacoes || [] : []);
+      const curso   = document.getElementById('filtro-curso').value;
+      const tipo    = document.getElementById('filtro-tipo').value;
+      const status  = document.getElementById('filtro-status').value;
+      const periodo = document.getElementById('filtro-periodo').value.trim().toLowerCase();
+
+      const filtrados = lista.filter(function (s) {
+        return (!curso   || s.curso   === curso)
+            && (!tipo    || s.tipo    === tipo)
+            && (!status  || s.status  === status)
+            && (!periodo || (s.periodo && s.periodo.toLowerCase().includes(periodo)));
+      });
+
+      const tbody = document.getElementById('tabela-solicitacoes');
+      const info  = document.getElementById('tabela-info');
+
+      if (filtrados.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--gray-400);padding:var(--space-8);">Nenhuma solicitação encontrada com os filtros selecionados.</td></tr>';
+        info.textContent = '';
+        return;
+      }
+
+      const exibidos = filtrados.slice(0, 100);
+      tbody.innerHTML = exibidos.map(function (s) {
+        const badgeClass = STATUS_BADGE[s.status] || 'badge-neutral';
+        return '<tr>'
+          + '<td><code style="font-size:var(--text-xs);color:var(--gray-500);">' + escapeHtml(s.id || '—') + '</code></td>'
+          + '<td style="white-space:nowrap;">' + escapeHtml(s.nomeEstudante || '—') + '</td>'
+          + '<td>' + escapeHtml(abreviarCurso(s.curso || '—')) + '</td>'
+          + '<td>' + escapeHtml(s.empresa || '—') + '</td>'
+          + '<td><span class="badge ' + (s.tipo === 'Obrigatório' ? 'badge-info' : 'badge-neutral') + '">' + escapeHtml(s.tipo || '—') + '</span></td>'
+          + '<td><span class="badge ' + badgeClass + '">' + escapeHtml(s.status || '—') + '</span></td>'
+          + '<td style="white-space:nowrap;">' + escapeHtml(formatDate(s.dataSolicitacao) || '—') + '</td>'
+          + '<td>'
+          + (s.id ? '<a href="#" class="btn btn-ghost btn-sm" style="font-size:var(--text-xs);" title="Ver detalhes" data-id="' + escapeHtml(s.id) + '">Ver</a>' : '')
+          + '</td>'
+          + '</tr>';
+      }).join('');
+
+      info.textContent = filtrados.length > 100
+        ? 'Exibindo 100 de ' + filtrados.length + ' registros. Refine os filtros para resultados mais precisos.'
+        : filtrados.length + ' registro' + (filtrados.length === 1 ? '' : 's') + ' encontrado' + (filtrados.length === 1 ? '' : 's') + '.';
+    }
+
+    function abreviarCurso(nome) {
+      const map = {
+        'Análise e Desenvolvimento de Sistemas': 'ADS',
+        'Engenharia de Computação': 'Eng. Computação',
+        'Engenharia Elétrica': 'Eng. Elétrica',
+        'Licenciatura em Computação': 'Lic. Computação',
+        'Tecnologia em Gestão Pública': 'Gestão Pública',
+        'Tecnologia em Processos Gerenciais': 'Proc. Gerenciais',
+      };
+      return map[nome] || nome;
+    }
+
+    // ── Breakdown cursos ──────────────────────────────────────────────
+    function renderizarBreakdownCursos(lista) {
+      const el = document.getElementById('breakdown-cursos');
+      if (!lista || lista.length === 0) { el.innerHTML = '<li class="text-sm text-muted">Sem dados disponíveis.</li>'; return; }
+      const max = Math.max(...lista.map(function (i) { return i.total; }), 1);
+      el.innerHTML = lista.map(function (item) {
+        const pct = Math.round((item.total / max) * 100);
+        return '<li class="breakdown-item">'
+          + '<span class="breakdown-item__label" title="' + escapeHtml(item.curso) + '">' + escapeHtml(abreviarCurso(item.curso)) + '</span>'
+          + '<div class="breakdown-item__bar-wrap" aria-hidden="true"><div class="breakdown-item__bar" style="width:' + pct + '%"></div></div>'
+          + '<span class="breakdown-item__count">' + item.total + '</span>'
+          + '</li>';
+      }).join('');
+    }
+
+    // ── Breakdown empresas ────────────────────────────────────────────
+    function renderizarBreakdownEmpresas(lista) {
+      const el = document.getElementById('breakdown-empresas');
+      if (!lista || lista.length === 0) { el.innerHTML = '<li class="text-sm text-muted">Sem dados disponíveis.</li>'; return; }
+      const max = Math.max(...lista.map(function (i) { return i.total; }), 1);
+      el.innerHTML = lista.slice(0, 10).map(function (item) {
+        const pct = Math.round((item.total / max) * 100);
+        const nome = item.nomeFantasia || item.razaoSocial || '—';
+        return '<li class="breakdown-item">'
+          + '<span class="breakdown-item__label" title="' + escapeHtml(nome) + '">' + escapeHtml(nome) + '</span>'
+          + '<div class="breakdown-item__bar-wrap" aria-hidden="true"><div class="breakdown-item__bar" style="width:' + pct + '%;background:var(--success)"></div></div>'
+          + '<span class="breakdown-item__count">' + item.total + '</span>'
+          + '</li>';
+      }).join('');
+    }
+
+    // ── Filtros da tabela ─────────────────────────────────────────────
+    ['filtro-curso', 'filtro-tipo', 'filtro-status'].forEach(function (id) {
+      document.getElementById(id).addEventListener('change', function () { aplicarFiltrosTabela(); });
+    });
+    document.getElementById('filtro-periodo').addEventListener('input', function () { aplicarFiltrosTabela(); });
+
+    // ── Atualizar / retry ─────────────────────────────────────────────
+    document.getElementById('btn-atualizar').addEventListener('click', carregarDashboard);
+    document.getElementById('btn-retry')?.addEventListener('click', carregarDashboard);
+  </script>
+</body>
+</html>

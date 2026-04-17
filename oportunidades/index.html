@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Portal de Oportunidades — Central de Estágios IFRS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/base.css">
+  <link rel="stylesheet" href="../assets/css/components.css">
+  <link rel="stylesheet" href="../assets/css/layout.css">
+  <style>
+    .opp-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: var(--space-5);
+    }
+    @media (max-width: 480px) { .opp-grid { grid-template-columns: 1fr; } }
+
+    .opp-card {
+      background: var(--white);
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius-lg);
+      padding: var(--space-5);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-3);
+      box-shadow: var(--shadow-sm);
+      transition: box-shadow 0.15s, border-color 0.15s;
+    }
+    .opp-card:hover {
+      box-shadow: var(--shadow-md);
+      border-color: var(--primary-200, #93c5fd);
+    }
+    .opp-card__header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: var(--space-3);
+    }
+    .opp-card__title {
+      font-size: var(--text-base);
+      font-weight: 600;
+      color: var(--gray-900);
+      line-height: 1.35;
+      margin: 0;
+    }
+    .opp-card__empresa {
+      font-size: var(--text-sm);
+      color: var(--gray-500);
+      margin-top: var(--space-1);
+    }
+    .opp-card__badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-1);
+    }
+    .opp-card__desc {
+      font-size: var(--text-sm);
+      color: var(--gray-600);
+      line-height: 1.5;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .opp-card__meta {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: var(--space-1) var(--space-3);
+      font-size: var(--text-xs);
+      color: var(--gray-500);
+    }
+    .opp-card__meta dt { white-space: nowrap; }
+    .opp-card__meta dd { margin: 0; color: var(--gray-700); }
+    .opp-card__footer {
+      margin-top: auto;
+      padding-top: var(--space-3);
+      border-top: 1px solid var(--gray-100);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-2);
+      flex-wrap: wrap;
+    }
+    .opp-card__prazo {
+      font-size: var(--text-xs);
+      color: var(--gray-400);
+    }
+    .opp-card__prazo--urgente { color: var(--error); font-weight: 600; }
+
+    .portal-filters {
+      background: var(--white);
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius-lg);
+      padding: var(--space-5);
+      margin-bottom: var(--space-6);
+      box-shadow: var(--shadow-sm);
+    }
+    .portal-filters__grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: var(--space-3);
+      align-items: end;
+    }
+    .portal-filters__grid .form-group { margin-bottom: 0; }
+    .portal-filters__busca {
+      grid-column: 1 / -1;
+    }
+    @media (min-width: 700px) {
+      .portal-filters__busca { grid-column: auto; grid-column: span 2; }
+    }
+  </style>
+</head>
+<body>
+  <header id="app-header">
+    <div class="container">
+      <div class="header-inner">
+        <a href="../index.html" class="header-brand">
+          <div class="header-logo-fallback" aria-hidden="true">IFRS</div>
+          <div class="header-brand-text">
+            <span class="header-brand-name">Central de Estágios</span>
+            <span class="header-brand-sub">IFRS Campus Rio Grande</span>
+          </div>
+        </a>
+        <div style="display:flex;align-items:center;gap:var(--space-3);">
+          <div id="header-user-area"></div>
+          <a href="../index.html" class="back-link">
+            <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd"/></svg>
+            Início
+          </a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main id="main-content">
+    <section class="page-hero">
+      <div class="container">
+        <h1>Portal de Oportunidades</h1>
+        <p>Vagas de estágio abertas em empresas conveniadas com o IFRS Campus Rio Grande. Candidature-se diretamente pela empresa.</p>
+      </div>
+    </section>
+
+    <div class="container" style="padding-top:var(--space-7);padding-bottom:var(--space-12);">
+
+      <!-- Filtros -->
+      <div class="portal-filters" role="search" aria-label="Filtros de oportunidades">
+        <div class="portal-filters__grid">
+          <div class="form-group portal-filters__busca">
+            <label class="form-label" for="filtro-busca">Buscar</label>
+            <input type="search" id="filtro-busca" class="form-control"
+              placeholder="Título, empresa, área…" aria-label="Buscar oportunidades">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="filtro-curso">Curso</label>
+            <select id="filtro-curso" class="form-control" aria-label="Filtrar por curso">
+              <option value="">Todos os cursos</option>
+              <optgroup label="Técnico">
+                <option value="Técnico em Administração">Téc. Administração</option>
+                <option value="Técnico em Eletrotécnica">Téc. Eletrotécnica</option>
+                <option value="Técnico em Informática">Téc. Informática</option>
+                <option value="Técnico em Química">Téc. Química</option>
+                <option value="Técnico em Segurança do Trabalho">Téc. Seg. Trabalho</option>
+              </optgroup>
+              <optgroup label="Graduação">
+                <option value="Análise e Desenvolvimento de Sistemas">ADS</option>
+                <option value="Engenharia de Computação">Eng. Computação</option>
+                <option value="Engenharia Elétrica">Eng. Elétrica</option>
+                <option value="Licenciatura em Computação">Lic. Computação</option>
+                <option value="Tecnologia em Gestão Pública">Gestão Pública</option>
+                <option value="Tecnologia em Processos Gerenciais">Proc. Gerenciais</option>
+              </optgroup>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="filtro-tipo">Tipo de vaga</label>
+            <select id="filtro-tipo" class="form-control" aria-label="Filtrar por tipo de vaga">
+              <option value="">Todos</option>
+              <option value="Estágio Obrigatório">Obrigatório</option>
+              <option value="Estágio Não Obrigatório">Não Obrigatório</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="filtro-modalidade">Modalidade</label>
+            <select id="filtro-modalidade" class="form-control" aria-label="Filtrar por modalidade">
+              <option value="">Todas</option>
+              <option value="Presencial">Presencial</option>
+              <option value="Remoto">Remoto</option>
+              <option value="Híbrido">Híbrido</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="filtro-cidade">Cidade</label>
+            <input type="text" id="filtro-cidade" class="form-control" placeholder="Ex.: Rio Grande" aria-label="Filtrar por cidade">
+          </div>
+        </div>
+
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:var(--space-4);flex-wrap:wrap;gap:var(--space-2);">
+          <p id="contagem-oportunidades" class="text-sm text-muted" aria-live="polite"></p>
+          <button type="button" id="btn-limpar-filtros" class="btn btn-ghost btn-sm">Limpar filtros</button>
+        </div>
+      </div>
+
+      <!-- Estado de carregamento -->
+      <div id="loading-state" class="empty-state" aria-live="polite">
+        <div class="spinner" aria-hidden="true"></div>
+        <p>Buscando oportunidades…</p>
+      </div>
+
+      <!-- Estado de erro -->
+      <div id="error-state" class="hidden">
+        <div class="alert alert-error" role="alert">
+          <strong>Erro ao carregar oportunidades.</strong> Verifique sua conexão e tente novamente.
+          <button type="button" id="btn-retry" class="btn btn-secondary btn-sm" style="margin-top:var(--space-3);">Tentar novamente</button>
+        </div>
+      </div>
+
+      <!-- Estado vazio -->
+      <div id="empty-state" class="empty-state hidden">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true" style="width:56px;height:56px;color:var(--gray-300);margin-bottom:var(--space-3);">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 14.15v4.25c0 1.094-.787 2.036-1.872 2.18-2.087.277-4.216.42-6.378.42s-4.291-.143-6.378-.42c-1.085-.144-1.872-1.086-1.872-2.18v-4.25m16.5 0a2.18 2.18 0 00.75-1.661V8.706c0-1.081-.768-2.015-1.837-2.175a48.114 48.114 0 00-3.413-.387m4.5 8.006c-.194.165-.42.295-.673.38A23.978 23.978 0 0112 15.75c-2.648 0-5.195-.429-7.577-1.22a2.016 2.016 0 01-.673-.38m0 0A2.18 2.18 0 013 12.489V8.706c0-1.081.768-2.015 1.837-2.175a48.111 48.111 0 013.413-.387m7.5 0V5.25A2.25 2.25 0 0013.5 3h-3a2.25 2.25 0 00-2.25 2.25v.894m7.5 0a48.667 48.667 0 00-7.5 0M12 12.75h.008v.008H12v-.008z"/>
+        </svg>
+        <p style="font-weight:500;">Nenhuma oportunidade encontrada</p>
+        <p class="text-sm text-muted" id="empty-desc">Tente ajustar os filtros ou volte em breve.</p>
+      </div>
+
+      <!-- Grid de cards -->
+      <div id="opp-grid" class="opp-grid hidden" aria-label="Lista de oportunidades de estágio"></div>
+
+    </div>
+  </main>
+
+  <footer id="app-footer">
+    <div class="container">
+      <div class="footer-inner">
+        <span class="footer-copy">&copy; <script>document.write(new Date().getFullYear())</script> Central de Estágios — IFRS Campus Rio Grande</span>
+        <nav class="footer-links"><a href="mailto:estagios@riogrande.ifrs.edu.br">estagios@riogrande.ifrs.edu.br</a></nav>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://accounts.google.com/gsi/client" async></script>
+  <script src="../assets/js/utils.js"></script>
+  <script src="../assets/js/auth.js"></script>
+  <script src="../assets/js/api.js"></script>
+  <script>
+    'use strict';
+
+    document.addEventListener('DOMContentLoaded', function () {
+      const session = getSession();
+      if (session) updateHeaderUser(session);
+      carregarOportunidades();
+    });
+
+    let todasOportunidades = [];
+
+    async function carregarOportunidades() {
+      mostrarEstado('loading');
+      try {
+        const lista = await apiListarOportunidades({});
+        todasOportunidades = lista || [];
+        aplicarFiltros();
+        mostrarEstado(todasOportunidades.length === 0 ? 'empty' : 'grid');
+      } catch (err) {
+        console.error('Erro ao carregar oportunidades:', err);
+        mostrarEstado('error');
+      }
+    }
+
+    function mostrarEstado(estado) {
+      document.getElementById('loading-state').classList.toggle('hidden', estado !== 'loading');
+      document.getElementById('error-state').classList.toggle('hidden', estado !== 'error');
+      document.getElementById('empty-state').classList.toggle('hidden', estado !== 'empty');
+      document.getElementById('opp-grid').classList.toggle('hidden', estado !== 'grid');
+    }
+
+    // ── Filtragem ─────────────────────────────────────────────────────
+    function aplicarFiltros() {
+      const busca     = document.getElementById('filtro-busca').value.trim().toLowerCase();
+      const curso     = document.getElementById('filtro-curso').value;
+      const tipo      = document.getElementById('filtro-tipo').value;
+      const modalidade= document.getElementById('filtro-modalidade').value;
+      const cidade    = document.getElementById('filtro-cidade').value.trim().toLowerCase();
+
+      const filtradas = todasOportunidades.filter(function (o) {
+        const matchBusca = !busca
+          || (o.titulo && o.titulo.toLowerCase().includes(busca))
+          || (o.nomeEmpresa && o.nomeEmpresa.toLowerCase().includes(busca))
+          || (o.area && o.area.toLowerCase().includes(busca))
+          || (o.atividades && o.atividades.toLowerCase().includes(busca));
+        const matchCurso = !curso || (o.area && o.area.includes(curso));
+        const matchTipo  = !tipo  || o.tipoVaga === tipo;
+        const matchMod   = !modalidade || o.modalidade === modalidade;
+        const matchCidade= !cidade || (o.cidade && o.cidade.toLowerCase().includes(cidade));
+        return matchBusca && matchCurso && matchTipo && matchMod && matchCidade;
+      });
+
+      renderizarOportunidades(filtradas);
+    }
+
+    // ── Render ────────────────────────────────────────────────────────
+    function renderizarOportunidades(lista) {
+      const grid  = document.getElementById('opp-grid');
+      const count = document.getElementById('contagem-oportunidades');
+
+      if (lista.length === 0) {
+        grid.innerHTML = '';
+        count.textContent = 'Nenhuma oportunidade encontrada.';
+        mostrarEstado('empty');
+        document.getElementById('empty-desc').textContent = todasOportunidades.length > 0
+          ? 'Nenhuma oportunidade corresponde aos filtros selecionados. Tente ampliar a busca.'
+          : 'Não há vagas publicadas no momento. Verifique novamente em breve.';
+        return;
+      }
+
+      mostrarEstado('grid');
+      count.textContent = lista.length === 1 ? '1 oportunidade encontrada' : lista.length + ' oportunidades encontradas';
+
+      grid.innerHTML = lista.map(function (o) {
+        const hoje = new Date();
+        hoje.setHours(0, 0, 0, 0);
+        const prazoDate = o.prazo ? new Date(o.prazo + 'T00:00:00') : null;
+        const diasRestantes = prazoDate ? Math.round((prazoDate - hoje) / 86400000) : null;
+        const prazoUrgente = diasRestantes !== null && diasRestantes <= 5;
+
+        const tipoClass = o.tipoVaga === 'Estágio Obrigatório' ? 'badge-info' : 'badge-neutral';
+        const modalClass = { 'Presencial': 'badge-success', 'Remoto': 'badge-warning', 'Híbrido': 'badge-info' }[o.modalidade] || 'badge-neutral';
+
+        let prazoTexto = '';
+        if (diasRestantes !== null) {
+          if (diasRestantes < 0) prazoTexto = 'Prazo encerrado';
+          else if (diasRestantes === 0) prazoTexto = 'Último dia!';
+          else if (diasRestantes === 1) prazoTexto = 'Amanhã é o último dia!';
+          else prazoTexto = 'Prazo: ' + formatDate(o.prazo) + ' (' + diasRestantes + ' dias)';
+        }
+
+        const candidaturaBtn = o.linkCandidatura
+          ? '<a href="' + escapeHtml(o.linkCandidatura) + '" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-sm">Candidatar-se</a>'
+          : (o.contatoCandidatura
+              ? '<a href="mailto:' + escapeHtml(o.contatoCandidatura) + '" class="btn btn-primary btn-sm">Candidatar-se</a>'
+              : '');
+
+        return '<article class="opp-card">'
+          + '<div class="opp-card__header">'
+          + '<div>'
+          + '<h2 class="opp-card__title">' + escapeHtml(o.titulo || 'Vaga de Estágio') + '</h2>'
+          + '<p class="opp-card__empresa">' + escapeHtml(o.nomeEmpresa || '—') + (o.cidade ? ' · ' + escapeHtml(o.cidade) : '') + '</p>'
+          + '</div>'
+          + '<div class="opp-card__badges">'
+          + (o.tipoVaga ? '<span class="badge ' + tipoClass + '">' + escapeHtml(o.tipoVaga.replace('Estágio ', '')) + '</span>' : '')
+          + (o.modalidade ? '<span class="badge ' + modalClass + '">' + escapeHtml(o.modalidade) + '</span>' : '')
+          + '</div>'
+          + '</div>'
+          + (o.atividades ? '<p class="opp-card__desc">' + escapeHtml(o.atividades) + '</p>' : '')
+          + '<dl class="opp-card__meta">'
+          + (o.area ? '<dt>Área / Curso</dt><dd>' + escapeHtml(o.area) + '</dd>' : '')
+          + (o.cargaHoraria ? '<dt>Carga horária</dt><dd>' + escapeHtml(o.cargaHoraria) + '</dd>' : '')
+          + (o.numVagas ? '<dt>Vagas</dt><dd>' + escapeHtml(String(o.numVagas)) + '</dd>' : '')
+          + (o.remuneracao ? '<dt>Remuneração</dt><dd>' + escapeHtml(o.remuneracao) + '</dd>' : '')
+          + (o.beneficios ? '<dt>Benefícios</dt><dd>' + escapeHtml(o.beneficios) + '</dd>' : '')
+          + '</dl>'
+          + '<div class="opp-card__footer">'
+          + (prazoTexto ? '<span class="opp-card__prazo' + (prazoUrgente ? ' opp-card__prazo--urgente' : '') + '">' + escapeHtml(prazoTexto) + '</span>' : '<span></span>')
+          + (candidaturaBtn || '')
+          + '</div>'
+          + '</article>';
+      }).join('');
+    }
+
+    // ── Listeners ─────────────────────────────────────────────────────
+    ['filtro-busca', 'filtro-cidade'].forEach(function (id) {
+      document.getElementById(id).addEventListener('input', aplicarFiltros);
+    });
+    ['filtro-curso', 'filtro-tipo', 'filtro-modalidade'].forEach(function (id) {
+      document.getElementById(id).addEventListener('change', aplicarFiltros);
+    });
+
+    document.getElementById('btn-limpar-filtros').addEventListener('click', function () {
+      document.getElementById('filtro-busca').value = '';
+      document.getElementById('filtro-curso').value = '';
+      document.getElementById('filtro-tipo').value = '';
+      document.getElementById('filtro-modalidade').value = '';
+      document.getElementById('filtro-cidade').value = '';
+      aplicarFiltros();
+    });
+
+    document.getElementById('btn-retry')?.addEventListener('click', carregarOportunidades);
+  </script>
+</body>
+</html>

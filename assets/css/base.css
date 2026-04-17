@@ -1,0 +1,266 @@
+/* ============================================================
+   IFRS CAMPUS RIO GRANDE — CENTRAL DE ESTÁGIOS
+   base.css — variáveis, reset, tipografia
+   ============================================================ */
+
+/* ─────────────────────────────────────────
+   CUSTOM PROPERTIES
+   Todas as cores e dimensões em um só lugar.
+   Alterar aqui reflete em todo o sistema.
+   ───────────────────────────────────────── */
+:root {
+  /* Paleta institucional */
+  --color-primary:      #1A3A6B;
+  --color-primary-dark: #122850;
+  --color-secondary:    #2E5FA3;
+  --color-accent:       #E65100;
+  --color-accent-dark:  #BF360C;
+
+  /* Superfícies */
+  --color-bg:      #F5F7FA;
+  --color-surface: #FFFFFF;
+  --color-border:  #E5E7EB;
+
+  /* Texto */
+  --color-text:        #1A1A2E;
+  --color-text-muted:  #6B7280;
+  --color-text-light:  #9CA3AF;
+
+  /* Feedback */
+  --color-success:       #059669;
+  --color-success-light: #ECFDF5;
+  --color-success-border:#A7F3D0;
+  --color-error:         #DC2626;
+  --color-error-light:   #FEF2F2;
+  --color-error-border:  #FECACA;
+  --color-warning:       #D97706;
+  --color-warning-light: #FFFBEB;
+  --color-warning-border:#FDE68A;
+  --color-info:          #2563EB;
+  --color-info-light:    #EFF6FF;
+  --color-info-border:   #BFDBFE;
+
+  /* Tipografia */
+  --font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-size-xs:  12px;
+  --font-size-sm:  14px;
+  --font-size-md:  16px;
+  --font-size-lg:  20px;
+  --font-size-xl:  24px;
+  --font-size-2xl: 32px;
+
+  --font-weight-regular: 400;
+  --font-weight-medium:  500;
+  --font-weight-semibold:600;
+
+  --line-height-tight:  1.25;
+  --line-height-normal: 1.5;
+  --line-height-relaxed:1.75;
+
+  /* Espaçamento */
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-8:  32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  /* Bordas */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+
+  /* Sombras */
+  --shadow-sm: 0 1px 2px 0 rgba(0,0,0,0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1);
+
+  /* Transições */
+  --transition-fast:   120ms ease;
+  --transition-normal: 200ms ease;
+  --transition-slow:   300ms ease;
+
+  /* Larguras */
+  --container-sm:  640px;
+  --container-md:  768px;
+  --container-lg:  1024px;
+  --container-xl:  1280px;
+}
+
+/* ─────────────────────────────────────────
+   RESET
+   Mínimo necessário, sem perder semântica.
+   ───────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  font-family: var(--font-family);
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-regular);
+  line-height: var(--line-height-normal);
+  color: var(--color-text);
+  background-color: var(--color-bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Elementos de bloco */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--line-height-tight);
+  color: var(--color-text);
+}
+
+h1 { font-size: var(--font-size-2xl); }
+h2 { font-size: var(--font-size-xl); }
+h3 { font-size: var(--font-size-lg); }
+h4 { font-size: var(--font-size-md); font-weight: var(--font-weight-semibold); }
+
+p {
+  line-height: var(--line-height-relaxed);
+}
+
+a {
+  color: var(--color-secondary);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
+a:hover {
+  color: var(--color-primary);
+  text-decoration: underline;
+}
+
+a:focus-visible {
+  outline: 2px solid var(--color-secondary);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+img, svg {
+  display: block;
+  max-width: 100%;
+}
+
+ul, ol {
+  list-style: none;
+}
+
+button, input, select, textarea {
+  font-family: inherit;
+  font-size: inherit;
+}
+
+/* Remove aparência nativa de selects e inputs em WebKit */
+input[type="search"]::-webkit-search-decoration,
+input[type="search"]::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+}
+
+/* Esconde a seta nativa do <details> no Chrome/Safari */
+summary {
+  list-style: none;
+}
+summary::-webkit-details-marker {
+  display: none;
+}
+
+/* Classe utilitária para conteúdo visível apenas para leitores de tela */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* ─────────────────────────────────────────
+   UTILITÁRIOS DE TEXTO
+   ───────────────────────────────────────── */
+.text-xs     { font-size: var(--font-size-xs); }
+.text-sm     { font-size: var(--font-size-sm); }
+.text-md     { font-size: var(--font-size-md); }
+.text-lg     { font-size: var(--font-size-lg); }
+.text-xl     { font-size: var(--font-size-xl); }
+.text-2xl    { font-size: var(--font-size-2xl); }
+
+.text-muted  { color: var(--color-text-muted); }
+.text-light  { color: var(--color-text-light); }
+.text-primary{ color: var(--color-primary); }
+.text-success{ color: var(--color-success); }
+.text-error  { color: var(--color-error); }
+.text-warning{ color: var(--color-warning); }
+
+.font-medium  { font-weight: var(--font-weight-medium); }
+.font-semibold{ font-weight: var(--font-weight-semibold); }
+
+.text-center { text-align: center; }
+.text-right  { text-align: right; }
+
+/* ─────────────────────────────────────────
+   UTILITÁRIOS DE DISPLAY
+   ───────────────────────────────────────── */
+.hidden  { display: none !important; }
+.block   { display: block; }
+.flex    { display: flex; }
+.inline-flex { display: inline-flex; }
+.grid    { display: grid; }
+
+.flex-col      { flex-direction: column; }
+.items-center  { align-items: center; }
+.justify-center{ justify-content: center; }
+.justify-between{ justify-content: space-between; }
+.gap-2  { gap: var(--space-2); }
+.gap-4  { gap: var(--space-4); }
+.gap-6  { gap: var(--space-6); }
+
+/* ─────────────────────────────────────────
+   UTILITÁRIOS DE ESPAÇAMENTO
+   ───────────────────────────────────────── */
+.mt-1 { margin-top: var(--space-1); }
+.mt-2 { margin-top: var(--space-2); }
+.mt-4 { margin-top: var(--space-4); }
+.mt-6 { margin-top: var(--space-6); }
+.mt-8 { margin-top: var(--space-8); }
+.mb-2 { margin-bottom: var(--space-2); }
+.mb-4 { margin-bottom: var(--space-4); }
+.mb-6 { margin-bottom: var(--space-6); }
+.mb-8 { margin-bottom: var(--space-8); }
+
+.w-full  { width: 100%; }
+.h-full  { height: 100%; }
+
+/* ─────────────────────────────────────────
+   REQUIRED MARKER (asterisco obrigatório)
+   ───────────────────────────────────────── */
+.required::after {
+  content: ' *';
+  color: var(--color-error);
+  font-weight: var(--font-weight-semibold);
+}
+
+/* ─────────────────────────────────────────
+   PRINT — esconde elementos de navegação
+   ───────────────────────────────────────── */
+@media print {
+  .no-print { display: none !important; }
+}
