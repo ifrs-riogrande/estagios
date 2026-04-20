@@ -17,7 +17,19 @@ function configurarPlanilha() {
   var sheets = ss.getSheets();
   // Precisa manter ao menos uma aba para poder deletar as demais
   var nova = ss.insertSheet('__temp__');
-  sheets.forEach(function(s) { ss.deleteSheet(s); });
+  var ignoradas = [];
+  sheets.forEach(function(s) {
+    try {
+      ss.deleteSheet(s);
+    } catch(e) {
+      // Aba vinculada a formulário — não pode ser deletada; limpa o conteúdo
+      ignoradas.push(s.getName());
+      s.clearContents();
+      s.clearFormats();
+      // Renomeia para não colidir com as novas abas
+      s.setName('_legado_' + s.getName().slice(0, 20));
+    }
+  });
 
   // ── 2. Definição das abas e seus cabeçalhos ─────────────────────────
   var abas = [
@@ -157,10 +169,17 @@ function configurarPlanilha() {
   ss.deleteSheet(ss.getSheetByName('__temp__'));
 
   // ── 5. Mensagem de confirmação ──────────────────────────────────────
+  var aviso = ignoradas.length > 0
+    ? '\n\n⚠️ As abas abaixo estão vinculadas a formulários e não puderam ser deletadas ' +
+      '(foram renomeadas para "_legado_..." e esvaziadas):\n' +
+      ignoradas.map(function(n) { return '• ' + n; }).join('\n')
+    : '';
+
   SpreadsheetApp.getUi().alert(
     '✅ Planilha configurada com sucesso!\n\n' +
     abas.length + ' abas criadas:\n' +
     abas.map(function(a) { return '• ' + a.nome; }).join('\n') +
+    aviso +
     '\n\nPróximo passo: preencha a aba "Diretor Geral" com os dados do DG atual.'
   );
 }
