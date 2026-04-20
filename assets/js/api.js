@@ -19,7 +19,7 @@
 //  (Implantar → Novo implante → Aplicativo da Web).
 // ─────────────────────────────────────────
 const API_CONFIG = {
-  BASE_URL: 'https://script.google.com/macros/s/AKfycbx95NKJwEUMZXjlTxU2_WKw3oXR4hLkkZI6VM7qgKFObcGlBL8Iy1lu8VwSokJwAEzp/exec',
+  BASE_URL: 'https://script.google.com/macros/s/AKfycbx4i1zKVrelIeOFxcZEzwS_nt3zmO4M5inkPtMoLFgE811IHQDmrFLQz16ejaDl0FJO/exec',
   TIMEOUT_MS: 30000, // 30 segundos
 };
 
