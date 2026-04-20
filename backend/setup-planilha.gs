@@ -16,6 +16,9 @@ function configurarPlanilha() {
   // ── 1. Remove todas as abas existentes ─────────────────────────────
   var sheets = ss.getSheets();
   // Precisa manter ao menos uma aba para poder deletar as demais
+  // Remove __temp__ se sobrou de execução anterior com erro
+  var tempExistente = ss.getSheetByName('__temp__');
+  if (tempExistente) ss.deleteSheet(tempExistente);
   var nova = ss.insertSheet('__temp__');
   var ignoradas = [];
   sheets.forEach(function(s) {
