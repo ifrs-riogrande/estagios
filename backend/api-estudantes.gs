@@ -94,7 +94,7 @@ function cadastrarEstudante_(dados) {
   }
 
   // Sanitização
-  var nome         = sanitizar_(dados.nomeCompleto, 200);
+  var nome         = sanitizar_(dados.nome || dados.nomeCompleto, 200);
   var emailInst    = sanitizar_(tokenInfo.email, 100).toLowerCase();
   var emailPes     = sanitizar_(dados.emailPessoal, 100).toLowerCase();
   var matricula    = sanitizar_(dados.matricula, 20).replace(/\D/g, '');
