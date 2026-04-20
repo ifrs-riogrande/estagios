@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Solicitações — Admin · Central de Estágios IFRS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/base.css">
+  <link rel="stylesheet" href="../assets/css/components.css">
+  <link rel="stylesheet" href="../assets/css/layout.css">
+  <style>
+    /* ── Toolbar ── */
+    .admin-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-3);
+      align-items: flex-end;
+      margin-bottom: var(--space-5);
+    }
+    .admin-toolbar .form-group { margin-bottom: 0; flex: 1; min-width: 160px; }
+    .admin-toolbar .form-group label { font-size: var(--font-size-xs); color: var(--color-text-muted); margin-bottom: 4px; display: block; }
+    .toolbar-actions { display: flex; gap: var(--space-2); align-items: center; margin-left: auto; }
+
+    /* ── Tabela ── */
+    .table-wrap { overflow-x: auto; border-radius: var(--radius-lg); border: 1px solid var(--color-border); background: var(--color-surface); }
+    .data-table { width: 100%; border-collapse: collapse; font-size: var(--font-size-sm); }
+    .data-table th {
+      background: var(--color-bg);
+      padding: var(--space-3) var(--space-4);
+      text-align: left;
+      font-weight: var(--font-weight-semibold);
+      font-size: var(--font-size-xs);
+      color: var(--color-text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      border-bottom: 1px solid var(--color-border);
+      white-space: nowrap;
+    }
+    .data-table td {
+      padding: var(--space-3) var(--space-4);
+      border-bottom: 1px solid var(--color-border);
+      vertical-align: middle;
+    }
+    .data-table tr:last-child td { border-bottom: none; }
+    .data-table tr:hover td { background: #F9FAFB; }
+    .data-table .td-actions { display: flex; gap: var(--space-2); white-space: nowrap; }
+
+    /* ── Badges de status ── */
+    .badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 2px 10px; border-radius: 9999px;
+      font-size: 11px; font-weight: 600; white-space: nowrap;
+    }
+    .badge::before { content: ''; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+    .badge-pending   { background: var(--color-warning-light); color: var(--color-warning); }
+    .badge-analysis  { background: var(--color-info-light);    color: var(--color-info); }
+    .badge-approved  { background: var(--color-success-light); color: var(--color-success); }
+    .badge-rejected  { background: var(--color-error-light);   color: var(--color-error); }
+    .badge-docs      { background: #EDE9FE; color: #7C3AED; }
+    .badge-dg        { background: #FEF3C7; color: #92400E; }
+    .badge-running   { background: var(--color-success-light); color: #065F46; }
+    .badge-closed    { background: var(--color-bg); color: var(--color-text-muted); }
+
+    /* ── Empty state ── */
+    .empty-state {
+      text-align: center; padding: var(--space-16) var(--space-6);
+      color: var(--color-text-muted);
+    }
+    .empty-state svg { width: 48px; height: 48px; margin: 0 auto var(--space-4); opacity: 0.3; }
+
+    /* ── Paginação ── */
+    .pagination { display: flex; justify-content: center; gap: var(--space-2); margin-top: var(--space-6); flex-wrap: wrap; }
+    .pagination button {
+      padding: var(--space-2) var(--space-3); border: 1px solid var(--color-border);
+      border-radius: var(--radius-md); background: var(--color-surface);
+      font-size: var(--font-size-xs); cursor: pointer; transition: all 0.15s;
+      min-width: 36px;
+    }
+    .pagination button:hover { background: var(--color-bg); }
+    .pagination button.active { background: var(--color-primary); border-color: var(--color-primary); color: #fff; }
+    .pagination button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* ── Modal ── */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+      z-index: 1000; display: flex; align-items: flex-start; justify-content: center;
+      padding: var(--space-8) var(--space-4); overflow-y: auto;
+    }
+    .modal-overlay.hidden { display: none; }
+    .modal {
+      background: var(--color-surface); border-radius: var(--radius-xl);
+      box-shadow: 0 20px 40px rgba(0,0,0,0.2); width: 100%; max-width: 700px;
+      animation: modal-in 0.2s ease;
+    }
+    @keyframes modal-in { from { opacity: 0; transform: translateY(-16px); } }
+    .modal-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: var(--space-5) var(--space-6);
+      border-bottom: 1px solid var(--color-border);
+    }
+    .modal-header h2 { font-size: var(--font-size-lg); font-weight: var(--font-weight-semibold); }
+    .modal-close { background: none; border: none; cursor: pointer; color: var(--color-text-muted); padding: var(--space-1); border-radius: var(--radius-md); }
+    .modal-close:hover { background: var(--color-bg); }
+    .modal-body { padding: var(--space-6); }
+    .modal-footer {
+      padding: var(--space-4) var(--space-6);
+      border-top: 1px solid var(--color-border);
+      display: flex; gap: var(--space-3); justify-content: flex-end; flex-wrap: wrap;
+    }
+
+    /* ── Detail grid ── */
+    .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4) var(--space-6); margin-bottom: var(--space-6); }
+    @media (max-width: 560px) { .detail-grid { grid-template-columns: 1fr; } }
+    .detail-item label { font-size: var(--font-size-xs); color: var(--color-text-muted); display: block; margin-bottom: 2px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.04em; }
+    .detail-item p { font-size: var(--font-size-sm); color: var(--color-text); word-break: break-word; }
+    .detail-full { grid-column: 1 / -1; }
+
+    /* ── Rejeição ── */
+    .reject-area { display: none; margin-top: var(--space-4); }
+    .reject-area.show { display: block; }
+
+    /* ── Loading spinner inline ── */
+    .table-loading { text-align: center; padding: var(--space-12); color: var(--color-text-muted); font-size: var(--font-size-sm); }
+
+    /* ── Count badge ── */
+    .section-count { font-size: var(--font-size-sm); color: var(--color-text-muted); margin-left: var(--space-3); }
+  </style>
+</head>
+<body>
+
+  <header id="app-header">
+    <div class="container">
+      <div class="header-inner">
+        <a href="../index.html" class="header-brand">
+          <div class="header-logo-fallback" aria-hidden="true">IFRS</div>
+          <div class="header-brand-text">
+            <span class="header-brand-name">Central de Estágios</span>
+            <span class="header-brand-sub">IFRS Campus Rio Grande</span>
+          </div>
+        </a>
+        <div style="display:flex;align-items:center;gap:var(--space-3);">
+          <div id="header-user-area"></div>
+          <a href="index.html" class="back-link">
+            <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd"/></svg>
+            Admin
+          </a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main id="main-content">
+    <section class="page-hero">
+      <div class="container">
+        <h1>Solicitações de Estágio</h1>
+        <p>Analise, aprove ou reprove solicitações enviadas pelos estudantes.</p>
+      </div>
+    </section>
+
+    <div class="container" style="padding-top:var(--space-6);padding-bottom:var(--space-12);">
+
+      <!-- Toolbar de filtros -->
+      <div class="admin-toolbar">
+        <div class="form-group">
+          <label for="filtro-status">Status</label>
+          <select id="filtro-status" class="form-control">
+            <option value="">Todos</option>
+            <option value="Pendente" selected>Pendente</option>
+            <option value="Em análise">Em análise</option>
+            <option value="Aguardando Documentos">Aguardando Documentos</option>
+            <option value="Docs Enviados">Docs Enviados</option>
+            <option value="Aguardando DG">Aguardando DG</option>
+            <option value="Aguardando Validação Final">Aguardando Validação Final</option>
+            <option value="Em execução">Em execução</option>
+            <option value="Encerrado">Encerrado</option>
+            <option value="Reprovado">Reprovado</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="filtro-tipo">Tipo</label>
+          <select id="filtro-tipo" class="form-control">
+            <option value="">Todos</option>
+            <option value="Obrigatório">Obrigatório</option>
+            <option value="Não Obrigatório">Não Obrigatório</option>
+          </select>
+        </div>
+        <div class="form-group" style="min-width:220px;">
+          <label for="filtro-busca">Buscar</label>
+          <input type="search" id="filtro-busca" class="form-control" placeholder="Nome, matrícula ou empresa…">
+        </div>
+        <div class="toolbar-actions">
+          <button id="btn-atualizar" class="btn btn-secondary btn-sm">
+            <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"/></svg>
+            Atualizar
+          </button>
+        </div>
+      </div>
+
+      <!-- Tabela -->
+      <div class="table-wrap">
+        <table class="data-table" id="tbl-solicitacoes" aria-label="Solicitações de estágio">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Estudante</th>
+              <th>Curso</th>
+              <th>Empresa</th>
+              <th>Tipo</th>
+              <th>Data</th>
+              <th>Status</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-solicitacoes">
+            <tr>
+              <td colspan="8" class="table-loading">
+                <span>Carregando solicitações…</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div id="pagination" class="pagination"></div>
+
+    </div>
+  </main>
+
+  <!-- ═══ MODAL DETALHE / AÇÃO ═══ -->
+  <div id="modal-overlay" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 id="modal-title">Detalhe da Solicitação</h2>
+        <button class="modal-close" id="btn-modal-close" aria-label="Fechar">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+        </button>
+      </div>
+      <div class="modal-body" id="modal-body">
+        <!-- preenchido via JS -->
+      </div>
+      <div class="modal-footer" id="modal-footer">
+        <!-- botões de ação preenchidos via JS -->
+      </div>
+    </div>
+  </div>
+
+  <footer id="app-footer">
+    <div class="container">
+      <div class="footer-inner">
+        <span class="footer-copy">&copy; <script>document.write(new Date().getFullYear())</script> Central de Estágios — IFRS Campus Rio Grande</span>
+        <nav class="footer-links"><a href="mailto:estagios@riogrande.ifrs.edu.br">estagios@riogrande.ifrs.edu.br</a></nav>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://accounts.google.com/gsi/client" async></script>
+  <script src="../assets/js/utils.js"></script>
+  <script src="../assets/js/auth.js"></script>
+  <script src="../assets/js/api.js"></script>
+  <script>
+    'use strict';
+
+    /* ────────────────────────────────────
+       Estado local
+    ──────────────────────────────────── */
+    let _dados = [];            // array completo carregado do GAS
+    let _dadosFiltrados = [];   // após aplicar filtros
+    let _paginaAtual = 1;
+    const POR_PAGINA = 25;
+    let _solAtual = null;       // solicitação aberta no modal
+
+    /* ────────────────────────────────────
+       Inicialização
+    ──────────────────────────────────── */
+    document.addEventListener('DOMContentLoaded', function () {
+      if (!requireAdminAuth()) return;
+      carregarSolicitacoes();
+
+      document.getElementById('btn-atualizar').addEventListener('click', carregarSolicitacoes);
+      document.getElementById('btn-modal-close').addEventListener('click', fecharModal);
+      document.getElementById('modal-overlay').addEventListener('click', function (e) {
+        if (e.target === this) fecharModal();
+      });
+
+      document.getElementById('filtro-status').addEventListener('change', aplicarFiltros);
+      document.getElementById('filtro-tipo').addEventListener('change', aplicarFiltros);
+      document.getElementById('filtro-busca').addEventListener('input', aplicarFiltros);
+    });
+
+    /* ────────────────────────────────────
+       Carregamento
+    ──────────────────────────────────── */
+    async function carregarSolicitacoes() {
+      setTabelaLoading(true);
+      try {
+        const token = getAccessToken();
+        const data = await API.get('listarSolicitacoesAdmin', { authToken: token });
+        _dados = Array.isArray(data) ? data : (data.solicitacoes || []);
+        aplicarFiltros();
+      } catch (err) {
+        setTabelaErro('Não foi possível carregar as solicitações. ' + err.message);
+      }
+    }
+
+    /* ────────────────────────────────────
+       Filtros
+    ──────────────────────────────────── */
+    function aplicarFiltros() {
+      const status = document.getElementById('filtro-status').value.toLowerCase();
+      const tipo   = document.getElementById('filtro-tipo').value.toLowerCase();
+      const busca  = document.getElementById('filtro-busca').value.toLowerCase().trim();
+
+      _dadosFiltrados = _dados.filter(s => {
+        if (status && (s.status || '').toLowerCase() !== status) return false;
+        if (tipo   && (s.tipoEstagio || '').toLowerCase() !== tipo) return false;
+        if (busca) {
+          const texto = [s.nomeEstudante, s.matricula, s.empresa, s.id].join(' ').toLowerCase();
+          if (!texto.includes(busca)) return false;
+        }
+        return true;
+      });
+
+      _paginaAtual = 1;
+      renderTabela();
+    }
+
+    /* ────────────────────────────────────
+       Render tabela
+    ──────────────────────────────────── */
+    function renderTabela() {
+      const tbody = document.getElementById('tbody-solicitacoes');
+
+      if (_dadosFiltrados.length === 0) {
+        tbody.innerHTML = `
+          <tr><td colspan="8">
+            <div class="empty-state">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25z"/></svg>
+              <p>Nenhuma solicitação encontrada com os filtros aplicados.</p>
+            </div>
+          </td></tr>`;
+        document.getElementById('pagination').innerHTML = '';
+        return;
+      }
+
+      const inicio = (_paginaAtual - 1) * POR_PAGINA;
+      const fim    = Math.min(inicio + POR_PAGINA, _dadosFiltrados.length);
+      const pagina = _dadosFiltrados.slice(inicio, fim);
+
+      tbody.innerHTML = pagina.map(s => `
+        <tr>
+          <td><code style="font-size:12px;color:var(--color-secondary)">${escapeHtml(s.id || '—')}</code></td>
+          <td>
+            <div style="font-weight:500">${escapeHtml(s.nomeEstudante || '—')}</div>
+            <div style="font-size:12px;color:var(--color-text-muted)">${escapeHtml(s.matricula || '')}</div>
+          </td>
+          <td style="font-size:12px">${escapeHtml(s.curso || '—')}</td>
+          <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escapeHtml(s.empresa || '')}">${escapeHtml(s.empresa || '—')}</td>
+          <td><span class="badge ${s.tipoEstagio === 'Obrigatório' ? 'badge-approved' : 'badge-analysis'}">${escapeHtml(s.tipoEstagio || '—')}</span></td>
+          <td style="font-size:12px;white-space:nowrap">${escapeHtml(s.dataSolicitacao || '—')}</td>
+          <td>${badgeStatus(s.status)}</td>
+          <td>
+            <div class="td-actions">
+              <button class="btn btn-secondary btn-sm" onclick="abrirModal('${escapeHtml(s.id)}')">Ver</button>
+            </div>
+          </td>
+        </tr>
+      `).join('');
+
+      renderPaginacao(_dadosFiltrados.length);
+    }
+
+    function renderPaginacao(total) {
+      const totalPaginas = Math.ceil(total / POR_PAGINA);
+      const pag = document.getElementById('pagination');
+      if (totalPaginas <= 1) { pag.innerHTML = ''; return; }
+
+      let html = `<button onclick="irPagina(${_paginaAtual - 1})" ${_paginaAtual === 1 ? 'disabled' : ''}>‹</button>`;
+      for (let i = 1; i <= totalPaginas; i++) {
+        if (totalPaginas > 7) {
+          if (i !== 1 && i !== totalPaginas && Math.abs(i - _paginaAtual) > 2) {
+            if (i === 2 || i === totalPaginas - 1) html += '<button disabled>…</button>';
+            continue;
+          }
+        }
+        html += `<button class="${i === _paginaAtual ? 'active' : ''}" onclick="irPagina(${i})">${i}</button>`;
+      }
+      html += `<button onclick="irPagina(${_paginaAtual + 1})" ${_paginaAtual === totalPaginas ? 'disabled' : ''}>›</button>`;
+      pag.innerHTML = html;
+    }
+
+    function irPagina(n) {
+      const totalPaginas = Math.ceil(_dadosFiltrados.length / POR_PAGINA);
+      if (n < 1 || n > totalPaginas) return;
+      _paginaAtual = n;
+      renderTabela();
+      document.querySelector('.table-wrap').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    /* ────────────────────────────────────
+       Modal
+    ──────────────────────────────────── */
+    async function abrirModal(id) {
+      _solAtual = _dados.find(s => s.id === id) || null;
+      if (!_solAtual) return;
+
+      const s = _solAtual;
+      document.getElementById('modal-title').textContent = 'Solicitação ' + s.id;
+
+      document.getElementById('modal-body').innerHTML = `
+        <div class="detail-grid">
+          <div class="detail-item">
+            <label>Estudante</label>
+            <p>${escapeHtml(s.nomeEstudante || '—')}</p>
+          </div>
+          <div class="detail-item">
+            <label>Matrícula</label>
+            <p>${escapeHtml(s.matricula || '—')}</p>
+          </div>
+          <div class="detail-item">
+            <label>Curso</label>
+            <p>${escapeHtml(s.curso || '—')}</p>
+          </div>
+          <div class="detail-item">
+            <label>E-mail</label>
+            <p>${escapeHtml(s.emailEstudante || '—')}</p>
+          </div>
+          <div class="detail-item">
+            <label>Empresa</label>
+            <p>${escapeHtml(s.empresa || '—')}</p>
+          </div>
+          <div class="detail-item">
+            <label>Supervisor</label>
+            <p>${escapeHtml(s.nomeSupervisor || '—')}</p>
+          </div>
+          <div class="detail-item">
+            <label>Orientador</label>
+            <p>${escapeHtml(s.nomeOrientador || '—')}</p>
+          </div>
+          <div class="detail-item">
+            <label>Tipo de Estágio</label>
+            <p>${escapeHtml(s.tipoEstagio || '—')}</p>
+          </div>
+          <div class="detail-item">
+            <label>Data de Início</label>
+            <p>${escapeHtml(s.dataInicio || '—')}</p>
+          </div>
+          <div class="detail-item">
+            <label>Data de Término</label>
+            <p>${escapeHtml(s.dataTermino || '—')}</p>
+          </div>
+          <div class="detail-item">
+            <label>Carga Horária Semanal</label>
+            <p>${escapeHtml(s.cargaHorariaSemanal || '—')}h</p>
+          </div>
+          <div class="detail-item">
+            <label>Status Atual</label>
+            <p>${badgeStatus(s.status)}</p>
+          </div>
+          <div class="detail-item detail-full">
+            <label>Plano de Atividades</label>
+            <p style="white-space:pre-wrap">${escapeHtml(s.planoAtividades || '—')}</p>
+          </div>
+          ${s.observacaoSetor ? `
+          <div class="detail-item detail-full">
+            <label>Observação do Setor</label>
+            <p style="white-space:pre-wrap">${escapeHtml(s.observacaoSetor)}</p>
+          </div>` : ''}
+          ${s.driveUrl ? `
+          <div class="detail-item detail-full">
+            <label>Pasta no Drive</label>
+            <p><a href="${escapeHtml(s.driveUrl)}" target="_blank" rel="noopener" class="link">Abrir pasta do estágio ↗</a></p>
+          </div>` : ''}
+        </div>
+
+        <div class="reject-area" id="reject-area">
+          <div class="form-group">
+            <label class="form-label" for="motivo-reprovacao">Motivo da reprovação <span style="color:var(--color-error)">*</span></label>
+            <textarea id="motivo-reprovacao" class="form-control" rows="3" placeholder="Descreva o motivo para ser comunicado ao estudante…"></textarea>
+          </div>
+        </div>
+      `;
+
+      renderModalFooter(s.status);
+      document.getElementById('modal-overlay').classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function renderModalFooter(status) {
+      const footer = document.getElementById('modal-footer');
+      let html = `<button class="btn btn-ghost" onclick="fecharModal()">Fechar</button>`;
+
+      if (status === 'Pendente') {
+        html += `
+          <button class="btn btn-secondary btn-sm" onclick="executarAcao('marcarEmAnalise')">Marcar "Em Análise"</button>
+          <button class="btn btn-danger btn-sm" onclick="mostrarReprovacao()">Reprovar</button>
+          <button class="btn btn-primary btn-sm" onclick="executarAcao('aprovarSolicitacao')">Aprovar e Gerar Documentos</button>`;
+      } else if (status === 'Em análise') {
+        html += `
+          <button class="btn btn-danger btn-sm" onclick="mostrarReprovacao()">Reprovar</button>
+          <button class="btn btn-primary btn-sm" onclick="executarAcao('aprovarSolicitacao')">Aprovar e Gerar Documentos</button>`;
+      }
+
+      footer.innerHTML = html;
+    }
+
+    function mostrarReprovacao() {
+      const area = document.getElementById('reject-area');
+      area.classList.add('show');
+      area.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      const footer = document.getElementById('modal-footer');
+      footer.innerHTML = `
+        <button class="btn btn-ghost" onclick="fecharModal()">Cancelar</button>
+        <button class="btn btn-danger" id="btn-confirmar-reprovacao" onclick="executarAcao('reprovarSolicitacao')">Confirmar Reprovação</button>`;
+    }
+
+    function fecharModal() {
+      document.getElementById('modal-overlay').classList.add('hidden');
+      document.body.style.overflow = '';
+      _solAtual = null;
+    }
+
+    /* ────────────────────────────────────
+       Ações no GAS
+    ──────────────────────────────────── */
+    async function executarAcao(action) {
+      if (!_solAtual) return;
+      const btn = document.getElementById('modal-footer').querySelector('.btn-primary, .btn-danger:last-child');
+      if (btn) { btn.classList.add('is-loading'); btn.disabled = true; }
+
+      const payload = { idEstagio: _solAtual.id };
+
+      if (action === 'reprovarSolicitacao') {
+        const motivo = document.getElementById('motivo-reprovacao')?.value?.trim();
+        if (!motivo) {
+          showToast('Informe o motivo da reprovação.', 'error');
+          if (btn) { btn.classList.remove('is-loading'); btn.disabled = false; }
+          return;
+        }
+        payload.motivoReprovacao = motivo;
+      }
+
+      try {
+        await API.post(action, { ...payload, authToken: getAccessToken() });
+        showToast(mensagemSucesso(action), 'success');
+        fecharModal();
+        await carregarSolicitacoes();
+      } catch (err) {
+        showToast('Erro: ' + err.message, 'error');
+        if (btn) { btn.classList.remove('is-loading'); btn.disabled = false; }
+      }
+    }
+
+    function mensagemSucesso(action) {
+      const msgs = {
+        aprovarSolicitacao: 'Solicitação aprovada! Documentos sendo gerados…',
+        reprovarSolicitacao: 'Solicitação reprovada. Estudante será notificado.',
+        marcarEmAnalise: 'Status atualizado para "Em análise".',
+      };
+      return msgs[action] || 'Ação realizada com sucesso.';
+    }
+
+    /* ────────────────────────────────────
+       Helpers
+    ──────────────────────────────────── */
+    function badgeStatus(status) {
+      const map = {
+        'Pendente':                 'badge-pending',
+        'Em análise':               'badge-analysis',
+        'Aguardando Documentos':    'badge-approved',
+        'Docs Enviados':            'badge-docs',
+        'Aguardando DG':            'badge-dg',
+        'Aguardando Validação Final':'badge-dg',
+        'Em execução':              'badge-running',
+        'Encerrado':                'badge-closed',
+        'Reprovado':                'badge-rejected',
+      };
+      const cls = map[status] || 'badge-closed';
+      return `<span class="badge ${cls}">${escapeHtml(status || '—')}</span>`;
+    }
+
+    function setTabelaLoading(show) {
+      if (show) {
+        document.getElementById('tbody-solicitacoes').innerHTML =
+          '<tr><td colspan="8" class="table-loading">Carregando…</td></tr>';
+        document.getElementById('pagination').innerHTML = '';
+      }
+    }
+
+    function setTabelaErro(msg) {
+      document.getElementById('tbody-solicitacoes').innerHTML =
+        `<tr><td colspan="8" class="table-loading" style="color:var(--color-error)">${escapeHtml(msg)}</td></tr>`;
+    }
+
+    function showToast(msg, type = 'success') {
+      const el = document.createElement('div');
+      el.className = 'form-feedback form-feedback--' + type;
+      el.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:9999;max-width:360px;animation:modal-in 0.2s ease;padding:12px 16px;border-radius:8px;font-size:14px;box-shadow:0 4px 16px rgba(0,0,0,0.15)';
+      el.style.background = type === 'success' ? 'var(--color-success-light)' : 'var(--color-error-light)';
+      el.style.color = type === 'success' ? 'var(--color-success)' : 'var(--color-error)';
+      el.style.border = `1px solid ${type === 'success' ? 'var(--color-success-border)' : 'var(--color-error-border)'}`;
+      el.textContent = msg;
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 4000);
+    }
+  </script>
+</body>
+</html>

@@ -225,7 +225,7 @@
                 placeholder="Rua ou avenida, número, bloco, apartamento" autocomplete="street-address">
             </div>
 
-            <div class="form-row-3">
+            <div class="form-row">
               <div class="form-group">
                 <label class="form-label" for="cep">CEP</label>
                 <input type="text" id="cep" name="cep" class="form-control"
@@ -235,9 +235,43 @@
                 <label class="form-label" for="bairro">Bairro</label>
                 <input type="text" id="bairro" name="bairro" class="form-control" placeholder="Bairro">
               </div>
+            </div>
+            <div class="form-row">
               <div class="form-group">
                 <label class="form-label" for="cidade">Cidade</label>
                 <input type="text" id="cidade" name="cidade" class="form-control" placeholder="Cidade" value="Rio Grande" autocomplete="address-level2">
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="uf">UF</label>
+                <select id="uf" name="uf" class="form-control" autocomplete="address-level1">
+                  <option value="RS" selected>RS</option>
+                  <option value="AC">AC</option>
+                  <option value="AL">AL</option>
+                  <option value="AP">AP</option>
+                  <option value="AM">AM</option>
+                  <option value="BA">BA</option>
+                  <option value="CE">CE</option>
+                  <option value="DF">DF</option>
+                  <option value="ES">ES</option>
+                  <option value="GO">GO</option>
+                  <option value="MA">MA</option>
+                  <option value="MT">MT</option>
+                  <option value="MS">MS</option>
+                  <option value="MG">MG</option>
+                  <option value="PA">PA</option>
+                  <option value="PB">PB</option>
+                  <option value="PR">PR</option>
+                  <option value="PE">PE</option>
+                  <option value="PI">PI</option>
+                  <option value="RJ">RJ</option>
+                  <option value="RN">RN</option>
+                  <option value="RO">RO</option>
+                  <option value="RR">RR</option>
+                  <option value="SC">SC</option>
+                  <option value="SP">SP</option>
+                  <option value="SE">SE</option>
+                  <option value="TO">TO</option>
+                </select>
               </div>
             </div>
           </div>
@@ -271,6 +305,45 @@
                 </optgroup>
               </select>
               <span id="curso-error" class="form-error hidden" role="alert"></span>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label required" for="turno">Turno</label>
+                <select id="turno" name="turno" class="form-control" required aria-required="true" aria-describedby="turno-error">
+                  <option value="">Selecione...</option>
+                  <option value="Manhã">Manhã</option>
+                  <option value="Tarde">Tarde</option>
+                  <option value="Noite">Noite</option>
+                </select>
+                <span id="turno-error" class="form-error hidden" role="alert"></span>
+              </div>
+              <div class="form-group">
+                <label class="form-label required" for="modalidade">Modalidade</label>
+                <select id="modalidade" name="modalidade" class="form-control" required aria-required="true" aria-describedby="modalidade-error">
+                  <option value="">Selecione...</option>
+                  <option value="Integrado">Integrado</option>
+                  <option value="Subsequente">Subsequente</option>
+                  <option value="Superior">Superior</option>
+                </select>
+                <span id="modalidade-error" class="form-error hidden" role="alert"></span>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label required" for="semestre">Período/Semestre atual</label>
+              <select id="semestre" name="semestre" class="form-control" required aria-required="true" aria-describedby="semestre-error">
+                <option value="">Selecione...</option>
+                <option value="1º">1º</option>
+                <option value="2º">2º</option>
+                <option value="3º">3º</option>
+                <option value="4º">4º</option>
+                <option value="5º">5º</option>
+                <option value="6º">6º</option>
+                <option value="7º">7º</option>
+                <option value="8º">8º</option>
+              </select>
+              <span id="semestre-error" class="form-error hidden" role="alert"></span>
             </div>
           </div>
 
@@ -424,6 +497,9 @@
       else if (tel.length < 10) fail('telefone', 'Telefone inválido. Informe DDD + número.');
 
       if (!document.getElementById('curso').value) fail('curso', 'Selecione o seu curso.');
+      if (!document.getElementById('turno').value) fail('turno', 'Selecione o seu turno.');
+      if (!document.getElementById('modalidade').value) fail('modalidade', 'Selecione a modalidade do curso.');
+      if (!document.getElementById('semestre').value) fail('semestre', 'Selecione o seu período/semestre.');
       if (!document.getElementById('declaracao').checked) fail('declaracao', 'Aceite a declaração para continuar.');
 
       if (firstInvalid) {
@@ -456,7 +532,11 @@
         cep:             document.getElementById('cep').value.trim(),
         bairro:          document.getElementById('bairro').value.trim(),
         cidade:          document.getElementById('cidade').value.trim(),
+        uf:              document.getElementById('uf').value,
         curso:           document.getElementById('curso').value,
+        turno:           document.getElementById('turno').value,
+        modalidade:      document.getElementById('modalidade').value,
+        semestre:        document.getElementById('semestre').value,
         declaracao:      'Sim',
       };
 

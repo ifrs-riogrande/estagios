@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Empresas — Admin · Central de Estágios IFRS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/base.css">
+  <link rel="stylesheet" href="../assets/css/components.css">
+  <link rel="stylesheet" href="../assets/css/layout.css">
+  <style>
+    .admin-toolbar{display:flex;flex-wrap:wrap;gap:var(--space-3);align-items:flex-end;margin-bottom:var(--space-5);}
+    .admin-toolbar .form-group{margin-bottom:0;flex:1;min-width:160px;}
+    .admin-toolbar .form-group label{font-size:var(--font-size-xs);color:var(--color-text-muted);margin-bottom:4px;display:block;}
+    .table-wrap{overflow-x:auto;border-radius:var(--radius-lg);border:1px solid var(--color-border);background:var(--color-surface);}
+    .data-table{width:100%;border-collapse:collapse;font-size:var(--font-size-sm);}
+    .data-table th{background:var(--color-bg);padding:var(--space-3) var(--space-4);text-align:left;font-weight:600;font-size:var(--font-size-xs);color:var(--color-text-muted);text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--color-border);white-space:nowrap;}
+    .data-table td{padding:var(--space-3) var(--space-4);border-bottom:1px solid var(--color-border);vertical-align:middle;}
+    .data-table tr:last-child td{border-bottom:none;}
+    .data-table tr:hover td{background:#F9FAFB;}
+    .td-actions{display:flex;gap:var(--space-2);}
+    .badge{display:inline-flex;align-items:center;gap:4px;padding:2px 10px;border-radius:9999px;font-size:11px;font-weight:600;}
+    .badge::before{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0;}
+    .badge-valid   {background:var(--color-success-light);color:var(--color-success);}
+    .badge-pending {background:var(--color-warning-light);color:var(--color-warning);}
+    .badge-inactive{background:var(--color-bg);color:var(--color-text-muted);}
+    .empty-state{text-align:center;padding:var(--space-12);color:var(--color-text-muted);}
+    .empty-state svg{width:48px;height:48px;margin:0 auto var(--space-4);opacity:.3;}
+    .table-loading{text-align:center;padding:var(--space-12);color:var(--color-text-muted);font-size:var(--font-size-sm);}
+    /* Modal */
+    .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;display:flex;align-items:flex-start;justify-content:center;padding:var(--space-8) var(--space-4);overflow-y:auto;}
+    .modal-overlay.hidden{display:none;}
+    .modal{background:var(--color-surface);border-radius:var(--radius-xl);box-shadow:0 20px 40px rgba(0,0,0,.2);width:100%;max-width:640px;animation:modal-in .2s ease;}
+    @keyframes modal-in{from{opacity:0;transform:translateY(-16px);}}
+    .modal-header{display:flex;align-items:center;justify-content:space-between;padding:var(--space-5) var(--space-6);border-bottom:1px solid var(--color-border);}
+    .modal-header h2{font-size:var(--font-size-lg);font-weight:600;}
+    .modal-close{background:none;border:none;cursor:pointer;color:var(--color-text-muted);padding:var(--space-1);border-radius:var(--radius-md);}
+    .modal-body{padding:var(--space-6);}
+    .detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4) var(--space-6);}
+    @media(max-width:560px){.detail-grid{grid-template-columns:1fr;}}
+    .detail-item label{font-size:var(--font-size-xs);color:var(--color-text-muted);display:block;margin-bottom:2px;font-weight:500;text-transform:uppercase;letter-spacing:.04em;}
+    .detail-item p{font-size:var(--font-size-sm);}
+    .detail-full{grid-column:1/-1;}
+    .modal-footer{padding:var(--space-4) var(--space-6);border-top:1px solid var(--color-border);display:flex;gap:var(--space-3);justify-content:flex-end;flex-wrap:wrap;}
+  </style>
+</head>
+<body>
+
+  <header id="app-header">
+    <div class="container">
+      <div class="header-inner">
+        <a href="../index.html" class="header-brand">
+          <div class="header-logo-fallback" aria-hidden="true">IFRS</div>
+          <div class="header-brand-text">
+            <span class="header-brand-name">Central de Estágios</span>
+            <span class="header-brand-sub">IFRS Campus Rio Grande</span>
+          </div>
+        </a>
+        <div style="display:flex;align-items:center;gap:var(--space-3);">
+          <div id="header-user-area"></div>
+          <a href="index.html" class="back-link">
+            <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd"/></svg>
+            Admin
+          </a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main id="main-content">
+    <section class="page-hero">
+      <div class="container">
+        <h1>Gestão de Empresas</h1>
+        <p>Valide empresas e supervisores cadastrados para liberar novas solicitações.</p>
+      </div>
+    </section>
+
+    <div class="container" style="padding-top:var(--space-6);padding-bottom:var(--space-12);">
+      <div class="admin-toolbar">
+        <div class="form-group" style="min-width:240px;">
+          <label for="busca-empresa">Buscar</label>
+          <input type="search" id="busca-empresa" class="form-control" placeholder="Razão social, CNPJ…">
+        </div>
+        <div class="form-group">
+          <label for="filtro-status">Status</label>
+          <select id="filtro-status" class="form-control">
+            <option value="">Todos</option>
+            <option value="Pendente" selected>Pendente</option>
+            <option value="Validada">Validada</option>
+            <option value="Inativa">Inativa</option>
+          </select>
+        </div>
+        <div style="display:flex;gap:var(--space-2);align-items:flex-end;">
+          <button id="btn-atualizar" class="btn btn-secondary btn-sm">Atualizar</button>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table class="data-table" aria-label="Empresas cadastradas">
+          <thead>
+            <tr>
+              <th>Razão Social</th>
+              <th>Nome Fantasia</th>
+              <th>CNPJ</th>
+              <th>Município/UF</th>
+              <th>Estágios Ativos</th>
+              <th>Status</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-empresas">
+            <tr><td colspan="7" class="table-loading">Carregando…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <!-- Modal -->
+  <div id="modal-overlay" class="modal-overlay hidden" role="dialog" aria-modal="true">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 id="modal-title">Dados da Empresa</h2>
+        <button class="modal-close" id="btn-modal-close" aria-label="Fechar">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+        </button>
+      </div>
+      <div class="modal-body" id="modal-body"></div>
+      <div class="modal-footer" id="modal-footer"></div>
+    </div>
+  </div>
+
+  <footer id="app-footer">
+    <div class="container">
+      <div class="footer-inner">
+        <span class="footer-copy">&copy; <script>document.write(new Date().getFullYear())</script> Central de Estágios — IFRS Campus Rio Grande</span>
+        <nav class="footer-links"><a href="mailto:estagios@riogrande.ifrs.edu.br">estagios@riogrande.ifrs.edu.br</a></nav>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://accounts.google.com/gsi/client" async></script>
+  <script src="../assets/js/utils.js"></script>
+  <script src="../assets/js/auth.js"></script>
+  <script src="../assets/js/api.js"></script>
+  <script>
+    'use strict';
+    let _dados = [], _filtrados = [], _atual = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      if (!requireAdminAuth()) return;
+      carregar();
+      document.getElementById('btn-atualizar').addEventListener('click', carregar);
+      document.getElementById('btn-modal-close').addEventListener('click', fechar);
+      document.getElementById('modal-overlay').addEventListener('click', e => { if (e.target === e.currentTarget) fechar(); });
+      document.getElementById('busca-empresa').addEventListener('input', filtrar);
+      document.getElementById('filtro-status').addEventListener('change', filtrar);
+    });
+
+    async function carregar() {
+      document.getElementById('tbody-empresas').innerHTML = '<tr><td colspan="7" class="table-loading">Carregando…</td></tr>';
+      try {
+        const data = await API.get('listarEmpresasAdmin', { authToken: getAccessToken() });
+        _dados = Array.isArray(data) ? data : (data.empresas || []);
+        filtrar();
+      } catch (err) {
+        document.getElementById('tbody-empresas').innerHTML =
+          `<tr><td colspan="7" class="table-loading" style="color:var(--color-error)">Erro: ${escapeHtml(err.message)}</td></tr>`;
+      }
+    }
+
+    function filtrar() {
+      const busca  = document.getElementById('busca-empresa').value.toLowerCase().trim();
+      const status = document.getElementById('filtro-status').value.toLowerCase();
+      _filtrados = _dados.filter(e => {
+        if (status && (e.status || '').toLowerCase() !== status) return false;
+        if (busca) {
+          const t = [e.razaoSocial, e.nomeFantasia, e.cnpj].join(' ').toLowerCase();
+          if (!t.includes(busca)) return false;
+        }
+        return true;
+      });
+      render();
+    }
+
+    function render() {
+      const tb = document.getElementById('tbody-empresas');
+      if (_filtrados.length === 0) {
+        tb.innerHTML = `<tr><td colspan="7"><div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21"/></svg><p>Nenhuma empresa encontrada.</p></div></td></tr>`;
+        return;
+      }
+      tb.innerHTML = _filtrados.map(e => `
+        <tr>
+          <td><span style="font-weight:500">${escapeHtml(e.razaoSocial||'—')}</span></td>
+          <td>${escapeHtml(e.nomeFantasia||'—')}</td>
+          <td style="font-size:12px">${escapeHtml(e.cnpj||'—')}</td>
+          <td style="font-size:12px">${escapeHtml(e.municipio||'—')}/${escapeHtml(e.uf||'')}</td>
+          <td style="text-align:center">${e.estagiosAtivos||0}</td>
+          <td>${badgeEmpresa(e.status)}</td>
+          <td><div class="td-actions">
+            <button class="btn btn-secondary btn-sm" onclick="abrir(${JSON.stringify(e).replace(/"/g,'&quot;')})">Ver</button>
+          </div></td>
+        </tr>`).join('');
+    }
+
+    function abrir(e) {
+      _atual = e;
+      document.getElementById('modal-title').textContent = e.nomeFantasia || e.razaoSocial || 'Empresa';
+      document.getElementById('modal-body').innerHTML = `
+        <div class="detail-grid">
+          <div class="detail-item"><label>Razão Social</label><p>${escapeHtml(e.razaoSocial||'—')}</p></div>
+          <div class="detail-item"><label>Nome Fantasia</label><p>${escapeHtml(e.nomeFantasia||'—')}</p></div>
+          <div class="detail-item"><label>CNPJ</label><p>${escapeHtml(e.cnpj||'—')}</p></div>
+          <div class="detail-item"><label>Tipo</label><p>${escapeHtml(e.tipoEmpresa||'—')}</p></div>
+          <div class="detail-item detail-full"><label>Endereço</label><p>${escapeHtml(e.endereco||'—')}, ${escapeHtml(e.municipio||'')} — ${escapeHtml(e.uf||'')}</p></div>
+          <div class="detail-item"><label>Representante Legal</label><p>${escapeHtml(e.nomeRepresentante||'—')}</p></div>
+          <div class="detail-item"><label>Cargo do Representante</label><p>${escapeHtml(e.cargoRepresentante||'—')}</p></div>
+          <div class="detail-item"><label>E-mail</label><p>${escapeHtml(e.email||'—')}</p></div>
+          <div class="detail-item"><label>Telefone</label><p>${escapeHtml(e.telefone||'—')}</p></div>
+          <div class="detail-item"><label>Status</label><p>${badgeEmpresa(e.status)}</p></div>
+          <div class="detail-item"><label>Estágios Ativos</label><p>${e.estagiosAtivos||0}</p></div>
+        </div>`;
+      const footer = document.getElementById('modal-footer');
+      if (e.status === 'Pendente') {
+        footer.innerHTML = `
+          <button class="btn btn-ghost" onclick="fechar()">Cancelar</button>
+          <button class="btn btn-danger btn-sm" onclick="acao('inativarEmpresa')">Recusar</button>
+          <button class="btn btn-primary btn-sm" onclick="acao('validarEmpresa')">Validar Empresa</button>`;
+      } else if (e.status === 'Validada') {
+        footer.innerHTML = `
+          <button class="btn btn-ghost" onclick="fechar()">Fechar</button>
+          <button class="btn btn-danger btn-sm" onclick="acao('inativarEmpresa')">Inativar</button>`;
+      } else {
+        footer.innerHTML = `<button class="btn btn-ghost" onclick="fechar()">Fechar</button>`;
+      }
+      document.getElementById('modal-overlay').classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+    }
+
+    async function acao(action) {
+      if (!_atual) return;
+      try {
+        await API.post(action, { cnpj: _atual.cnpj, authToken: getAccessToken() });
+        toast(action === 'validarEmpresa' ? 'Empresa validada com sucesso.' : 'Empresa inativada.', 'success');
+        fechar();
+        carregar();
+      } catch (err) { toast('Erro: ' + err.message, 'error'); }
+    }
+
+    function fechar() {
+      document.getElementById('modal-overlay').classList.add('hidden');
+      document.body.style.overflow = '';
+      _atual = null;
+    }
+
+    function badgeEmpresa(s) {
+      const m = { 'Validada': 'badge-valid', 'Pendente': 'badge-pending', 'Inativa': 'badge-inactive' };
+      return `<span class="badge ${m[s]||'badge-inactive'}">${escapeHtml(s||'—')}</span>`;
+    }
+
+    function toast(msg, type) {
+      const el = document.createElement('div');
+      el.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:9999;max-width:360px;padding:12px 16px;border-radius:8px;font-size:14px;box-shadow:0 4px 16px rgba(0,0,0,.15)';
+      el.style.background = type === 'success' ? 'var(--color-success-light)' : 'var(--color-error-light)';
+      el.style.color = type === 'success' ? 'var(--color-success)' : 'var(--color-error)';
+      el.style.border = `1px solid ${type === 'success' ? 'var(--color-success-border)' : 'var(--color-error-border)'}`;
+      el.textContent = msg;
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 4000);
+    }
+  </script>
+</body>
+</html>

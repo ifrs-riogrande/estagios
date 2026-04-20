@@ -12,7 +12,8 @@
 'use strict';
 
 var CFG_EST = {
-  SS_ID: '10ykZIYr_jpskxfAAl_wDW6e2MwaSTeIxO_a-9lwK1hY',
+  SS_ID: '1iAnurghOelZQiYMIevO1xxnx0ptz5bxyniuUe5KZx3Y',  // planilha consolidada SGE
+  ABA:   'Estudantes',
 };
 
 /**
@@ -41,6 +42,11 @@ var COL_EST = {
   STATUS:          18,   // 'Cadastrado' | 'Inativo'
   COD_ACESSO:      19,   // código gerado para solicitação
   COD_EXPIRA:      20,   // timestamp de expiração
+  MODALIDADE:      21,   // Integrado / Subsequente / Superior
+  BAIRRO:          22,
+  CEP:             23,
+  CIDADE:          24,
+  UF:              25,
 };
 
 // ---------------------------------------------------------------------------
@@ -95,10 +101,15 @@ function cadastrarEstudante_(dados) {
   var curso        = sanitizar_(dados.curso, 100);
   var turno        = sanitizar_(dados.turno, 30);
   var semestre     = sanitizar_(dados.semestre, 10);
+  var modalidade   = sanitizar_(dados.modalidade, 50);
   var cpf          = sanitizar_(dados.cpf, 14).replace(/\D/g, '');
   var dataNasc     = sanitizar_(dados.dataNascimento, 10);
   var telefone     = sanitizar_(dados.telefone, 30);
   var endereco     = sanitizar_(dados.endereco, 300);
+  var bairro       = sanitizar_(dados.bairro, 100);
+  var cep          = sanitizar_(dados.cep, 9);
+  var cidade       = sanitizar_(dados.cidade, 100);
+  var uf           = sanitizar_(dados.uf, 2);
   var maiorIdade   = sanitizar_(dados.maiorIdade, 3);
   var nomeResp     = sanitizar_(dados.nomeResponsavel, 200);
   var cpfResp      = sanitizar_(dados.cpfResponsavel, 14).replace(/\D/g, '');
@@ -110,6 +121,9 @@ function cadastrarEstudante_(dados) {
   if (!nome)       return jsonError_('Nome completo é obrigatório.', 'VALIDATION');
   if (!matricula)  return jsonError_('Matrícula é obrigatória.', 'VALIDATION');
   if (!curso)      return jsonError_('Curso é obrigatório.', 'VALIDATION');
+  if (!turno)      return jsonError_('Turno é obrigatório.', 'VALIDATION');
+  if (!modalidade) return jsonError_('Modalidade é obrigatória.', 'VALIDATION');
+  if (!semestre)   return jsonError_('Período/Semestre é obrigatório.', 'VALIDATION');
   if (!validarCPF_(cpf)) return jsonError_('CPF inválido.', 'VALIDATION');
   if (!dataNasc)   return jsonError_('Data de nascimento é obrigatória.', 'VALIDATION');
   if (!telefone)   return jsonError_('Telefone é obrigatório.', 'VALIDATION');
@@ -121,7 +135,7 @@ function cadastrarEstudante_(dados) {
     if (cpfResp && !validarCPF_(cpfResp)) return jsonError_('CPF do responsável inválido.', 'VALIDATION');
   }
 
-  var sheet = abrirAba_(CFG_EST.SS_ID);
+  var sheet = abrirAba_(CFG_EST.SS_ID, CFG_EST.ABA);
 
   // Verifica duplicidade por CPF ou matrícula
   var idxCPF = buscarNaColuna_(sheet, COL_EST.CPF, cpf);
@@ -147,12 +161,17 @@ function cadastrarEstudante_(dados) {
   linha[COL_EST.DATA_NASC]     = dataNasc;
   linha[COL_EST.TELEFONE]      = telefone;
   linha[COL_EST.ENDERECO]      = endereco;
+  linha[COL_EST.BAIRRO]        = bairro;
+  linha[COL_EST.CEP]           = cep;
+  linha[COL_EST.CIDADE]        = cidade;
+  linha[COL_EST.UF]            = uf;
   linha[COL_EST.MAIOR_IDADE]   = maiorIdade;
   linha[COL_EST.NOME_RESP]     = nomeResp;
   linha[COL_EST.CPF_RESP]      = cpfResp;
   linha[COL_EST.TEL_RESP]      = telResp;
   linha[COL_EST.EMAIL_RESP]    = emailResp;
   linha[COL_EST.DOC_RESP]      = docResp;
+  linha[COL_EST.MODALIDADE]    = modalidade;
   linha[COL_EST.STATUS]        = 'Cadastrado';
   linha[COL_EST.COD_ACESSO]    = '';
   linha[COL_EST.COD_EXPIRA]    = '';
@@ -178,7 +197,7 @@ function gerarCodigoAcesso_(dados) {
     return jsonError_('Limite de geração de códigos atingido. Tente em alguns minutos.', 'RATE_LIMIT');
   }
 
-  var sheet = abrirAba_(CFG_EST.SS_ID);
+  var sheet = abrirAba_(CFG_EST.SS_ID, CFG_EST.ABA);
   var dadosPlan = sheet.getDataRange().getValues();
 
   // Localiza o estudante pelo e-mail
@@ -228,7 +247,7 @@ function gerarCodigoAcesso_(dados) {
  * @returns {{ nome, matricula, curso, cpf, telefone, emailPessoal }}
  */
 function validarCodigoAcesso_(emailEstudante, codigo) {
-  var sheet = abrirAba_(CFG_EST.SS_ID);
+  var sheet = abrirAba_(CFG_EST.SS_ID, CFG_EST.ABA);
   var dados = sheet.getDataRange().getValues();
   var agora = new Date();
 

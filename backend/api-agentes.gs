@@ -11,7 +11,8 @@
 'use strict';
 
 var CFG_AGT = {
-  SS_ID: '1jCb0xNx3aRPGgyuRDekcxpzGk1j5qTiK4kCO-87KX7Y',
+  SS_ID: '1iAnurghOelZQiYMIevO1xxnx0ptz5bxyniuUe5KZx3Y',  // planilha consolidada SGE
+  ABA:   'Agentes',
 };
 
 /**
@@ -74,7 +75,7 @@ function doPost(e) {
 // ---------------------------------------------------------------------------
 
 function listarAgentes_() {
-  var sheet  = abrirAba_(CFG_AGT.SS_ID);
+  var sheet  = abrirAba_(CFG_AGT.SS_ID, CFG_AGT.ABA);
   var dados  = sheet.getDataRange().getValues();
   var lista  = [];
 
@@ -132,7 +133,7 @@ function cadastrarAgente_(dados) {
   if (!period) return jsonError_('Período de vigência é obrigatório.', 'VALIDATION');
 
   // Verifica duplicidade por CNPJ
-  var sheet = abrirAba_(CFG_AGT.SS_ID);
+  var sheet = abrirAba_(CFG_AGT.SS_ID, CFG_AGT.ABA);
   var idx   = buscarNaColuna_(sheet, COL_AGT.CNPJ, cnpj);
   if (idx !== -1) return jsonError_('Já existe um agente cadastrado com este CNPJ.', 'DUPLICATE');
 

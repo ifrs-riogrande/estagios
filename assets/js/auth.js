@@ -33,6 +33,13 @@ const AUTH_CONFIG = {
   // Domínios permitidos para cada tipo de acesso
   STUDENT_DOMAIN: '@aluno.riogrande.ifrs.edu.br',
   STAFF_DOMAIN: '@riogrande.ifrs.edu.br',
+
+  // E-mails com acesso ao Admin (setor de estágios)
+  ADMIN_EMAILS: [
+    'estagios@riogrande.ifrs.edu.br',
+    'dex@riogrande.ifrs.edu.br',
+    'den@riogrande.ifrs.edu.br',
+  ],
 };
 
 // Chave de armazenamento na sessionStorage
@@ -232,6 +239,70 @@ function requireStaffAuth(redirectAfter) {
   renderAuthGate(
     'Acesso restrito a servidores',
     `Esta página é exclusiva para servidores com e-mail institucional <strong>${AUTH_CONFIG.STAFF_DOMAIN}</strong>.`,
+    redirectAfter || window.location.href,
+    'staff'
+  );
+  return false;
+}
+
+/**
+ * Verifica se o e-mail logado pertence ao Admin do setor de estágios.
+ * @returns {boolean}
+ */
+function isAdmin() {
+  const session = getSession();
+  if (!session || !session.email) return false;
+  return AUTH_CONFIG.ADMIN_EMAILS.includes(session.email.toLowerCase());
+}
+
+/**
+ * Exige acesso Admin (lista de e-mails específicos do setor).
+ * Bloqueia qualquer outro e-mail mesmo que seja @riogrande.ifrs.edu.br.
+ */
+function requireAdminAuth(redirectAfter) {
+  const session = getSession();
+  if (session && session.email && isAdmin()) {
+    updateHeaderUser(session);
+    return true;
+  }
+  // Usuário logado mas sem permissão de Admin
+  if (session && session.email) {
+    const main = document.querySelector('main') || document.body;
+    main.innerHTML = `
+      <div class="auth-gate">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/>
+        </svg>
+        <h2>Acesso não autorizado</h2>
+        <p>O e-mail <strong>${escapeHtml(session.email)}</strong> não tem permissão para acessar o Admin.</p>
+        <button onclick="logout('../')" class="btn btn-ghost">Sair e usar outra conta</button>
+      </div>
+    `;
+    return false;
+  }
+  renderAuthGate(
+    'Acesso restrito — Setor de Estágios',
+    'Esta área é exclusiva para o setor de estágios do IFRS Campus Rio Grande.',
+    redirectAfter || window.location.href,
+    'staff'
+  );
+  return false;
+}
+
+/**
+ * Verifica se o usuário logado é o Diretor Geral (perfil cadastrado no sistema).
+ * A validação final é server-side no GAS.
+ */
+function requireDiretorGeralAuth(redirectAfter) {
+  const session = getSession();
+  if (session && session.email && session.email.endsWith(AUTH_CONFIG.STAFF_DOMAIN)) {
+    updateHeaderUser(session);
+    return true;
+  }
+  renderAuthGate(
+    'Acesso restrito — Diretor Geral',
+    'Esta área é exclusiva para o Diretor Geral do IFRS Campus Rio Grande.',
     redirectAfter || window.location.href,
     'staff'
   );

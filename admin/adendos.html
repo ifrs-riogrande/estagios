@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Adendos — Admin · Central de Estágios IFRS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/base.css">
+  <link rel="stylesheet" href="../assets/css/components.css">
+  <link rel="stylesheet" href="../assets/css/layout.css">
+  <style>
+    .admin-toolbar{display:flex;flex-wrap:wrap;gap:var(--space-3);align-items:flex-end;margin-bottom:var(--space-5);}
+    .admin-toolbar .form-group{margin-bottom:0;flex:1;min-width:140px;}
+    .admin-toolbar .form-group label{font-size:var(--font-size-xs);color:var(--color-text-muted);margin-bottom:4px;display:block;}
+    .table-wrap{overflow-x:auto;border-radius:var(--radius-lg);border:1px solid var(--color-border);background:var(--color-surface);}
+    .data-table{width:100%;border-collapse:collapse;font-size:var(--font-size-sm);}
+    .data-table th{background:var(--color-bg);padding:var(--space-3) var(--space-4);text-align:left;font-weight:600;font-size:var(--font-size-xs);color:var(--color-text-muted);text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--color-border);white-space:nowrap;}
+    .data-table td{padding:var(--space-3) var(--space-4);border-bottom:1px solid var(--color-border);vertical-align:middle;}
+    .data-table tr:last-child td{border-bottom:none;}
+    .data-table tr:hover td{background:#F9FAFB;}
+    .td-actions{display:flex;gap:var(--space-2);}
+    .badge{display:inline-flex;align-items:center;gap:4px;padding:2px 10px;border-radius:9999px;font-size:11px;font-weight:600;}
+    .badge::before{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0;}
+    .badge-pending  {background:var(--color-warning-light);color:var(--color-warning);}
+    .badge-approved {background:var(--color-success-light);color:var(--color-success);}
+    .badge-rejected {background:var(--color-error-light);color:var(--color-error);}
+    .empty-state{text-align:center;padding:var(--space-12);color:var(--color-text-muted);}
+    .empty-state svg{width:48px;height:48px;margin:0 auto var(--space-4);opacity:.3;}
+    .table-loading{text-align:center;padding:var(--space-12);color:var(--color-text-muted);font-size:var(--font-size-sm);}
+    /* Modal */
+    .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;display:flex;align-items:flex-start;justify-content:center;padding:var(--space-8) var(--space-4);overflow-y:auto;}
+    .modal-overlay.hidden{display:none;}
+    .modal{background:var(--color-surface);border-radius:var(--radius-xl);box-shadow:0 20px 40px rgba(0,0,0,.2);width:100%;max-width:620px;animation:modal-in .2s ease;}
+    @keyframes modal-in{from{opacity:0;transform:translateY(-16px);}}
+    .modal-header{display:flex;align-items:center;justify-content:space-between;padding:var(--space-5) var(--space-6);border-bottom:1px solid var(--color-border);}
+    .modal-header h2{font-size:var(--font-size-lg);font-weight:600;}
+    .modal-close{background:none;border:none;cursor:pointer;color:var(--color-text-muted);padding:var(--space-1);border-radius:var(--radius-md);}
+    .modal-body{padding:var(--space-6);}
+    .detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4) var(--space-6);margin-bottom:var(--space-5);}
+    @media(max-width:520px){.detail-grid{grid-template-columns:1fr;}}
+    .detail-item label{font-size:var(--font-size-xs);color:var(--color-text-muted);display:block;margin-bottom:2px;font-weight:500;text-transform:uppercase;letter-spacing:.04em;}
+    .detail-item p{font-size:var(--font-size-sm);white-space:pre-wrap;}
+    .detail-full{grid-column:1/-1;}
+    .modal-footer{padding:var(--space-4) var(--space-6);border-top:1px solid var(--color-border);display:flex;gap:var(--space-3);justify-content:flex-end;flex-wrap:wrap;}
+    .reject-area{display:none;margin-top:var(--space-4);}
+    .reject-area.show{display:block;}
+  </style>
+</head>
+<body>
+
+  <header id="app-header">
+    <div class="container">
+      <div class="header-inner">
+        <a href="../index.html" class="header-brand">
+          <div class="header-logo-fallback" aria-hidden="true">IFRS</div>
+          <div class="header-brand-text">
+            <span class="header-brand-name">Central de Estágios</span>
+            <span class="header-brand-sub">IFRS Campus Rio Grande</span>
+          </div>
+        </a>
+        <div style="display:flex;align-items:center;gap:var(--space-3);">
+          <div id="header-user-area"></div>
+          <a href="index.html" class="back-link">
+            <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd"/></svg>
+            Admin
+          </a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main id="main-content">
+    <section class="page-hero">
+      <div class="container">
+        <h1>Adendos ao TCE</h1>
+        <p>Aprove ou reprove solicitações de alteração ao Termo de Compromisso de Estágio.</p>
+      </div>
+    </section>
+
+    <div class="container" style="padding-top:var(--space-6);padding-bottom:var(--space-12);">
+      <div class="admin-toolbar">
+        <div class="form-group">
+          <label for="filtro-status">Status</label>
+          <select id="filtro-status" class="form-control">
+            <option value="Pendente" selected>Pendente</option>
+            <option value="Aprovado">Aprovado</option>
+            <option value="Reprovado">Reprovado</option>
+            <option value="">Todos</option>
+          </select>
+        </div>
+        <div class="form-group" style="min-width:220px;">
+          <label for="busca-adendo">Buscar</label>
+          <input type="search" id="busca-adendo" class="form-control" placeholder="ID, estudante…">
+        </div>
+        <div style="display:flex;gap:var(--space-2);align-items:flex-end;">
+          <button id="btn-atualizar" class="btn btn-secondary btn-sm">Atualizar</button>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table class="data-table" aria-label="Adendos">
+          <thead>
+            <tr>
+              <th>ID Estágio</th>
+              <th>Estudante</th>
+              <th>Tipo de Alteração</th>
+              <th>Data Solicitação</th>
+              <th>Status</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-adendos">
+            <tr><td colspan="6" class="table-loading">Carregando…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <!-- Modal -->
+  <div id="modal-overlay" class="modal-overlay hidden" role="dialog" aria-modal="true">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 id="modal-title">Adendo</h2>
+        <button class="modal-close" id="btn-modal-close" aria-label="Fechar">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+        </button>
+      </div>
+      <div class="modal-body" id="modal-body"></div>
+      <div class="modal-footer" id="modal-footer"></div>
+    </div>
+  </div>
+
+  <footer id="app-footer">
+    <div class="container">
+      <div class="footer-inner">
+        <span class="footer-copy">&copy; <script>document.write(new Date().getFullYear())</script> Central de Estágios — IFRS Campus Rio Grande</span>
+        <nav class="footer-links"><a href="mailto:estagios@riogrande.ifrs.edu.br">estagios@riogrande.ifrs.edu.br</a></nav>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://accounts.google.com/gsi/client" async></script>
+  <script src="../assets/js/utils.js"></script>
+  <script src="../assets/js/auth.js"></script>
+  <script src="../assets/js/api.js"></script>
+  <script>
+    'use strict';
+    let _dados = [], _filtrados = [], _atual = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      if (!requireAdminAuth()) return;
+      carregar();
+      document.getElementById('btn-atualizar').addEventListener('click', carregar);
+      document.getElementById('btn-modal-close').addEventListener('click', fechar);
+      document.getElementById('modal-overlay').addEventListener('click', e => { if (e.target === e.currentTarget) fechar(); });
+      document.getElementById('filtro-status').addEventListener('change', filtrar);
+      document.getElementById('busca-adendo').addEventListener('input', filtrar);
+    });
+
+    async function carregar() {
+      document.getElementById('tbody-adendos').innerHTML = '<tr><td colspan="6" class="table-loading">Carregando…</td></tr>';
+      try {
+        const data = await API.get('listarAdendosAdmin', { authToken: getAccessToken() });
+        _dados = Array.isArray(data) ? data : (data.adendos || []);
+        filtrar();
+      } catch (err) {
+        document.getElementById('tbody-adendos').innerHTML =
+          `<tr><td colspan="6" class="table-loading" style="color:var(--color-error)">Erro: ${escapeHtml(err.message)}</td></tr>`;
+      }
+    }
+
+    function filtrar() {
+      const status = document.getElementById('filtro-status').value;
+      const busca  = document.getElementById('busca-adendo').value.toLowerCase().trim();
+      _filtrados = _dados.filter(a => {
+        if (status && a.status !== status) return false;
+        if (busca) {
+          const t = [a.idEstagio, a.nomeEstudante].join(' ').toLowerCase();
+          if (!t.includes(busca)) return false;
+        }
+        return true;
+      });
+      render();
+    }
+
+    function render() {
+      const tb = document.getElementById('tbody-adendos');
+      if (_filtrados.length === 0) {
+        tb.innerHTML = `<tr><td colspan="6"><div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z"/></svg><p>Nenhum adendo encontrado.</p></div></td></tr>`;
+        return;
+      }
+      tb.innerHTML = _filtrados.map(a => `
+        <tr>
+          <td><code style="font-size:12px;color:var(--color-secondary)">${escapeHtml(a.idEstagio||'—')}</code></td>
+          <td><span style="font-weight:500">${escapeHtml(a.nomeEstudante||'—')}</span></td>
+          <td style="font-size:12px">${escapeHtml(a.tipoAlteracao||'—')}</td>
+          <td style="font-size:12px">${escapeHtml(a.dataSolicitacao||'—')}</td>
+          <td>${badgeAdendo(a.status)}</td>
+          <td><div class="td-actions">
+            <button class="btn btn-secondary btn-sm" onclick="abrir(${JSON.stringify(a).replace(/"/g,'&quot;')})">Ver</button>
+          </div></td>
+        </tr>`).join('');
+    }
+
+    function abrir(a) {
+      _atual = a;
+      document.getElementById('modal-title').textContent = 'Adendo — ' + (a.idEstagio || '');
+      document.getElementById('modal-body').innerHTML = `
+        <div class="detail-grid">
+          <div class="detail-item"><label>ID do Estágio</label><p><code>${escapeHtml(a.idEstagio||'—')}</code></p></div>
+          <div class="detail-item"><label>Status</label><p>${badgeAdendo(a.status)}</p></div>
+          <div class="detail-item"><label>Estudante</label><p>${escapeHtml(a.nomeEstudante||'—')}</p></div>
+          <div class="detail-item"><label>Data Solicitação</label><p>${escapeHtml(a.dataSolicitacao||'—')}</p></div>
+          <div class="detail-item detail-full"><label>Tipo de Alteração</label><p>${escapeHtml(a.tipoAlteracao||'—')}</p></div>
+          <div class="detail-item detail-full"><label>Descrição / Justificativa</label><p>${escapeHtml(a.descricao||'—')}</p></div>
+          ${a.valorAnterior ? `<div class="detail-item"><label>Valor Anterior</label><p>${escapeHtml(a.valorAnterior)}</p></div>` : ''}
+          ${a.valorNovo    ? `<div class="detail-item"><label>Novo Valor</label><p>${escapeHtml(a.valorNovo)}</p></div>` : ''}
+        </div>
+        <div class="reject-area" id="reject-area">
+          <div class="form-group">
+            <label class="form-label">Motivo da reprovação <span style="color:var(--color-error)">*</span></label>
+            <textarea id="motivo-rep" class="form-control" rows="2" placeholder="Informe o motivo ao estudante…"></textarea>
+          </div>
+        </div>`;
+      const footer = document.getElementById('modal-footer');
+      if (a.status === 'Pendente') {
+        footer.innerHTML = `
+          <button class="btn btn-ghost" onclick="fechar()">Cancelar</button>
+          <button class="btn btn-danger btn-sm" onclick="mostrarRej()">Reprovar</button>
+          <button class="btn btn-primary btn-sm" onclick="acao('aprovarAdendo')">Aprovar Adendo</button>`;
+      } else {
+        footer.innerHTML = `<button class="btn btn-ghost" onclick="fechar()">Fechar</button>`;
+      }
+      document.getElementById('modal-overlay').classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function mostrarRej() {
+      document.getElementById('reject-area').classList.add('show');
+      document.getElementById('modal-footer').innerHTML = `
+        <button class="btn btn-ghost" onclick="fechar()">Cancelar</button>
+        <button class="btn btn-danger" onclick="acao('reprovarAdendo')">Confirmar Reprovação</button>`;
+    }
+
+    async function acao(action) {
+      if (!_atual) return;
+      const payload = { idAdendo: _atual.idAdendo || _atual.id, idEstagio: _atual.idEstagio, authToken: getAccessToken() };
+      if (action === 'reprovarAdendo') {
+        const motivo = document.getElementById('motivo-rep')?.value?.trim();
+        if (!motivo) { toast('Informe o motivo.', 'error'); return; }
+        payload.motivoReprovacao = motivo;
+      }
+      try {
+        await API.post(action, payload);
+        toast(action === 'aprovarAdendo' ? 'Adendo aprovado!' : 'Adendo reprovado.', 'success');
+        fechar(); carregar();
+      } catch (err) { toast('Erro: ' + err.message, 'error'); }
+    }
+
+    function fechar() {
+      document.getElementById('modal-overlay').classList.add('hidden');
+      document.body.style.overflow = '';
+      _atual = null;
+    }
+
+    function badgeAdendo(s) {
+      const m = { 'Pendente':'badge-pending','Aprovado':'badge-approved','Reprovado':'badge-rejected' };
+      return `<span class="badge ${m[s]||'badge-pending'}">${escapeHtml(s||'—')}</span>`;
+    }
+
+    function toast(msg, type) {
+      const el = document.createElement('div');
+      el.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:9999;max-width:360px;padding:12px 16px;border-radius:8px;font-size:14px;box-shadow:0 4px 16px rgba(0,0,0,.15)';
+      el.style.background = type === 'success' ? 'var(--color-success-light)' : 'var(--color-error-light)';
+      el.style.color = type === 'success' ? 'var(--color-success)' : 'var(--color-error)';
+      el.style.border = `1px solid ${type === 'success' ? 'var(--color-success-border)' : 'var(--color-error-border)'}`;
+      el.textContent = msg;
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 4000);
+    }
+  </script>
+</body>
+</html>

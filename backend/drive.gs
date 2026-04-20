@@ -2,18 +2,15 @@
  * drive.gs — Gestão de pastas e arquivos no Google Drive
  * SGE — Sistema de Gestão de Estágios · IFRS Campus Rio Grande
  *
- * Estrutura de pastas criada automaticamente:
+ * Estrutura de pastas ATUAL (usada por api-admin.gs):
  *   Estágios SGE/
- *     <Ano>/
- *       <Curso>/
- *         <ID>—<Matrícula>—<Nome>/
- *           (documentos enviados via e-mail/link ficam aqui)
+ *     <CPF>/
+ *       <Matrícula>/
+ *         <ID> — <Nome>/
  *
  * Funções exportadas:
- *   criarPastaEstagio_(idEstagio, ano, curso, matricula, nomeEstudante)
- *     → retorna URL da pasta criada
- *   obterOuCriarPasta_(pastaRaiz, nomePasta)
- *     → retorna objeto Folder
+ *   obterOuCriarPasta_(pastaRaiz, nomePasta)  → Folder
+ *   criarPastaEstagio_(...)                   → URL (estrutura legada, mantida para compat.)
  */
 
 'use strict';

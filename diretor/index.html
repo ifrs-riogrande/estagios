@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Área do Diretor Geral — Central de Estágios IFRS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/base.css">
+  <link rel="stylesheet" href="../assets/css/components.css">
+  <link rel="stylesheet" href="../assets/css/layout.css">
+  <style>
+    .badge{display:inline-flex;align-items:center;gap:4px;padding:3px 12px;border-radius:9999px;font-size:12px;font-weight:600;}
+    .badge::before{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0;}
+    .badge-dg{background:#FEF3C7;color:#92400E;}
+    .badge-done{background:var(--color-success-light);color:var(--color-success);}
+
+    .doc-card{background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:var(--space-5) var(--space-6);margin-bottom:var(--space-4);}
+    .doc-card-header{display:flex;align-items:flex-start;justify-content:space-between;gap:var(--space-4);flex-wrap:wrap;margin-bottom:var(--space-4);}
+    .doc-card-title{font-weight:600;font-size:var(--font-size-md);}
+    .doc-card-meta{display:flex;flex-wrap:wrap;gap:var(--space-4);font-size:var(--font-size-sm);color:var(--color-text-muted);margin-bottom:var(--space-4);}
+    .doc-actions{display:flex;flex-wrap:wrap;gap:var(--space-3);align-items:center;border-top:1px solid var(--color-border);padding-top:var(--space-4);}
+
+    .upload-area{border:2px dashed var(--color-border);border-radius:var(--radius-md);padding:var(--space-6);text-align:center;cursor:pointer;transition:all .15s;background:var(--color-bg);}
+    .upload-area:hover,.upload-area.drag-over{border-color:var(--color-primary);background:var(--color-info-light);}
+    .upload-area input{display:none;}
+    .upload-area svg{width:32px;height:32px;margin:0 auto var(--space-2);color:var(--color-text-muted);}
+    .upload-area p{font-size:var(--font-size-sm);color:var(--color-text-muted);margin-bottom:var(--space-1);}
+    .upload-area small{font-size:var(--font-size-xs);color:var(--color-text-light);}
+    .file-selected-info{display:none;align-items:center;gap:var(--space-2);padding:var(--space-2) var(--space-3);background:var(--color-success-light);border-radius:var(--radius-md);font-size:var(--font-size-xs);color:var(--color-success);margin-top:var(--space-2);}
+    .file-selected-info.show{display:flex;}
+
+    .upload-section{margin-top:var(--space-4);display:none;}
+    .upload-section.show{display:block;}
+
+    .empty-state{text-align:center;padding:var(--space-12);color:var(--color-text-muted);}
+    .empty-state svg{width:56px;height:56px;margin:0 auto var(--space-4);opacity:.2;}
+    .table-loading{text-align:center;padding:var(--space-12);color:var(--color-text-muted);}
+  </style>
+</head>
+<body>
+
+  <header id="app-header">
+    <div class="container">
+      <div class="header-inner">
+        <a href="../index.html" class="header-brand">
+          <div class="header-logo-fallback" aria-hidden="true">IFRS</div>
+          <div class="header-brand-text">
+            <span class="header-brand-name">Central de Estágios</span>
+            <span class="header-brand-sub">IFRS Campus Rio Grande</span>
+          </div>
+        </a>
+        <div style="display:flex;align-items:center;gap:var(--space-3);">
+          <div id="header-user-area"></div>
+          <a href="../index.html" class="back-link">
+            <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd"/></svg>
+            Início
+          </a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main id="main-content">
+    <section class="page-hero">
+      <div class="container">
+        <h1>Área do Diretor Geral</h1>
+        <p>Documentos de estágio aguardando sua assinatura digital.</p>
+      </div>
+    </section>
+
+    <div class="container" style="padding-top:var(--space-6);padding-bottom:var(--space-12);">
+
+      <div class="info-banner" role="note" style="margin-bottom:var(--space-6);">
+        <strong>Como funciona:</strong> Para cada estágio abaixo, faça o download dos documentos na pasta do Drive, assine digitalmente pelo
+        <a href="https://assinador.iti.br" target="_blank" rel="noopener" class="link">assinador.iti.br ↗</a>
+        e envie o arquivo assinado aqui. O setor verificará e ativará o estágio.
+      </div>
+
+      <div id="lista-docs">
+        <div class="table-loading">Carregando documentos pendentes…</div>
+      </div>
+
+    </div>
+  </main>
+
+  <footer id="app-footer">
+    <div class="container">
+      <div class="footer-inner">
+        <span class="footer-copy">&copy; <script>document.write(new Date().getFullYear())</script> Central de Estágios — IFRS Campus Rio Grande</span>
+        <nav class="footer-links"><a href="mailto:estagios@riogrande.ifrs.edu.br">estagios@riogrande.ifrs.edu.br</a></nav>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://accounts.google.com/gsi/client" async></script>
+  <script src="../assets/js/utils.js"></script>
+  <script src="../assets/js/auth.js"></script>
+  <script src="../assets/js/api.js"></script>
+  <script>
+    'use strict';
+
+    const _arquivosDG = {}; // idEstagio → File
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      if (!requireDiretorGeralAuth()) return;
+      await carregar();
+    });
+
+    async function carregar() {
+      const c = document.getElementById('lista-docs');
+      try {
+        const token = getAccessToken();
+        const data  = await API.get('listarDocumentosAdmin', { authToken: token });
+        const lista = data.aguardandoDG || [];
+
+        if (lista.length === 0) {
+          c.innerHTML = `
+            <div class="empty-state">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              <p>Nenhum documento aguardando sua assinatura no momento.</p>
+              <p style="font-size:var(--font-size-xs);margin-top:var(--space-2)">O setor de estágios notificará você por e-mail quando houver novos documentos.</p>
+            </div>`;
+          return;
+        }
+
+        c.innerHTML = lista.map((s, idx) => buildCard(s, idx)).join('');
+        lista.forEach((s, idx) => iniciarUpload(s.id, idx));
+      } catch (err) {
+        c.innerHTML = `<p style="color:var(--color-error);font-size:var(--font-size-sm)">Erro ao carregar: ${escapeHtml(err.message)}</p>`;
+      }
+    }
+
+    function buildCard(s, idx) {
+      return `
+        <div class="doc-card" id="card-${escapeHtml(s.id)}">
+          <div class="doc-card-header">
+            <div>
+              <div class="doc-card-title">${escapeHtml(s.nomeEstudante || '—')}</div>
+              <code style="font-size:12px;color:var(--color-secondary)">${escapeHtml(s.id)}</code>
+            </div>
+            <span class="badge badge-dg">Aguardando DG</span>
+          </div>
+          <div class="doc-card-meta">
+            <span>📚 ${escapeHtml(s.curso || '—')}</span>
+            <span>🏢 ${escapeHtml(s.empresa || '—')}</span>
+            <span>📋 ${escapeHtml(s.tipoEstagio || '—')}</span>
+          </div>
+          <div class="doc-actions">
+            <div style="flex:1;font-size:var(--font-size-xs);color:var(--color-text-muted)">
+              Faça o download, assine e envie o arquivo assinado abaixo.
+            </div>
+            ${s.driveUrl ? `<a href="${escapeHtml(s.driveUrl)}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">Download dos documentos ↗</a>` : ''}
+            <button class="btn btn-primary btn-sm" onclick="mostrarUpload('${escapeHtml(s.id)}', ${idx})">
+              Enviar documento assinado
+            </button>
+          </div>
+
+          <div class="upload-section" id="upload-sec-${idx}">
+            <div style="height:var(--space-1)"></div>
+            <div id="feedback-dg-${idx}"></div>
+            <div class="upload-area" id="drop-dg-${idx}" onclick="document.getElementById('file-dg-${idx}').click()">
+              <input type="file" id="file-dg-${idx}" accept=".pdf">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/></svg>
+              <p>Clique ou arraste o PDF assinado aqui</p>
+              <small>Apenas PDF — máx. 10 MB</small>
+            </div>
+            <div class="file-selected-info" id="file-info-${idx}"></div>
+            <div style="margin-top:var(--space-3)">
+              <button class="btn btn-primary btn-sm" id="btn-enviar-dg-${idx}" onclick="enviarDocDG('${escapeHtml(s.id)}', ${idx})">
+                Confirmar Envio
+              </button>
+              <button class="btn btn-ghost btn-sm" onclick="ocultarUpload(${idx})">Cancelar</button>
+            </div>
+          </div>
+        </div>`;
+    }
+
+    function iniciarUpload(id, idx) {
+      const input = document.getElementById('file-dg-' + idx);
+      if (!input) return;
+      input.addEventListener('change', () => {
+        const file = input.files[0];
+        if (!file) return;
+        if (file.type !== 'application/pdf') { alert('Apenas PDF.'); return; }
+        if (file.size > 10 * 1024 * 1024) { alert('Máximo 10 MB.'); return; }
+        _arquivosDG[id] = file;
+        const info = document.getElementById('file-info-' + idx);
+        info.textContent = '✓ ' + file.name + ' (' + (file.size / 1024).toFixed(1) + ' KB)';
+        info.classList.add('show');
+      });
+      // Drag & drop
+      const drop = document.getElementById('drop-dg-' + idx);
+      drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('drag-over'); });
+      drop.addEventListener('dragleave', () => drop.classList.remove('drag-over'));
+      drop.addEventListener('drop', e => {
+        e.preventDefault(); drop.classList.remove('drag-over');
+        const file = e.dataTransfer.files[0];
+        if (file) { input.files = e.dataTransfer.files; input.dispatchEvent(new Event('change')); }
+      });
+    }
+
+    function mostrarUpload(id, idx) {
+      document.getElementById('upload-sec-' + idx).classList.add('show');
+      document.getElementById('upload-sec-' + idx).scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    function ocultarUpload(idx) {
+      document.getElementById('upload-sec-' + idx).classList.remove('show');
+    }
+
+    async function enviarDocDG(id, idx) {
+      const file = _arquivosDG[id];
+      if (!file) { toast('Selecione o arquivo antes de confirmar.', 'error'); return; }
+
+      const btn = document.getElementById('btn-enviar-dg-' + idx);
+      btn.classList.add('is-loading'); btn.disabled = true;
+
+      try {
+        const b64 = await fileToBase64(file);
+        await API.post('enviarDocumentoDG', {
+          idEstagio:  id,
+          authToken:  getAccessToken(),
+          arquivo: { nome: file.name, base64: b64 },
+        });
+        toast('Documento enviado! O setor irá verificar e ativar o estágio.', 'success');
+        // Oculta card após envio
+        const card = document.getElementById('card-' + id);
+        if (card) {
+          card.style.opacity = '0.5';
+          card.innerHTML += `<div style="text-align:center;padding:var(--space-3);color:var(--color-success);font-size:var(--font-size-sm)">✓ Enviado com sucesso</div>`;
+        }
+      } catch (err) {
+        const fb = document.getElementById('feedback-dg-' + idx);
+        if (fb) {
+          fb.innerHTML = `<div style="background:var(--color-error-light);border:1px solid var(--color-error-border);border-radius:var(--radius-md);padding:var(--space-3) var(--space-4);font-size:var(--font-size-sm);color:var(--color-error);margin-bottom:var(--space-3)">Erro: ${escapeHtml(err.message)}</div>`;
+        }
+        btn.classList.remove('is-loading'); btn.disabled = false;
+      }
+    }
+
+    function fileToBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload  = () => resolve(reader.result.split(',')[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function toast(msg, type) {
+      const el = document.createElement('div');
+      el.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:9999;max-width:360px;padding:12px 16px;border-radius:8px;font-size:14px;box-shadow:0 4px 16px rgba(0,0,0,.15)';
+      el.style.background = type === 'success' ? 'var(--color-success-light)' : 'var(--color-error-light)';
+      el.style.color = type === 'success' ? 'var(--color-success)' : 'var(--color-error)';
+      el.style.border = `1px solid ${type === 'success' ? 'var(--color-success-border)' : 'var(--color-error-border)'}`;
+      el.textContent = msg;
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 5000);
+    }
+  </script>
+</body>
+</html>

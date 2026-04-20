@@ -20,9 +20,10 @@
 'use strict';
 
 var CFG_DASH = {
-  SS_SOL:   '1iAnurghOelZQiYMIevO1xxnx0ptz5bxyniuUe5KZx3Y',
-  SS_ORI:   '1lmwm-9_UYqqP2dWRhZdaBmSD5Qb8h8KZk6x6FJVSHJE',
+  SS_SOL:   '1iAnurghOelZQiYMIevO1xxnx0ptz5bxyniuUe5KZx3Y',  // planilha consolidada SGE
+  SS_ORI:   '1iAnurghOelZQiYMIevO1xxnx0ptz5bxyniuUe5KZx3Y',  // mesma planilha consolidada
   ABA_SOL:  'Solicitações',
+  ABA_ORI:  'Orientadores',
   ABA_PARC: 'Relatórios Parciais',
   ABA_FINAL:'Relatórios Finais',
   ABA_ADENDO:'Adendos',
@@ -219,7 +220,7 @@ function gerarDashboard_() {
   // ── Alertas de orientadores substitutos com contrato vencendo ────────────
   try {
     var ssOri  = SpreadsheetApp.openById(CFG_DASH.SS_ORI);
-    var shOri  = ssOri.getSheets()[0];
+    var shOri  = ssOri.getSheetByName(CFG_DASH.ABA_ORI) || ssOri.getSheets()[0];
     var dadOri = shOri.getDataRange().getValues();
     for (var o = 1; o < dadOri.length; o++) {
       var linhaOri = dadOri[o];

@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agentes de Integração — Admin · Central de Estágios IFRS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/base.css">
+  <link rel="stylesheet" href="../assets/css/components.css">
+  <link rel="stylesheet" href="../assets/css/layout.css">
+  <style>
+    .admin-toolbar{display:flex;flex-wrap:wrap;gap:var(--space-3);align-items:flex-end;margin-bottom:var(--space-5);}
+    .admin-toolbar .form-group{margin-bottom:0;flex:1;min-width:140px;}
+    .admin-toolbar .form-group label{font-size:var(--font-size-xs);color:var(--color-text-muted);margin-bottom:4px;display:block;}
+    .table-wrap{overflow-x:auto;border-radius:var(--radius-lg);border:1px solid var(--color-border);background:var(--color-surface);}
+    .data-table{width:100%;border-collapse:collapse;font-size:var(--font-size-sm);}
+    .data-table th{background:var(--color-bg);padding:var(--space-3) var(--space-4);text-align:left;font-weight:600;font-size:var(--font-size-xs);color:var(--color-text-muted);text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--color-border);white-space:nowrap;}
+    .data-table td{padding:var(--space-3) var(--space-4);border-bottom:1px solid var(--color-border);vertical-align:middle;}
+    .data-table tr:last-child td{border-bottom:none;}
+    .data-table tr:hover td{background:#F9FAFB;}
+    .td-actions{display:flex;gap:var(--space-2);}
+    .badge{display:inline-flex;align-items:center;gap:4px;padding:2px 10px;border-radius:9999px;font-size:11px;font-weight:600;}
+    .badge::before{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0;}
+    .badge-active {background:var(--color-success-light);color:var(--color-success);}
+    .badge-inactive{background:var(--color-bg);color:var(--color-text-muted);}
+    .empty-state{text-align:center;padding:var(--space-12);color:var(--color-text-muted);}
+    .empty-state svg{width:48px;height:48px;margin:0 auto var(--space-4);opacity:.3;}
+    .table-loading{text-align:center;padding:var(--space-12);color:var(--color-text-muted);font-size:var(--font-size-sm);}
+    /* Modal */
+    .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;display:flex;align-items:flex-start;justify-content:center;padding:var(--space-8) var(--space-4);overflow-y:auto;}
+    .modal-overlay.hidden{display:none;}
+    .modal{background:var(--color-surface);border-radius:var(--radius-xl);box-shadow:0 20px 40px rgba(0,0,0,.2);width:100%;max-width:620px;animation:modal-in .2s ease;}
+    @keyframes modal-in{from{opacity:0;transform:translateY(-16px);}}
+    .modal-header{display:flex;align-items:center;justify-content:space-between;padding:var(--space-5) var(--space-6);border-bottom:1px solid var(--color-border);}
+    .modal-header h2{font-size:var(--font-size-lg);font-weight:600;}
+    .modal-close{background:none;border:none;cursor:pointer;color:var(--color-text-muted);padding:var(--space-1);border-radius:var(--radius-md);}
+    .modal-body{padding:var(--space-6);}
+    .modal-footer{padding:var(--space-4) var(--space-6);border-top:1px solid var(--color-border);display:flex;gap:var(--space-3);justify-content:flex-end;flex-wrap:wrap;}
+    .form-section{background:var(--color-bg);border-radius:var(--radius-md);padding:var(--space-4);margin-top:var(--space-4);}
+    .form-section h3{font-size:var(--font-size-sm);font-weight:600;margin-bottom:var(--space-4);}
+  </style>
+</head>
+<body>
+
+  <header id="app-header">
+    <div class="container">
+      <div class="header-inner">
+        <a href="../index.html" class="header-brand">
+          <div class="header-logo-fallback" aria-hidden="true">IFRS</div>
+          <div class="header-brand-text">
+            <span class="header-brand-name">Central de Estágios</span>
+            <span class="header-brand-sub">IFRS Campus Rio Grande</span>
+          </div>
+        </a>
+        <div style="display:flex;align-items:center;gap:var(--space-3);">
+          <div id="header-user-area"></div>
+          <a href="index.html" class="back-link">
+            <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd"/></svg>
+            Admin
+          </a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main id="main-content">
+    <section class="page-hero">
+      <div class="container">
+        <h1>Agentes de Integração</h1>
+        <p>Gerencie convênios com agentes de integração parceiros do IFRS.</p>
+      </div>
+    </section>
+
+    <div class="container" style="padding-top:var(--space-6);padding-bottom:var(--space-12);">
+      <div class="admin-toolbar">
+        <div class="form-group" style="min-width:220px;">
+          <label for="busca-agente">Buscar</label>
+          <input type="search" id="busca-agente" class="form-control" placeholder="Nome ou CNPJ…">
+        </div>
+        <div class="form-group">
+          <label for="filtro-status">Status</label>
+          <select id="filtro-status" class="form-control">
+            <option value="Ativo" selected>Ativo</option>
+            <option value="Inativo">Inativo</option>
+            <option value="">Todos</option>
+          </select>
+        </div>
+        <div style="display:flex;gap:var(--space-2);align-items:flex-end;">
+          <button id="btn-atualizar" class="btn btn-secondary btn-sm">Atualizar</button>
+          <button id="btn-novo" class="btn btn-primary btn-sm">+ Novo Agente</button>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table class="data-table" aria-label="Agentes de integração">
+          <thead>
+            <tr>
+              <th>Nome / Razão Social</th>
+              <th>CNPJ</th>
+              <th>Responsável</th>
+              <th>E-mail</th>
+              <th>Estágios Via Agente</th>
+              <th>Status</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-agentes">
+            <tr><td colspan="7" class="table-loading">Carregando…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <!-- Modal detalhe / novo agente -->
+  <div id="modal-overlay" class="modal-overlay hidden" role="dialog" aria-modal="true">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 id="modal-title">Agente de Integração</h2>
+        <button class="modal-close" id="btn-modal-close" aria-label="Fechar">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+        </button>
+      </div>
+      <div class="modal-body" id="modal-body"></div>
+      <div class="modal-footer" id="modal-footer"></div>
+    </div>
+  </div>
+
+  <footer id="app-footer">
+    <div class="container">
+      <div class="footer-inner">
+        <span class="footer-copy">&copy; <script>document.write(new Date().getFullYear())</script> Central de Estágios — IFRS Campus Rio Grande</span>
+        <nav class="footer-links"><a href="mailto:estagios@riogrande.ifrs.edu.br">estagios@riogrande.ifrs.edu.br</a></nav>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://accounts.google.com/gsi/client" async></script>
+  <script src="../assets/js/utils.js"></script>
+  <script src="../assets/js/auth.js"></script>
+  <script src="../assets/js/api.js"></script>
+  <script>
+    'use strict';
+    let _dados = [], _filtrados = [], _atual = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      if (!requireAdminAuth()) return;
+      carregar();
+      document.getElementById('btn-atualizar').addEventListener('click', carregar);
+      document.getElementById('btn-novo').addEventListener('click', () => abrirFormNovo());
+      document.getElementById('btn-modal-close').addEventListener('click', fechar);
+      document.getElementById('modal-overlay').addEventListener('click', e => { if (e.target === e.currentTarget) fechar(); });
+      document.getElementById('busca-agente').addEventListener('input', filtrar);
+      document.getElementById('filtro-status').addEventListener('change', filtrar);
+    });
+
+    async function carregar() {
+      document.getElementById('tbody-agentes').innerHTML = '<tr><td colspan="7" class="table-loading">Carregando…</td></tr>';
+      try {
+        const data = await API.get('listarAgentesAdmin', { authToken: getAccessToken() });
+        _dados = Array.isArray(data) ? data : (data.agentes || []);
+        filtrar();
+      } catch (err) {
+        document.getElementById('tbody-agentes').innerHTML =
+          `<tr><td colspan="7" class="table-loading" style="color:var(--color-error)">Erro: ${escapeHtml(err.message)}</td></tr>`;
+      }
+    }
+
+    function filtrar() {
+      const busca  = document.getElementById('busca-agente').value.toLowerCase().trim();
+      const status = document.getElementById('filtro-status').value;
+      _filtrados = _dados.filter(a => {
+        if (status && a.status !== status) return false;
+        if (busca && !([a.nomeAgente, a.cnpj].join(' ').toLowerCase().includes(busca))) return false;
+        return true;
+      });
+      render();
+    }
+
+    function render() {
+      const tb = document.getElementById('tbody-agentes');
+      if (_filtrados.length === 0) {
+        tb.innerHTML = `<tr><td colspan="7"><div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 16.875h3.375m0 0h3.375m-3.375 0V13.5m0 3.375v3.375M6 10.5h2.25a2.25 2.25 0 002.25-2.25V6a2.25 2.25 0 00-2.25-2.25H6A2.25 2.25 0 003.75 6v2.25A2.25 2.25 0 006 10.5z"/></svg><p>Nenhum agente encontrado.</p></div></td></tr>`;
+        return;
+      }
+      tb.innerHTML = _filtrados.map(a => `
+        <tr>
+          <td><span style="font-weight:500">${escapeHtml(a.nomeAgente||'—')}</span></td>
+          <td style="font-size:12px">${escapeHtml(a.cnpj||'—')}</td>
+          <td>${escapeHtml(a.nomeResponsavel||'—')}</td>
+          <td style="font-size:12px">${escapeHtml(a.email||'—')}</td>
+          <td style="text-align:center">${a.totalEstagios||0}</td>
+          <td>${a.status==='Ativo'?'<span class="badge badge-active">Ativo</span>':'<span class="badge badge-inactive">Inativo</span>'}</td>
+          <td><div class="td-actions">
+            <button class="btn btn-secondary btn-sm" onclick="abrir(${JSON.stringify(a).replace(/"/g,'&quot;')})">Ver</button>
+          </div></td>
+        </tr>`).join('');
+    }
+
+    function abrir(a) {
+      _atual = a;
+      document.getElementById('modal-title').textContent = a.nomeAgente || 'Agente';
+      document.getElementById('modal-body').innerHTML = `
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4) var(--space-6);">
+          <div><label style="font-size:11px;color:var(--color-text-muted);text-transform:uppercase;font-weight:600">Nome</label><p style="font-size:14px">${escapeHtml(a.nomeAgente||'—')}</p></div>
+          <div><label style="font-size:11px;color:var(--color-text-muted);text-transform:uppercase;font-weight:600">CNPJ</label><p style="font-size:14px">${escapeHtml(a.cnpj||'—')}</p></div>
+          <div><label style="font-size:11px;color:var(--color-text-muted);text-transform:uppercase;font-weight:600">Responsável</label><p style="font-size:14px">${escapeHtml(a.nomeResponsavel||'—')}</p></div>
+          <div><label style="font-size:11px;color:var(--color-text-muted);text-transform:uppercase;font-weight:600">Cargo</label><p style="font-size:14px">${escapeHtml(a.cargoResponsavel||'—')}</p></div>
+          <div><label style="font-size:11px;color:var(--color-text-muted);text-transform:uppercase;font-weight:600">E-mail</label><p style="font-size:14px">${escapeHtml(a.email||'—')}</p></div>
+          <div><label style="font-size:11px;color:var(--color-text-muted);text-transform:uppercase;font-weight:600">Telefone</label><p style="font-size:14px">${escapeHtml(a.telefone||'—')}</p></div>
+          <div style="grid-column:1/-1"><label style="font-size:11px;color:var(--color-text-muted);text-transform:uppercase;font-weight:600">Endereço</label><p style="font-size:14px">${escapeHtml(a.endereco||'—')}</p></div>
+          <div><label style="font-size:11px;color:var(--color-text-muted);text-transform:uppercase;font-weight:600">Status</label><p>${a.status==='Ativo'?'<span class="badge badge-active">Ativo</span>':'<span class="badge badge-inactive">Inativo</span>'}</p></div>
+          <div><label style="font-size:11px;color:var(--color-text-muted);text-transform:uppercase;font-weight:600">Estágios via Agente</label><p style="font-size:14px">${a.totalEstagios||0}</p></div>
+        </div>`;
+      const f = document.getElementById('modal-footer');
+      f.innerHTML = `<button class="btn btn-ghost" onclick="fechar()">Fechar</button>
+        ${a.status==='Ativo'
+          ? `<button class="btn btn-danger btn-sm" onclick="alterarStatus('inativarAgente')">Inativar Convênio</button>`
+          : `<button class="btn btn-primary btn-sm" onclick="alterarStatus('reativarAgente')">Reativar Convênio</button>`}`;
+      document.getElementById('modal-overlay').classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function abrirFormNovo() {
+      _atual = null;
+      document.getElementById('modal-title').textContent = 'Novo Agente de Integração';
+      document.getElementById('modal-body').innerHTML = `
+        <div id="feedback-agente"></div>
+        <div class="form-row">
+          <div class="form-group"><label class="form-label">Nome / Razão Social <span style="color:var(--color-error)">*</span></label><input id="f-nome" class="form-control" placeholder="Centro de Integração Empresa-Escola…"></div>
+          <div class="form-group"><label class="form-label">CNPJ <span style="color:var(--color-error)">*</span></label><input id="f-cnpj" class="form-control" placeholder="00.000.000/0000-00"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label class="form-label">Responsável <span style="color:var(--color-error)">*</span></label><input id="f-resp" class="form-control"></div>
+          <div class="form-group"><label class="form-label">Cargo</label><input id="f-cargo" class="form-control"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label class="form-label">E-mail <span style="color:var(--color-error)">*</span></label><input id="f-email" type="email" class="form-control"></div>
+          <div class="form-group"><label class="form-label">Telefone</label><input id="f-tel" class="form-control" placeholder="(53) 99999-9999"></div>
+        </div>
+        <div class="form-group"><label class="form-label">Endereço</label><input id="f-end" class="form-control"></div>
+      `;
+      document.getElementById('modal-footer').innerHTML = `
+        <button class="btn btn-ghost" onclick="fechar()">Cancelar</button>
+        <button class="btn btn-primary" id="btn-salvar-agente" onclick="salvarAgente()">Cadastrar Agente</button>`;
+      document.getElementById('modal-overlay').classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+    }
+
+    async function salvarAgente() {
+      const btn = document.getElementById('btn-salvar-agente');
+      const nome  = document.getElementById('f-nome').value.trim();
+      const cnpj  = document.getElementById('f-cnpj').value.trim();
+      const resp  = document.getElementById('f-resp').value.trim();
+      const email = document.getElementById('f-email').value.trim();
+      if (!nome || !cnpj || !resp || !email) { toast('Preencha todos os campos obrigatórios.', 'error'); return; }
+      btn.classList.add('is-loading'); btn.disabled = true;
+      try {
+        await API.post('cadastrarAgente', {
+          nomeAgente: nome, cnpj, nomeResponsavel: resp,
+          cargoResponsavel: document.getElementById('f-cargo').value.trim(),
+          email, telefone: document.getElementById('f-tel').value.trim(),
+          endereco: document.getElementById('f-end').value.trim(),
+          authToken: getAccessToken(),
+        });
+        toast('Agente cadastrado com sucesso!', 'success');
+        fechar(); carregar();
+      } catch (err) { toast('Erro: ' + err.message, 'error'); }
+      finally { btn.classList.remove('is-loading'); btn.disabled = false; }
+    }
+
+    async function alterarStatus(action) {
+      if (!_atual) return;
+      try {
+        await API.post(action, { cnpj: _atual.cnpj, authToken: getAccessToken() });
+        toast(action.includes('inativar') ? 'Convênio inativado.' : 'Convênio reativado.', 'success');
+        fechar(); carregar();
+      } catch (err) { toast('Erro: ' + err.message, 'error'); }
+    }
+
+    function fechar() {
+      document.getElementById('modal-overlay').classList.add('hidden');
+      document.body.style.overflow = '';
+      _atual = null;
+    }
+
+    function toast(msg, type) {
+      const el = document.createElement('div');
+      el.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:9999;max-width:360px;padding:12px 16px;border-radius:8px;font-size:14px;box-shadow:0 4px 16px rgba(0,0,0,.15)';
+      el.style.background = type === 'success' ? 'var(--color-success-light)' : 'var(--color-error-light)';
+      el.style.color = type === 'success' ? 'var(--color-success)' : 'var(--color-error)';
+      el.style.border = `1px solid ${type === 'success' ? 'var(--color-success-border)' : 'var(--color-error-border)'}`;
+      el.textContent = msg;
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 4000);
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Alunos — Admin · Central de Estágios IFRS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/base.css">
+  <link rel="stylesheet" href="../assets/css/components.css">
+  <link rel="stylesheet" href="../assets/css/layout.css">
+  <style>
+    .admin-toolbar{display:flex;flex-wrap:wrap;gap:var(--space-3);align-items:flex-end;margin-bottom:var(--space-5);}
+    .admin-toolbar .form-group{margin-bottom:0;flex:1;min-width:160px;}
+    .admin-toolbar .form-group label{font-size:var(--font-size-xs);color:var(--color-text-muted);margin-bottom:4px;display:block;}
+
+    .table-wrap{overflow-x:auto;border-radius:var(--radius-lg);border:1px solid var(--color-border);background:var(--color-surface);}
+    .data-table{width:100%;border-collapse:collapse;font-size:var(--font-size-sm);}
+    .data-table th{background:var(--color-bg);padding:var(--space-3) var(--space-4);text-align:left;font-weight:600;font-size:var(--font-size-xs);color:var(--color-text-muted);text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--color-border);white-space:nowrap;}
+    .data-table td{padding:var(--space-3) var(--space-4);border-bottom:1px solid var(--color-border);vertical-align:middle;}
+    .data-table tr:last-child td{border-bottom:none;}
+    .data-table tr:hover td{background:#F9FAFB;}
+
+    .badge{display:inline-flex;align-items:center;gap:4px;padding:2px 10px;border-radius:9999px;font-size:11px;font-weight:600;white-space:nowrap;}
+    .badge::before{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0;}
+    .badge-active{background:var(--color-success-light);color:var(--color-success);}
+    .badge-inactive{background:var(--color-bg);color:var(--color-text-muted);}
+
+    .empty-state{text-align:center;padding:var(--space-12);color:var(--color-text-muted);}
+    .empty-state svg{width:48px;height:48px;margin:0 auto var(--space-4);opacity:.3;}
+    .table-loading{text-align:center;padding:var(--space-12);color:var(--color-text-muted);font-size:var(--font-size-sm);}
+
+    .pagination{display:flex;justify-content:center;gap:var(--space-2);margin-top:var(--space-6);flex-wrap:wrap;}
+    .pagination button{padding:var(--space-2) var(--space-3);border:1px solid var(--color-border);border-radius:var(--radius-md);background:var(--color-surface);font-size:var(--font-size-xs);cursor:pointer;transition:all .15s;min-width:36px;}
+    .pagination button:hover{background:var(--color-bg);}
+    .pagination button.active{background:var(--color-primary);border-color:var(--color-primary);color:#fff;}
+    .pagination button:disabled{opacity:.4;cursor:not-allowed;}
+
+    /* Modal */
+    .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;display:flex;align-items:flex-start;justify-content:center;padding:var(--space-8) var(--space-4);overflow-y:auto;}
+    .modal-overlay.hidden{display:none;}
+    .modal{background:var(--color-surface);border-radius:var(--radius-xl);box-shadow:0 20px 40px rgba(0,0,0,.2);width:100%;max-width:640px;animation:modal-in .2s ease;}
+    @keyframes modal-in{from{opacity:0;transform:translateY(-16px);}}
+    .modal-header{display:flex;align-items:center;justify-content:space-between;padding:var(--space-5) var(--space-6);border-bottom:1px solid var(--color-border);}
+    .modal-header h2{font-size:var(--font-size-lg);font-weight:600;}
+    .modal-close{background:none;border:none;cursor:pointer;color:var(--color-text-muted);padding:var(--space-1);border-radius:var(--radius-md);}
+    .modal-close:hover{background:var(--color-bg);}
+    .modal-body{padding:var(--space-6);}
+    .detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4) var(--space-6);}
+    @media(max-width:560px){.detail-grid{grid-template-columns:1fr;}}
+    .detail-item label{font-size:var(--font-size-xs);color:var(--color-text-muted);display:block;margin-bottom:2px;font-weight:500;text-transform:uppercase;letter-spacing:.04em;}
+    .detail-item p{font-size:var(--font-size-sm);color:var(--color-text);word-break:break-word;}
+    .detail-full{grid-column:1/-1;}
+    .modal-footer{padding:var(--space-4) var(--space-6);border-top:1px solid var(--color-border);display:flex;gap:var(--space-3);justify-content:flex-end;}
+  </style>
+</head>
+<body>
+
+  <header id="app-header">
+    <div class="container">
+      <div class="header-inner">
+        <a href="../index.html" class="header-brand">
+          <div class="header-logo-fallback" aria-hidden="true">IFRS</div>
+          <div class="header-brand-text">
+            <span class="header-brand-name">Central de Estágios</span>
+            <span class="header-brand-sub">IFRS Campus Rio Grande</span>
+          </div>
+        </a>
+        <div style="display:flex;align-items:center;gap:var(--space-3);">
+          <div id="header-user-area"></div>
+          <a href="index.html" class="back-link">
+            <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd"/></svg>
+            Admin
+          </a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main id="main-content">
+    <section class="page-hero">
+      <div class="container">
+        <h1>Gestão de Alunos</h1>
+        <p>Consulte cadastros e histórico de estágios dos estudantes.</p>
+      </div>
+    </section>
+
+    <div class="container" style="padding-top:var(--space-6);padding-bottom:var(--space-12);">
+
+      <div class="admin-toolbar">
+        <div class="form-group" style="min-width:260px;">
+          <label for="busca-aluno">Buscar aluno</label>
+          <input type="search" id="busca-aluno" class="form-control" placeholder="Nome, matrícula ou CPF…">
+        </div>
+        <div class="form-group">
+          <label for="filtro-curso">Curso</label>
+          <select id="filtro-curso" class="form-control">
+            <option value="">Todos</option>
+          </select>
+        </div>
+        <div style="display:flex;gap:var(--space-2);align-items:flex-end;">
+          <button id="btn-atualizar" class="btn btn-secondary btn-sm">Atualizar</button>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table class="data-table" aria-label="Alunos cadastrados">
+          <thead>
+            <tr>
+              <th>Nome</th>
+              <th>Matrícula</th>
+              <th>CPF</th>
+              <th>Curso</th>
+              <th>E-mail</th>
+              <th>Estágios</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-alunos">
+            <tr><td colspan="7" class="table-loading">Carregando…</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div id="pagination" class="pagination"></div>
+
+    </div>
+  </main>
+
+  <!-- Modal detalhe -->
+  <div id="modal-overlay" class="modal-overlay hidden" role="dialog" aria-modal="true">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 id="modal-title">Dados do Aluno</h2>
+        <button class="modal-close" id="btn-modal-close" aria-label="Fechar">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+        </button>
+      </div>
+      <div class="modal-body" id="modal-body"></div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="fecharModal()">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <footer id="app-footer">
+    <div class="container">
+      <div class="footer-inner">
+        <span class="footer-copy">&copy; <script>document.write(new Date().getFullYear())</script> Central de Estágios — IFRS Campus Rio Grande</span>
+        <nav class="footer-links"><a href="mailto:estagios@riogrande.ifrs.edu.br">estagios@riogrande.ifrs.edu.br</a></nav>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://accounts.google.com/gsi/client" async></script>
+  <script src="../assets/js/utils.js"></script>
+  <script src="../assets/js/auth.js"></script>
+  <script src="../assets/js/api.js"></script>
+  <script>
+    'use strict';
+    let _dados = [], _filtrados = [], _pagina = 1;
+    const POR_PAGINA = 30;
+
+    document.addEventListener('DOMContentLoaded', function () {
+      if (!requireAdminAuth()) return;
+      carregar();
+      document.getElementById('btn-atualizar').addEventListener('click', carregar);
+      document.getElementById('btn-modal-close').addEventListener('click', fecharModal);
+      document.getElementById('modal-overlay').addEventListener('click', e => { if (e.target === e.currentTarget) fecharModal(); });
+      document.getElementById('busca-aluno').addEventListener('input', aplicarFiltros);
+      document.getElementById('filtro-curso').addEventListener('change', aplicarFiltros);
+    });
+
+    async function carregar() {
+      document.getElementById('tbody-alunos').innerHTML = '<tr><td colspan="7" class="table-loading">Carregando…</td></tr>';
+      try {
+        const data = await API.get('listarAlunosAdmin', { authToken: getAccessToken() });
+        _dados = Array.isArray(data) ? data : (data.alunos || []);
+        popularCursos();
+        aplicarFiltros();
+      } catch (err) {
+        document.getElementById('tbody-alunos').innerHTML =
+          `<tr><td colspan="7" class="table-loading" style="color:var(--color-error)">Erro: ${escapeHtml(err.message)}</td></tr>`;
+      }
+    }
+
+    function popularCursos() {
+      const cursos = [...new Set(_dados.map(a => a.curso).filter(Boolean))].sort();
+      const sel = document.getElementById('filtro-curso');
+      const val = sel.value;
+      sel.innerHTML = '<option value="">Todos</option>' + cursos.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+      sel.value = val;
+    }
+
+    function aplicarFiltros() {
+      const busca  = document.getElementById('busca-aluno').value.toLowerCase().trim();
+      const curso  = document.getElementById('filtro-curso').value.toLowerCase();
+      _filtrados = _dados.filter(a => {
+        if (curso && (a.curso || '').toLowerCase() !== curso) return false;
+        if (busca) {
+          const txt = [a.nome, a.matricula, a.cpf, a.email].join(' ').toLowerCase();
+          if (!txt.includes(busca)) return false;
+        }
+        return true;
+      });
+      _pagina = 1;
+      render();
+    }
+
+    function render() {
+      const tbody = document.getElementById('tbody-alunos');
+      if (_filtrados.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"/></svg><p>Nenhum aluno encontrado.</p></div></td></tr>`;
+        document.getElementById('pagination').innerHTML = '';
+        return;
+      }
+      const start = (_pagina - 1) * POR_PAGINA;
+      const slice = _filtrados.slice(start, start + POR_PAGINA);
+      tbody.innerHTML = slice.map(a => `
+        <tr>
+          <td><span style="font-weight:500">${escapeHtml(a.nome || '—')}</span></td>
+          <td>${escapeHtml(a.matricula || '—')}</td>
+          <td style="font-size:12px">${escapeHtml(a.cpf || '—')}</td>
+          <td style="font-size:12px">${escapeHtml(a.curso || '—')}</td>
+          <td style="font-size:12px">${escapeHtml(a.email || '—')}</td>
+          <td><span class="badge ${(a.totalEstagios || 0) > 0 ? 'badge-active' : 'badge-inactive'}">${a.totalEstagios || 0} estágio${(a.totalEstagios||0) !== 1 ? 's' : ''}</span></td>
+          <td><button class="btn btn-secondary btn-sm" onclick="abrirModal(${JSON.stringify(a).replace(/"/g,'&quot;')})">Ver</button></td>
+        </tr>`).join('');
+      renderPagina(_filtrados.length);
+    }
+
+    function renderPagina(total) {
+      const tp = Math.ceil(total / POR_PAGINA);
+      const pag = document.getElementById('pagination');
+      if (tp <= 1) { pag.innerHTML = ''; return; }
+      let h = `<button onclick="irP(${_pagina-1})" ${_pagina===1?'disabled':''}>‹</button>`;
+      for (let i=1;i<=tp;i++) h += `<button class="${i===_pagina?'active':''}" onclick="irP(${i})">${i}</button>`;
+      h += `<button onclick="irP(${_pagina+1})" ${_pagina===tp?'disabled':''}>›</button>`;
+      pag.innerHTML = h;
+    }
+    function irP(n) { const tp=Math.ceil(_filtrados.length/POR_PAGINA); if(n<1||n>tp)return; _pagina=n; render(); }
+
+    function abrirModal(a) {
+      document.getElementById('modal-title').textContent = a.nome || 'Dados do Aluno';
+      document.getElementById('modal-body').innerHTML = `
+        <div class="detail-grid">
+          <div class="detail-item"><label>Nome Completo</label><p>${escapeHtml(a.nome||'—')}</p></div>
+          <div class="detail-item"><label>Matrícula</label><p>${escapeHtml(a.matricula||'—')}</p></div>
+          <div class="detail-item"><label>CPF</label><p>${escapeHtml(a.cpf||'—')}</p></div>
+          <div class="detail-item"><label>Data de Nascimento</label><p>${escapeHtml(a.dataNascimento||'—')}</p></div>
+          <div class="detail-item"><label>Curso</label><p>${escapeHtml(a.curso||'—')}</p></div>
+          <div class="detail-item"><label>Semestre</label><p>${escapeHtml(a.semestre||'—')}</p></div>
+          <div class="detail-item"><label>E-mail</label><p>${escapeHtml(a.email||'—')}</p></div>
+          <div class="detail-item"><label>Telefone</label><p>${escapeHtml(a.telefone||'—')}</p></div>
+          <div class="detail-item detail-full"><label>Endereço</label><p>${escapeHtml(a.endereco||'—')}</p></div>
+          ${a.nomeResponsavelLegal ? `<div class="detail-item"><label>Responsável Legal</label><p>${escapeHtml(a.nomeResponsavelLegal)}</p></div>
+          <div class="detail-item"><label>CPF do Responsável</label><p>${escapeHtml(a.cpfResponsavelLegal||'—')}</p></div>` : ''}
+          <div class="detail-item detail-full">
+            <label>Estágios (${a.totalEstagios||0})</label>
+            ${(a.estagios||[]).length > 0
+              ? `<ul style="margin:var(--space-2) 0 0;padding-left:var(--space-5);font-size:var(--font-size-sm);">${(a.estagios||[]).map(e=>`<li><code style="font-size:11px">${escapeHtml(e.id)}</code> — ${escapeHtml(e.empresa)} — <em>${escapeHtml(e.status)}</em></li>`).join('')}</ul>`
+              : '<p style="color:var(--color-text-muted)">Nenhum estágio registrado.</p>'}
+          </div>
+          ${a.driveUrl ? `<div class="detail-item detail-full"><label>Pasta no Drive</label><p><a href="${escapeHtml(a.driveUrl)}" target="_blank" class="link">Abrir pasta ↗</a></p></div>` : ''}
+        </div>`;
+      document.getElementById('modal-overlay').classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function fecharModal() {
+      document.getElementById('modal-overlay').classList.add('hidden');
+      document.body.style.overflow = '';
+    }
+  </script>
+</body>
+</html>

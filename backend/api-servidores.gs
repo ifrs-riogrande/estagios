@@ -11,7 +11,9 @@
 'use strict';
 
 var CFG_SRV = {
-  SS_ID: '1lmwm-9_UYqqP2dWRhZdaBmSD5Qb8h8KZk6x6FJVSHJE',
+  SS_ID:         '1iAnurghOelZQiYMIevO1xxnx0ptz5bxyniuUe5KZx3Y',  // planilha consolidada SGE
+  ABA:           'Orientadores',
+  ABA_COORD:     'Coordenadores',
 };
 
 /**
@@ -76,7 +78,7 @@ function doPost(e) {
 // ---------------------------------------------------------------------------
 
 function listarOrientadores_(curso) {
-  var sheet = abrirAba_(CFG_SRV.SS_ID);
+  var sheet = abrirAba_(CFG_SRV.SS_ID, CFG_SRV.ABA);
   var dados = sheet.getDataRange().getValues();
   var lista = [];
   var hoje  = new Date();
@@ -160,7 +162,7 @@ function cadastrarOrientador_(dados) {
   }
 
   // Verifica duplicidade por CPF
-  var sheet = abrirAba_(CFG_SRV.SS_ID);
+  var sheet = abrirAba_(CFG_SRV.SS_ID, CFG_SRV.ABA);
   var idx   = buscarNaColuna_(sheet, COL_ORI.CPF, cpf);
   if (idx !== -1) {
     // Atualiza cadastro existente em vez de duplicar

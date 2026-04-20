@@ -420,8 +420,30 @@
     // ── Autenticação ──
     document.addEventListener('DOMContentLoaded', async function () {
       if (!requireStudentAuth()) return;
-      // Define mínimo de 7 dias para início
-      document.getElementById('data-inicio').min = getMinDateString(7);
+
+      // Data início: mínimo = hoje + 7 dias corridos
+      const inputInicio  = document.getElementById('data-inicio');
+      const inputTermino = document.getElementById('data-termino');
+      inputInicio.min = getMinDateString(7);
+
+      // Quando início muda: ajusta min/max de término
+      inputInicio.addEventListener('change', function () {
+        const val = this.value;
+        if (!val) { inputTermino.min = ''; inputTermino.max = ''; return; }
+        // Mínimo para término: dia seguinte ao início
+        const dtInicio = new Date(val + 'T00:00:00');
+        const dtMin = new Date(dtInicio); dtMin.setDate(dtMin.getDate() + 1);
+        inputTermino.min = dtMin.toISOString().slice(0, 10);
+        // Máximo: 2 anos a partir do início
+        const dtMax = new Date(dtInicio); dtMax.setFullYear(dtMax.getFullYear() + 2);
+        inputTermino.max = dtMax.toISOString().slice(0, 10);
+        // Limpa término se estiver fora do novo range
+        if (inputTermino.value) {
+          const t = new Date(inputTermino.value + 'T00:00:00');
+          if (t < dtMin || t > dtMax) inputTermino.value = '';
+        }
+      });
+
       await Promise.all([carregarEmpresas(), carregarAgentes()]);
     });
 
@@ -558,14 +580,26 @@
       if (!document.getElementById('supervisor').value)        fail('supervisor', 'Selecione o supervisor.');
       if (!document.getElementById('orientador').value)        fail('orientador', 'Selecione o professor orientador.');
 
-      const dataInicio = document.getElementById('data-inicio').value;
+      const dataInicio  = document.getElementById('data-inicio').value;
+      const dataTermino = document.getElementById('data-termino').value;
       if (!dataInicio) {
         fail('data-inicio', 'Informe a data de início.');
       } else if (!validateMinDate(dataInicio, 7)) {
-        fail('data-inicio', 'A data de início deve ser mínimo 7 dias a partir de hoje.');
+        fail('data-inicio', 'A data de início deve ser mínimo 7 dias corridos a partir de hoje.');
       }
 
-      if (!document.getElementById('data-termino').value)      fail('data-termino', 'Informe a data de término.');
+      if (!dataTermino) {
+        fail('data-termino', 'Informe a data de término.');
+      } else if (dataInicio && dataTermino) {
+        const dtI = new Date(dataInicio  + 'T00:00:00');
+        const dtT = new Date(dataTermino + 'T00:00:00');
+        const dtMax2Anos = new Date(dtI); dtMax2Anos.setFullYear(dtMax2Anos.getFullYear() + 2);
+        if (dtT <= dtI) {
+          fail('data-termino', 'A data de término deve ser posterior à data de início.');
+        } else if (dtT > dtMax2Anos) {
+          fail('data-termino', 'A duração máxima do estágio é de 2 anos na mesma concedente.');
+        }
+      }
       if (!document.getElementById('carga-horaria').value)     fail('carga-horaria', 'Selecione a carga horária.');
       if (!document.getElementById('area-setor').value.trim()) fail('area-setor', 'Informe a área/setor do estágio.');
       if (!document.getElementById('dias-horarios').value.trim()) fail('dias-horarios', 'Informe os dias e horários.');

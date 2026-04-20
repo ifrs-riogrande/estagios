@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Acompanhamento de Estágio — Central de Estágios IFRS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/base.css">
+  <link rel="stylesheet" href="../assets/css/components.css">
+  <link rel="stylesheet" href="../assets/css/layout.css">
+  <style>
+    /* ── Seletor de estágio ── */
+    .estagio-selector{background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:var(--space-5);margin-bottom:var(--space-6);}
+    .estagio-selector label{font-size:var(--font-size-sm);font-weight:500;display:block;margin-bottom:var(--space-2);}
+
+    /* ── Timeline de status ── */
+    .timeline{position:relative;padding-left:var(--space-10);margin-bottom:var(--space-8);}
+    .timeline::before{content:'';position:absolute;left:20px;top:12px;bottom:12px;width:2px;background:var(--color-border);}
+    .timeline-item{position:relative;margin-bottom:var(--space-6);}
+    .timeline-item:last-child{margin-bottom:0;}
+    .timeline-dot{
+      position:absolute;left:-32px;top:4px;
+      width:24px;height:24px;border-radius:50%;
+      display:flex;align-items:center;justify-content:center;
+      font-size:12px;font-weight:600;border:2px solid;
+    }
+    .timeline-dot--done    {background:var(--color-success);border-color:var(--color-success);color:#fff;}
+    .timeline-dot--active  {background:var(--color-primary);border-color:var(--color-primary);color:#fff;box-shadow:0 0 0 4px rgba(26,58,107,.15);}
+    .timeline-dot--pending {background:var(--color-surface);border-color:var(--color-border);color:var(--color-text-light);}
+    .timeline-dot--error   {background:var(--color-error);border-color:var(--color-error);color:#fff;}
+    .timeline-label{font-size:var(--font-size-sm);font-weight:600;margin-bottom:2px;}
+    .timeline-desc {font-size:var(--font-size-xs);color:var(--color-text-muted);line-height:1.5;}
+    .timeline-date {font-size:var(--font-size-xs);color:var(--color-text-light);margin-top:2px;}
+
+    /* ── Card de ação ── */
+    .action-card{background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:var(--space-6);margin-bottom:var(--space-6);}
+    .action-card h2{font-size:var(--font-size-md);font-weight:600;margin-bottom:var(--space-2);}
+    .action-card p {font-size:var(--font-size-sm);color:var(--color-text-muted);margin-bottom:var(--space-5);}
+    .action-card--highlight{border-color:var(--color-primary);background:var(--color-info-light);}
+
+    /* ── Upload ── */
+    .upload-area{border:2px dashed var(--color-border);border-radius:var(--radius-md);padding:var(--space-8);text-align:center;cursor:pointer;transition:all .15s;background:var(--color-bg);}
+    .upload-area:hover,.upload-area.drag-over{border-color:var(--color-primary);background:var(--color-info-light);}
+    .upload-area input{display:none;}
+    .upload-area svg{width:40px;height:40px;margin:0 auto var(--space-3);color:var(--color-text-muted);}
+    .upload-area p{font-size:var(--font-size-sm);color:var(--color-text-muted);margin-bottom:var(--space-1);}
+    .upload-area small{font-size:var(--font-size-xs);color:var(--color-text-light);}
+    .file-selected{display:none;align-items:center;gap:var(--space-2);padding:var(--space-3) var(--space-4);background:var(--color-success-light);border-radius:var(--radius-md);font-size:var(--font-size-sm);color:var(--color-success);}
+    .file-selected.show{display:flex;}
+
+    /* ── Informações do estágio ── */
+    .info-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:var(--space-4);margin-bottom:var(--space-6);}
+    .info-item{background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-md);padding:var(--space-4);}
+    .info-item label{font-size:var(--font-size-xs);color:var(--color-text-muted);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em;font-weight:500;}
+    .info-item p{font-size:var(--font-size-sm);font-weight:500;}
+
+    /* ── Badge status ── */
+    .badge{display:inline-flex;align-items:center;gap:4px;padding:3px 12px;border-radius:9999px;font-size:12px;font-weight:600;}
+    .badge::before{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0;}
+    .badge-pending {background:var(--color-warning-light);color:var(--color-warning);}
+    .badge-analysis{background:var(--color-info-light);color:var(--color-info);}
+    .badge-approved{background:var(--color-success-light);color:var(--color-success);}
+    .badge-docs    {background:#EDE9FE;color:#7C3AED;}
+    .badge-dg      {background:#FEF3C7;color:#92400E;}
+    .badge-running {background:var(--color-success-light);color:#065F46;}
+    .badge-closed  {background:var(--color-bg);color:var(--color-text-muted);}
+    .badge-rejected{background:var(--color-error-light);color:var(--color-error);}
+
+    /* ── Layout ── */
+    .main-cols{display:grid;grid-template-columns:1fr 320px;gap:var(--space-6);}
+    @media(max-width:900px){.main-cols{grid-template-columns:1fr;}}
+
+    .loading-page{text-align:center;padding:var(--space-16);color:var(--color-text-muted);}
+  </style>
+</head>
+<body>
+
+  <header id="app-header">
+    <div class="container">
+      <div class="header-inner">
+        <a href="../index.html" class="header-brand">
+          <div class="header-logo-fallback" aria-hidden="true">IFRS</div>
+          <div class="header-brand-text">
+            <span class="header-brand-name">Central de Estágios</span>
+            <span class="header-brand-sub">IFRS Campus Rio Grande</span>
+          </div>
+        </a>
+        <div style="display:flex;align-items:center;gap:var(--space-3);">
+          <div id="header-user-area"></div>
+          <a href="index.html" class="back-link">
+            <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd"/></svg>
+            Meus Estágios
+          </a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main id="main-content">
+    <section class="page-hero">
+      <div class="container">
+        <h1>Acompanhamento de Estágio</h1>
+        <p>Acompanhe o andamento do processo e envie documentos quando solicitado.</p>
+      </div>
+    </section>
+
+    <div class="container" style="padding-top:var(--space-6);padding-bottom:var(--space-12);" id="page-content">
+      <div class="loading-page">Carregando seus estágios…</div>
+    </div>
+  </main>
+
+  <footer id="app-footer">
+    <div class="container">
+      <div class="footer-inner">
+        <span class="footer-copy">&copy; <script>document.write(new Date().getFullYear())</script> Central de Estágios — IFRS Campus Rio Grande</span>
+        <nav class="footer-links"><a href="mailto:estagios@riogrande.ifrs.edu.br">estagios@riogrande.ifrs.edu.br</a></nav>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://accounts.google.com/gsi/client" async></script>
+  <script src="../assets/js/utils.js"></script>
+  <script src="../assets/js/auth.js"></script>
+  <script src="../assets/js/api.js"></script>
+  <script>
+    'use strict';
+
+    let _estagios = [];
+    let _atual = null;
+
+    /* ── Arquivos selecionados para upload ── */
+    const _arquivos = { solicitacao: null, tce: null, tce_nao_obrig: null };
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      if (!requireStudentAuth()) return;
+      await carregarEstagios();
+    });
+
+    /* ════════════════════════════════════════
+       CARREGAMENTO
+    ════════════════════════════════════════ */
+    async function carregarEstagios() {
+      try {
+        const data = await API.get('listarMeusEstagios', { authToken: getAccessToken() });
+        _estagios = Array.isArray(data) ? data : (data.estagios || []);
+        renderPaginaPrincipal();
+      } catch (err) {
+        document.getElementById('page-content').innerHTML =
+          `<div class="form-feedback form-feedback--error"><strong>Erro ao carregar.</strong> ${escapeHtml(err.message)}</div>`;
+      }
+    }
+
+    /* ════════════════════════════════════════
+       RENDER PRINCIPAL
+    ════════════════════════════════════════ */
+    function renderPaginaPrincipal() {
+      const c = document.getElementById('page-content');
+
+      if (_estagios.length === 0) {
+        c.innerHTML = `
+          <div style="text-align:center;padding:var(--space-16);color:var(--color-text-muted)">
+            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" style="margin:0 auto var(--space-4);opacity:.2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25z"/></svg>
+            <p>Você ainda não possui estágios registrados.</p>
+            <a href="solicitacao.html" class="btn btn-primary" style="margin-top:var(--space-4)">Solicitar Estágio</a>
+          </div>`;
+        return;
+      }
+
+      // Selector + conteúdo do estágio selecionado
+      const opcoes = _estagios.map((e, i) =>
+        `<option value="${i}">${escapeHtml(e.id)} — ${escapeHtml(e.empresa)} (${escapeHtml(e.status)})</option>`).join('');
+
+      c.innerHTML = `
+        <div class="estagio-selector">
+          <label for="sel-estagio">Selecione o estágio:</label>
+          <select id="sel-estagio" class="form-control" onchange="selecionarEstagio(this.value)">
+            ${opcoes}
+          </select>
+        </div>
+        <div id="estagio-detalhe"></div>`;
+
+      selecionarEstagio(0);
+    }
+
+    function selecionarEstagio(idx) {
+      _atual = _estagios[parseInt(idx)] || null;
+      if (!_atual) return;
+      renderDetalhe();
+    }
+
+    /* ════════════════════════════════════════
+       RENDER DETALHE DO ESTÁGIO
+    ════════════════════════════════════════ */
+    function renderDetalhe() {
+      const s = _atual;
+      const container = document.getElementById('estagio-detalhe');
+
+      // Monta timeline de passos
+      const passos = buildTimeline(s.status);
+
+      // Card de ação dependendo do status
+      const cardAcao = buildCardAcao(s);
+
+      container.innerHTML = `
+        <div class="main-cols">
+          <!-- Coluna principal -->
+          <div>
+            ${cardAcao}
+
+            <!-- Informações do estágio -->
+            <div class="action-card">
+              <h2>Detalhes do Estágio</h2>
+              <div class="info-grid">
+                <div class="info-item"><label>ID</label><p><code style="font-size:12px">${escapeHtml(s.id||'—')}</code></p></div>
+                <div class="info-item"><label>Tipo</label><p>${escapeHtml(s.tipoEstagio||'—')}</p></div>
+                <div class="info-item"><label>Empresa</label><p>${escapeHtml(s.empresa||'—')}</p></div>
+                <div class="info-item"><label>Orientador</label><p>${escapeHtml(s.nomeOrientador||'—')}</p></div>
+                <div class="info-item"><label>Início</label><p>${escapeHtml(s.dataInicio||'—')}</p></div>
+                <div class="info-item"><label>Término</label><p>${escapeHtml(s.dataTermino||'—')}</p></div>
+                <div class="info-item"><label>Carga Horária</label><p>${escapeHtml(s.cargaHorariaSemanal||'—')}h/sem</p></div>
+                <div class="info-item"><label>Status</label><p>${badgeStatus(s.status)}</p></div>
+              </div>
+              ${s.observacaoSetor ? `
+              <div style="background:var(--color-warning-light);border:1px solid var(--color-warning-border);border-radius:var(--radius-md);padding:var(--space-3) var(--space-4);font-size:var(--font-size-sm);">
+                <strong>Observação do setor:</strong> ${escapeHtml(s.observacaoSetor)}
+              </div>` : ''}
+              ${s.motivoReprovacao ? `
+              <div style="background:var(--color-error-light);border:1px solid var(--color-error-border);border-radius:var(--radius-md);padding:var(--space-3) var(--space-4);font-size:var(--font-size-sm);margin-top:var(--space-3)">
+                <strong>Motivo da reprovação:</strong> ${escapeHtml(s.motivoReprovacao)}
+              </div>` : ''}
+            </div>
+
+            <!-- Área de documentos (se houver) -->
+            ${s.driveUrl ? `
+            <div class="action-card">
+              <h2>Documentos Gerados</h2>
+              <p>Os documentos do seu estágio estão disponíveis na pasta do Drive abaixo.</p>
+              <a href="${escapeHtml(s.driveUrl)}" target="_blank" rel="noopener" class="btn btn-secondary">
+                <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clip-rule="evenodd"/></svg>
+                Abrir Pasta do Estágio no Drive ↗
+              </a>
+            </div>` : ''}
+          </div>
+
+          <!-- Sidebar: timeline -->
+          <div>
+            <div class="action-card" style="padding:var(--space-5)">
+              <h2 style="margin-bottom:var(--space-5)">Etapas do Processo</h2>
+              <div class="timeline">${passos}</div>
+            </div>
+          </div>
+        </div>`;
+
+      // Inicializa uploads
+      initUpload('upload-solicitacao', 'solicitacao');
+      initUpload('upload-tce', 'tce');
+      initUpload('upload-tce-nao', 'tce_nao_obrig');
+    }
+
+    /* ════════════════════════════════════════
+       TIMELINE
+    ════════════════════════════════════════ */
+    const PASSOS = [
+      { key: 'solicitacao',   label: 'Solicitação enviada',             desc: 'Documentos e dados do estágio submetidos.' },
+      { key: 'analise',       label: 'Em análise pelo setor',           desc: 'O setor de estágios está revisando a solicitação.' },
+      { key: 'aprovado',      label: 'Aprovado — documentos gerados',   desc: 'TCE e Solicitação de Ingresso foram gerados.' },
+      { key: 'docs_enviados', label: 'Documentos assinados enviados',   desc: 'Você enviou os documentos com todas as assinaturas (exceto Diretor Geral).' },
+      { key: 'aguardando_dg', label: 'Aguardando Diretor Geral',        desc: 'O Diretor Geral está assinando os documentos.' },
+      { key: 'em_execucao',   label: 'Estágio em execução',             desc: 'Todas as assinaturas foram confirmadas.' },
+    ];
+
+    const STATUS_PASSO = {
+      'Pendente':                  1,
+      'Em análise':                2,
+      'Aguardando Documentos':     3,
+      'Docs Enviados':             4,
+      'Aguardando DG':             5,
+      'Aguardando Validação Final':5,
+      'Em execução':               6,
+      'Encerrado':                 6,
+      'Reprovado':                 -1,
+    };
+
+    function buildTimeline(status) {
+      const etapaAtual = STATUS_PASSO[status] || 1;
+      const reprovado  = status === 'Reprovado';
+      return PASSOS.map((p, i) => {
+        const num = i + 1;
+        let cls = 'timeline-dot--pending';
+        let label = p.label;
+        if (reprovado && num === 2) { cls = 'timeline-dot--error'; label = 'Reprovado'; }
+        else if (num < etapaAtual) cls = 'timeline-dot--done';
+        else if (num === etapaAtual) cls = 'timeline-dot--active';
+        return `
+          <div class="timeline-item">
+            <div class="timeline-dot ${cls}">${num < etapaAtual ? '✓' : num}</div>
+            <div class="timeline-label">${escapeHtml(label)}</div>
+            <div class="timeline-desc">${escapeHtml(p.desc)}</div>
+          </div>`;
+      }).join('');
+    }
+
+    /* ════════════════════════════════════════
+       CARD DE AÇÃO POR STATUS
+    ════════════════════════════════════════ */
+    function buildCardAcao(s) {
+      if (s.status === 'Aguardando Documentos') {
+        const tipoTce = s.tipoEstagio === 'Obrigatório'
+          ? `<!-- TCE Obrigatório -->
+             <div class="form-group">
+               <label class="form-label">TCE — Termo de Compromisso de Estágio Obrigatório (assinado por todos exceto Diretor Geral) <span style="color:var(--color-error)">*</span></label>
+               <div class="upload-area" id="drop-tce" onclick="document.getElementById('upload-tce').click()">
+                 <input type="file" id="upload-tce" accept=".pdf">
+                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m6.75 12H9m1.5-12H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg>
+                 <p>Clique ou arraste o arquivo PDF aqui</p><small>Apenas PDF — máx. 10 MB</small>
+               </div>
+               <div class="file-selected" id="file-tce-info"></div>
+             </div>`
+          : `<!-- TCE Não Obrigatório -->
+             <div class="form-group">
+               <label class="form-label">TCE — Termo de Compromisso de Estágio Não Obrigatório (assinado por todos exceto Diretor Geral) <span style="color:var(--color-error)">*</span></label>
+               <div class="upload-area" id="drop-tce-nao" onclick="document.getElementById('upload-tce-nao').click()">
+                 <input type="file" id="upload-tce-nao" accept=".pdf">
+                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m6.75 12H9m1.5-12H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg>
+                 <p>Clique ou arraste o arquivo PDF aqui</p><small>Apenas PDF — máx. 10 MB</small>
+               </div>
+               <div class="file-selected" id="file-tce-nao-info"></div>
+             </div>`;
+        return `
+          <div class="action-card action-card--highlight">
+            <h2>📎 Envie os documentos assinados</h2>
+            <p>Os documentos do seu estágio foram gerados. Faça o download na pasta do Drive, obtenha as assinaturas indicadas e envie os arquivos aqui. <strong>Não inclua a assinatura do Diretor Geral</strong> — ela será obtida pelo setor após sua entrega.</p>
+            <div id="feedback-upload"></div>
+
+            <!-- Solicitação de Ingresso -->
+            <div class="form-group">
+              <label class="form-label">Solicitação de Ingresso (assinada) <span style="color:var(--color-error)">*</span></label>
+              <div class="upload-area" id="drop-solicitacao" onclick="document.getElementById('upload-solicitacao').click()">
+                <input type="file" id="upload-solicitacao" accept=".pdf">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m6.75 12H9m1.5-12H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg>
+                <p>Clique ou arraste o arquivo PDF aqui</p><small>Apenas PDF — máx. 10 MB</small>
+              </div>
+              <div class="file-selected" id="file-sol-info"></div>
+            </div>
+
+            ${tipoTce}
+
+            <div style="margin-top:var(--space-4)">
+              <button id="btn-enviar-docs" class="btn btn-primary" onclick="enviarDocumentos()">Enviar Documentos</button>
+            </div>
+          </div>`;
+      }
+
+      if (s.status === 'Reprovado') {
+        return `
+          <div class="action-card" style="border-color:var(--color-error);background:var(--color-error-light)">
+            <h2 style="color:var(--color-error)">❌ Solicitação Reprovada</h2>
+            <p>Sua solicitação foi reprovada pelo setor de estágios. Veja o motivo abaixo e entre em contato se necessário.</p>
+          </div>`;
+      }
+
+      if (s.status === 'Em execução') {
+        return `
+          <div class="action-card" style="border-color:var(--color-success);background:var(--color-success-light)">
+            <h2 style="color:var(--color-success)">✅ Estágio em Execução</h2>
+            <p>Seu estágio foi autorizado e está em andamento. Lembre-se de enviar os relatórios parciais e final nos prazos.</p>
+            <div style="display:flex;gap:var(--space-3);flex-wrap:wrap;margin-top:var(--space-4)">
+              <a href="relatorio-parcial.html" class="btn btn-secondary btn-sm">Enviar Relatório Parcial</a>
+              <a href="relatorio-final.html"   class="btn btn-secondary btn-sm">Enviar Relatório Final</a>
+              <a href="adendo.html"             class="btn btn-ghost btn-sm">Solicitar Adendo ao TCE</a>
+            </div>
+          </div>`;
+      }
+
+      if (s.status === 'Encerrado') {
+        return `
+          <div class="action-card" style="border-color:var(--color-border)">
+            <h2>Estágio Encerrado</h2>
+            <p>Este estágio foi concluído. Consulte os documentos na pasta do Drive.</p>
+          </div>`;
+      }
+
+      // Statuses de espera (Pendente, Em análise, Docs Enviados, Aguardando DG...)
+      const mensagens = {
+        'Pendente':                  '⏳ Sua solicitação foi recebida e está na fila de análise do setor de estágios.',
+        'Em análise':                '🔍 O setor de estágios está analisando sua solicitação. Em breve você receberá uma resposta.',
+        'Docs Enviados':             '📨 Seus documentos foram recebidos. O setor está revisando antes de encaminhar ao Diretor Geral.',
+        'Aguardando DG':             '✍️ O Diretor Geral está assinando os documentos. Aguarde a conclusão do processo.',
+        'Aguardando Validação Final':'🔎 O setor está verificando a assinatura do Diretor Geral. O processo será concluído em breve.',
+      };
+      const msg = mensagens[s.status] || 'Aguardando próxima etapa do processo.';
+      return `
+        <div class="action-card" style="background:var(--color-info-light);border-color:var(--color-info-border)">
+          <h2>Status: ${escapeHtml(s.status)}</h2>
+          <p>${msg}</p>
+        </div>`;
+    }
+
+    /* ════════════════════════════════════════
+       UPLOAD
+    ════════════════════════════════════════ */
+    function initUpload(inputId, key) {
+      const input = document.getElementById(inputId);
+      if (!input) return;
+      input.addEventListener('change', () => {
+        const file = input.files[0];
+        if (!file) return;
+        if (file.type !== 'application/pdf') { alert('Apenas arquivos PDF são aceitos.'); input.value = ''; return; }
+        if (file.size > 10 * 1024 * 1024) { alert('Arquivo muito grande. Máximo: 10 MB.'); input.value = ''; return; }
+        _arquivos[key] = file;
+        const infoId = { solicitacao: 'file-sol-info', tce: 'file-tce-info', tce_nao_obrig: 'file-tce-nao-info' }[key];
+        const info = document.getElementById(infoId);
+        if (info) {
+          info.innerHTML = `✓ ${escapeHtml(file.name)} (${(file.size/1024).toFixed(1)} KB)`;
+          info.classList.add('show');
+        }
+      });
+
+      // Drag & drop
+      const dropId = { solicitacao: 'drop-solicitacao', tce: 'drop-tce', tce_nao_obrig: 'drop-tce-nao' }[key];
+      const drop = document.getElementById(dropId);
+      if (!drop) return;
+      drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('drag-over'); });
+      drop.addEventListener('dragleave', () => drop.classList.remove('drag-over'));
+      drop.addEventListener('drop', e => {
+        e.preventDefault(); drop.classList.remove('drag-over');
+        const file = e.dataTransfer.files[0];
+        if (file) { input.files = e.dataTransfer.files; input.dispatchEvent(new Event('change')); }
+      });
+    }
+
+    async function enviarDocumentos() {
+      const btn = document.getElementById('btn-enviar-docs');
+      const feedbackId = 'feedback-upload';
+
+      // Valida arquivos
+      const tipo = _atual?.tipoEstagio;
+      const temSol = _arquivos.solicitacao;
+      const temTce = tipo === 'Obrigatório' ? _arquivos.tce : _arquivos.tce_nao_obrig;
+
+      if (!temSol || !temTce) {
+        showFormFeedback(feedbackId, 'error', 'Arquivos obrigatórios', 'Selecione todos os documentos antes de enviar.');
+        return;
+      }
+
+      btn.classList.add('is-loading'); btn.disabled = true;
+      hideFormFeedback(feedbackId);
+
+      try {
+        // Converte arquivos para base64
+        const [b64Sol, b64Tce] = await Promise.all([
+          fileToBase64(tipo === 'Obrigatório' ? _arquivos.tce : _arquivos.tce_nao_obrig),
+          fileToBase64(_arquivos.solicitacao),
+        ]);
+
+        await API.post('enviarDocumentosAssinados', {
+          idEstagio: _atual.id,
+          authToken: getAccessToken(),
+          arquivos: {
+            tce:        { nome: (tipo === 'Obrigatório' ? _arquivos.tce : _arquivos.tce_nao_obrig).name, base64: b64Sol },
+            solicitacao:{ nome: _arquivos.solicitacao.name, base64: b64Tce },
+          },
+        });
+
+        showFormFeedback(feedbackId, 'success', 'Documentos enviados!',
+          'O setor de estágios irá revisar e encaminhar ao Diretor Geral. Você será notificado por e-mail.');
+        btn.textContent = 'Enviado ✓';
+
+        // Recarrega após 3s para atualizar status
+        setTimeout(() => carregarEstagios(), 3000);
+      } catch (err) {
+        showFormFeedback(feedbackId, 'error', 'Erro no envio', err.message);
+        btn.classList.remove('is-loading'); btn.disabled = false;
+      }
+    }
+
+    function fileToBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload  = () => resolve(reader.result.split(',')[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    /* ════════════════════════════════════════
+       HELPERS
+    ════════════════════════════════════════ */
+    function badgeStatus(status) {
+      const m = {
+        'Pendente':'badge-pending','Em análise':'badge-analysis','Aguardando Documentos':'badge-approved',
+        'Docs Enviados':'badge-docs','Aguardando DG':'badge-dg','Aguardando Validação Final':'badge-dg',
+        'Em execução':'badge-running','Encerrado':'badge-closed','Reprovado':'badge-rejected',
+      };
+      return `<span class="badge ${m[status]||'badge-closed'}">${escapeHtml(status||'—')}</span>`;
+    }
+  </script>
+</body>
+</html>

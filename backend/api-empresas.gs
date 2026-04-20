@@ -28,13 +28,13 @@ var CFG = {
   EMAIL_SETOR: 'estagios@riogrande.ifrs.edu.br',
   NOME_SETOR:  'Central de Estágios — IFRS Campus Rio Grande',
 
-  // IDs das planilhas
-  ID_EMPRESAS:     '1pbngqAv9hjqlVMF50SIz-3wD2F94__-QA9DawBjMTKk',
-  ID_SUPERVISORES: '1Mw5huiOG0tzSD_hjCi1Llb_A9olgh-sqytNX8CKGhfE',
-  ID_OPORTUNIDADES:'', // Preencher após criar a planilha de oportunidades
+  // Planilha consolidada SGE (todas as abas)
+  ID_EMPRESAS:     '1iAnurghOelZQiYMIevO1xxnx0ptz5bxyniuUe5KZx3Y',
+  ID_SUPERVISORES: '1iAnurghOelZQiYMIevO1xxnx0ptz5bxyniuUe5KZx3Y',
+  ID_OPORTUNIDADES:'1iAnurghOelZQiYMIevO1xxnx0ptz5bxyniuUe5KZx3Y',
 
-  ABA_EMPRESAS:     'Empresas Cadastradas',
-  ABA_SUP_RESPOSTAS:'Respostas ao formulário 1',
+  ABA_EMPRESAS:     'Empresas',
+  ABA_SUP_RESPOSTAS:'Supervisores',
   ABA_OPP:          'Oportunidades',
   ABA_LOG:          'Log de Alterações',
 

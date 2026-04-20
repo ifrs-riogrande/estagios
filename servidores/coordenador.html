@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cadastro de Coordenador de Curso — Central de Estágios IFRS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/base.css">
+  <link rel="stylesheet" href="../assets/css/components.css">
+  <link rel="stylesheet" href="../assets/css/layout.css">
+</head>
+<body>
+
+  <header id="app-header">
+    <div class="container">
+      <div class="header-inner">
+        <a href="../index.html" class="header-brand">
+          <div class="header-logo-fallback" aria-hidden="true">IFRS</div>
+          <div class="header-brand-text">
+            <span class="header-brand-name">Central de Estágios</span>
+            <span class="header-brand-sub">IFRS Campus Rio Grande</span>
+          </div>
+        </a>
+        <div style="display:flex;align-items:center;gap:var(--space-3);">
+          <div id="header-user-area"></div>
+          <a href="index.html" class="back-link">
+            <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd"/></svg>
+            Servidores
+          </a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="form-page" id="main-content">
+    <div class="container">
+      <div class="form-wrapper">
+        <div class="form-page-header">
+          <h1>Cadastro de Coordenador de Curso</h1>
+          <p>Preencha seus dados para ser cadastrado como coordenador e participar do fluxo de aprovação das solicitações de estágio vinculadas ao seu curso.</p>
+        </div>
+
+        <div class="info-banner" role="note">
+          O e-mail institucional será preenchido automaticamente com base no seu login Google. Após o cadastro, seu nome ficará disponível para seleção nas solicitações de estágio do curso que você coordena.
+        </div>
+
+        <form id="form-coordenador" novalidate>
+
+          <!-- Seção 1 — Dados Pessoais -->
+          <div class="form-section">
+            <h2 class="form-section-title">
+              <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"/></svg>
+              Dados Pessoais
+            </h2>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label required" for="nome">Nome completo</label>
+                <input type="text" id="nome" name="nome" class="form-control"
+                  placeholder="Nome conforme documento oficial"
+                  required aria-required="true" autocomplete="name">
+              </div>
+              <div class="form-group">
+                <label class="form-label required" for="cpf">CPF</label>
+                <input type="text" id="cpf" name="cpf" class="form-control"
+                  placeholder="000.000.000-00" maxlength="14"
+                  required aria-required="true" inputmode="numeric">
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label required" for="siape">Matrícula SIAPE</label>
+                <input type="text" id="siape" name="siape" class="form-control"
+                  placeholder="0000000" maxlength="10"
+                  required aria-required="true" inputmode="numeric">
+              </div>
+              <div class="form-group">
+                <label class="form-label required" for="email">E-mail institucional</label>
+                <input type="email" id="email" name="email" class="form-control"
+                  placeholder="Preenchido automaticamente"
+                  readonly aria-readonly="true" tabindex="-1">
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="telefone">Telefone / Ramal</label>
+                <input type="tel" id="telefone" name="telefone" class="form-control"
+                  placeholder="(53) 99999-9999" autocomplete="tel">
+              </div>
+              <div class="form-group">
+                <label class="form-label required" for="titulacao">Titulação</label>
+                <select id="titulacao" name="titulacao" class="form-control" required aria-required="true">
+                  <option value="">Selecione…</option>
+                  <option value="Especialista">Especialista</option>
+                  <option value="Mestre">Mestre</option>
+                  <option value="Doutor">Doutor</option>
+                  <option value="Pós-Doutor">Pós-Doutor</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Seção 2 — Curso Coordenado -->
+          <div class="form-section">
+            <h2 class="form-section-title">
+              <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3zM3.31 9.397L5 10.12v4.102a8.969 8.969 0 00-1.05-.174 1 1 0 01-.89-.89 11.115 11.115 0 01.25-3.762zM9.3 16.573A9.026 9.026 0 007 14.935v-3.957l1.818.78a3 3 0 002.364 0l5.508-2.361a11.026 11.026 0 01.25 3.762 1 1 0 01-.89.89 8.968 8.968 0 00-5.35 2.524 1 1 0 01-1.4 0zM6 18a1 1 0 001-1v-2.065a8.935 8.935 0 00-2-.712V17a1 1 0 001 1z"/></svg>
+              Curso Coordenado
+            </h2>
+
+            <div class="form-group">
+              <label class="form-label required" for="curso">Curso que coordena</label>
+              <select id="curso" name="curso" class="form-control" required aria-required="true">
+                <option value="">Selecione o curso…</option>
+                <option value="Técnico em Administração">Técnico em Administração</option>
+                <option value="Técnico em Informática">Técnico em Informática</option>
+                <option value="Técnico em Eletrotécnica">Técnico em Eletrotécnica</option>
+                <option value="Técnico em Mecânica">Técnico em Mecânica</option>
+                <option value="Técnico em Química">Técnico em Química</option>
+                <option value="Técnico em Edificações">Técnico em Edificações</option>
+                <option value="Técnico em Controle Ambiental">Técnico em Controle Ambiental</option>
+                <option value="Tecnologia em Gestão Ambiental">Tecnologia em Gestão Ambiental</option>
+                <option value="Tecnologia em Análise e Desenvolvimento de Sistemas">Tecnologia em Análise e Desenvolvimento de Sistemas</option>
+                <option value="Licenciatura em Computação">Licenciatura em Computação</option>
+                <option value="Licenciatura em Química">Licenciatura em Química</option>
+                <option value="Bacharelado em Engenharia de Controle e Automação">Bacharelado em Engenharia de Controle e Automação</option>
+                <option value="Outro">Outro (especificar abaixo)</option>
+              </select>
+            </div>
+
+            <div class="form-group" id="grupo-curso-outro" style="display:none">
+              <label class="form-label required" for="curso-outro">Nome do curso</label>
+              <input type="text" id="curso-outro" name="cursoOutro" class="form-control"
+                placeholder="Digite o nome completo do curso">
+            </div>
+          </div>
+
+          <!-- Feedback e botão -->
+          <div id="form-feedback"></div>
+
+          <div class="form-actions">
+            <button type="submit" id="btn-submit" class="btn btn-primary btn-lg">
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+              Cadastrar como Coordenador
+            </button>
+          </div>
+
+        </form>
+      </div>
+    </div>
+  </main>
+
+  <footer id="app-footer">
+    <div class="container">
+      <div class="footer-inner">
+        <span class="footer-copy">&copy; <script>document.write(new Date().getFullYear())</script> Central de Estágios — IFRS Campus Rio Grande</span>
+        <nav class="footer-links"><a href="mailto:estagios@riogrande.ifrs.edu.br">estagios@riogrande.ifrs.edu.br</a></nav>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://accounts.google.com/gsi/client" async></script>
+  <script src="../assets/js/utils.js"></script>
+  <script src="../assets/js/auth.js"></script>
+  <script src="../assets/js/api.js"></script>
+  <script>
+    'use strict';
+
+    document.addEventListener('DOMContentLoaded', function () {
+      // Exige login de servidor
+      const ok = requireStaffAuth();
+      if (!ok) return;
+
+      // Preenche e-mail automaticamente
+      const emailInput = document.getElementById('email');
+      const userEmail = getCurrentUserEmail();
+      if (userEmail) emailInput.value = userEmail;
+
+      // Exibe campo "outro curso" condicionalmente
+      document.getElementById('curso').addEventListener('change', function () {
+        const grupo = document.getElementById('grupo-curso-outro');
+        const input = document.getElementById('curso-outro');
+        if (this.value === 'Outro') {
+          grupo.style.display = '';
+          input.required = true;
+        } else {
+          grupo.style.display = 'none';
+          input.required = false;
+          input.value = '';
+        }
+      });
+
+      // Máscara CPF
+      document.getElementById('cpf').addEventListener('input', function () {
+        this.value = maskCPF(this.value);
+      });
+
+      // Submit
+      document.getElementById('form-coordenador').addEventListener('submit', async function (e) {
+        e.preventDefault();
+        if (!validarFormulario()) return;
+
+        const btn = document.getElementById('btn-submit');
+        const cursoVal = document.getElementById('curso').value;
+        const cursoFinal = cursoVal === 'Outro'
+          ? document.getElementById('curso-outro').value.trim()
+          : cursoVal;
+
+        await submitWithFeedback(
+          () => API.post('cadastrarCoordenador', {
+            nome:       document.getElementById('nome').value.trim(),
+            cpf:        document.getElementById('cpf').value.trim(),
+            siape:      document.getElementById('siape').value.trim(),
+            email:      document.getElementById('email').value.trim(),
+            telefone:   document.getElementById('telefone').value.trim(),
+            titulacao:  document.getElementById('titulacao').value,
+            curso:      cursoFinal,
+            authToken:  getAccessToken(),
+          }),
+          btn,
+          'form-feedback',
+          'Cadastro realizado!',
+          'Seus dados foram registrados com sucesso. Você já pode ser selecionado como coordenador nas solicitações do seu curso.',
+          () => { document.getElementById('form-coordenador').reset(); document.getElementById('email').value = userEmail || ''; }
+        );
+      });
+    });
+
+    function validarFormulario() {
+      clearValidationErrors();
+      let valido = true;
+      const obrigatorios = ['nome','cpf','siape','titulacao','curso'];
+      obrigatorios.forEach(id => {
+        const el = document.getElementById(id);
+        if (!el || !el.value.trim()) {
+          setFieldError(el, 'Campo obrigatório.');
+          valido = false;
+        }
+      });
+      if (document.getElementById('curso').value === 'Outro') {
+        const outro = document.getElementById('curso-outro');
+        if (!outro.value.trim()) { setFieldError(outro, 'Informe o nome do curso.'); valido = false; }
+      }
+      const cpf = document.getElementById('cpf').value.replace(/\D/g,'');
+      if (cpf && cpf.length !== 11) {
+        setFieldError(document.getElementById('cpf'), 'CPF inválido.');
+        valido = false;
+      }
+      return valido;
+    }
+
+    function maskCPF(v) {
+      v = v.replace(/\D/g,'').slice(0,11);
+      if (v.length > 9) return v.replace(/(\d{3})(\d{3})(\d{3})(\d{0,2})/,'$1.$2.$3-$4');
+      if (v.length > 6) return v.replace(/(\d{3})(\d{3})(\d{0,3})/,'$1.$2.$3');
+      if (v.length > 3) return v.replace(/(\d{3})(\d{0,3})/,'$1.$2');
+      return v;
+    }
+
+    function setFieldError(el, msg) {
+      if (!el) return;
+      el.classList.add('is-invalid');
+      const err = document.createElement('span');
+      err.className = 'form-error';
+      err.textContent = msg;
+      el.parentNode.appendChild(err);
+    }
+
+    function clearValidationErrors() {
+      document.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+      document.querySelectorAll('.form-error').forEach(el => el.remove());
+    }
+  </script>
+</body>
+</html>

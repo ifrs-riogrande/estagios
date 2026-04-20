@@ -245,6 +245,80 @@ async function apiDashboard() {
 }
 
 // ─────────────────────────────────────────
+//  ADMIN — chamadas restritas ao setor
+// ─────────────────────────────────────────
+
+/** Lista solicitações para o admin (requer token Admin). */
+async function apiListarSolicitacoesAdmin(filtros = {}) {
+  return API.get('listarSolicitacoesAdmin', { authToken: getAccessToken(), ...filtros });
+}
+
+/** Lista documentos por etapa do fluxo. */
+async function apiListarDocumentosAdmin() {
+  return API.get('listarDocumentosAdmin', { authToken: getAccessToken() });
+}
+
+/** Lista alunos cadastrados. */
+async function apiListarAlunosAdmin(filtros = {}) {
+  return API.get('listarAlunosAdmin', { authToken: getAccessToken(), ...filtros });
+}
+
+/** Lista empresas (admin). */
+async function apiListarEmpresasAdmin(filtros = {}) {
+  return API.get('listarEmpresasAdmin', { authToken: getAccessToken(), ...filtros });
+}
+
+/** Lista orientadores (admin). */
+async function apiListarOrientadoresAdmin() {
+  return API.get('listarOrientadoresAdmin', { authToken: getAccessToken() });
+}
+
+/** Lista adendos (admin). */
+async function apiListarAdendosAdmin(filtros = {}) {
+  return API.get('listarAdendosAdmin', { authToken: getAccessToken(), ...filtros });
+}
+
+/** Lista agentes (admin). */
+async function apiListarAgentesAdmin() {
+  return API.get('listarAgentesAdmin', { authToken: getAccessToken() });
+}
+
+/** Aprova uma solicitação de estágio. */
+async function apiAprovarSolicitacao(idEstagio) {
+  return API.post('aprovarSolicitacao', { idEstagio, authToken: getAccessToken() });
+}
+
+/** Reprova uma solicitação. */
+async function apiReprovarSolicitacao(idEstagio, motivoReprovacao) {
+  return API.post('reprovarSolicitacao', { idEstagio, motivoReprovacao, authToken: getAccessToken() });
+}
+
+/** Valida documentos enviados pelo estudante → notifica DG. */
+async function apiValidarDocumentos(idEstagio) {
+  return API.post('validarDocumentos', { idEstagio, authToken: getAccessToken() });
+}
+
+/** Ativa estágio após assinatura do DG. */
+async function apiValidarDocumentosDG(idEstagio) {
+  return API.post('validarDocumentosDG', { idEstagio, authToken: getAccessToken() });
+}
+
+/** Lista estágios do estudante logado. */
+async function apiListarMeusEstagios() {
+  return API.get('listarMeusEstagios', { authToken: getAccessToken() });
+}
+
+/** Envia documentos assinados pelo estudante (base64). */
+async function apiEnviarDocumentosAssinados(dados) {
+  return API.post('enviarDocumentosAssinados', { ...dados, authToken: getAccessToken() });
+}
+
+/** Cadastra coordenador de curso. */
+async function apiCadastrarCoordenador(dados) {
+  return API.post('cadastrarCoordenador', dados);
+}
+
+// ─────────────────────────────────────────
 //  UTILITÁRIO: wrapper com loading e feedback
 //  Uso nos formulários para reduzir boilerplate.
 // ─────────────────────────────────────────

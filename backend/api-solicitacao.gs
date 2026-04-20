@@ -54,9 +54,15 @@ var COL_SOL = {
   LINK_DOC_MAT:      25,   // matrícula
   LINK_DOC_ID:       26,   // identidade
   LINK_DOC_BOL:      27,   // boletim
-  STATUS:            28,   // Pendente / Em análise / Aprovado / Ativo / Encerrado / Cancelado
-  LINK_PASTA_DRIVE:  29,
-  OBS_SETOR:         30,
+  STATUS:            28,   // Pendente / Em análise / Aguardando Documentos / etc.
+  OBS_SETOR:         29,   // Observações do setor
+  MOTIVO_REPROVACAO: 30,   // Motivo de reprovação de documentos
+  DRIVE_URL:         31,   // URL da pasta no Drive (alias: LINK_PASTA_DRIVE)
+  DATA_APROVACAO:    32,   // Data de aprovação da solicitação
+  DATA_DOC_ENVIADO:  33,   // Data em que o estudante enviou os documentos assinados
+  DATA_ATIVACAO:     34,   // Data de ativação do estágio
+  OBJETIVOS:         35,   // Objetivos do estágio (campo da solicitação)
+  FORMANDO:          36,   // "Sim" ou "Não" — último semestre/ano letivo
 };
 
 /** Colunas da aba Relatórios Parciais (base 0). */
@@ -171,6 +177,8 @@ function solicitarEstagio_(dados) {
   var valorBolsa     = sanitizar_(dados.valorBolsa, 20);
   var valorTransp    = sanitizar_(dados.valorTransporte, 20);
   var planoAtiv      = sanitizar_(dados.planoAtividades, 2000);
+  var objetivos      = sanitizar_(dados.objetivos, 2000);
+  var formando       = sanitizar_(dados.formando, 50).indexOf('Sim') === 0 ? 'Sim' : 'Não';
   var docMat         = sanitizar_(dados.docMatricula, 200);
   var docId          = sanitizar_(dados.docIdentidade, 200);
   var docBol         = sanitizar_(dados.docBoletim, 200);
@@ -183,6 +191,8 @@ function solicitarEstagio_(dados) {
   if (!dataInicio)     return jsonError_('Data de início é obrigatória.', 'VALIDATION');
   if (!dataTermino)    return jsonError_('Data de término é obrigatória.', 'VALIDATION');
   if (!cargaHor)       return jsonError_('Carga horária é obrigatória.', 'VALIDATION');
+  if (!objetivos || objetivos.length < 20)
+    return jsonError_('Objetivos do estágio são obrigatórios (mínimo 20 caracteres).', 'VALIDATION');
 
   // Data início deve ser >= hoje + 7 dias
   var hoje    = new Date(); hoje.setHours(0, 0, 0, 0);
@@ -198,9 +208,9 @@ function solicitarEstagio_(dados) {
   // Gera ID único
   var idEstagio = gerarIdEstagio_();
 
-  // Cria pasta no Drive
-  var ano      = new Date().getFullYear();
-  var linkPasta= criarPastaEstagio_(idEstagio, ano, estudante.curso, estudante.matricula, estudante.nome);
+  // Nota: a pasta no Drive é criada somente quando o setor APROVAR a solicitação
+  // (api-admin.gs :: aprovarSolicitacao_ → criarPastaEstagioNova_).
+  // Não criamos pasta aqui para não gerar lixo caso a solicitação seja reprovada.
 
   // Monta linha
   var now  = new Date();
@@ -233,12 +243,15 @@ function solicitarEstagio_(dados) {
   linha[COL_SOL.VALOR_BOLSA]      = valorBolsa;
   linha[COL_SOL.VALOR_TRANSPORTE] = valorTransp;
   linha[COL_SOL.PLANO_ATIVIDADES] = planoAtiv;
+  linha[COL_SOL.OBJETIVOS]        = objetivos;
+  linha[COL_SOL.FORMANDO]         = formando;
   linha[COL_SOL.LINK_DOC_MAT]     = docMat;
   linha[COL_SOL.LINK_DOC_ID]      = docId;
   linha[COL_SOL.LINK_DOC_BOL]     = docBol;
   linha[COL_SOL.STATUS]           = 'Pendente';
-  linha[COL_SOL.LINK_PASTA_DRIVE] = linkPasta;
   linha[COL_SOL.OBS_SETOR]        = '';
+  linha[COL_SOL.MOTIVO_REPROVACAO]= '';
+  linha[COL_SOL.DRIVE_URL]        = '';
 
   sheet.appendRow(linha);
 
@@ -548,4 +561,323 @@ function obterOuCriarAba_(ss, nomeAba, cabecalho) {
     }
   }
   return sheet;
+}
+
+// ---------------------------------------------------------------------------
+// GET — Listar estágios do estudante logado
+// ---------------------------------------------------------------------------
+
+/**
+ * Retorna todos os estágios do estudante autenticado.
+ * Rota: GET ?action=listarMeusEstagios&authToken=...
+ *
+ * Resposta: array de objetos com os dados resumidos do estágio.
+ */
+function listarMeusEstagios_(e) {
+  try {
+    var token     = e.parameter && e.parameter.authToken;
+    var tokenInfo = validarTokenEstudante_(token);
+    var email     = tokenInfo.email.toLowerCase();
+
+    var ss    = SpreadsheetApp.openById(CFG_SOL.SS_ID);
+    var sheet = ss.getSheetByName(CFG_SOL.ABA_SOL);
+    if (!sheet) return jsonOk_([]);
+
+    var dados = sheet.getDataRange().getValues();
+    var lista = [];
+
+    for (var i = 1; i < dados.length; i++) {
+      var r = dados[i];
+      if (String(r[COL_SOL.EMAIL_ESTUDANTE] || '').trim().toLowerCase() !== email) continue;
+
+      lista.push({
+        id:               String(r[COL_SOL.ID_ESTAGIO]        || ''),
+        status:           String(r[COL_SOL.STATUS]             || 'Pendente'),
+        tipoEstagio:      String(r[COL_SOL.TIPO_ESTAGIO]       || ''),
+        empresa:          String(r[COL_SOL.NOME_EMPRESA]       || ''),
+        curso:            String(r[COL_SOL.CURSO]              || ''),
+        dataInicio:       formatarData_(r[COL_SOL.DATA_INICIO]),
+        dataTermino:      formatarData_(r[COL_SOL.DATA_TERMINO]),
+        driveUrl:         String(r[COL_SOL.DRIVE_URL]          || ''),
+        motivoReprovacao: String(r[COL_SOL.MOTIVO_REPROVACAO]  || ''),
+        obsSetor:         String(r[COL_SOL.OBS_SETOR]          || ''),
+      });
+    }
+
+    // Mais recente primeiro (por ID decrescente)
+    lista.sort(function (a, b) { return b.id.localeCompare(a.id); });
+
+    return jsonOk_(lista);
+
+  } catch (err) {
+    if (err instanceof ErroAutenticacao) return jsonError_(err.message, 'AUTH_ERROR');
+    logErro_('listarMeusEstagios_', err);
+    return jsonError_('Erro ao carregar seus estágios.', 'INTERNAL');
+  }
+}
+
+// ---------------------------------------------------------------------------
+// POST — Enviar documentos assinados pelo estudante
+// ---------------------------------------------------------------------------
+
+/**
+ * Recebe os PDFs assinados pelo estudante (TCE + Solicitação de Ingresso)
+ * em base64, salva na pasta do Drive do estágio e muda o status para
+ * "Docs Enviados".
+ *
+ * Body: {
+ *   idEstagio : string,
+ *   authToken : string,
+ *   arquivos  : {
+ *     tce          : { nome: string, base64: string },  // obrigatório
+ *     solicitacao  : { nome: string, base64: string },  // opcional p/ alguns tipos
+ *   }
+ * }
+ */
+function enviarDocumentosAssinados_(body) {
+  var tokenInfo = validarTokenEstudante_(body.authToken);
+
+  if (!checkRateLimit_('enviarDocumentosAssinados')) {
+    return jsonError_('Muitas requisições. Aguarde um momento.', 'RATE_LIMIT');
+  }
+
+  var idEstagio = sanitizar_(body.idEstagio, 20).toUpperCase().trim();
+  if (!idEstagio.match(/^RG\d{2}-[A-Z0-9]{4}-[A-Z0-9]{4}$/)) {
+    return jsonError_('ID do estágio inválido.', 'VALIDATION');
+  }
+
+  var arquivos = body.arquivos || {};
+  var arqTce   = arquivos.tce;
+  if (!arqTce || !arqTce.base64 || !arqTce.nome) {
+    return jsonError_('O arquivo do TCE é obrigatório.', 'VALIDATION');
+  }
+  // Valida tamanho do base64 (~10 MB → ~13,6 M chars em base64)
+  if (arqTce.base64.length > 14000000) {
+    return jsonError_('Arquivo do TCE muito grande (máx. 10 MB).', 'VALIDATION');
+  }
+  if (arquivos.solicitacao && arquivos.solicitacao.base64 &&
+      arquivos.solicitacao.base64.length > 14000000) {
+    return jsonError_('Arquivo da Solicitação muito grande (máx. 10 MB).', 'VALIDATION');
+  }
+
+  // Localiza o registro na planilha
+  var ss    = SpreadsheetApp.openById(CFG_SOL.SS_ID);
+  var sheet = ss.getSheetByName(CFG_SOL.ABA_SOL);
+  if (!sheet) return jsonError_('Planilha não encontrada.', 'INTERNAL');
+
+  var dados  = sheet.getDataRange().getValues();
+  var linhaIdx = -1;
+  for (var i = 1; i < dados.length; i++) {
+    if (String(dados[i][COL_SOL.ID_ESTAGIO] || '').trim() === idEstagio &&
+        String(dados[i][COL_SOL.EMAIL_ESTUDANTE] || '').trim().toLowerCase() === tokenInfo.email.toLowerCase()) {
+      linhaIdx = i;
+      break;
+    }
+  }
+  if (linhaIdx === -1) {
+    return jsonError_('Estágio não encontrado ou não pertence à sua conta.', 'NOT_FOUND');
+  }
+
+  var statusAtual = String(dados[linhaIdx][COL_SOL.STATUS] || '');
+  if (statusAtual !== 'Aguardando Documentos') {
+    return jsonError_(
+      'Este estágio não está aguardando documentos (status atual: ' + statusAtual + ').',
+      'INVALID_STATE'
+    );
+  }
+
+  // Recupera URL da pasta do Drive
+  var driveUrl = String(dados[linhaIdx][COL_SOL.DRIVE_URL] || '');
+  var folder;
+  try {
+    var folderId = driveUrl.match(/[-\w]{25,}/);
+    if (!folderId) throw new Error('URL inválida');
+    folder = DriveApp.getFolderById(folderId[0]);
+  } catch (e) {
+    return jsonError_('Não foi possível acessar a pasta do Drive: ' + e.message, 'DRIVE_ERROR');
+  }
+
+  // Salva TCE
+  try {
+    var nomeTce  = sanitizarNomeArquivo_(arqTce.nome) || ('TCE_Assinado_' + idEstagio + '.pdf');
+    var blobTce  = Utilities.newBlob(Utilities.base64Decode(arqTce.base64), 'application/pdf', nomeTce);
+    var arqExistenteTce = folder.getFilesByName(nomeTce);
+    while (arqExistenteTce.hasNext()) { arqExistenteTce.next().setTrashed(true); }
+    folder.createFile(blobTce);
+  } catch (e) {
+    logErro_('enviarDocumentosAssinados_.saveTce', e);
+    return jsonError_('Erro ao salvar TCE no Drive: ' + e.message, 'DRIVE_ERROR');
+  }
+
+  // Salva Solicitação de Ingresso (se enviada)
+  if (arquivos.solicitacao && arquivos.solicitacao.base64) {
+    try {
+      var nomeSol  = sanitizarNomeArquivo_(arquivos.solicitacao.nome) || ('Solicitacao_Assinada_' + idEstagio + '.pdf');
+      var blobSol  = Utilities.newBlob(Utilities.base64Decode(arquivos.solicitacao.base64), 'application/pdf', nomeSol);
+      var arqExistenteSol = folder.getFilesByName(nomeSol);
+      while (arqExistenteSol.hasNext()) { arqExistenteSol.next().setTrashed(true); }
+      folder.createFile(blobSol);
+    } catch (e) {
+      logErro_('enviarDocumentosAssinados_.saveSol', e);
+      // Não aborta — TCE já foi salvo; apenas registra
+    }
+  }
+
+  // Atualiza planilha: status → "Docs Enviados", timestamp
+  var rowNum = linhaIdx + 1;
+  sheet.getRange(rowNum, COL_SOL.STATUS          + 1).setValue('Docs Enviados');
+  sheet.getRange(rowNum, COL_SOL.DATA_DOC_ENVIADO+ 1).setValue(new Date());
+
+  // Notifica o setor
+  try {
+    var nomeEstudante = String(dados[linhaIdx][COL_SOL.NOME_ESTUDANTE] || tokenInfo.email);
+    enviarEmailDocsEnviados_({
+      idEstagio:     idEstagio,
+      nomeEstudante: nomeEstudante,
+      emailEstudante:tokenInfo.email,
+    });
+  } catch (e) { logErro_('enviarDocumentosAssinados_.mail', e); }
+
+  return jsonOk_({ mensagem: 'Documentos enviados com sucesso! O setor irá verificar e encaminhará ao Diretor Geral.' });
+}
+
+// ---------------------------------------------------------------------------
+// POST — Enviar documento assinado pelo Diretor Geral
+// ---------------------------------------------------------------------------
+
+/**
+ * Recebe o PDF assinado pelo DG em base64, salva na pasta do Drive do
+ * estágio e muda o status para "Aguardando Validação Final".
+ *
+ * Body: {
+ *   idEstagio : string,
+ *   authToken : string,
+ *   arquivo   : { nome: string, base64: string }
+ * }
+ */
+function enviarDocumentoDG_(body) {
+  // DG usa e-mail @riogrande.ifrs.edu.br (servidor)
+  var tokenInfo;
+  try {
+    tokenInfo = validarTokenServidor_(body.authToken);
+  } catch (e) {
+    return jsonError_(e.message, 'AUTH_ERROR');
+  }
+
+  if (!checkRateLimit_('enviarDocumentoDG')) {
+    return jsonError_('Muitas requisições. Aguarde um momento.', 'RATE_LIMIT');
+  }
+
+  var idEstagio = sanitizar_(body.idEstagio, 20).toUpperCase().trim();
+  if (!idEstagio.match(/^RG\d{2}-[A-Z0-9]{4}-[A-Z0-9]{4}$/)) {
+    return jsonError_('ID do estágio inválido.', 'VALIDATION');
+  }
+
+  var arquivo = body.arquivo;
+  if (!arquivo || !arquivo.base64 || !arquivo.nome) {
+    return jsonError_('Arquivo PDF é obrigatório.', 'VALIDATION');
+  }
+  if (arquivo.base64.length > 14000000) {
+    return jsonError_('Arquivo muito grande (máx. 10 MB).', 'VALIDATION');
+  }
+
+  // Localiza o registro
+  var ss    = SpreadsheetApp.openById(CFG_SOL.SS_ID);
+  var sheet = ss.getSheetByName(CFG_SOL.ABA_SOL);
+  if (!sheet) return jsonError_('Planilha não encontrada.', 'INTERNAL');
+
+  var dados    = sheet.getDataRange().getValues();
+  var linhaIdx = -1;
+  for (var i = 1; i < dados.length; i++) {
+    if (String(dados[i][COL_SOL.ID_ESTAGIO] || '').trim() === idEstagio) {
+      linhaIdx = i;
+      break;
+    }
+  }
+  if (linhaIdx === -1) {
+    return jsonError_('Estágio não encontrado: ' + idEstagio, 'NOT_FOUND');
+  }
+
+  var statusAtual = String(dados[linhaIdx][COL_SOL.STATUS] || '');
+  if (statusAtual !== 'Aguardando DG') {
+    return jsonError_(
+      'Este estágio não está aguardando assinatura do DG (status atual: ' + statusAtual + ').',
+      'INVALID_STATE'
+    );
+  }
+
+  // Acessa a pasta do Drive
+  var driveUrl = String(dados[linhaIdx][COL_SOL.DRIVE_URL] || '');
+  var folder;
+  try {
+    var folderId = driveUrl.match(/[-\w]{25,}/);
+    if (!folderId) throw new Error('URL da pasta inválida');
+    folder = DriveApp.getFolderById(folderId[0]);
+  } catch (e) {
+    return jsonError_('Não foi possível acessar a pasta do Drive: ' + e.message, 'DRIVE_ERROR');
+  }
+
+  // Salva o PDF assinado pelo DG
+  try {
+    var nomeArq   = sanitizarNomeArquivo_(arquivo.nome) || ('TCE_Assinado_DG_' + idEstagio + '.pdf');
+    var blob      = Utilities.newBlob(Utilities.base64Decode(arquivo.base64), 'application/pdf', nomeArq);
+    var existentes = folder.getFilesByName(nomeArq);
+    while (existentes.hasNext()) { existentes.next().setTrashed(true); }
+    folder.createFile(blob);
+  } catch (e) {
+    logErro_('enviarDocumentoDG_.savePdf', e);
+    return jsonError_('Erro ao salvar arquivo no Drive: ' + e.message, 'DRIVE_ERROR');
+  }
+
+  // Atualiza status → "Aguardando Validação Final"
+  var rowNum = linhaIdx + 1;
+  sheet.getRange(rowNum, COL_SOL.STATUS + 1).setValue('Aguardando Validação Final');
+
+  // Notifica o setor
+  try {
+    var nomeEstudante = String(dados[linhaIdx][COL_SOL.NOME_ESTUDANTE] || '');
+    enviarEmailDocDGRecebido_({
+      idEstagio:      idEstagio,
+      nomeEstudante:  nomeEstudante,
+      nomeRemetente:  tokenInfo.name || tokenInfo.email,
+    });
+  } catch (e) { logErro_('enviarDocumentoDG_.mail', e); }
+
+  return jsonOk_({ mensagem: 'Documento enviado com sucesso! O setor irá verificar e ativar o estágio.' });
+}
+
+// ---------------------------------------------------------------------------
+// Helpers locais
+// ---------------------------------------------------------------------------
+
+/**
+ * Sanitiza nome de arquivo: remove caracteres inválidos para Drive/SO.
+ */
+function sanitizarNomeArquivo_(nome) {
+  if (!nome || typeof nome !== 'string') return '';
+  return nome.replace(/[\\/:*?"<>|]/g, '_').trim().slice(0, 200);
+}
+
+/**
+ * Envia e-mail ao setor quando o estudante envia os documentos assinados.
+ */
+function enviarEmailDocsEnviados_(dados) {
+  var adminEmails = ['estagios@riogrande.ifrs.edu.br'];
+  var assunto     = '[SGE] Documentos enviados — ' + dados.idEstagio;
+  var corpo       = 'O estudante ' + dados.nomeEstudante + ' (' + dados.emailEstudante + ') ' +
+                    'enviou os documentos assinados do estágio ' + dados.idEstagio + '.\n\n' +
+                    'Acesse o painel administrativo para verificar e encaminhar ao Diretor Geral.';
+  MailApp.sendEmail({ to: adminEmails.join(','), subject: assunto, body: corpo });
+}
+
+/**
+ * Envia e-mail ao setor quando o DG envia o documento assinado.
+ */
+function enviarEmailDocDGRecebido_(dados) {
+  var adminEmails = ['estagios@riogrande.ifrs.edu.br'];
+  var assunto     = '[SGE] Documento DG recebido — ' + dados.idEstagio;
+  var corpo       = 'O Diretor Geral ' + dados.nomeRemetente + ' enviou o documento assinado ' +
+                    'do estágio ' + dados.idEstagio + ' (' + dados.nomeEstudante + ').\n\n' +
+                    'Acesse o painel administrativo para realizar a validação final e ativar o estágio.';
+  MailApp.sendEmail({ to: adminEmails.join(','), subject: assunto, body: corpo });
 }

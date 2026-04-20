@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Orientadores — Admin · Central de Estágios IFRS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/base.css">
+  <link rel="stylesheet" href="../assets/css/components.css">
+  <link rel="stylesheet" href="../assets/css/layout.css">
+  <style>
+    .admin-toolbar{display:flex;flex-wrap:wrap;gap:var(--space-3);align-items:flex-end;margin-bottom:var(--space-5);}
+    .admin-toolbar .form-group{margin-bottom:0;flex:1;min-width:140px;}
+    .admin-toolbar .form-group label{font-size:var(--font-size-xs);color:var(--color-text-muted);margin-bottom:4px;display:block;}
+    .table-wrap{overflow-x:auto;border-radius:var(--radius-lg);border:1px solid var(--color-border);background:var(--color-surface);}
+    .data-table{width:100%;border-collapse:collapse;font-size:var(--font-size-sm);}
+    .data-table th{background:var(--color-bg);padding:var(--space-3) var(--space-4);text-align:left;font-weight:600;font-size:var(--font-size-xs);color:var(--color-text-muted);text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--color-border);white-space:nowrap;}
+    .data-table td{padding:var(--space-3) var(--space-4);border-bottom:1px solid var(--color-border);vertical-align:middle;}
+    .data-table tr:last-child td{border-bottom:none;}
+    .data-table tr:hover td{background:#F9FAFB;}
+    .td-actions{display:flex;gap:var(--space-2);}
+    .badge{display:inline-flex;align-items:center;gap:4px;padding:2px 10px;border-radius:9999px;font-size:11px;font-weight:600;}
+    .badge::before{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0;}
+    .badge-active {background:var(--color-success-light);color:var(--color-success);}
+    .badge-inactive{background:var(--color-bg);color:var(--color-text-muted);}
+    .badge-warning{background:var(--color-warning-light);color:var(--color-warning);}
+    .badge-error  {background:var(--color-error-light);color:var(--color-error);}
+    .alert-row td{background:var(--color-warning-light)!important;}
+    .alert-row:hover td{background:#FEF3C7!important;}
+    .empty-state{text-align:center;padding:var(--space-12);color:var(--color-text-muted);}
+    .empty-state svg{width:48px;height:48px;margin:0 auto var(--space-4);opacity:.3;}
+    .table-loading{text-align:center;padding:var(--space-12);color:var(--color-text-muted);font-size:var(--font-size-sm);}
+    /* Modal */
+    .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;display:flex;align-items:flex-start;justify-content:center;padding:var(--space-8) var(--space-4);overflow-y:auto;}
+    .modal-overlay.hidden{display:none;}
+    .modal{background:var(--color-surface);border-radius:var(--radius-xl);box-shadow:0 20px 40px rgba(0,0,0,.2);width:100%;max-width:580px;animation:modal-in .2s ease;}
+    @keyframes modal-in{from{opacity:0;transform:translateY(-16px);}}
+    .modal-header{display:flex;align-items:center;justify-content:space-between;padding:var(--space-5) var(--space-6);border-bottom:1px solid var(--color-border);}
+    .modal-header h2{font-size:var(--font-size-lg);font-weight:600;}
+    .modal-close{background:none;border:none;cursor:pointer;color:var(--color-text-muted);padding:var(--space-1);border-radius:var(--radius-md);}
+    .modal-body{padding:var(--space-6);}
+    .detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4) var(--space-6);}
+    @media(max-width:520px){.detail-grid{grid-template-columns:1fr;}}
+    .detail-item label{font-size:var(--font-size-xs);color:var(--color-text-muted);display:block;margin-bottom:2px;font-weight:500;text-transform:uppercase;letter-spacing:.04em;}
+    .detail-item p{font-size:var(--font-size-sm);}
+    .detail-full{grid-column:1/-1;}
+    .modal-footer{padding:var(--space-4) var(--space-6);border-top:1px solid var(--color-border);display:flex;gap:var(--space-3);justify-content:flex-end;flex-wrap:wrap;}
+  </style>
+</head>
+<body>
+
+  <header id="app-header">
+    <div class="container">
+      <div class="header-inner">
+        <a href="../index.html" class="header-brand">
+          <div class="header-logo-fallback" aria-hidden="true">IFRS</div>
+          <div class="header-brand-text">
+            <span class="header-brand-name">Central de Estágios</span>
+            <span class="header-brand-sub">IFRS Campus Rio Grande</span>
+          </div>
+        </a>
+        <div style="display:flex;align-items:center;gap:var(--space-3);">
+          <div id="header-user-area"></div>
+          <a href="index.html" class="back-link">
+            <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd"/></svg>
+            Admin
+          </a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main id="main-content">
+    <section class="page-hero">
+      <div class="container">
+        <h1>Gestão de Orientadores</h1>
+        <p>Acompanhe orientadores ativos e contratos de substitutos próximos ao vencimento.</p>
+      </div>
+    </section>
+
+    <div class="container" style="padding-top:var(--space-6);padding-bottom:var(--space-12);">
+      <div class="admin-toolbar">
+        <div class="form-group" style="min-width:220px;">
+          <label for="busca-ori">Buscar</label>
+          <input type="search" id="busca-ori" class="form-control" placeholder="Nome, SIAPE ou e-mail…">
+        </div>
+        <div class="form-group">
+          <label for="filtro-vinculo">Vínculo</label>
+          <select id="filtro-vinculo" class="form-control">
+            <option value="">Todos</option>
+            <option value="Efetivo">Efetivo</option>
+            <option value="Substituto">Substituto</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="filtro-status">Status</label>
+          <select id="filtro-status" class="form-control">
+            <option value="Ativo" selected>Ativo</option>
+            <option value="Inativo">Inativo</option>
+            <option value="">Todos</option>
+          </select>
+        </div>
+        <div style="display:flex;gap:var(--space-2);align-items:flex-end;">
+          <button id="btn-atualizar" class="btn btn-secondary btn-sm">Atualizar</button>
+        </div>
+      </div>
+
+      <div id="alerta-contratos" style="display:none;background:var(--color-warning-light);border:1px solid var(--color-warning-border);border-radius:var(--radius-md);padding:var(--space-3) var(--space-4);margin-bottom:var(--space-4);font-size:var(--font-size-sm);color:var(--color-warning);">
+        ⚠️ Há contratos de substitutos vencendo em breve (destacados na tabela).
+      </div>
+
+      <div class="table-wrap">
+        <table class="data-table" aria-label="Orientadores">
+          <thead>
+            <tr>
+              <th>Nome</th>
+              <th>SIAPE</th>
+              <th>E-mail</th>
+              <th>Curso(s)</th>
+              <th>Vínculo</th>
+              <th>Fim Contrato</th>
+              <th>Estágios Ativos</th>
+              <th>Status</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-ori">
+            <tr><td colspan="9" class="table-loading">Carregando…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <!-- Modal -->
+  <div id="modal-overlay" class="modal-overlay hidden" role="dialog" aria-modal="true">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 id="modal-title">Orientador</h2>
+        <button class="modal-close" id="btn-modal-close" aria-label="Fechar">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+        </button>
+      </div>
+      <div class="modal-body" id="modal-body"></div>
+      <div class="modal-footer" id="modal-footer"></div>
+    </div>
+  </div>
+
+  <footer id="app-footer">
+    <div class="container">
+      <div class="footer-inner">
+        <span class="footer-copy">&copy; <script>document.write(new Date().getFullYear())</script> Central de Estágios — IFRS Campus Rio Grande</span>
+        <nav class="footer-links"><a href="mailto:estagios@riogrande.ifrs.edu.br">estagios@riogrande.ifrs.edu.br</a></nav>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://accounts.google.com/gsi/client" async></script>
+  <script src="../assets/js/utils.js"></script>
+  <script src="../assets/js/auth.js"></script>
+  <script src="../assets/js/api.js"></script>
+  <script>
+    'use strict';
+    let _dados = [], _filtrados = [], _atual = null;
+    const ALERTA_DIAS = 30;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      if (!requireAdminAuth()) return;
+      carregar();
+      document.getElementById('btn-atualizar').addEventListener('click', carregar);
+      document.getElementById('btn-modal-close').addEventListener('click', fechar);
+      document.getElementById('modal-overlay').addEventListener('click', e => { if (e.target === e.currentTarget) fechar(); });
+      ['busca-ori','filtro-vinculo','filtro-status'].forEach(id =>
+        document.getElementById(id).addEventListener(id === 'busca-ori' ? 'input' : 'change', filtrar));
+    });
+
+    async function carregar() {
+      document.getElementById('tbody-ori').innerHTML = '<tr><td colspan="9" class="table-loading">Carregando…</td></tr>';
+      try {
+        const data = await API.get('listarOrientadoresAdmin', { authToken: getAccessToken() });
+        _dados = Array.isArray(data) ? data : (data.orientadores || []);
+        verificarAlertas();
+        filtrar();
+      } catch (err) {
+        document.getElementById('tbody-ori').innerHTML =
+          `<tr><td colspan="9" class="table-loading" style="color:var(--color-error)">Erro: ${escapeHtml(err.message)}</td></tr>`;
+      }
+    }
+
+    function verificarAlertas() {
+      const hoje = new Date(); hoje.setHours(0,0,0,0);
+      const alerta = _dados.some(o => {
+        if (o.tipoVinculo !== 'Substituto' || o.status === 'Inativo') return false;
+        if (!o.fimContrato) return false;
+        const dt = new Date(o.fimContrato); dt.setHours(0,0,0,0);
+        return Math.round((dt - hoje) / 86400000) <= ALERTA_DIAS;
+      });
+      document.getElementById('alerta-contratos').style.display = alerta ? '' : 'none';
+    }
+
+    function filtrar() {
+      const busca   = document.getElementById('busca-ori').value.toLowerCase().trim();
+      const vinculo = document.getElementById('filtro-vinculo').value;
+      const status  = document.getElementById('filtro-status').value;
+      _filtrados = _dados.filter(o => {
+        if (status  && o.status !== status) return false;
+        if (vinculo && o.tipoVinculo !== vinculo) return false;
+        if (busca) {
+          const t = [o.nome, o.siape, o.email].join(' ').toLowerCase();
+          if (!t.includes(busca)) return false;
+        }
+        return true;
+      });
+      render();
+    }
+
+    function render() {
+      const tb = document.getElementById('tbody-ori');
+      if (_filtrados.length === 0) {
+        tb.innerHTML = `<tr><td colspan="9"><div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 14l9-5-9-5-9 5 9 5z"/></svg><p>Nenhum orientador encontrado.</p></div></td></tr>`;
+        return;
+      }
+      const hoje = new Date(); hoje.setHours(0,0,0,0);
+      tb.innerHTML = _filtrados.map(o => {
+        let diasFim = null, alertaCls = '';
+        if (o.tipoVinculo === 'Substituto' && o.fimContrato) {
+          const dt = new Date(o.fimContrato); dt.setHours(0,0,0,0);
+          diasFim = Math.round((dt - hoje) / 86400000);
+          if (diasFim >= 0 && diasFim <= ALERTA_DIAS) alertaCls = 'alert-row';
+        }
+        const fimHtml = o.fimContrato
+          ? `${escapeHtml(o.fimContrato)}${diasFim !== null && diasFim >= 0 && diasFim <= ALERTA_DIAS ? ` <span style="color:var(--color-warning);font-size:11px">(${diasFim}d)</span>` : ''}`
+          : '—';
+        return `
+        <tr class="${alertaCls}">
+          <td><span style="font-weight:500">${escapeHtml(o.nome||'—')}</span></td>
+          <td>${escapeHtml(o.siape||'—')}</td>
+          <td style="font-size:12px">${escapeHtml(o.email||'—')}</td>
+          <td style="font-size:12px">${escapeHtml((o.cursos||[]).join(', ')||'—')}</td>
+          <td><span class="badge ${o.tipoVinculo==='Substituto'?'badge-warning':'badge-active'}">${escapeHtml(o.tipoVinculo||'—')}</span></td>
+          <td style="font-size:12px">${fimHtml}</td>
+          <td style="text-align:center">${o.estagiosAtivos||0}</td>
+          <td>${o.status==='Ativo' ? '<span class="badge badge-active">Ativo</span>' : '<span class="badge badge-inactive">Inativo</span>'}</td>
+          <td><div class="td-actions">
+            <button class="btn btn-secondary btn-sm" onclick="abrir(${JSON.stringify(o).replace(/"/g,'&quot;')})">Ver</button>
+          </div></td>
+        </tr>`;
+      }).join('');
+    }
+
+    function abrir(o) {
+      _atual = o;
+      document.getElementById('modal-title').textContent = o.nome || 'Orientador';
+      document.getElementById('modal-body').innerHTML = `
+        <div class="detail-grid">
+          <div class="detail-item"><label>Nome</label><p>${escapeHtml(o.nome||'—')}</p></div>
+          <div class="detail-item"><label>SIAPE</label><p>${escapeHtml(o.siape||'—')}</p></div>
+          <div class="detail-item"><label>E-mail</label><p>${escapeHtml(o.email||'—')}</p></div>
+          <div class="detail-item"><label>Titulação</label><p>${escapeHtml(o.titulacao||'—')}</p></div>
+          <div class="detail-item"><label>Vínculo</label><p>${escapeHtml(o.tipoVinculo||'—')}</p></div>
+          ${o.tipoVinculo==='Substituto' ? `<div class="detail-item"><label>Fim do Contrato</label><p>${escapeHtml(o.fimContrato||'—')}</p></div>` : '<div></div>'}
+          <div class="detail-item detail-full"><label>Cursos</label><p>${escapeHtml((o.cursos||[]).join(', ')||'—')}</p></div>
+          <div class="detail-item"><label>Status</label><p>${o.status==='Ativo'?'<span class="badge badge-active">Ativo</span>':'<span class="badge badge-inactive">Inativo</span>'}</p></div>
+          <div class="detail-item"><label>Estágios Ativos</label><p>${o.estagiosAtivos||0}</p></div>
+        </div>`;
+      const footer = document.getElementById('modal-footer');
+      if (o.status === 'Ativo') {
+        footer.innerHTML = `<button class="btn btn-ghost" onclick="fechar()">Fechar</button>
+          <button class="btn btn-danger btn-sm" onclick="acao('inativarOrientador')">Inativar</button>`;
+      } else {
+        footer.innerHTML = `<button class="btn btn-ghost" onclick="fechar()">Fechar</button>
+          <button class="btn btn-primary btn-sm" onclick="acao('reativarOrientador')">Reativar</button>`;
+      }
+      document.getElementById('modal-overlay').classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+    }
+
+    async function acao(action) {
+      if (!_atual) return;
+      try {
+        await API.post(action, { email: _atual.email, authToken: getAccessToken() });
+        toast(action === 'inativarOrientador' ? 'Orientador inativado.' : 'Orientador reativado.', 'success');
+        fechar(); carregar();
+      } catch (err) { toast('Erro: ' + err.message, 'error'); }
+    }
+
+    function fechar() {
+      document.getElementById('modal-overlay').classList.add('hidden');
+      document.body.style.overflow = '';
+      _atual = null;
+    }
+
+    function toast(msg, type) {
+      const el = document.createElement('div');
+      el.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:9999;max-width:360px;padding:12px 16px;border-radius:8px;font-size:14px;box-shadow:0 4px 16px rgba(0,0,0,.15)';
+      el.style.background = type === 'success' ? 'var(--color-success-light)' : 'var(--color-error-light)';
+      el.style.color = type === 'success' ? 'var(--color-success)' : 'var(--color-error)';
+      el.style.border = `1px solid ${type === 'success' ? 'var(--color-success-border)' : 'var(--color-error-border)'}`;
+      el.textContent = msg;
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 4000);
+    }
+  </script>
+</body>
+</html>
