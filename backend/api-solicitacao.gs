@@ -8,13 +8,13 @@
  *   enviarRelatorioFinal     — Relatório de conclusão
  *   enviarAdendo             — Adendo ao TCE
  *
- * Planilha de Solicitações ID: 1iAnurghOelZQiYMIevO1xxnx0ptz5bxyniuUe5KZx3Y
+ * Planilha de Solicitações ID: 1zVyseifVC6xeMpNjqwYd6jCq9HTJ2NS8BlN1dtM4s7Y
  */
 
 'use strict';
 
 var CFG_SOL = {
-  SS_ID:         '1iAnurghOelZQiYMIevO1xxnx0ptz5bxyniuUe5KZx3Y',
+  SS_ID:         '1zVyseifVC6xeMpNjqwYd6jCq9HTJ2NS8BlN1dtM4s7Y',
   ABA_SOL:       'Solicitações',
   ABA_PARC:      'Relatórios Parciais',
   ABA_FINAL:     'Relatórios Finais',

@@ -14,7 +14,7 @@
 'use strict';
 
 var CFG_OPP = {
-  SS_ID:    '1iAnurghOelZQiYMIevO1xxnx0ptz5bxyniuUe5KZx3Y',  // planilha consolidada SGE
+  SS_ID:    '1zVyseifVC6xeMpNjqwYd6jCq9HTJ2NS8BlN1dtM4s7Y',  // planilha consolidada SGE
   ABA_OPP:  'Oportunidades',
 };
 

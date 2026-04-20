@@ -29,9 +29,9 @@ var CFG = {
   NOME_SETOR:  'Central de Estágios — IFRS Campus Rio Grande',
 
   // Planilha consolidada SGE (todas as abas)
-  ID_EMPRESAS:     '1iAnurghOelZQiYMIevO1xxnx0ptz5bxyniuUe5KZx3Y',
-  ID_SUPERVISORES: '1iAnurghOelZQiYMIevO1xxnx0ptz5bxyniuUe5KZx3Y',
-  ID_OPORTUNIDADES:'1iAnurghOelZQiYMIevO1xxnx0ptz5bxyniuUe5KZx3Y',
+  ID_EMPRESAS:     '1zVyseifVC6xeMpNjqwYd6jCq9HTJ2NS8BlN1dtM4s7Y',
+  ID_SUPERVISORES: '1zVyseifVC6xeMpNjqwYd6jCq9HTJ2NS8BlN1dtM4s7Y',
+  ID_OPORTUNIDADES:'1zVyseifVC6xeMpNjqwYd6jCq9HTJ2NS8BlN1dtM4s7Y',
 
   ABA_EMPRESAS:     'Empresas',
   ABA_SUP_RESPOSTAS:'Supervisores',

@@ -41,7 +41,7 @@
 
 var CFG_ADMIN = {
   // ⚠️ Substitua pelo ID da sua planilha consolidada
-  SS_ID: '1iAnurghOelZQiYMIevO1xxnx0ptz5bxyniuUe5KZx3Y',
+  SS_ID: '1zVyseifVC6xeMpNjqwYd6jCq9HTJ2NS8BlN1dtM4s7Y',
 
   // Abas
   ABA_SOL:         'Solicitações',

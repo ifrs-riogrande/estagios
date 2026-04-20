@@ -6,35 +6,14 @@
  *   Selecione a função "configurarPlanilha" e clique em Executar (▶)
  *
  * O que faz:
- *   1. Apaga todas as abas existentes
+ *   1. Apaga todas as abas existentes (exceto as vinculadas a formulários)
  *   2. Cria todas as abas do SGE com cabeçalhos
  */
 
 function configurarPlanilha() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
 
-  // ── 1. Remove todas as abas existentes ─────────────────────────────
-  var sheets = ss.getSheets();
-  // Precisa manter ao menos uma aba para poder deletar as demais
-  // Remove __temp__ se sobrou de execução anterior com erro
-  var tempExistente = ss.getSheetByName('__temp__');
-  if (tempExistente) ss.deleteSheet(tempExistente);
-  var nova = ss.insertSheet('__temp__');
-  var ignoradas = [];
-  sheets.forEach(function(s) {
-    try {
-      ss.deleteSheet(s);
-    } catch(e) {
-      // Aba vinculada a formulário — não pode ser deletada; limpa o conteúdo
-      ignoradas.push(s.getName());
-      s.clearContents();
-      s.clearFormats();
-      // Renomeia para não colidir com as novas abas
-      s.setName('_legado_' + s.getName().slice(0, 20));
-    }
-  });
-
-  // ── 2. Definição das abas e seus cabeçalhos ─────────────────────────
+  // ── 1. Define as abas e seus cabeçalhos ────────────────────────────
   var abas = [
 
     {
@@ -156,8 +135,35 @@ function configurarPlanilha() {
 
   ];
 
-  // ── 3. Cria cada aba com cabeçalho formatado ────────────────────────
-  abas.forEach(function(aba) {
+  // ── 2. Usa a primeira aba como âncora (renomeia com timestamp único) ─
+  //    Nunca deleta a última aba — o Google não permite
+  var sheets       = ss.getSheets();
+  var anchorName   = 'SGE_SETUP_' + Date.now();
+  var anchor       = sheets[0];
+  anchor.setName(anchorName);
+
+  // ── 3. Deleta todas as outras abas existentes ───────────────────────
+  var ignoradas = [];
+  for (var i = 1; i < sheets.length; i++) {
+    try {
+      ss.deleteSheet(sheets[i]);
+    } catch (e) {
+      // Aba vinculada a formulário — limpa e renomeia
+      ignoradas.push(sheets[i].getName());
+      sheets[i].clearContents();
+      sheets[i].clearFormats();
+      sheets[i].setName('_legado_' + i);
+    }
+  }
+
+  // ── 4. Cria cada aba do SGE com cabeçalho formatado ─────────────────
+  abas.forEach(function (aba) {
+    // Se já existe uma aba com esse nome (de execução parcial anterior), remove primeiro
+    var existente = ss.getSheetByName(aba.nome);
+    if (existente) {
+      try { ss.deleteSheet(existente); } catch (e) { /* ignora */ }
+    }
+
     var sheet = ss.insertSheet(aba.nome);
     var range = sheet.getRange(1, 1, 1, aba.cabecalho.length);
     range.setValues([aba.cabecalho]);
@@ -168,21 +174,21 @@ function configurarPlanilha() {
     sheet.setColumnWidth(1, 160);
   });
 
-  // ── 4. Remove aba temporária ────────────────────────────────────────
-  ss.deleteSheet(ss.getSheetByName('__temp__'));
+  // ── 5. Remove a aba âncora ──────────────────────────────────────────
+  var anchorSheet = ss.getSheetByName(anchorName);
+  if (anchorSheet) ss.deleteSheet(anchorSheet);
 
-  // ── 5. Mensagem de confirmação ──────────────────────────────────────
+  // ── 6. Mensagem de confirmação ──────────────────────────────────────
   var aviso = ignoradas.length > 0
-    ? '\n\n⚠️ As abas abaixo estão vinculadas a formulários e não puderam ser deletadas ' +
-      '(foram renomeadas para "_legado_..." e esvaziadas):\n' +
-      ignoradas.map(function(n) { return '• ' + n; }).join('\n')
+    ? '\n\n⚠️ Abas vinculadas a formulários (não deletadas, apenas esvaziadas):\n' +
+      ignoradas.map(function (n) { return '• ' + n; }).join('\n')
     : '';
 
   SpreadsheetApp.getUi().alert(
     '✅ Planilha configurada com sucesso!\n\n' +
     abas.length + ' abas criadas:\n' +
-    abas.map(function(a) { return '• ' + a.nome; }).join('\n') +
+    abas.map(function (a) { return '• ' + a.nome; }).join('\n') +
     aviso +
-    '\n\nPróximo passo: preencha a aba "Diretor Geral" com os dados do DG atual.'
+    '\n\nPróximo passo: preencha a aba "Diretor Geral" com os dados do DG.'
   );
 }

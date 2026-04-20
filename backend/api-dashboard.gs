@@ -13,15 +13,15 @@
  *   - topEmpresas:   [ { razaoSocial, nomeFantasia, total } ]
  *
  * Planilhas:
- *   Solicitações: 1iAnurghOelZQiYMIevO1xxnx0ptz5bxyniuUe5KZx3Y
+ *   Solicitações: 1zVyseifVC6xeMpNjqwYd6jCq9HTJ2NS8BlN1dtM4s7Y
  *   Orientadores: 1lmwm-9_UYqqP2dWRhZdaBmSD5Qb8h8KZk6x6FJVSHJE
  */
 
 'use strict';
 
 var CFG_DASH = {
-  SS_SOL:   '1iAnurghOelZQiYMIevO1xxnx0ptz5bxyniuUe5KZx3Y',  // planilha consolidada SGE
-  SS_ORI:   '1iAnurghOelZQiYMIevO1xxnx0ptz5bxyniuUe5KZx3Y',  // mesma planilha consolidada
+  SS_SOL:   '1zVyseifVC6xeMpNjqwYd6jCq9HTJ2NS8BlN1dtM4s7Y',  // planilha consolidada SGE
+  SS_ORI:   '1zVyseifVC6xeMpNjqwYd6jCq9HTJ2NS8BlN1dtM4s7Y',  // mesma planilha consolidada
   ABA_SOL:  'Solicitações',
   ABA_ORI:  'Orientadores',
   ABA_PARC: 'Relatórios Parciais',
