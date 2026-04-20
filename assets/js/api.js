@@ -123,7 +123,9 @@ const API = {
 
     const resp = await fetchWithTimeout(API_CONFIG.BASE_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      // Content-Type: text/plain evita o preflight CORS que o GAS não responde.
+      // O body continua sendo JSON stringify — o GAS parseia e.postData.contents normalmente.
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify(body),
     });
 
