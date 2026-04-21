@@ -320,6 +320,11 @@ async function apiCadastrarCoordenador(dados) {
   return API.post('cadastrarCoordenador', dados);
 }
 
+/** Atualiza dados cadastrais do estudante logado. */
+async function apiAtualizarMeuCadastro(dados) {
+  return API.post('atualizarMeuCadastro', dados);
+}
+
 // ─────────────────────────────────────────
 //  UTILITÁRIO: wrapper com loading e feedback
 //  Uso nos formulários para reduzir boilerplate.
