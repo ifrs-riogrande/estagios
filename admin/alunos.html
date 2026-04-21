@@ -25,7 +25,9 @@
     .badge{display:inline-flex;align-items:center;gap:4px;padding:2px 10px;border-radius:9999px;font-size:11px;font-weight:600;white-space:nowrap;}
     .badge::before{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0;}
     .badge-active{background:var(--color-success-light);color:var(--color-success);}
+    .badge-pending{background:#FEF3C7;color:#D97706;}
     .badge-inactive{background:var(--color-bg);color:var(--color-text-muted);}
+    .badge-estagio{background:var(--color-primary-light,#EEF2FF);color:var(--color-primary);}
 
     .empty-state{text-align:center;padding:var(--space-12);color:var(--color-text-muted);}
     .empty-state svg{width:48px;height:48px;margin:0 auto var(--space-4);opacity:.3;}
@@ -40,7 +42,7 @@
     /* Modal */
     .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;display:flex;align-items:flex-start;justify-content:center;padding:var(--space-8) var(--space-4);overflow-y:auto;}
     .modal-overlay.hidden{display:none;}
-    .modal{background:var(--color-surface);border-radius:var(--radius-xl);box-shadow:0 20px 40px rgba(0,0,0,.2);width:100%;max-width:640px;animation:modal-in .2s ease;}
+    .modal{background:var(--color-surface);border-radius:var(--radius-xl);box-shadow:0 20px 40px rgba(0,0,0,.2);width:100%;max-width:680px;animation:modal-in .2s ease;}
     @keyframes modal-in{from{opacity:0;transform:translateY(-16px);}}
     .modal-header{display:flex;align-items:center;justify-content:space-between;padding:var(--space-5) var(--space-6);border-bottom:1px solid var(--color-border);}
     .modal-header h2{font-size:var(--font-size-lg);font-weight:600;}
@@ -52,7 +54,15 @@
     .detail-item label{font-size:var(--font-size-xs);color:var(--color-text-muted);display:block;margin-bottom:2px;font-weight:500;text-transform:uppercase;letter-spacing:.04em;}
     .detail-item p{font-size:var(--font-size-sm);color:var(--color-text);word-break:break-word;}
     .detail-full{grid-column:1/-1;}
-    .modal-footer{padding:var(--space-4) var(--space-6);border-top:1px solid var(--color-border);display:flex;gap:var(--space-3);justify-content:flex-end;}
+    .modal-footer{padding:var(--space-4) var(--space-6);border-top:1px solid var(--color-border);display:flex;gap:var(--space-3);justify-content:flex-end;flex-wrap:wrap;}
+
+    /* Alerta de ação no modal */
+    .modal-action-banner{padding:var(--space-4) var(--space-5);border-radius:var(--radius-md);margin-bottom:var(--space-5);font-size:var(--font-size-sm);}
+    .modal-action-banner.pending{background:#FEF3C7;border:1px solid #FCD34D;color:#92400E;}
+    .modal-action-banner.active{background:#D1FAE5;border:1px solid #6EE7B7;color:#065F46;}
+
+    .btn-warning{background:#D97706;border-color:#D97706;color:#fff;}
+    .btn-warning:hover{background:#B45309;border-color:#B45309;}
   </style>
 </head>
 <body>
@@ -82,21 +92,33 @@
     <section class="page-hero">
       <div class="container">
         <h1>Gestão de Alunos</h1>
-        <p>Consulte cadastros e histórico de estágios dos estudantes.</p>
+        <p>Valide cadastros pendentes e gerencie os dados dos estudantes.</p>
       </div>
     </section>
 
     <div class="container" style="padding-top:var(--space-6);padding-bottom:var(--space-12);">
 
+      <!-- Contadores de status -->
+      <div style="display:flex;gap:var(--space-3);margin-bottom:var(--space-5);flex-wrap:wrap;" id="status-counters"></div>
+
       <div class="admin-toolbar">
         <div class="form-group" style="min-width:260px;">
           <label for="busca-aluno">Buscar aluno</label>
-          <input type="search" id="busca-aluno" class="form-control" placeholder="Nome, matrícula ou CPF…">
+          <input type="search" id="busca-aluno" class="form-control" placeholder="Nome, matrícula, CPF ou e-mail…">
         </div>
         <div class="form-group">
           <label for="filtro-curso">Curso</label>
           <select id="filtro-curso" class="form-control">
             <option value="">Todos</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="filtro-status">Status</label>
+          <select id="filtro-status" class="form-control">
+            <option value="">Todos</option>
+            <option value="Aguardando Validação">Aguardando Validação</option>
+            <option value="Ativo">Ativo</option>
+            <option value="Inativo">Inativo</option>
           </select>
         </div>
         <div style="display:flex;gap:var(--space-2);align-items:flex-end;">
@@ -110,9 +132,9 @@
             <tr>
               <th>Nome</th>
               <th>Matrícula</th>
-              <th>CPF</th>
               <th>Curso</th>
               <th>E-mail</th>
+              <th>Status</th>
               <th>Estágios</th>
               <th>Ações</th>
             </tr>
@@ -127,8 +149,8 @@
     </div>
   </main>
 
-  <!-- Modal detalhe -->
-  <div id="modal-overlay" class="modal-overlay hidden" role="dialog" aria-modal="true">
+  <!-- Modal detalhe / ações -->
+  <div id="modal-overlay" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="modal-title">
     <div class="modal">
       <div class="modal-header">
         <h2 id="modal-title">Dados do Aluno</h2>
@@ -137,7 +159,7 @@
         </button>
       </div>
       <div class="modal-body" id="modal-body"></div>
-      <div class="modal-footer">
+      <div class="modal-footer" id="modal-footer">
         <button class="btn btn-ghost" onclick="fecharModal()">Fechar</button>
       </div>
     </div>
@@ -160,6 +182,7 @@
     'use strict';
     let _dados = [], _filtrados = [], _pagina = 1;
     const POR_PAGINA = 30;
+    let _alunoAtual = null;
 
     document.addEventListener('DOMContentLoaded', function () {
       if (!requireAdminAuth()) return;
@@ -169,14 +192,17 @@
       document.getElementById('modal-overlay').addEventListener('click', e => { if (e.target === e.currentTarget) fecharModal(); });
       document.getElementById('busca-aluno').addEventListener('input', aplicarFiltros);
       document.getElementById('filtro-curso').addEventListener('change', aplicarFiltros);
+      document.getElementById('filtro-status').addEventListener('change', aplicarFiltros);
     });
 
     async function carregar() {
       document.getElementById('tbody-alunos').innerHTML = '<tr><td colspan="7" class="table-loading">Carregando…</td></tr>';
+      document.getElementById('status-counters').innerHTML = '';
       try {
         const data = await API.get('listarAlunosAdmin', { authToken: getAccessToken() });
         _dados = Array.isArray(data) ? data : (data.alunos || []);
         popularCursos();
+        renderContadores();
         aplicarFiltros();
       } catch (err) {
         document.getElementById('tbody-alunos').innerHTML =
@@ -192,19 +218,42 @@
       sel.value = val;
     }
 
+    function renderContadores() {
+      const conts = { 'Aguardando Validação': 0, 'Ativo': 0, 'Inativo': 0 };
+      _dados.forEach(a => { const s = a.status || 'Aguardando Validação'; if (s in conts) conts[s]++; });
+      const el = document.getElementById('status-counters');
+      el.innerHTML = Object.entries(conts).map(([s, n]) => {
+        const cls = s === 'Ativo' ? 'badge-active' : s === 'Aguardando Validação' ? 'badge-pending' : 'badge-inactive';
+        return `<button class="badge ${cls}" style="cursor:pointer;border:none;" onclick="filtrarStatus('${escapeHtml(s)}')">${escapeHtml(s)}: <strong>${n}</strong></button>`;
+      }).join('');
+    }
+
+    function filtrarStatus(s) {
+      document.getElementById('filtro-status').value = s;
+      aplicarFiltros();
+    }
+
     function aplicarFiltros() {
       const busca  = document.getElementById('busca-aluno').value.toLowerCase().trim();
       const curso  = document.getElementById('filtro-curso').value.toLowerCase();
+      const status = document.getElementById('filtro-status').value.toLowerCase();
       _filtrados = _dados.filter(a => {
         if (curso && (a.curso || '').toLowerCase() !== curso) return false;
+        if (status && (a.status || '').toLowerCase() !== status) return false;
         if (busca) {
-          const txt = [a.nome, a.matricula, a.cpf, a.email].join(' ').toLowerCase();
+          const txt = [a.nome, a.matricula, a.cpf, a.email, a.emailPessoal].join(' ').toLowerCase();
           if (!txt.includes(busca)) return false;
         }
         return true;
       });
       _pagina = 1;
       render();
+    }
+
+    function badgeStatus(s) {
+      if (s === 'Ativo') return `<span class="badge badge-active">${escapeHtml(s)}</span>`;
+      if (s === 'Aguardando Validação') return `<span class="badge badge-pending">${escapeHtml(s)}</span>`;
+      return `<span class="badge badge-inactive">${escapeHtml(s || 'Aguardando Validação')}</span>`;
     }
 
     function render() {
@@ -220,10 +269,10 @@
         <tr>
           <td><span style="font-weight:500">${escapeHtml(a.nome || '—')}</span></td>
           <td>${escapeHtml(a.matricula || '—')}</td>
-          <td style="font-size:12px">${escapeHtml(a.cpf || '—')}</td>
           <td style="font-size:12px">${escapeHtml(a.curso || '—')}</td>
           <td style="font-size:12px">${escapeHtml(a.email || '—')}</td>
-          <td><span class="badge ${(a.totalEstagios || 0) > 0 ? 'badge-active' : 'badge-inactive'}">${a.totalEstagios || 0} estágio${(a.totalEstagios||0) !== 1 ? 's' : ''}</span></td>
+          <td>${badgeStatus(a.status)}</td>
+          <td><span class="badge ${(a.totalEstagios || 0) > 0 ? 'badge-estagio' : 'badge-inactive'}">${a.totalEstagios || 0}</span></td>
           <td><button class="btn btn-secondary btn-sm" onclick="abrirModal(${JSON.stringify(a).replace(/"/g,'&quot;')})">Ver</button></td>
         </tr>`).join('');
       renderPagina(_filtrados.length);
@@ -241,35 +290,124 @@
     function irP(n) { const tp=Math.ceil(_filtrados.length/POR_PAGINA); if(n<1||n>tp)return; _pagina=n; render(); }
 
     function abrirModal(a) {
+      _alunoAtual = a;
       document.getElementById('modal-title').textContent = a.nome || 'Dados do Aluno';
-      document.getElementById('modal-body').innerHTML = `
+
+      const aguardando = (a.status || '') === 'Aguardando Validação';
+      const ativo = (a.status || '') === 'Ativo';
+
+      // Banner de ação
+      let banner = '';
+      if (aguardando) {
+        banner = `<div class="modal-action-banner pending">
+          <strong>⏳ Cadastro pendente de validação.</strong>
+          Clique em "Validar e Enviar Código" para aprovar e enviar o código de acesso ao aluno.
+        </div>`;
+      } else if (ativo) {
+        banner = `<div class="modal-action-banner active">
+          <strong>✓ Cadastro ativo.</strong>
+          Se o aluno perder o código de acesso, use "Reenviar Código".
+        </div>`;
+      }
+
+      const enderecoCompleto = [a.endereco, a.bairro, a.cidade && a.uf ? a.cidade + ' — ' + a.uf : (a.cidade || a.uf), a.cep ? 'CEP ' + a.cep : ''].filter(Boolean).join(', ');
+
+      document.getElementById('modal-body').innerHTML = banner + `
         <div class="detail-grid">
           <div class="detail-item"><label>Nome Completo</label><p>${escapeHtml(a.nome||'—')}</p></div>
+          <div class="detail-item"><label>Status</label><p>${badgeStatus(a.status)}</p></div>
           <div class="detail-item"><label>Matrícula</label><p>${escapeHtml(a.matricula||'—')}</p></div>
           <div class="detail-item"><label>CPF</label><p>${escapeHtml(a.cpf||'—')}</p></div>
           <div class="detail-item"><label>Data de Nascimento</label><p>${escapeHtml(a.dataNascimento||'—')}</p></div>
           <div class="detail-item"><label>Curso</label><p>${escapeHtml(a.curso||'—')}</p></div>
-          <div class="detail-item"><label>Semestre</label><p>${escapeHtml(a.semestre||'—')}</p></div>
-          <div class="detail-item"><label>E-mail</label><p>${escapeHtml(a.email||'—')}</p></div>
+          <div class="detail-item"><label>Modalidade</label><p>${escapeHtml(a.modalidade||'—')}</p></div>
+          <div class="detail-item"><label>Turno / Semestre</label><p>${escapeHtml((a.turno||'—') + ' · ' + (a.semestre||'—'))}</p></div>
+          <div class="detail-item"><label>E-mail Institucional</label><p>${escapeHtml(a.email||'—')}</p></div>
+          <div class="detail-item"><label>E-mail Pessoal</label><p>${escapeHtml(a.emailPessoal||'—')}</p></div>
           <div class="detail-item"><label>Telefone</label><p>${escapeHtml(a.telefone||'—')}</p></div>
-          <div class="detail-item detail-full"><label>Endereço</label><p>${escapeHtml(a.endereco||'—')}</p></div>
-          ${a.nomeResponsavelLegal ? `<div class="detail-item"><label>Responsável Legal</label><p>${escapeHtml(a.nomeResponsavelLegal)}</p></div>
-          <div class="detail-item"><label>CPF do Responsável</label><p>${escapeHtml(a.cpfResponsavelLegal||'—')}</p></div>` : ''}
+          <div class="detail-item"><label>Maior de idade?</label><p>${escapeHtml(a.maiorIdade||'—')}</p></div>
+          <div class="detail-item detail-full"><label>Endereço</label><p>${escapeHtml(enderecoCompleto||'—')}</p></div>
+          ${a.nomeResponsavelLegal ? `
+          <div class="detail-item"><label>Responsável Legal</label><p>${escapeHtml(a.nomeResponsavelLegal)}</p></div>
+          <div class="detail-item"><label>CPF do Responsável</label><p>${escapeHtml(a.cpfResponsavelLegal||'—')}</p></div>
+          <div class="detail-item"><label>Tel. Responsável</label><p>${escapeHtml(a.telResponsavelLegal||'—')}</p></div>
+          ` : ''}
           <div class="detail-item detail-full">
             <label>Estágios (${a.totalEstagios||0})</label>
             ${(a.estagios||[]).length > 0
               ? `<ul style="margin:var(--space-2) 0 0;padding-left:var(--space-5);font-size:var(--font-size-sm);">${(a.estagios||[]).map(e=>`<li><code style="font-size:11px">${escapeHtml(e.id)}</code> — ${escapeHtml(e.empresa)} — <em>${escapeHtml(e.status)}</em></li>`).join('')}</ul>`
               : '<p style="color:var(--color-text-muted)">Nenhum estágio registrado.</p>'}
           </div>
-          ${a.driveUrl ? `<div class="detail-item detail-full"><label>Pasta no Drive</label><p><a href="${escapeHtml(a.driveUrl)}" target="_blank" class="link">Abrir pasta ↗</a></p></div>` : ''}
         </div>`;
+
+      // Botões do rodapé
+      const footer = document.getElementById('modal-footer');
+      footer.innerHTML = '<button class="btn btn-ghost" onclick="fecharModal()">Fechar</button>';
+      if (aguardando) {
+        footer.innerHTML += `<button class="btn btn-primary" id="btn-validar" onclick="validarCadastro()">
+          <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" style="margin-right:4px"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+          Validar e Enviar Código
+        </button>`;
+      } else if (ativo) {
+        footer.innerHTML += `<button class="btn btn-warning" id="btn-reenviar" onclick="reenviarCodigo()">
+          <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" style="margin-right:4px"><path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"/><path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"/></svg>
+          Reenviar Código
+        </button>`;
+      }
+
       document.getElementById('modal-overlay').classList.remove('hidden');
       document.body.style.overflow = 'hidden';
+    }
+
+    async function validarCadastro() {
+      if (!_alunoAtual) return;
+      const btn = document.getElementById('btn-validar');
+      if (!btn) return;
+      const nomeAluno = _alunoAtual.nome || 'este aluno';
+      if (!confirm(`Confirma a validação do cadastro de ${nomeAluno}?\n\nO código de acesso será gerado e enviado ao e-mail institucional.`)) return;
+
+      btn.disabled = true;
+      btn.textContent = 'Processando…';
+      try {
+        await API.post('validarCadastroAdmin', { emailEstudante: _alunoAtual.email });
+        // Atualiza status local
+        _alunoAtual.status = 'Ativo';
+        const idx = _dados.findIndex(a => a.email === _alunoAtual.email);
+        if (idx !== -1) _dados[idx].status = 'Ativo';
+        fecharModal();
+        await carregar();
+        alert(`Cadastro de ${nomeAluno} validado com sucesso!\nO código de acesso foi enviado para ${_alunoAtual.email}.`);
+      } catch (err) {
+        alert('Erro: ' + err.message);
+        btn.disabled = false;
+        btn.textContent = 'Validar e Enviar Código';
+      }
+    }
+
+    async function reenviarCodigo() {
+      if (!_alunoAtual) return;
+      const btn = document.getElementById('btn-reenviar');
+      if (!btn) return;
+      const nomeAluno = _alunoAtual.nome || 'este aluno';
+      if (!confirm(`Reenviar o código de acesso para ${nomeAluno} (${_alunoAtual.email})?`)) return;
+
+      btn.disabled = true;
+      btn.textContent = 'Enviando…';
+      try {
+        await API.post('reenviarCodigoAdmin', { emailEstudante: _alunoAtual.email });
+        fecharModal();
+        alert(`Código de acesso reenviado para ${_alunoAtual.email}.`);
+      } catch (err) {
+        alert('Erro: ' + err.message);
+        btn.disabled = false;
+        btn.textContent = 'Reenviar Código';
+      }
     }
 
     function fecharModal() {
       document.getElementById('modal-overlay').classList.add('hidden');
       document.body.style.overflow = '';
+      _alunoAtual = null;
     }
   </script>
 </body>

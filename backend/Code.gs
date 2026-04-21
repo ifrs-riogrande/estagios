@@ -32,6 +32,7 @@ var GET_ROUTES = {
   // Estudantes
   'listarMeusEstagios':      doGetEstudantes,
   'verificarEstudante':      doGetEstudantes,
+  'obterMeuCadastro':        doGetEstudantes,
 
   // Servidores / Orientadores
   'listarOrientadores':      doGetServidores,
@@ -64,6 +65,10 @@ var POST_ROUTES = {
 
   // Estudantes
   'cadastrarEstudante':        doPostEstudantes,
+
+  // Estudantes — Admin
+  'validarCadastroAdmin':      doPostAdmin,
+  'reenviarCodigoAdmin':       doPostAdmin,
 
   // Servidores
   'cadastrarOrientador':       doPostServidores,
@@ -148,6 +153,7 @@ function doGetEstudantes(e) {
   var action = e.parameter && e.parameter.action;
   if (action === 'listarMeusEstagios') return listarMeusEstagios_(e);
   if (action === 'verificarEstudante') return verificarEstudante_(e);
+  if (action === 'obterMeuCadastro')   return obterMeuCadastro_(e);
   return jsonError_('Ação não implementada: ' + action, 'NOT_IMPLEMENTED');
 }
 

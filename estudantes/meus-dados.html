@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Meus Dados — Central de Estágios IFRS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/base.css">
+  <link rel="stylesheet" href="../assets/css/components.css">
+  <link rel="stylesheet" href="../assets/css/layout.css">
+  <style>
+    .dados-grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-5) var(--space-8);}
+    @media(max-width:600px){.dados-grid{grid-template-columns:1fr;}}
+    .dado-full{grid-column:1/-1;}
+    .dado-item label{font-size:var(--font-size-xs);color:var(--color-text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:4px;}
+    .dado-item p{font-size:var(--font-size-base);color:var(--color-text);word-break:break-word;margin:0;}
+    .dado-item p.vazio{color:var(--color-text-muted);font-style:italic;}
+    .section-title{font-size:var(--font-size-sm);font-weight:600;color:var(--color-text-muted);text-transform:uppercase;letter-spacing:.06em;margin:var(--space-6) 0 var(--space-4);padding-bottom:var(--space-2);border-bottom:1px solid var(--color-border);grid-column:1/-1;}
+    #painel-dados{display:none;}
+    .codigo-input-wrapper{display:flex;gap:var(--space-3);align-items:flex-start;flex-wrap:wrap;}
+    .codigo-input-wrapper .form-group{flex:1;min-width:200px;margin-bottom:0;}
+  </style>
+</head>
+<body>
+
+  <header id="app-header">
+    <div class="container">
+      <div class="header-inner">
+        <a href="../index.html" class="header-brand">
+          <div class="header-logo-fallback" aria-hidden="true">IFRS</div>
+          <div class="header-brand-text">
+            <span class="header-brand-name">Central de Estágios</span>
+            <span class="header-brand-sub">IFRS Campus Rio Grande</span>
+          </div>
+        </a>
+        <div style="display:flex;align-items:center;gap:var(--space-3);">
+          <div id="header-user-area"></div>
+          <a href="index.html" class="back-link">
+            <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd"/></svg>
+            Estudantes
+          </a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="form-page" id="main-content">
+    <div class="container">
+      <div class="form-wrapper">
+
+        <div class="form-page-header">
+          <h1>Meus Dados Cadastrais</h1>
+          <p>Consulte suas informações registradas no sistema. Para solicitar alterações, entre em contato com o setor.</p>
+        </div>
+
+        <!-- Painel de verificação de código -->
+        <div id="painel-verificacao">
+          <div class="info-banner" role="note">
+            <strong>Código de acesso necessário.</strong>
+            Digite o código que você recebeu por e-mail quando seu cadastro foi validado pelo setor de estágios.
+          </div>
+
+          <div class="form-section" style="margin-top:var(--space-5);">
+            <div class="codigo-input-wrapper">
+              <div class="form-group">
+                <label class="form-label required" for="codigo-acesso">Código de acesso</label>
+                <input type="text" id="codigo-acesso" class="form-control"
+                  placeholder="SGE-XXXX-XXXX-XXXX" maxlength="19"
+                  style="text-transform:uppercase;letter-spacing:.05em;font-size:1.1em;"
+                  aria-describedby="codigo-hint codigo-error">
+                <span id="codigo-hint" class="form-hint">Formato: SGE-XXXX-XXXX-XXXX</span>
+                <span id="codigo-error" class="form-error hidden" role="alert"></span>
+              </div>
+              <div style="padding-top:28px;">
+                <button id="btn-consultar" class="btn btn-primary">
+                  <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" style="margin-right:4px"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/></svg>
+                  Consultar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Painel com os dados -->
+        <div id="painel-dados">
+          <div class="alert alert-success" style="margin-bottom:var(--space-6);" id="alerta-identificado">
+            <svg class="alert-icon" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+            <div class="alert-content" id="alerta-texto">Cadastro encontrado.</div>
+          </div>
+
+          <div class="dados-grid" id="dados-content"></div>
+
+          <div style="margin-top:var(--space-8);padding-top:var(--space-5);border-top:1px solid var(--color-border);">
+            <p style="font-size:var(--font-size-sm);color:var(--color-text-muted);">
+              Para solicitar atualização de dados, entre em contato com o setor de estágios:
+              <a href="mailto:estagios@riogrande.ifrs.edu.br" class="link">estagios@riogrande.ifrs.edu.br</a>
+            </p>
+            <button class="btn btn-ghost btn-sm" onclick="limpar()" style="margin-top:var(--space-3);">
+              Consultar outro código
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <footer id="app-footer">
+    <div class="container">
+      <div class="footer-inner">
+        <span class="footer-copy">&copy; <script>document.write(new Date().getFullYear())</script> Central de Estágios — IFRS Campus Rio Grande</span>
+        <nav class="footer-links"><a href="mailto:estagios@riogrande.ifrs.edu.br">estagios@riogrande.ifrs.edu.br</a></nav>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://accounts.google.com/gsi/client" async></script>
+  <script src="../assets/js/utils.js"></script>
+  <script src="../assets/js/auth.js"></script>
+  <script src="../assets/js/api.js"></script>
+  <script>
+    'use strict';
+
+    document.addEventListener('DOMContentLoaded', function () {
+      if (!requireStudentAuth()) return;
+
+      // Formata automaticamente o código ao digitar
+      document.getElementById('codigo-acesso').addEventListener('input', function () {
+        let v = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+        if (v.startsWith('SGE')) v = v.slice(3);
+        const grupos = [];
+        for (let i = 0; i < v.length && grupos.length < 3; i += 4) grupos.push(v.slice(i, i + 4));
+        this.value = grupos.length ? 'SGE-' + grupos.join('-') : (v ? 'SGE-' + v : '');
+      });
+
+      document.getElementById('codigo-acesso').addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') consultar();
+      });
+
+      document.getElementById('btn-consultar').addEventListener('click', consultar);
+    });
+
+    async function consultar() {
+      const input = document.getElementById('codigo-acesso');
+      const errEl = document.getElementById('codigo-error');
+      const cod   = input.value.trim().toUpperCase();
+
+      // Limpa erro anterior
+      errEl.textContent = '';
+      errEl.classList.add('hidden');
+      input.classList.remove('is-invalid');
+
+      if (!cod.match(/^SGE-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$/)) {
+        errEl.textContent = 'Código inválido. Formato: SGE-XXXX-XXXX-XXXX';
+        errEl.classList.remove('hidden');
+        input.classList.add('is-invalid');
+        input.focus();
+        return;
+      }
+
+      const btn = document.getElementById('btn-consultar');
+      btn.disabled = true;
+      btn.classList.add('is-loading');
+
+      try {
+        const dados = await API.get('obterMeuCadastro', { codigoAcesso: cod, authToken: getAccessToken() });
+        exibirDados(dados);
+      } catch (err) {
+        errEl.textContent = err.message || 'Código inválido ou cadastro não encontrado.';
+        errEl.classList.remove('hidden');
+        input.classList.add('is-invalid');
+      } finally {
+        btn.disabled = false;
+        btn.classList.remove('is-loading');
+      }
+    }
+
+    function exibirDados(d) {
+      document.getElementById('painel-verificacao').style.display = 'none';
+      document.getElementById('painel-dados').style.display = 'block';
+      document.getElementById('alerta-texto').textContent = 'Cadastro encontrado: ' + (d.nome || '') + ' — ' + (d.matricula || '');
+
+      const val = v => v ? `<p>${escapeHtml(v)}</p>` : `<p class="vazio">Não informado</p>`;
+      const enderecoCompleto = [d.endereco, d.bairro, d.cidade && d.uf ? d.cidade + ' — ' + d.uf : (d.cidade || d.uf), d.cep ? 'CEP ' + d.cep : ''].filter(Boolean).join(', ');
+
+      document.getElementById('dados-content').innerHTML = `
+        <div class="section-title">Identificação</div>
+        <div class="dado-item"><label>Nome Completo</label>${val(d.nome)}</div>
+        <div class="dado-item"><label>CPF</label>${val(d.cpf)}</div>
+        <div class="dado-item"><label>Data de Nascimento</label>${val(d.dataNasc)}</div>
+        <div class="dado-item"><label>Maior de idade?</label>${val(d.maiorIdade)}</div>
+
+        <div class="section-title">Dados Acadêmicos</div>
+        <div class="dado-item"><label>Curso</label>${val(d.curso)}</div>
+        <div class="dado-item"><label>Modalidade</label>${val(d.modalidade)}</div>
+        <div class="dado-item"><label>Turno</label>${val(d.turno)}</div>
+        <div class="dado-item"><label>Semestre / Período</label>${val(d.semestre)}</div>
+        <div class="dado-item"><label>Matrícula</label>${val(d.matricula)}</div>
+
+        <div class="section-title">Contato</div>
+        <div class="dado-item"><label>E-mail Institucional</label>${val(d.emailInst)}</div>
+        <div class="dado-item"><label>E-mail Pessoal</label>${val(d.emailPessoal)}</div>
+        <div class="dado-item"><label>Telefone</label>${val(d.telefone)}</div>
+        <div class="dado-item dado-full"><label>Endereço</label>${val(enderecoCompleto)}</div>
+
+        ${d.nomeResp ? `
+        <div class="section-title">Responsável Legal</div>
+        <div class="dado-item"><label>Nome do Responsável</label>${val(d.nomeResp)}</div>
+        ` : ''}
+      `;
+    }
+
+    function limpar() {
+      document.getElementById('painel-dados').style.display = 'none';
+      document.getElementById('painel-verificacao').style.display = 'block';
+      const input = document.getElementById('codigo-acesso');
+      input.value = '';
+      input.classList.remove('is-invalid');
+      document.getElementById('codigo-error').textContent = '';
+      document.getElementById('codigo-error').classList.add('hidden');
+      input.focus();
+    }
+  </script>
+</body>
+</html>

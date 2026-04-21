@@ -160,9 +160,12 @@ function doPostAdmin(e) {
       case 'reativarOrientador':   return alterarStatusOrientador_(body.email, 'Ativo');
       case 'aprovarAdendo':        return processarAdendo_(body, 'Aprovado');
       case 'reprovarAdendo':       return processarAdendo_(body, 'Reprovado');
-      case 'inativarAgente':       return alterarStatusAgente_(body.cnpj, 'Inativo');
-      case 'reativarAgente':       return alterarStatusAgente_(body.cnpj, 'Ativo');
-      case 'cadastrarCoordenador': return cadastrarCoordenador_(body);
+      case 'inativarAgente':         return alterarStatusAgente_(body.cnpj, 'Inativo');
+      case 'reativarAgente':         return alterarStatusAgente_(body.cnpj, 'Ativo');
+      case 'cadastrarCoordenador':   return cadastrarCoordenador_(body);
+      // Estudantes — validação de cadastro e reenvio de código
+      case 'validarCadastroAdmin':   return validarCadastroAdmin_(body);
+      case 'reenviarCodigoAdmin':    return reenviarCodigoAdmin_(body);
       default: return jsonError_('Ação POST não reconhecida: ' + action, 'UNKNOWN_ACTION');
     }
   } catch (err) {
@@ -270,24 +273,30 @@ function listarDocumentosAdmin_() {
 }
 
 function listarAlunosAdmin_() {
+  // Índices de coluna da aba Estudantes (base 0) — sincronizados com COL_EST em api-estudantes.gs
+  // 0:TIMESTAMP 1:NOME 2:EMAIL_INST 3:EMAIL_PESSOAL 4:MATRICULA 5:CURSO
+  // 6:TURNO 7:SEMESTRE 8:CPF 9:DATA_NASC 10:TELEFONE 11:ENDERECO
+  // 12:MAIOR_IDADE 13:NOME_RESP 14:CPF_RESP 15:TEL_RESP 16:EMAIL_RESP 17:DOC_RESP
+  // 18:STATUS 19:COD_ACESSO 20:COD_EXPIRA 21:MODALIDADE 22:BAIRRO 23:CEP 24:CIDADE 25:UF
+
   var ss    = SpreadsheetApp.openById(CFG_ADMIN.SS_ID);
   var sheet = ss.getSheetByName(CFG_ADMIN.ABA_ESTUDANTES);
   if (!sheet) return jsonOk_([]);
   var dados = sheet.getDataRange().getValues();
 
-  // Lê também as solicitações para contar estágios por estudante
+  // Lê solicitações para contar estágios por estudante
   var sheetSol = ss.getSheetByName(CFG_ADMIN.ABA_SOL);
   var estagiosPorEmail = {};
   if (sheetSol) {
     var dadosSol = sheetSol.getDataRange().getValues();
     for (var j = 1; j < dadosSol.length; j++) {
-      var email = String(dadosSol[j][COL.EMAIL_ESTUDANTE] || '').toLowerCase();
-      if (!email) continue;
-      if (!estagiosPorEmail[email]) estagiosPorEmail[email] = [];
-      estagiosPorEmail[email].push({
-        id:      String(dadosSol[j][COL.ID_ESTAGIO] || ''),
+      var emailSol = String(dadosSol[j][COL.EMAIL_ESTUDANTE] || '').toLowerCase();
+      if (!emailSol) continue;
+      if (!estagiosPorEmail[emailSol]) estagiosPorEmail[emailSol] = [];
+      estagiosPorEmail[emailSol].push({
+        id:      String(dadosSol[j][COL.ID_ESTAGIO]   || ''),
         empresa: String(dadosSol[j][COL.NOME_EMPRESA] || ''),
-        status:  String(dadosSol[j][COL.STATUS] || ''),
+        status:  String(dadosSol[j][COL.STATUS]       || ''),
       });
     }
   }
@@ -295,23 +304,33 @@ function listarAlunosAdmin_() {
   var lista = [];
   for (var i = 1; i < dados.length; i++) {
     var r = dados[i];
-    if (!r[1]) continue; // matrícula vazia
-    var emailEst = String(r[3] || '').toLowerCase();
+    if (!r[4]) continue;  // matrícula vazia (col 4)
+    var emailEst = String(r[2] || '').toLowerCase();  // EMAIL_INST (col 2)
     var ests = estagiosPorEmail[emailEst] || [];
     lista.push({
-      nome:              String(r[2] || ''),
-      cpf:               String(r[0] || ''),
-      matricula:         String(r[1] || ''),
-      email:             emailEst,
-      telefone:          String(r[4] || ''),
-      curso:             String(r[5] || ''),
-      semestre:          String(r[6] || ''),
-      dataNascimento:    formatarData_(r[7]),
-      endereco:          String(r[8] || ''),
-      nomeResponsavelLegal: String(r[9] || ''),
-      cpfResponsavelLegal:  String(r[10] || ''),
-      estagios:          ests,
-      totalEstagios:     ests.length,
+      nome:                 String(r[1]  || ''),  // NOME
+      cpf:                  String(r[8]  || ''),  // CPF
+      matricula:            String(r[4]  || ''),  // MATRICULA
+      email:                emailEst,
+      emailPessoal:         String(r[3]  || ''),  // EMAIL_PESSOAL
+      curso:                String(r[5]  || ''),  // CURSO
+      turno:                String(r[6]  || ''),  // TURNO
+      semestre:             String(r[7]  || ''),  // SEMESTRE
+      modalidade:           String(r[21] || ''),  // MODALIDADE
+      dataNascimento:       formatarData_(r[9]),  // DATA_NASC
+      telefone:             String(r[10] || ''),  // TELEFONE
+      endereco:             String(r[11] || ''),  // ENDERECO
+      bairro:               String(r[22] || ''),  // BAIRRO
+      cep:                  String(r[23] || ''),  // CEP
+      cidade:               String(r[24] || ''),  // CIDADE
+      uf:                   String(r[25] || ''),  // UF
+      maiorIdade:           String(r[12] || ''),  // MAIOR_IDADE
+      nomeResponsavelLegal: String(r[13] || ''),  // NOME_RESP
+      cpfResponsavelLegal:  String(r[14] || ''),  // CPF_RESP
+      telResponsavelLegal:  String(r[15] || ''),  // TEL_RESP
+      status:               String(r[18] || 'Aguardando Validação'),  // STATUS
+      estagios:             ests,
+      totalEstagios:        ests.length,
     });
   }
   return jsonOk_(lista);

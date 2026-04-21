@@ -65,9 +65,9 @@
             <div class="form-group">
               <label class="form-label required" for="codigo-acesso">Código de acesso</label>
               <input type="text" id="codigo-acesso" name="codigoAcesso" class="form-control"
-                placeholder="EST-AAAA-XXXXXX" required aria-required="true" style="text-transform:uppercase;"
-                aria-describedby="codigo-acesso-hint codigo-acesso-error">
-              <span id="codigo-acesso-hint" class="form-hint">Código recebido por e-mail ao se cadastrar. Formato: EST-AAAA-XXXXXX. Sem código? Contate o setor.</span>
+                placeholder="SGE-XXXX-XXXX-XXXX" required aria-required="true" style="text-transform:uppercase;letter-spacing:.05em;"
+                maxlength="19" aria-describedby="codigo-acesso-hint codigo-acesso-error">
+              <span id="codigo-acesso-hint" class="form-hint">Código recebido por e-mail quando seu cadastro foi validado pelo setor. Formato: SGE-XXXX-XXXX-XXXX. Em caso de dúvidas, contate o setor.</span>
               <span id="codigo-acesso-error" class="form-error hidden" role="alert"></span>
             </div>
           </div>
@@ -536,11 +536,22 @@
       }
     }
 
-    // Ao confirmar código de acesso (blur), carrega orientadores pelo curso vinculado
+    // Formata automaticamente o código ao digitar (SGE-XXXX-XXXX-XXXX)
+    document.getElementById('codigo-acesso').addEventListener('input', function () {
+      let v = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+      if (v.startsWith('SGE')) v = v.slice(3);
+      // Monta grupos de 4
+      const grupos = [];
+      for (let i = 0; i < v.length && grupos.length < 3; i += 4) grupos.push(v.slice(i, i + 4));
+      this.value = grupos.length ? 'SGE-' + grupos.join('-') : (v ? 'SGE-' + v : '');
+    });
+
+    // Carrega orientadores quando o código estiver completo
     document.getElementById('codigo-acesso').addEventListener('blur', async function () {
       const cod = this.value.trim().toUpperCase();
-      if (!cod || !cod.startsWith('EST-')) return;
-      await carregarOrientadores();
+      if (cod.match(/^SGE-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$/)) {
+        await carregarOrientadores();
+      }
     });
 
     // Exibe nomes de arquivos selecionados
@@ -564,8 +575,8 @@
       function fail(id, msg) { showFieldError(id, msg); if (!firstInvalid) firstInvalid = id; valid = false; }
 
       const cod = document.getElementById('codigo-acesso').value.trim().toUpperCase();
-      if (!cod || !cod.match(/^EST-[A-Z0-9]{4}-[A-Z0-9]{6}$/)) {
-        fail('codigo-acesso', 'Código de acesso inválido. Formato esperado: EST-AAAA-XXXXXX.');
+      if (!cod || !cod.match(/^SGE-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$/)) {
+        fail('codigo-acesso', 'Código de acesso inválido. Formato esperado: SGE-XXXX-XXXX-XXXX.');
       }
       if (!document.getElementById('semestre-atual').value)    fail('semestre-atual', 'Selecione o semestre atual.');
       if (!document.getElementById('formando').value)          fail('formando', 'Informe se é formando(a).');
