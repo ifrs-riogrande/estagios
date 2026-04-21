@@ -33,6 +33,7 @@ var GET_ROUTES = {
   'listarMeusEstagios':      doGetEstudantes,
   'verificarEstudante':      doGetEstudantes,
   'obterMeuCadastro':        doGetEstudantes,
+  'verificarCpf':            doGetEstudantes,
 
   // Servidores / Orientadores
   'listarOrientadores':      doGetServidores,
@@ -154,6 +155,7 @@ function doGetEstudantes(e) {
   if (action === 'listarMeusEstagios') return listarMeusEstagios_(e);
   if (action === 'verificarEstudante') return verificarEstudante_(e);
   if (action === 'obterMeuCadastro')   return obterMeuCadastro_(e);
+  if (action === 'verificarCpf')       return verificarCpf_(e);
   return jsonError_('Ação não implementada: ' + action, 'NOT_IMPLEMENTED');
 }
 

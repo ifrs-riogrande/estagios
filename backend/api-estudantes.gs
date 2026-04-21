@@ -270,6 +270,26 @@ function reenviarCodigoAdmin_(body) {
 }
 
 // ---------------------------------------------------------------------------
+// GET — Verificar se CPF já está cadastrado (tempo real no formulário)
+// ---------------------------------------------------------------------------
+
+/**
+ * Retorna { existe: true/false } para um CPF (apenas dígitos).
+ * Requer autenticação de estudante para evitar enumeração pública.
+ */
+function verificarCpf_(e) {
+  var params = e.parameter || {};
+  try { validarTokenEstudante_(params.authToken); } catch (err) {
+    return jsonError_(err.message, 'AUTH_ERROR');
+  }
+  var cpf = sanitizar_(params.cpf || '', 14).replace(/\D/g, '');
+  if (!cpf || cpf.length !== 11) return jsonOk_({ existe: false });
+  var sheet = abrirAba_(CFG_EST.SS_ID, CFG_EST.ABA);
+  var existe = buscarNaColuna_(sheet, COL_EST.CPF, cpf) !== -1;
+  return jsonOk_({ existe: existe });
+}
+
+// ---------------------------------------------------------------------------
 // GET — Obter dados do próprio cadastro (aluno logado + código)
 // ---------------------------------------------------------------------------
 
