@@ -268,6 +268,13 @@
 
             <!-- Bloco de adição de curso -->
             <div style="display:flex;gap:var(--space-3);align-items:flex-end;flex-wrap:wrap;margin-bottom:var(--space-3);">
+              <div class="form-group" style="flex:1.5;min-width:220px;margin-bottom:0;">
+                <label class="form-label required" for="email-inst-add">E-mail institucional do curso</label>
+                <input type="email" id="email-inst-add" class="form-control"
+                  placeholder="matricula@aluno.riogrande.ifrs.edu.br"
+                  aria-describedby="cursos-error" autocomplete="email">
+                <span class="form-hint" style="font-size:var(--font-size-xs);">Domínio @aluno.riogrande.ifrs.edu.br</span>
+              </div>
               <div class="form-group" style="flex:2;min-width:220px;margin-bottom:0;">
                 <label class="form-label required" for="curso-add">Curso</label>
                 <select id="curso-add" class="form-control" aria-describedby="cursos-error">
@@ -374,7 +381,7 @@
     const btnLimpar = document.getElementById('btn-limpar');
 
     // ── Lista de cursos adicionados ───────────────────────────────────────────
-    let cursosAdicionados = [];  // [{curso, matricula}, ...]
+    let cursosAdicionados = [];  // [{emailInst, curso, matricula}, ...]
 
     function modalidadeDoCurso(curso) {
       if (curso.startsWith('Técnico Integrado'))   return 'Integrado';
@@ -390,7 +397,11 @@
         const li = document.createElement('li');
         li.style.cssText = 'display:flex;align-items:center;gap:var(--space-3);background:var(--color-surface-secondary,#f8f9fa);border:1px solid var(--color-border);border-radius:var(--radius-md);padding:var(--space-2) var(--space-3);font-size:var(--font-size-sm);';
         li.innerHTML = `
-          <span style="flex:1;"><strong>${escapeHtml(item.curso)}</strong> <span style="color:var(--color-text-muted);">— Mat. ${escapeHtml(item.matricula)}</span></span>
+          <span style="flex:1;">
+            <strong>${escapeHtml(item.curso)}</strong>
+            <span style="color:var(--color-text-muted);">— Mat. ${escapeHtml(item.matricula)}</span>
+            <span style="color:var(--color-text-muted);font-size:var(--font-size-xs);display:block;margin-top:2px;">${escapeHtml(item.emailInst || '')}</span>
+          </span>
           <button type="button" class="btn btn-ghost btn-sm" style="color:var(--color-danger,#dc3545);padding:2px 8px;"
             onclick="removerCurso(${idx})" aria-label="Remover curso">✕</button>
         `;
@@ -402,15 +413,29 @@
     }
 
     function adicionarCurso() {
+      const inpEmail = document.getElementById('email-inst-add');
       const selCurso = document.getElementById('curso-add');
       const inpMat   = document.getElementById('matricula-add');
       const errEl    = document.getElementById('cursos-error');
-      const curso    = selCurso.value.trim();
-      const mat      = inpMat.value.trim().replace(/\D/g, '');
+      const emailCurso = inpEmail.value.trim().toLowerCase();
+      const curso      = selCurso.value.trim();
+      const mat        = inpMat.value.trim().replace(/\D/g, '');
 
       errEl.textContent = '';
       errEl.classList.add('hidden');
 
+      if (!emailCurso) {
+        errEl.textContent = 'Informe o e-mail institucional do curso.';
+        errEl.classList.remove('hidden');
+        inpEmail.focus();
+        return;
+      }
+      if (!isStudentEmail(emailCurso)) {
+        errEl.textContent = 'O e-mail institucional deve ser do domínio @aluno.riogrande.ifrs.edu.br.';
+        errEl.classList.remove('hidden');
+        inpEmail.focus();
+        return;
+      }
       if (!curso) {
         errEl.textContent = 'Selecione um curso.';
         errEl.classList.remove('hidden');
@@ -436,9 +461,10 @@
         return;
       }
 
-      cursosAdicionados.push({ curso: curso, matricula: mat });
+      cursosAdicionados.push({ emailInst: emailCurso, curso: curso, matricula: mat });
       selCurso.value = '';
       inpMat.value   = '';
+      // Mantém e-mail do curso para agilizar adição do próximo vínculo
       renderizarCursos();
     }
 
@@ -447,9 +473,11 @@
       renderizarCursos();
     }
 
-    // Tecla Enter no campo matrícula aciona Adicionar
-    document.getElementById('matricula-add').addEventListener('keydown', function (e) {
-      if (e.key === 'Enter') { e.preventDefault(); adicionarCurso(); }
+    // Tecla Enter no campo e-mail ou matrícula aciona Adicionar
+    ['email-inst-add', 'matricula-add'].forEach(id => {
+      document.getElementById(id).addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') { e.preventDefault(); adicionarCurso(); }
+      });
     });
 
     // ── Autenticação ──────────────────────────────────────────────────────────
@@ -459,6 +487,8 @@
       if (emailLogado) {
         document.getElementById('email-inst').value = emailLogado;
         document.getElementById('email-inst').disabled = true;
+        // Pré-preenche o campo de e-mail do primeiro vínculo
+        document.getElementById('email-inst-add').value = emailLogado;
       }
     });
 
@@ -647,6 +677,9 @@
       form.reset();
       cursosAdicionados = [];
       renderizarCursos();
+      // Restaura e-mail do vínculo com o e-mail logado
+      const emailLogado = getCurrentUserEmail();
+      if (emailLogado) document.getElementById('email-inst-add').value = emailLogado;
       form.querySelectorAll('.form-control').forEach(el => { el.classList.remove('is-invalid','is-valid'); el.removeAttribute('aria-invalid'); });
       form.querySelectorAll('.form-error').forEach(el => { el.textContent = ''; el.classList.add('hidden'); });
       hideFormFeedback('form-feedback');

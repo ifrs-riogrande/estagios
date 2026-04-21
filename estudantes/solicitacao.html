@@ -443,6 +443,7 @@
 
     // ── Dados do estudante (carregados ao validar o código) ──────────────────
     let dadosEstudante = null;
+    let emailInstEstagio = '';   // e-mail institucional do vínculo selecionado
 
     // Opções de semestre por tipo de curso (espelha cadastro.html)
     const OPCOES_SEMESTRE_SOL = {
@@ -539,9 +540,10 @@
         return;
       }
 
-      // Preenche matrícula correspondente ao curso
+      // Preenche matrícula e e-mail institucional correspondentes ao curso
       const entry = (dadosEstudante.cursos || []).find(c => c.curso === cursoNome);
-      inpMat.value = entry ? entry.matricula : '';
+      inpMat.value     = entry ? entry.matricula : '';
+      emailInstEstagio = entry ? (entry.emailInst || '') : '';
 
       // Popula opções de semestre
       const tipo   = tipoDoCursoSol(cursoNome);
@@ -628,6 +630,7 @@
 
       // Limpa estado anterior
       dadosEstudante = null;
+      emailInstEstagio = '';
       populateSelect('curso-estagio', [], 'Buscando seus dados...');
       selCurso.disabled = true;
       document.getElementById('matricula-estagio').value = '';
@@ -643,7 +646,10 @@
           populateSelect('curso-estagio', [], 'Nenhum curso cadastrado — contate o setor');
         } else {
           populateSelect('curso-estagio',
-            cursos.map(c => ({ value: c.curso, label: c.curso + ' (mat. ' + c.matricula + ')' })),
+            cursos.map(c => ({
+              value: c.curso,
+              label: c.curso + ' (mat. ' + c.matricula + ')' + (c.emailInst ? ' — ' + c.emailInst : ''),
+            })),
             'Selecione o curso para este estágio...'
           );
           selCurso.disabled = false;
@@ -652,6 +658,7 @@
         markFieldValid('codigo-acesso');
       } catch (err) {
         dadosEstudante = null;
+        emailInstEstagio = '';
         populateSelect('curso-estagio', [], 'Preencha o código de acesso primeiro...');
         selCurso.disabled = true;
         errEl.textContent = err.message || 'Código inválido ou cadastro não encontrado.';
@@ -752,6 +759,7 @@
         codigoAcesso:       document.getElementById('codigo-acesso').value.trim().toUpperCase(),
         cursoEstagio:       document.getElementById('curso-estagio').value,
         matriculaEstagio:   document.getElementById('matricula-estagio').value,
+        emailInstEstagio:   emailInstEstagio,
         turno:              document.getElementById('turno').value,
         semestreAtual:      document.getElementById('semestre-atual').value,
         formando:           document.getElementById('formando').value,
@@ -796,6 +804,8 @@
 
     document.getElementById('btn-limpar')?.addEventListener('click', function () {
       form.reset();
+      dadosEstudante   = null;
+      emailInstEstagio = '';
       form.querySelectorAll('.form-control').forEach(el => { el.classList.remove('is-invalid','is-valid'); el.removeAttribute('aria-invalid'); });
       form.querySelectorAll('.form-error').forEach(el => { el.textContent = ''; el.classList.add('hidden'); });
       hideFormFeedback('form-feedback');

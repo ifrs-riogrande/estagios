@@ -110,8 +110,9 @@ var COL = {
   DATA_ATIVACAO:    34,
   OBJETIVOS:        35,
   FORMANDO:         36,
-  TURNO:            37,   // turno do estudante no curso (salvo na solicitação)
-  SEMESTRE_SOL:     38,   // período/semestre atual (salvo na solicitação)
+  TURNO:             37,   // turno do estudante no curso (salvo na solicitação)
+  SEMESTRE_SOL:      38,   // período/semestre atual (salvo na solicitação)
+  EMAIL_INST_ESTAGIO:39,   // e-mail institucional do vínculo usado neste estágio
 };
 
 // ─────────────────────────────────────────────────────────────────
@@ -836,7 +837,8 @@ function montarVariaveis_(r) {
   // ── Dados diretos da aba Solicitações ──────────────────────────────
   vars['{{ID_ESTAGIO}}']            = String(r[COL.ID_ESTAGIO]        || '');
   vars['{{NOME_ESTUDANTE}}']        = String(r[COL.NOME_ESTUDANTE]    || '');
-  vars['{{EMAIL_ESTUDANTE}}']       = String(r[COL.EMAIL_ESTUDANTE]   || '');
+  // Usa e-mail institucional do vínculo deste estágio; cai para o e-mail principal se ausente
+  vars['{{EMAIL_ESTUDANTE}}']       = String(r[COL.EMAIL_INST_ESTAGIO] || r[COL.EMAIL_ESTUDANTE] || '');
   vars['{{CPF_ESTUDANTE}}']         = String(r[COL.CPF_ESTUDANTE]     || '');
   vars['{{MATRICULA}}']             = String(r[COL.MATRICULA]         || '');
   vars['{{CURSO}}']                 = String(r[COL.CURSO]             || '');

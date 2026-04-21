@@ -180,10 +180,31 @@
     function exibirDados(d) {
       document.getElementById('painel-verificacao').style.display = 'none';
       document.getElementById('painel-dados').style.display = 'block';
-      document.getElementById('alerta-texto').textContent = 'Cadastro encontrado: ' + (d.nome || '') + ' — ' + (d.matricula || '');
+
+      const primeiroVinculo = (d.cursos && d.cursos.length > 0) ? d.cursos[0] : null;
+      const labelResumo = (d.nome || '') + (primeiroVinculo ? ' — ' + primeiroVinculo.curso : (d.curso ? ' — ' + d.curso : ''));
+      document.getElementById('alerta-texto').textContent = 'Cadastro encontrado: ' + labelResumo;
 
       const val = v => v ? `<p>${escapeHtml(v)}</p>` : `<p class="vazio">Não informado</p>`;
       const enderecoCompleto = [d.endereco, d.bairro, d.cidade && d.uf ? d.cidade + ' — ' + d.uf : (d.cidade || d.uf), d.cep ? 'CEP ' + d.cep : ''].filter(Boolean).join(', ');
+
+      // Monta os vínculos acadêmicos (cursos com e-mail e matrícula por vínculo)
+      let cursosHtml = '';
+      if (d.cursos && d.cursos.length > 0) {
+        cursosHtml = d.cursos.map((c, idx) => `
+          <div class="dado-item dado-full" style="background:var(--color-surface-secondary,#f8f9fa);border:1px solid var(--color-border);border-radius:var(--radius-md);padding:var(--space-3) var(--space-4);">
+            <label>Vínculo ${idx + 1}</label>
+            <p>${escapeHtml(c.curso || '')}
+              &nbsp;·&nbsp; Mat.&nbsp;${escapeHtml(c.matricula || '')}
+              &nbsp;·&nbsp; ${escapeHtml(c.emailInst || d.emailInst || '')}
+            </p>
+          </div>`).join('');
+      } else {
+        // Compatibilidade com registros antigos sem CURSOS_JSON
+        cursosHtml = `
+          <div class="dado-item"><label>Curso</label>${val(d.curso)}</div>
+          <div class="dado-item"><label>Matrícula</label>${val(d.matricula)}</div>`;
+      }
 
       document.getElementById('dados-content').innerHTML = `
         <div class="section-title">Identificação</div>
@@ -193,14 +214,10 @@
         <div class="dado-item"><label>Maior de idade?</label>${val(d.maiorIdade)}</div>
 
         <div class="section-title">Dados Acadêmicos</div>
-        <div class="dado-item"><label>Curso</label>${val(d.curso)}</div>
+        ${cursosHtml}
         <div class="dado-item"><label>Modalidade</label>${val(d.modalidade)}</div>
-        <div class="dado-item"><label>Turno</label>${val(d.turno)}</div>
-        <div class="dado-item"><label>Semestre / Período</label>${val(d.semestre)}</div>
-        <div class="dado-item"><label>Matrícula</label>${val(d.matricula)}</div>
 
         <div class="section-title">Contato</div>
-        <div class="dado-item"><label>E-mail Institucional</label>${val(d.emailInst)}</div>
         <div class="dado-item"><label>E-mail Pessoal</label>${val(d.emailPessoal)}</div>
         <div class="dado-item"><label>Telefone</label>${val(d.telefone)}</div>
         <div class="dado-item dado-full"><label>Endereço</label>${val(enderecoCompleto)}</div>

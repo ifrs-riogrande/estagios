@@ -52,7 +52,7 @@ var COL_EST = {
   CEP:             23,
   CIDADE:          24,
   UF:              25,
-  CURSOS_JSON:     26,   // JSON array [{curso, matricula}] — todos os cursos do aluno
+  CURSOS_JSON:     26,   // JSON array [{emailInst, curso, matricula}] — todos os cursos do aluno
 };
 
 // ---------------------------------------------------------------------------
@@ -97,24 +97,38 @@ function cadastrarEstudante_(dados) {
   var emailResp  = sanitizar_(dados.emailResponsavel, 100).toLowerCase();
   var docResp    = sanitizar_(dados.docResponsavel, 300);
 
-  // ── Cursos (array de objetos {curso, matricula}) ──────────────────────────
-  var cursosRaw = Array.isArray(dados.cursos) ? dados.cursos : [];
-  // Sanitiza cada item
+  // ── Cursos (array [{emailInst, curso, matricula}]) ───────────────────────
   var cursos = [];
-  for (var ci = 0; ci < cursosRaw.length && cursos.length < 6; ci++) {
-    var c = sanitizar_(cursosRaw[ci].curso,    100);
-    var m = sanitizar_(cursosRaw[ci].matricula, 20).replace(/\D/g, '');
-    if (c && m) cursos.push({ curso: c, matricula: m });
+  var cursosInput = dados.cursos;
+  if (cursosInput && typeof cursosInput === 'object') {
+    // Garante que é um array iterável mesmo se GAS serializar de forma diferente
+    var cursosArr = Array.isArray(cursosInput) ? cursosInput : Object.values(cursosInput);
+    for (var ci = 0; ci < cursosArr.length && cursos.length < 6; ci++) {
+      var item = cursosArr[ci];
+      if (!item) continue;
+      var nomeCurso    = String(item.curso     || '').trim().slice(0, 100);
+      var numMatricula = String(item.matricula || '').replace(/\D/g, '').slice(0, 20);
+      var emailCurso   = sanitizar_(String(item.emailInst || emailInst), 100).toLowerCase();
+      if (!nomeCurso || !numMatricula) continue;
+      // Valida domínio do e-mail institucional do curso
+      if (!/@aluno\.riogrande\.ifrs\.edu\.br$/i.test(emailCurso)) {
+        return jsonError_(
+          'E-mail institucional inválido para o curso "' + nomeCurso +
+          '". Use o domínio @aluno.riogrande.ifrs.edu.br.', 'VALIDATION');
+      }
+      cursos.push({ emailInst: emailCurso, curso: nomeCurso, matricula: numMatricula });
+    }
   }
-  if (cursos.length === 0) return jsonError_('Informe pelo menos um curso e matrícula.', 'VALIDATION');
+  if (cursos.length === 0) {
+    return jsonError_('Nenhum curso válido informado. Verifique curso, matrícula e e-mail institucional.', 'VALIDATION');
+  }
 
   // Primeiro curso para compatibilidade com colunas legadas
   var cursoPrincipal     = cursos[0].curso;
   var matriculaPrincipal = cursos[0].matricula;
-  var modalidade         = sanitizar_(dados.modalidade, 50);
+  var modalidade = String(dados.modalidade || '').trim().slice(0, 50);
   if (!modalidade) {
-    // Deriva modalidade do primeiro curso, caso o front não envie
-    if (cursoPrincipal.indexOf('Integrado') !== -1)    modalidade = 'Integrado';
+    if (cursoPrincipal.indexOf('Integrado')   !== -1) modalidade = 'Integrado';
     else if (cursoPrincipal.indexOf('Subsequente') !== -1) modalidade = 'Subsequente';
     else modalidade = 'Superior';
   }
@@ -173,7 +187,7 @@ function cadastrarEstudante_(dados) {
 
   // Notifica o setor sobre novo cadastro pendente
   try {
-    var cursosTexto = cursos.map(function(c) { return c.curso + ' (mat. ' + c.matricula + ')'; }).join('\n              ');
+    var cursosTexto = cursos.map(function(c) { return c.curso + ' (mat. ' + c.matricula + ', ' + c.emailInst + ')'; }).join('\n              ');
     MailApp.sendEmail({
       to:      'estagios@riogrande.ifrs.edu.br',
       subject: '[SGE IFRS] Novo cadastro aguardando validação — ' + nome,
@@ -349,67 +363,123 @@ function validarCodigoAcesso_(emailEstudante, codigo) {
 // ---------------------------------------------------------------------------
 
 /**
- * Localiza estudante por e-mail + código, valida status Ativo.
+ * Localiza estudante por e-mail (principal ou de qualquer vínculo) + código.
+ * Valida status Ativo e retorna dados completos.
  */
 function buscarEstudantePorEmailECodigo_(emailEstudante, codigo) {
   var sheet = abrirAba_(CFG_EST.SS_ID, CFG_EST.ABA);
   var dados = sheet.getDataRange().getValues();
-  var emailNorm = String(emailEstudante || '').toLowerCase().trim();
+  var emailNorm  = String(emailEstudante || '').toLowerCase().trim();
   var codigoNorm = String(codigo || '').trim().toUpperCase();
 
+  var linhaEncontrada = null;
+
+  // 1ª passagem: busca pelo e-mail principal (COL_EST.EMAIL_INST)
   for (var i = 1; i < dados.length; i++) {
-    var linha = dados[i];
-    if (String(linha[COL_EST.EMAIL_INST] || '').toLowerCase().trim() !== emailNorm) continue;
-
-    // Estudante encontrado pelo e-mail
-    var statusEst = String(linha[COL_EST.STATUS] || '').trim();
-    if (statusEst !== 'Ativo') {
-      throw new Error('Cadastro ainda não validado pelo setor. Aguarde o e-mail com seu código de acesso.');
+    if (String(dados[i][COL_EST.EMAIL_INST] || '').toLowerCase().trim() === emailNorm) {
+      linhaEncontrada = dados[i];
+      break;
     }
-
-    var codPlan = String(linha[COL_EST.COD_ACESSO] || '').trim().toUpperCase();
-    if (!codPlan) {
-      throw new Error('Nenhum código de acesso registrado. Entre em contato com o setor.');
-    }
-    if (codPlan !== codigoNorm) {
-      throw new Error('Código de acesso inválido.');
-    }
-
-    // Recupera array de cursos; usa compat se JSON ausente
-    var cursosJson = String(linha[COL_EST.CURSOS_JSON] || '').trim();
-    var cursosArr  = [];
-    try {
-      if (cursosJson) cursosArr = JSON.parse(cursosJson);
-    } catch (_) {}
-    if (!cursosArr.length) {
-      var c0 = String(linha[COL_EST.CURSO]     || '');
-      var m0 = String(linha[COL_EST.MATRICULA] || '');
-      if (c0) cursosArr = [{ curso: c0, matricula: m0 }];
-    }
-
-    return {
-      nome:         String(linha[COL_EST.NOME]         || ''),
-      matricula:    String(linha[COL_EST.MATRICULA]     || ''),
-      curso:        String(linha[COL_EST.CURSO]         || ''),
-      modalidade:   String(linha[COL_EST.MODALIDADE]    || ''),
-      cpf:          String(linha[COL_EST.CPF]           || ''),
-      dataNasc:     String(linha[COL_EST.DATA_NASC]     || ''),
-      telefone:     String(linha[COL_EST.TELEFONE]      || ''),
-      emailInst:    String(linha[COL_EST.EMAIL_INST]    || ''),
-      emailPessoal: String(linha[COL_EST.EMAIL_PESSOAL] || ''),
-      endereco:     String(linha[COL_EST.ENDERECO]      || ''),
-      bairro:       String(linha[COL_EST.BAIRRO]        || ''),
-      cep:          String(linha[COL_EST.CEP]           || ''),
-      cidade:       String(linha[COL_EST.CIDADE]        || ''),
-      uf:           String(linha[COL_EST.UF]            || ''),
-      maiorIdade:   String(linha[COL_EST.MAIOR_IDADE]   || ''),
-      nomeResp:     String(linha[COL_EST.NOME_RESP]     || ''),
-      cursos:       cursosArr,   // array [{curso, matricula}]
-      status:       statusEst,
-    };
   }
 
-  throw new Error('Estudante não encontrado para o e-mail informado.');
+  // 2ª passagem: busca em qualquer emailInst dentro de CURSOS_JSON
+  if (!linhaEncontrada) {
+    for (var j = 1; j < dados.length; j++) {
+      var cjBusca = String(dados[j][COL_EST.CURSOS_JSON] || '').trim();
+      if (!cjBusca) continue;
+      try {
+        var arrBusca = JSON.parse(cjBusca);
+        for (var ci = 0; ci < arrBusca.length; ci++) {
+          if (String(arrBusca[ci].emailInst || '').toLowerCase().trim() === emailNorm) {
+            linhaEncontrada = dados[j];
+            break;
+          }
+        }
+        if (linhaEncontrada) break;
+      } catch (_) {}
+    }
+  }
+
+  if (!linhaEncontrada) {
+    throw new Error('Estudante não encontrado para o e-mail informado.');
+  }
+
+  var linha = linhaEncontrada;
+
+  var statusEst = String(linha[COL_EST.STATUS] || '').trim();
+  if (statusEst !== 'Ativo') {
+    throw new Error('Cadastro ainda não validado pelo setor. Aguarde o e-mail com seu código de acesso.');
+  }
+
+  var codPlan = String(linha[COL_EST.COD_ACESSO] || '').trim().toUpperCase();
+  if (!codPlan) {
+    throw new Error('Nenhum código de acesso registrado. Entre em contato com o setor.');
+  }
+  if (codPlan !== codigoNorm) {
+    throw new Error('Código de acesso inválido.');
+  }
+
+  // Recupera array de cursos; compatibilidade com registros antigos sem emailInst
+  var cursosJsonFinal = String(linha[COL_EST.CURSOS_JSON] || '').trim();
+  var cursosArrFinal  = [];
+  try {
+    if (cursosJsonFinal) cursosArrFinal = JSON.parse(cursosJsonFinal);
+  } catch (_) {}
+  if (!cursosArrFinal.length) {
+    var c0 = String(linha[COL_EST.CURSO]     || '');
+    var m0 = String(linha[COL_EST.MATRICULA] || '');
+    var e0 = String(linha[COL_EST.EMAIL_INST] || '');
+    if (c0) cursosArrFinal = [{ emailInst: e0, curso: c0, matricula: m0 }];
+  }
+
+  return {
+    nome:         String(linha[COL_EST.NOME]         || ''),
+    matricula:    String(linha[COL_EST.MATRICULA]     || ''),
+    curso:        String(linha[COL_EST.CURSO]         || ''),
+    modalidade:   String(linha[COL_EST.MODALIDADE]    || ''),
+    cpf:          String(linha[COL_EST.CPF]           || ''),
+    dataNasc:     String(linha[COL_EST.DATA_NASC]     || ''),
+    telefone:     String(linha[COL_EST.TELEFONE]      || ''),
+    emailInst:    String(linha[COL_EST.EMAIL_INST]    || ''),
+    emailPessoal: String(linha[COL_EST.EMAIL_PESSOAL] || ''),
+    endereco:     String(linha[COL_EST.ENDERECO]      || ''),
+    bairro:       String(linha[COL_EST.BAIRRO]        || ''),
+    cep:          String(linha[COL_EST.CEP]           || ''),
+    cidade:       String(linha[COL_EST.CIDADE]        || ''),
+    uf:           String(linha[COL_EST.UF]            || ''),
+    maiorIdade:   String(linha[COL_EST.MAIOR_IDADE]   || ''),
+    nomeResp:     String(linha[COL_EST.NOME_RESP]     || ''),
+    cursos:       cursosArrFinal,   // array [{emailInst, curso, matricula}]
+    status:       statusEst,
+  };
+}
+
+/**
+ * Dado qualquer e-mail institucional (principal ou de vínculo), retorna
+ * o e-mail principal (COL_EST.EMAIL_INST) do estudante correspondente.
+ * Se não encontrado, devolve o próprio e-mail recebido.
+ * Usado por api-solicitacao.gs para resolver identidade em verificações de ID.
+ */
+function resolverEmailPrimario_(emailQualquer) {
+  var sheet = abrirAba_(CFG_EST.SS_ID, CFG_EST.ABA);
+  var dados = sheet.getDataRange().getValues();
+  var norm = String(emailQualquer || '').toLowerCase().trim();
+  for (var i = 1; i < dados.length; i++) {
+    if (String(dados[i][COL_EST.EMAIL_INST] || '').toLowerCase().trim() === norm) {
+      return norm;  // já é o principal
+    }
+    var cj = String(dados[i][COL_EST.CURSOS_JSON] || '').trim();
+    if (!cj) continue;
+    try {
+      var arr = JSON.parse(cj);
+      for (var ci = 0; ci < arr.length; ci++) {
+        if (String(arr[ci].emailInst || '').toLowerCase().trim() === norm) {
+          return String(dados[i][COL_EST.EMAIL_INST] || '').toLowerCase().trim();
+        }
+      }
+    } catch (_) {}
+  }
+  return norm;  // não encontrado — retorna como está
 }
 
 /**

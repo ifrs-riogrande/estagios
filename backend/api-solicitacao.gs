@@ -65,6 +65,7 @@ var COL_SOL = {
   FORMANDO:          36,   // "Sim" ou "Não" — último semestre/ano letivo
   TURNO:             37,   // Turno do estudante no curso (informado na solicitação)
   SEMESTRE_SOL:      38,   // Período/Semestre atual (informado na solicitação)
+  EMAIL_INST_ESTAGIO:39,   // E-mail institucional do vínculo usado neste estágio
 };
 
 /** Colunas da aba Relatórios Parciais (base 0). */
@@ -188,8 +189,10 @@ function solicitarEstagio_(dados) {
   var cursoEstagio     = sanitizar_(dados.cursoEstagio     || dados.curso,     100) || estudante.curso;
   var matriculaEstagio = sanitizar_(dados.matriculaEstagio || dados.matricula, 20).replace(/\D/g, '') || estudante.matricula;
   // Turno e semestre: informados na solicitação (não estão mais no cadastro)
-  var turno            = sanitizar_(dados.turno, 30);
-  var semestreAtual    = sanitizar_(dados.semestreAtual, 30);
+  var turno              = sanitizar_(dados.turno, 30);
+  var semestreAtual      = sanitizar_(dados.semestreAtual, 30);
+  // E-mail institucional do vínculo deste estágio (pode diferir do e-mail principal do cadastro)
+  var emailInstEstagio   = sanitizar_(dados.emailInstEstagio || '', 100).toLowerCase() || estudante.emailInst;
 
   // Validações
   if (!tipoEstagio)    return jsonError_('Tipo de estágio é obrigatório.', 'VALIDATION');
@@ -253,9 +256,10 @@ function solicitarEstagio_(dados) {
   linha[COL_SOL.PLANO_ATIVIDADES] = planoAtiv;
   linha[COL_SOL.OBJETIVOS]        = objetivos;
   linha[COL_SOL.FORMANDO]         = formando;
-  linha[COL_SOL.TURNO]            = turno;
-  linha[COL_SOL.SEMESTRE_SOL]     = semestreAtual;
-  linha[COL_SOL.LINK_DOC_MAT]     = docMat;
+  linha[COL_SOL.TURNO]              = turno;
+  linha[COL_SOL.SEMESTRE_SOL]       = semestreAtual;
+  linha[COL_SOL.EMAIL_INST_ESTAGIO] = emailInstEstagio;
+  linha[COL_SOL.LINK_DOC_MAT]       = docMat;
   linha[COL_SOL.LINK_DOC_ID]      = docId;
   linha[COL_SOL.LINK_DOC_BOL]     = docBol;
   linha[COL_SOL.STATUS]           = 'Pendente';
@@ -507,18 +511,23 @@ function enviarAdendo_(dados) {
 // ---------------------------------------------------------------------------
 
 /**
- * Verifica se o ID de estágio existe na planilha e pertence ao e-mail do estudante.
+ * Verifica se o ID de estágio existe na planilha e pertence ao estudante.
+ * Aceita qualquer e-mail do estudante (principal ou vínculo) via resolverEmailPrimario_.
  * Lança erro se não encontrado ou se não pertencer ao estudante.
  */
 function verificarIdEstagio_(idEstagio, emailEstudante) {
+  // Resolve o e-mail principal mesmo que o estudante tenha feito login com e-mail de vínculo
+  var emailPrimario = resolverEmailPrimario_(emailEstudante);
+  var emailToken    = emailEstudante.toLowerCase().trim();
+
   var ss    = SpreadsheetApp.openById(CFG_SOL.SS_ID);
   var sheet = ss.getSheetByName(CFG_SOL.ABA_SOL) || ss.getSheets()[0];
   var dados = sheet.getDataRange().getValues();
   for (var i = 1; i < dados.length; i++) {
     var linha = dados[i];
     if (String(linha[COL_SOL.ID_ESTAGIO] || '').trim() !== idEstagio) continue;
-    if (String(linha[COL_SOL.EMAIL_ESTUDANTE] || '').toLowerCase().trim()
-        !== emailEstudante.toLowerCase().trim()) {
+    var emailNaSol = String(linha[COL_SOL.EMAIL_ESTUDANTE] || '').toLowerCase().trim();
+    if (emailNaSol !== emailPrimario && emailNaSol !== emailToken) {
       throw new Error('Este ID de estágio não pertence à sua conta.');
     }
     return; // OK
@@ -587,7 +596,8 @@ function listarMeusEstagios_(e) {
   try {
     var token     = e.parameter && e.parameter.authToken;
     var tokenInfo = validarTokenEstudante_(token);
-    var email     = tokenInfo.email.toLowerCase();
+    // Resolve e-mail principal (o estudante pode ter feito login com e-mail de vínculo)
+    var email = resolverEmailPrimario_(tokenInfo.email.toLowerCase());
 
     var ss    = SpreadsheetApp.openById(CFG_SOL.SS_ID);
     var sheet = ss.getSheetByName(CFG_SOL.ABA_SOL);
