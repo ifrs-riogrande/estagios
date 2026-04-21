@@ -63,6 +63,8 @@ var COL_SOL = {
   DATA_ATIVACAO:     34,   // Data de ativação do estágio
   OBJETIVOS:         35,   // Objetivos do estágio (campo da solicitação)
   FORMANDO:          36,   // "Sim" ou "Não" — último semestre/ano letivo
+  TURNO:             37,   // Turno do estudante no curso (informado na solicitação)
+  SEMESTRE_SOL:      38,   // Período/Semestre atual (informado na solicitação)
 };
 
 /** Colunas da aba Relatórios Parciais (base 0). */
@@ -182,6 +184,12 @@ function solicitarEstagio_(dados) {
   var docMat         = sanitizar_(dados.docMatricula, 200);
   var docId          = sanitizar_(dados.docIdentidade, 200);
   var docBol         = sanitizar_(dados.docBoletim, 200);
+  // Curso e matrícula específicos deste estágio (podem diferir do curso principal do estudante)
+  var cursoEstagio     = sanitizar_(dados.cursoEstagio     || dados.curso,     100) || estudante.curso;
+  var matriculaEstagio = sanitizar_(dados.matriculaEstagio || dados.matricula, 20).replace(/\D/g, '') || estudante.matricula;
+  // Turno e semestre: informados na solicitação (não estão mais no cadastro)
+  var turno            = sanitizar_(dados.turno, 30);
+  var semestreAtual    = sanitizar_(dados.semestreAtual, 30);
 
   // Validações
   if (!tipoEstagio)    return jsonError_('Tipo de estágio é obrigatório.', 'VALIDATION');
@@ -222,8 +230,8 @@ function solicitarEstagio_(dados) {
   linha[COL_SOL.ID_ESTAGIO]       = idEstagio;
   linha[COL_SOL.EMAIL_ESTUDANTE]  = estudante.emailInst;
   linha[COL_SOL.NOME_ESTUDANTE]   = estudante.nome;
-  linha[COL_SOL.MATRICULA]        = estudante.matricula;
-  linha[COL_SOL.CURSO]            = estudante.curso;
+  linha[COL_SOL.MATRICULA]        = matriculaEstagio;   // matrícula do curso deste estágio
+  linha[COL_SOL.CURSO]            = cursoEstagio;        // curso deste estágio
   linha[COL_SOL.CPF]              = estudante.cpf;
   linha[COL_SOL.DATA_NASC]        = estudante.dataNasc;
   linha[COL_SOL.TELEFONE]         = estudante.telefone;
@@ -245,6 +253,8 @@ function solicitarEstagio_(dados) {
   linha[COL_SOL.PLANO_ATIVIDADES] = planoAtiv;
   linha[COL_SOL.OBJETIVOS]        = objetivos;
   linha[COL_SOL.FORMANDO]         = formando;
+  linha[COL_SOL.TURNO]            = turno;
+  linha[COL_SOL.SEMESTRE_SOL]     = semestreAtual;
   linha[COL_SOL.LINK_DOC_MAT]     = docMat;
   linha[COL_SOL.LINK_DOC_ID]      = docId;
   linha[COL_SOL.LINK_DOC_BOL]     = docBol;

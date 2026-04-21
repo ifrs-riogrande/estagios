@@ -72,13 +72,6 @@
 
             <div class="form-row">
               <div class="form-group">
-                <label class="form-label required" for="matricula">Número de matrícula</label>
-                <input type="text" id="matricula" name="matricula" class="form-control"
-                  placeholder="Ex.: 2023100001" required aria-required="true"
-                  aria-describedby="matricula-error" inputmode="numeric">
-                <span id="matricula-error" class="form-error hidden" role="alert"></span>
-              </div>
-              <div class="form-group">
                 <label class="form-label required" for="cpf">CPF</label>
                 <input type="text" id="cpf" name="cpf" class="form-control"
                   placeholder="000.000.000-00" required aria-required="true"
@@ -269,69 +262,60 @@
               Seção 4 — Dados Acadêmicos
             </h2>
 
-            <div class="form-group">
-              <label class="form-label required" for="curso">Curso</label>
-              <select id="curso" name="curso" class="form-control" required aria-required="true" aria-describedby="curso-error">
-                <option value="">Selecione o curso...</option>
-                <optgroup label="Técnico Integrado">
-                  <option value="Técnico Integrado em Automação Industrial">Técnico Integrado em Automação Industrial</option>
-                  <option value="Técnico Integrado em Eletrotécnica">Técnico Integrado em Eletrotécnica</option>
-                  <option value="Técnico Integrado em Geoprocessamento">Técnico Integrado em Geoprocessamento</option>
-                  <option value="Técnico Integrado em Informática para Internet">Técnico Integrado em Informática para Internet</option>
-                  <option value="Técnico Integrado em Mecânica">Técnico Integrado em Mecânica</option>
-                  <option value="Técnico Integrado em Refrigeração e Climatização">Técnico Integrado em Refrigeração e Climatização</option>
-                </optgroup>
-                <optgroup label="Técnico Subsequente">
-                  <option value="Técnico Subsequente em Automação Industrial">Técnico Subsequente em Automação Industrial</option>
-                  <option value="Técnico Subsequente em Eletrotécnica">Técnico Subsequente em Eletrotécnica</option>
-                  <option value="Técnico Subsequente em Enfermagem">Técnico Subsequente em Enfermagem</option>
-                  <option value="Técnico Subsequente em Fabricação Mecânica">Técnico Subsequente em Fabricação Mecânica</option>
-                  <option value="Técnico Subsequente em Geoprocessamento">Técnico Subsequente em Geoprocessamento</option>
-                  <option value="Técnico Subsequente em Refrigeração e Climatização">Técnico Subsequente em Refrigeração e Climatização</option>
-                </optgroup>
-                <optgroup label="Tecnólogo">
-                  <option value="Tecnologia em Análise e Desenvolvimento de Sistemas">Tecnologia em Análise e Desenvolvimento de Sistemas</option>
-                  <option value="Tecnologia em Construção de Edifícios">Tecnologia em Construção de Edifícios</option>
-                </optgroup>
-                <optgroup label="Bacharelado">
-                  <option value="Bacharelado em Engenharia Mecânica">Bacharelado em Engenharia Mecânica</option>
-                  <option value="Bacharelado em Arquitetura e Urbanismo">Bacharelado em Arquitetura e Urbanismo</option>
-                </optgroup>
-              </select>
-              <span id="curso-error" class="form-error hidden" role="alert"></span>
-            </div>
+            <p class="form-hint" style="margin-bottom:var(--space-4);">
+              Informe todos os cursos em que está matriculado (máximo 6). Para cada um, selecione o curso e informe a matrícula correspondente.
+            </p>
 
-            <div class="form-row">
-              <div class="form-group">
-                <label class="form-label required" for="turno">Turno</label>
-                <select id="turno" name="turno" class="form-control" required aria-required="true" aria-describedby="turno-error">
-                  <option value="">Selecione...</option>
-                  <option value="Manhã">Manhã</option>
-                  <option value="Tarde">Tarde</option>
-                  <option value="Noite">Noite</option>
-                  <option value="Integral">Integral</option>
+            <!-- Bloco de adição de curso -->
+            <div style="display:flex;gap:var(--space-3);align-items:flex-end;flex-wrap:wrap;margin-bottom:var(--space-3);">
+              <div class="form-group" style="flex:2;min-width:220px;margin-bottom:0;">
+                <label class="form-label required" for="curso-add">Curso</label>
+                <select id="curso-add" class="form-control" aria-describedby="cursos-error">
+                  <option value="">Selecione o curso...</option>
+                  <optgroup label="Técnico Integrado">
+                    <option value="Técnico Integrado em Automação Industrial">Técnico Integrado em Automação Industrial</option>
+                    <option value="Técnico Integrado em Eletrotécnica">Técnico Integrado em Eletrotécnica</option>
+                    <option value="Técnico Integrado em Geoprocessamento">Técnico Integrado em Geoprocessamento</option>
+                    <option value="Técnico Integrado em Informática para Internet">Técnico Integrado em Informática para Internet</option>
+                    <option value="Técnico Integrado em Mecânica">Técnico Integrado em Mecânica</option>
+                    <option value="Técnico Integrado em Refrigeração e Climatização">Técnico Integrado em Refrigeração e Climatização</option>
+                  </optgroup>
+                  <optgroup label="Técnico Subsequente">
+                    <option value="Técnico Subsequente em Automação Industrial">Técnico Subsequente em Automação Industrial</option>
+                    <option value="Técnico Subsequente em Eletrotécnica">Técnico Subsequente em Eletrotécnica</option>
+                    <option value="Técnico Subsequente em Enfermagem">Técnico Subsequente em Enfermagem</option>
+                    <option value="Técnico Subsequente em Fabricação Mecânica">Técnico Subsequente em Fabricação Mecânica</option>
+                    <option value="Técnico Subsequente em Geoprocessamento">Técnico Subsequente em Geoprocessamento</option>
+                    <option value="Técnico Subsequente em Refrigeração e Climatização">Técnico Subsequente em Refrigeração e Climatização</option>
+                  </optgroup>
+                  <optgroup label="Tecnólogo">
+                    <option value="Tecnologia em Análise e Desenvolvimento de Sistemas">Tecnologia em Análise e Desenvolvimento de Sistemas</option>
+                    <option value="Tecnologia em Construção de Edifícios">Tecnologia em Construção de Edifícios</option>
+                  </optgroup>
+                  <optgroup label="Bacharelado">
+                    <option value="Bacharelado em Engenharia Mecânica">Bacharelado em Engenharia Mecânica</option>
+                    <option value="Bacharelado em Arquitetura e Urbanismo">Bacharelado em Arquitetura e Urbanismo</option>
+                  </optgroup>
                 </select>
-                <span id="turno-error" class="form-error hidden" role="alert"></span>
               </div>
-              <div class="form-group">
-                <label class="form-label required" for="modalidade">Modalidade</label>
-                <select id="modalidade" name="modalidade" class="form-control" required aria-required="true" aria-describedby="modalidade-error" disabled>
-                  <option value="">Preenchido automaticamente pelo curso</option>
-                  <option value="Integrado">Integrado</option>
-                  <option value="Subsequente">Subsequente</option>
-                  <option value="Superior">Superior</option>
-                </select>
-                <span id="modalidade-error" class="form-error hidden" role="alert"></span>
+              <div class="form-group" style="flex:1;min-width:150px;margin-bottom:0;">
+                <label class="form-label required" for="matricula-add">Matrícula</label>
+                <input type="text" id="matricula-add" class="form-control"
+                  placeholder="Ex.: 2023100001" inputmode="numeric" aria-describedby="cursos-error">
+              </div>
+              <div style="padding-bottom:2px;">
+                <button type="button" id="btn-add-curso" class="btn btn-secondary" onclick="adicionarCurso()">
+                  <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" style="margin-right:4px"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"/></svg>
+                  Adicionar
+                </button>
               </div>
             </div>
+            <span id="cursos-error" class="form-error hidden" role="alert" style="display:block;margin-bottom:var(--space-3);"></span>
 
-            <div class="form-group">
-              <label class="form-label required" for="semestre">Período/Semestre atual</label>
-              <select id="semestre" name="semestre" class="form-control" required aria-required="true" aria-describedby="semestre-hint semestre-error" disabled>
-                <option value="">Selecione o curso primeiro...</option>
-              </select>
-              <span id="semestre-hint" class="form-hint">As opções dependem do curso selecionado.</span>
-              <span id="semestre-error" class="form-error hidden" role="alert"></span>
+            <!-- Lista de cursos adicionados -->
+            <div id="cursos-lista" style="display:none;margin-bottom:var(--space-2);">
+              <p style="font-size:var(--font-size-xs);color:var(--color-text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:var(--space-2);">Cursos adicionados</p>
+              <ul id="cursos-ul" style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:var(--space-2);"></ul>
             </div>
           </div>
 
@@ -389,28 +373,84 @@
     const btnEnviar = document.getElementById('btn-enviar');
     const btnLimpar = document.getElementById('btn-limpar');
 
-    // ── Opções de semestre por tipo de curso ──────────────────────────────────
-    const OPCOES_SEMESTRE = {
-      integrado:   ['1º Ano','2º Ano','3º Ano','4º Ano'],
-      subsequente: ['1º Semestre','2º Semestre','3º Semestre','4º Semestre'],
-      tecnologo:   ['1º Semestre','2º Semestre','3º Semestre','4º Semestre','5º Semestre','6º Semestre'],
-      bacharelado: ['1º Semestre','2º Semestre','3º Semestre','4º Semestre','5º Semestre',
-                    '6º Semestre','7º Semestre','8º Semestre','9º Semestre','10º Semestre'],
-    };
+    // ── Lista de cursos adicionados ───────────────────────────────────────────
+    let cursosAdicionados = [];  // [{curso, matricula}, ...]
 
-    function tipoDoCurso(curso) {
-      if (curso.startsWith('Técnico Integrado'))    return 'integrado';
-      if (curso.startsWith('Técnico Subsequente'))  return 'subsequente';
-      if (curso.startsWith('Tecnologia em'))        return 'tecnologo';
-      if (curso.startsWith('Bacharelado em'))       return 'bacharelado';
-      return null;
-    }
-
-    function modalidadeDoCurso(tipo) {
-      if (tipo === 'integrado')    return 'Integrado';
-      if (tipo === 'subsequente')  return 'Subsequente';
+    function modalidadeDoCurso(curso) {
+      if (curso.startsWith('Técnico Integrado'))   return 'Integrado';
+      if (curso.startsWith('Técnico Subsequente')) return 'Subsequente';
       return 'Superior';
     }
+
+    function renderizarCursos() {
+      const ul    = document.getElementById('cursos-ul');
+      const lista = document.getElementById('cursos-lista');
+      ul.innerHTML = '';
+      cursosAdicionados.forEach((item, idx) => {
+        const li = document.createElement('li');
+        li.style.cssText = 'display:flex;align-items:center;gap:var(--space-3);background:var(--color-surface-secondary,#f8f9fa);border:1px solid var(--color-border);border-radius:var(--radius-md);padding:var(--space-2) var(--space-3);font-size:var(--font-size-sm);';
+        li.innerHTML = `
+          <span style="flex:1;"><strong>${escapeHtml(item.curso)}</strong> <span style="color:var(--color-text-muted);">— Mat. ${escapeHtml(item.matricula)}</span></span>
+          <button type="button" class="btn btn-ghost btn-sm" style="color:var(--color-danger,#dc3545);padding:2px 8px;"
+            onclick="removerCurso(${idx})" aria-label="Remover curso">✕</button>
+        `;
+        ul.appendChild(li);
+      });
+      lista.style.display = cursosAdicionados.length ? 'block' : 'none';
+      // Habilita/desabilita botão adicionar
+      document.getElementById('btn-add-curso').disabled = cursosAdicionados.length >= 6;
+    }
+
+    function adicionarCurso() {
+      const selCurso = document.getElementById('curso-add');
+      const inpMat   = document.getElementById('matricula-add');
+      const errEl    = document.getElementById('cursos-error');
+      const curso    = selCurso.value.trim();
+      const mat      = inpMat.value.trim().replace(/\D/g, '');
+
+      errEl.textContent = '';
+      errEl.classList.add('hidden');
+
+      if (!curso) {
+        errEl.textContent = 'Selecione um curso.';
+        errEl.classList.remove('hidden');
+        selCurso.focus();
+        return;
+      }
+      if (!mat) {
+        errEl.textContent = 'Informe a matrícula do curso.';
+        errEl.classList.remove('hidden');
+        inpMat.focus();
+        return;
+      }
+      if (cursosAdicionados.length >= 6) {
+        errEl.textContent = 'Limite de 6 cursos atingido.';
+        errEl.classList.remove('hidden');
+        return;
+      }
+      // Impede curso duplicado
+      if (cursosAdicionados.some(c => c.curso === curso)) {
+        errEl.textContent = 'Este curso já foi adicionado.';
+        errEl.classList.remove('hidden');
+        selCurso.focus();
+        return;
+      }
+
+      cursosAdicionados.push({ curso: curso, matricula: mat });
+      selCurso.value = '';
+      inpMat.value   = '';
+      renderizarCursos();
+    }
+
+    function removerCurso(idx) {
+      cursosAdicionados.splice(idx, 1);
+      renderizarCursos();
+    }
+
+    // Tecla Enter no campo matrícula aciona Adicionar
+    document.getElementById('matricula-add').addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') { e.preventDefault(); adicionarCurso(); }
+    });
 
     // ── Autenticação ──────────────────────────────────────────────────────────
     document.addEventListener('DOMContentLoaded', function () {
@@ -422,35 +462,6 @@
       }
     });
 
-    // ── Curso → atualiza modalidade e opções de semestre ─────────────────────
-    document.getElementById('curso').addEventListener('change', function () {
-      const curso = this.value;
-      const tipo  = tipoDoCurso(curso);
-      const selMod = document.getElementById('modalidade');
-      const selSem = document.getElementById('semestre');
-
-      if (!tipo) {
-        selMod.value = '';
-        selSem.innerHTML = '<option value="">Selecione o curso primeiro...</option>';
-        selSem.disabled  = true;
-        return;
-      }
-
-      // Atualiza modalidade
-      selMod.value = modalidadeDoCurso(tipo);
-
-      // Atualiza opções de semestre
-      const opcoes = OPCOES_SEMESTRE[tipo];
-      selSem.innerHTML = '<option value="">Selecione...</option>' +
-        opcoes.map(o => `<option value="${o}">${o}</option>`).join('');
-      selSem.disabled = false;
-      selSem.value = '';
-
-      // Limpa erro se havia
-      clearFieldError('curso');
-      clearFieldError('semestre');
-    });
-
     // ── Data de nascimento → exibe/oculta responsável ─────────────────────────
     document.getElementById('data-nascimento').addEventListener('change', function () {
       const val = this.value;
@@ -460,10 +471,8 @@
       let idade   = hoje.getFullYear() - nasc.getFullYear();
       const m     = hoje.getMonth() - nasc.getMonth();
       if (m < 0 || (m === 0 && hoje.getDate() < nasc.getDate())) idade--;
-
       const menor = idade < 18;
       toggleSection('secao-responsavel', menor);
-      // Ajusta required dos campos do responsável
       document.querySelectorAll('#secao-responsavel input, #secao-responsavel select').forEach(c => {
         if (c.id === 'tel-responsavel' || c.id === 'doc-responsavel') return;
         c.required = menor;
@@ -488,7 +497,6 @@
         showFieldError('cpf', 'CPF inválido.');
         return;
       }
-      // Verifica duplicidade no sistema
       const cpfDigitos = val.replace(/\D/g, '');
       try {
         const res = await API.get('verificarCpf', { cpf: cpfDigitos, authToken: getAccessToken() });
@@ -499,7 +507,6 @@
           markFieldValid('cpf');
         }
       } catch (e) {
-        // Falha silenciosa — a validação final acontece no submit
         clearFieldError('cpf');
         markFieldValid('cpf');
       }
@@ -511,10 +518,8 @@
       else { clearFieldError('email-pessoal'); markFieldValid('email-pessoal'); }
     });
 
-    ['nome', 'matricula'].forEach(id => {
-      document.getElementById(id)?.addEventListener('input', function () {
-        if (this.value.trim()) clearFieldError(id);
-      });
+    document.getElementById('nome').addEventListener('input', function () {
+      if (this.value.trim()) clearFieldError('nome');
     });
 
     // ── Validação completa ────────────────────────────────────────────────────
@@ -529,10 +534,12 @@
 
     function validateForm() {
       let valid = true, firstInvalid = null;
-      function fail(id, msg) { showFieldError(id, msg); if (!firstInvalid) firstInvalid = id; valid = false; }
+      function fail(id, msg) {
+        if (id) { showFieldError(id, msg); if (!firstInvalid) firstInvalid = id; }
+        valid = false;
+      }
 
-      if (!document.getElementById('nome').value.trim())     fail('nome', 'Informe seu nome completo.');
-      if (!document.getElementById('matricula').value.trim()) fail('matricula', 'Informe sua matrícula.');
+      if (!document.getElementById('nome').value.trim()) fail('nome', 'Informe seu nome completo.');
 
       if (!document.getElementById('cpf').value.trim()) {
         fail('cpf', 'Informe seu CPF.');
@@ -575,17 +582,23 @@
       if (!document.getElementById('bairro').value.trim())   fail('bairro', 'Informe o bairro.');
       if (!document.getElementById('cidade').value.trim())   fail('cidade', 'Informe a cidade.');
 
-      // Dados acadêmicos
-      if (!document.getElementById('curso').value)      fail('curso', 'Selecione o seu curso.');
-      if (!document.getElementById('turno').value)      fail('turno', 'Selecione o seu turno.');
-      if (!document.getElementById('modalidade').value) fail('modalidade', 'Selecione o curso para preencher a modalidade.');
-      if (!document.getElementById('semestre').value)   fail('semestre', 'Selecione o seu período/semestre.');
+      // Cursos (mínimo 1)
+      const errCursos = document.getElementById('cursos-error');
+      if (cursosAdicionados.length === 0) {
+        errCursos.textContent = 'Adicione pelo menos um curso.';
+        errCursos.classList.remove('hidden');
+        if (!firstInvalid) firstInvalid = 'curso-add';
+        valid = false;
+      } else {
+        errCursos.textContent = '';
+        errCursos.classList.add('hidden');
+      }
 
       if (!document.getElementById('declaracao').checked) fail('declaracao', 'Aceite a declaração para continuar.');
 
       if (firstInvalid) {
-        document.getElementById(firstInvalid)?.focus();
-        document.getElementById(firstInvalid)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        const el = document.getElementById(firstInvalid);
+        if (el) { el.focus(); el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
       }
       return valid;
     }
@@ -598,10 +611,11 @@
 
       const dataNasc   = document.getElementById('data-nascimento').value;
       const maiorIdade = calcularIdade(dataNasc) >= 18 ? 'Sim' : 'Não';
+      // Modalidade baseada no primeiro curso
+      const modalidade = modalidadeDoCurso(cursosAdicionados[0].curso);
 
       const dados = {
         nome:            document.getElementById('nome').value.trim(),
-        matricula:       document.getElementById('matricula').value.trim(),
         cpf:             document.getElementById('cpf').value.trim(),
         dataNascimento:  dataNasc,
         maiorIdade:      maiorIdade,
@@ -615,10 +629,8 @@
         bairro:          document.getElementById('bairro').value.trim(),
         cidade:          document.getElementById('cidade').value.trim(),
         uf:              document.getElementById('uf').value,
-        curso:           document.getElementById('curso').value,
-        turno:           document.getElementById('turno').value,
-        modalidade:      document.getElementById('modalidade').value,
-        semestre:        document.getElementById('semestre').value,
+        modalidade:      modalidade,
+        cursos:          cursosAdicionados,
       };
 
       await submitWithFeedback(
@@ -633,13 +645,12 @@
 
     btnLimpar.addEventListener('click', function () {
       form.reset();
+      cursosAdicionados = [];
+      renderizarCursos();
       form.querySelectorAll('.form-control').forEach(el => { el.classList.remove('is-invalid','is-valid'); el.removeAttribute('aria-invalid'); });
       form.querySelectorAll('.form-error').forEach(el => { el.textContent = ''; el.classList.add('hidden'); });
       hideFormFeedback('form-feedback');
       toggleSection('secao-responsavel', false);
-      document.getElementById('semestre').innerHTML = '<option value="">Selecione o curso primeiro...</option>';
-      document.getElementById('semestre').disabled  = true;
-      document.getElementById('modalidade').value   = '';
     });
   </script>
 </body>

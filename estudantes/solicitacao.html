@@ -78,34 +78,58 @@
               <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3z"/></svg>
               Seção 2 — Dados Acadêmicos
             </h2>
+
             <div class="form-row">
               <div class="form-group">
-                <label class="form-label required" for="semestre-atual">Semestre ou ano atual no curso</label>
-                <select id="semestre-atual" name="semestreAtual" class="form-control" required aria-required="true" aria-describedby="semestre-atual-error">
-                  <option value="">Selecione...</option>
-                  <option value="1">1º semestre / 1º ano</option>
-                  <option value="2">2º semestre / 2º ano</option>
-                  <option value="3">3º semestre / 3º ano</option>
-                  <option value="4">4º semestre / 4º ano</option>
-                  <option value="5">5º semestre / 5º ano</option>
-                  <option value="6">6º semestre / 6º ano</option>
-                  <option value="7">7º semestre</option>
-                  <option value="8">8º semestre</option>
-                  <option value="9">9º semestre</option>
-                  <option value="10">10º semestre</option>
+                <label class="form-label required" for="curso-estagio">Curso para este estágio</label>
+                <select id="curso-estagio" name="cursoEstagio" class="form-control" required aria-required="true"
+                  aria-describedby="curso-estagio-hint curso-estagio-error" disabled>
+                  <option value="">Preencha o código de acesso primeiro...</option>
                 </select>
-                <span id="semestre-atual-error" class="form-error hidden" role="alert"></span>
+                <span id="curso-estagio-hint" class="form-hint">Cursos cadastrados no seu perfil. Selecione o curso que será vinculado a este estágio.</span>
+                <span id="curso-estagio-error" class="form-error hidden" role="alert"></span>
               </div>
               <div class="form-group">
-                <label class="form-label required" for="formando">É formando(a) neste semestre/ano letivo?</label>
-                <select id="formando" name="formando" class="form-control" required aria-required="true" aria-describedby="formando-hint formando-error">
-                  <option value="">Selecione...</option>
-                  <option value="Não">Não</option>
-                  <option value="Sim">Sim — estou no último semestre/ano</option>
-                </select>
-                <span id="formando-hint" class="form-hint">Formando: último semestre ou ano do curso. O término do estágio deve ocorrer até 15 dias antes do encerramento do período letivo.</span>
-                <span id="formando-error" class="form-error hidden" role="alert"></span>
+                <label class="form-label" for="matricula-estagio">Matrícula</label>
+                <input type="text" id="matricula-estagio" name="matriculaEstagio" class="form-control"
+                  readonly placeholder="Preenchida automaticamente" aria-describedby="matricula-estagio-hint"
+                  style="background:var(--color-surface-secondary,#f8f9fa);cursor:not-allowed;">
+                <span id="matricula-estagio-hint" class="form-hint">Preenchida automaticamente conforme o curso selecionado.</span>
               </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label required" for="turno">Turno</label>
+                <select id="turno" name="turno" class="form-control" required aria-required="true" aria-describedby="turno-error">
+                  <option value="">Selecione...</option>
+                  <option value="Manhã">Manhã</option>
+                  <option value="Tarde">Tarde</option>
+                  <option value="Noite">Noite</option>
+                  <option value="Integral">Integral</option>
+                </select>
+                <span id="turno-error" class="form-error hidden" role="alert"></span>
+              </div>
+              <div class="form-group">
+                <label class="form-label required" for="semestre-atual">Período/Semestre atual</label>
+                <select id="semestre-atual" name="semestreAtual" class="form-control" required aria-required="true"
+                  aria-describedby="semestre-atual-hint semestre-atual-error" disabled>
+                  <option value="">Selecione o curso primeiro...</option>
+                </select>
+                <span id="semestre-atual-hint" class="form-hint">As opções dependem do curso selecionado.</span>
+                <span id="semestre-atual-error" class="form-error hidden" role="alert"></span>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label required" for="formando">É formando(a) neste semestre/ano letivo?</label>
+              <select id="formando" name="formando" class="form-control" required aria-required="true" aria-describedby="formando-hint formando-error">
+                <option value="">Selecione...</option>
+                <option value="Não">Não</option>
+                <option value="Sim">Sim — estou no último semestre/ano</option>
+              </select>
+              <span id="formando-hint" class="form-hint">Formando: último semestre ou ano do curso. O término do estágio deve ocorrer até 15 dias antes do encerramento do período letivo.</span>
+              <span id="formando-error" class="form-error hidden" role="alert"></span>
             </div>
           </div>
 
@@ -417,6 +441,26 @@
     const form = document.getElementById('form-solicitacao');
     const btnEnviar = document.getElementById('btn-enviar');
 
+    // ── Dados do estudante (carregados ao validar o código) ──────────────────
+    let dadosEstudante = null;
+
+    // Opções de semestre por tipo de curso (espelha cadastro.html)
+    const OPCOES_SEMESTRE_SOL = {
+      integrado:   ['1º Ano','2º Ano','3º Ano','4º Ano'],
+      subsequente: ['1º Semestre','2º Semestre','3º Semestre','4º Semestre'],
+      tecnologo:   ['1º Semestre','2º Semestre','3º Semestre','4º Semestre','5º Semestre','6º Semestre'],
+      bacharelado: ['1º Semestre','2º Semestre','3º Semestre','4º Semestre','5º Semestre',
+                    '6º Semestre','7º Semestre','8º Semestre','9º Semestre','10º Semestre'],
+    };
+
+    function tipoDoCursoSol(curso) {
+      if (curso.startsWith('Técnico Integrado'))   return 'integrado';
+      if (curso.startsWith('Técnico Subsequente')) return 'subsequente';
+      if (curso.startsWith('Tecnologia em'))       return 'tecnologo';
+      if (curso.startsWith('Bacharelado em'))      return 'bacharelado';
+      return 'bacharelado'; // fallback genérico
+    }
+
     // ── Autenticação ──
     document.addEventListener('DOMContentLoaded', async function () {
       if (!requireStudentAuth()) return;
@@ -430,14 +474,11 @@
       inputInicio.addEventListener('change', function () {
         const val = this.value;
         if (!val) { inputTermino.min = ''; inputTermino.max = ''; return; }
-        // Mínimo para término: dia seguinte ao início
         const dtInicio = new Date(val + 'T00:00:00');
         const dtMin = new Date(dtInicio); dtMin.setDate(dtMin.getDate() + 1);
         inputTermino.min = dtMin.toISOString().slice(0, 10);
-        // Máximo: 2 anos a partir do início
         const dtMax = new Date(dtInicio); dtMax.setFullYear(dtMax.getFullYear() + 2);
         inputTermino.max = dtMax.toISOString().slice(0, 10);
-        // Limpa término se estiver fora do novo range
         if (inputTermino.value) {
           const t = new Date(inputTermino.value + 'T00:00:00');
           if (t < dtMin || t > dtMax) inputTermino.value = '';
@@ -453,7 +494,6 @@
       const isNaoObrig = this.value === 'Não Obrigatório';
       toggleSection('secao-rem-obrig', isObrig);
       toggleSection('secao-rem-naobrig', isNaoObrig);
-      // Campos obrigatórios condicionais de remuneração não obrigatória
       document.getElementById('bolsa-naobrig').required = isNaoObrig;
       document.getElementById('transp-naobrig').required = isNaoObrig;
     });
@@ -486,6 +526,38 @@
       }
     });
 
+    // ── Curso selecionado → preenche matrícula e semestre ───────────────────
+    document.getElementById('curso-estagio').addEventListener('change', function () {
+      const cursoNome = this.value;
+      const selSem    = document.getElementById('semestre-atual');
+      const inpMat    = document.getElementById('matricula-estagio');
+
+      if (!cursoNome || !dadosEstudante) {
+        inpMat.value = '';
+        selSem.innerHTML = '<option value="">Selecione o curso primeiro...</option>';
+        selSem.disabled  = true;
+        return;
+      }
+
+      // Preenche matrícula correspondente ao curso
+      const entry = (dadosEstudante.cursos || []).find(c => c.curso === cursoNome);
+      inpMat.value = entry ? entry.matricula : '';
+
+      // Popula opções de semestre
+      const tipo   = tipoDoCursoSol(cursoNome);
+      const opcoes = OPCOES_SEMESTRE_SOL[tipo] || OPCOES_SEMESTRE_SOL.bacharelado;
+      selSem.innerHTML = '<option value="">Selecione...</option>' +
+        opcoes.map(o => `<option value="${o}">${o}</option>`).join('');
+      selSem.disabled  = false;
+      selSem.value     = '';
+
+      // Recarrega orientadores filtrados pelo curso selecionado
+      carregarOrientadores(cursoNome);
+
+      clearFieldError('curso-estagio');
+      clearFieldError('semestre-atual');
+    });
+
     // ── Carrega empresas ──
     async function carregarEmpresas() {
       const select = document.getElementById('empresa');
@@ -502,13 +574,14 @@
       }
     }
 
-    // ── Carrega orientadores pelo curso do estudante ──
-    async function carregarOrientadores() {
-      // O curso vem dos dados do estudante obtidos pelo código de acesso
-      // Por ora carregamos todos e o backend filtra pelo curso
+    // ── Carrega orientadores (opcional: filtro por curso) ────────────────────
+    async function carregarOrientadores(curso) {
       const select = document.getElementById('orientador');
+      populateSelect('orientador', [], 'Carregando orientadores...');
+      select.disabled = true;
       try {
-        const orientadores = await API.get('listarOrientadores');
+        const params = curso ? { curso: curso } : {};
+        const orientadores = await API.get('listarOrientadores', params);
         if (orientadores && orientadores.length > 0) {
           populateSelect('orientador', orientadores.map(o => ({ value: o.siape, label: o.nome })), 'Selecione o orientador...');
           select.disabled = false;
@@ -540,17 +613,50 @@
     document.getElementById('codigo-acesso').addEventListener('input', function () {
       let v = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
       if (v.startsWith('SGE')) v = v.slice(3);
-      // Monta grupos de 4
       const grupos = [];
       for (let i = 0; i < v.length && grupos.length < 3; i += 4) grupos.push(v.slice(i, i + 4));
       this.value = grupos.length ? 'SGE-' + grupos.join('-') : (v ? 'SGE-' + v : '');
     });
 
-    // Carrega orientadores quando o código estiver completo
+    // ── Código preenchido → busca dados do estudante e popula cursos ─────────
     document.getElementById('codigo-acesso').addEventListener('blur', async function () {
       const cod = this.value.trim().toUpperCase();
-      if (cod.match(/^SGE-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$/)) {
-        await carregarOrientadores();
+      const errEl    = document.getElementById('codigo-acesso-error');
+      const selCurso = document.getElementById('curso-estagio');
+
+      if (!cod.match(/^SGE-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$/)) return;
+
+      // Limpa estado anterior
+      dadosEstudante = null;
+      populateSelect('curso-estagio', [], 'Buscando seus dados...');
+      selCurso.disabled = true;
+      document.getElementById('matricula-estagio').value = '';
+      document.getElementById('semestre-atual').innerHTML = '<option value="">Selecione o curso primeiro...</option>';
+      document.getElementById('semestre-atual').disabled  = true;
+      errEl.textContent = ''; errEl.classList.add('hidden');
+
+      try {
+        const dados = await API.get('obterMeuCadastro', { codigoAcesso: cod, authToken: getAccessToken() });
+        dadosEstudante = dados;
+        const cursos = dados.cursos || [];
+        if (cursos.length === 0) {
+          populateSelect('curso-estagio', [], 'Nenhum curso cadastrado — contate o setor');
+        } else {
+          populateSelect('curso-estagio',
+            cursos.map(c => ({ value: c.curso, label: c.curso + ' (mat. ' + c.matricula + ')' })),
+            'Selecione o curso para este estágio...'
+          );
+          selCurso.disabled = false;
+        }
+        clearFieldError('codigo-acesso');
+        markFieldValid('codigo-acesso');
+      } catch (err) {
+        dadosEstudante = null;
+        populateSelect('curso-estagio', [], 'Preencha o código de acesso primeiro...');
+        selCurso.disabled = true;
+        errEl.textContent = err.message || 'Código inválido ou cadastro não encontrado.';
+        errEl.classList.remove('hidden');
+        document.getElementById('codigo-acesso').classList.add('is-invalid');
       }
     });
 
@@ -577,8 +683,12 @@
       const cod = document.getElementById('codigo-acesso').value.trim().toUpperCase();
       if (!cod || !cod.match(/^SGE-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$/)) {
         fail('codigo-acesso', 'Código de acesso inválido. Formato esperado: SGE-XXXX-XXXX-XXXX.');
+      } else if (!dadosEstudante) {
+        fail('codigo-acesso', 'Não foi possível validar o código. Clique fora do campo para tentar novamente.');
       }
-      if (!document.getElementById('semestre-atual').value)    fail('semestre-atual', 'Selecione o semestre atual.');
+      if (!document.getElementById('curso-estagio').value)     fail('curso-estagio', 'Selecione o curso para este estágio.');
+      if (!document.getElementById('turno').value)             fail('turno', 'Selecione o turno.');
+      if (!document.getElementById('semestre-atual').value)    fail('semestre-atual', 'Selecione o período/semestre atual.');
       if (!document.getElementById('formando').value)          fail('formando', 'Informe se é formando(a).');
       if (!document.getElementById('tipo-estagio').value)      fail('tipo-estagio', 'Selecione o tipo de estágio.');
 
@@ -640,6 +750,9 @@
 
       const dados = {
         codigoAcesso:       document.getElementById('codigo-acesso').value.trim().toUpperCase(),
+        cursoEstagio:       document.getElementById('curso-estagio').value,
+        matriculaEstagio:   document.getElementById('matricula-estagio').value,
+        turno:              document.getElementById('turno').value,
         semestreAtual:      document.getElementById('semestre-atual').value,
         formando:           document.getElementById('formando').value,
         tipoEstagio:        document.getElementById('tipo-estagio').value,

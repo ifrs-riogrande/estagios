@@ -30,10 +30,10 @@ var COL_EST = {
   NOME:            1,
   EMAIL_INST:      2,
   EMAIL_PESSOAL:   3,
-  MATRICULA:       4,
-  CURSO:           5,
-  TURNO:           6,
-  SEMESTRE:        7,
+  MATRICULA:       4,   // matrícula do primeiro curso (compatibilidade)
+  CURSO:           5,   // nome do primeiro curso (compatibilidade)
+  TURNO:           6,   // não preenchido no cadastro (fica na solicitação)
+  SEMESTRE:        7,   // não preenchido no cadastro (fica na solicitação)
   CPF:             8,
   DATA_NASC:       9,
   TELEFONE:        10,
@@ -47,11 +47,12 @@ var COL_EST = {
   STATUS:          18,   // 'Aguardando Validação' | 'Ativo' | 'Inativo'
   COD_ACESSO:      19,   // código permanente SGE-XXXX-XXXX-XXXX (gerado pelo setor)
   COD_EXPIRA:      20,   // não utilizado (mantido para compatibilidade de coluna)
-  MODALIDADE:      21,
+  MODALIDADE:      21,   // modalidade do primeiro curso (compatibilidade)
   BAIRRO:          22,
   CEP:             23,
   CIDADE:          24,
   UF:              25,
+  CURSOS_JSON:     26,   // JSON array [{curso, matricula}] — todos os cursos do aluno
 };
 
 // ---------------------------------------------------------------------------
@@ -77,15 +78,10 @@ function cadastrarEstudante_(dados) {
     return jsonError_('Muitas requisições. Aguarde um momento.', 'RATE_LIMIT');
   }
 
-  // Sanitização
+  // Sanitização de dados pessoais
   var nome       = sanitizar_(dados.nome || dados.nomeCompleto, 200);
   var emailInst  = sanitizar_(tokenInfo.email, 100).toLowerCase();
   var emailPes   = sanitizar_(dados.emailPessoal, 100).toLowerCase();
-  var matricula  = sanitizar_(dados.matricula, 20).replace(/\D/g, '');
-  var curso      = sanitizar_(dados.curso, 100);
-  var turno      = sanitizar_(dados.turno, 30);
-  var semestre   = sanitizar_(dados.semestre, 10);
-  var modalidade = sanitizar_(dados.modalidade, 50);
   var cpf        = sanitizar_(dados.cpf, 14).replace(/\D/g, '');
   var dataNasc   = sanitizar_(dados.dataNascimento, 10);
   var telefone   = sanitizar_(dados.telefone, 30);
@@ -101,13 +97,30 @@ function cadastrarEstudante_(dados) {
   var emailResp  = sanitizar_(dados.emailResponsavel, 100).toLowerCase();
   var docResp    = sanitizar_(dados.docResponsavel, 300);
 
+  // ── Cursos (array de objetos {curso, matricula}) ──────────────────────────
+  var cursosRaw = Array.isArray(dados.cursos) ? dados.cursos : [];
+  // Sanitiza cada item
+  var cursos = [];
+  for (var ci = 0; ci < cursosRaw.length && cursos.length < 6; ci++) {
+    var c = sanitizar_(cursosRaw[ci].curso,    100);
+    var m = sanitizar_(cursosRaw[ci].matricula, 20).replace(/\D/g, '');
+    if (c && m) cursos.push({ curso: c, matricula: m });
+  }
+  if (cursos.length === 0) return jsonError_('Informe pelo menos um curso e matrícula.', 'VALIDATION');
+
+  // Primeiro curso para compatibilidade com colunas legadas
+  var cursoPrincipal     = cursos[0].curso;
+  var matriculaPrincipal = cursos[0].matricula;
+  var modalidade         = sanitizar_(dados.modalidade, 50);
+  if (!modalidade) {
+    // Deriva modalidade do primeiro curso, caso o front não envie
+    if (cursoPrincipal.indexOf('Integrado') !== -1)    modalidade = 'Integrado';
+    else if (cursoPrincipal.indexOf('Subsequente') !== -1) modalidade = 'Subsequente';
+    else modalidade = 'Superior';
+  }
+
   // Validações obrigatórias
   if (!nome)       return jsonError_('Nome completo é obrigatório.', 'VALIDATION');
-  if (!matricula)  return jsonError_('Matrícula é obrigatória.', 'VALIDATION');
-  if (!curso)      return jsonError_('Curso é obrigatório.', 'VALIDATION');
-  if (!turno)      return jsonError_('Turno é obrigatório.', 'VALIDATION');
-  if (!modalidade) return jsonError_('Modalidade é obrigatória.', 'VALIDATION');
-  if (!semestre)   return jsonError_('Período/Semestre é obrigatório.', 'VALIDATION');
   if (!validarCPF_(cpf)) return jsonError_('CPF inválido.', 'VALIDATION');
   if (!dataNasc)   return jsonError_('Data de nascimento é obrigatória.', 'VALIDATION');
   if (!telefone)   return jsonError_('Telefone é obrigatório.', 'VALIDATION');
@@ -121,12 +134,9 @@ function cadastrarEstudante_(dados) {
 
   var sheet = abrirAba_(CFG_EST.SS_ID, CFG_EST.ABA);
 
-  // Verifica duplicidade por CPF ou matrícula
+  // Verifica duplicidade por CPF (matrícula não é verificada pois pode ter várias)
   if (buscarNaColuna_(sheet, COL_EST.CPF, cpf) !== -1) {
     return jsonError_('Já existe um estudante cadastrado com este CPF.', 'DUPLICATE');
-  }
-  if (buscarNaColuna_(sheet, COL_EST.MATRICULA, matricula) !== -1) {
-    return jsonError_('Já existe um estudante cadastrado com esta matrícula.', 'DUPLICATE');
   }
 
   var now   = new Date();
@@ -135,10 +145,10 @@ function cadastrarEstudante_(dados) {
   linha[COL_EST.NOME]          = nome;
   linha[COL_EST.EMAIL_INST]    = emailInst;
   linha[COL_EST.EMAIL_PESSOAL] = emailPes;
-  linha[COL_EST.MATRICULA]     = matricula;
-  linha[COL_EST.CURSO]         = curso;
-  linha[COL_EST.TURNO]         = turno;
-  linha[COL_EST.SEMESTRE]      = semestre;
+  linha[COL_EST.MATRICULA]     = matriculaPrincipal;  // primeiro curso (compat.)
+  linha[COL_EST.CURSO]         = cursoPrincipal;       // primeiro curso (compat.)
+  linha[COL_EST.TURNO]         = '';                   // preenchido na solicitação
+  linha[COL_EST.SEMESTRE]      = '';                   // preenchido na solicitação
   linha[COL_EST.CPF]           = cpf;
   linha[COL_EST.DATA_NASC]     = dataNasc;
   linha[COL_EST.TELEFONE]      = telefone;
@@ -154,24 +164,25 @@ function cadastrarEstudante_(dados) {
   linha[COL_EST.EMAIL_RESP]    = emailResp;
   linha[COL_EST.DOC_RESP]      = docResp;
   linha[COL_EST.MODALIDADE]    = modalidade;
-  linha[COL_EST.STATUS]        = 'Aguardando Validação';  // setor valida antes de liberar
+  linha[COL_EST.STATUS]        = 'Aguardando Validação';
   linha[COL_EST.COD_ACESSO]    = '';
   linha[COL_EST.COD_EXPIRA]    = '';
+  linha[COL_EST.CURSOS_JSON]   = JSON.stringify(cursos);
 
   sheet.appendRow(linha);
 
   // Notifica o setor sobre novo cadastro pendente
   try {
+    var cursosTexto = cursos.map(function(c) { return c.curso + ' (mat. ' + c.matricula + ')'; }).join('\n              ');
     MailApp.sendEmail({
       to:      'estagios@riogrande.ifrs.edu.br',
       subject: '[SGE IFRS] Novo cadastro aguardando validação — ' + nome,
       body: [
         'Um novo estudante realizou cadastro no SGE e aguarda validação.',
         '',
-        'Nome: '       + nome,
-        'Matrícula: '  + matricula,
-        'Curso: '      + curso,
-        'E-mail: '     + emailInst,
+        'Nome: '    + nome,
+        'E-mail: '  + emailInst,
+        'Cursos: '  + cursosTexto,
         '',
         'Acesse o painel administrativo para validar o cadastro e enviar o código de acesso.',
         '',
@@ -364,12 +375,22 @@ function buscarEstudantePorEmailECodigo_(emailEstudante, codigo) {
       throw new Error('Código de acesso inválido.');
     }
 
+    // Recupera array de cursos; usa compat se JSON ausente
+    var cursosJson = String(linha[COL_EST.CURSOS_JSON] || '').trim();
+    var cursosArr  = [];
+    try {
+      if (cursosJson) cursosArr = JSON.parse(cursosJson);
+    } catch (_) {}
+    if (!cursosArr.length) {
+      var c0 = String(linha[COL_EST.CURSO]     || '');
+      var m0 = String(linha[COL_EST.MATRICULA] || '');
+      if (c0) cursosArr = [{ curso: c0, matricula: m0 }];
+    }
+
     return {
       nome:         String(linha[COL_EST.NOME]         || ''),
       matricula:    String(linha[COL_EST.MATRICULA]     || ''),
       curso:        String(linha[COL_EST.CURSO]         || ''),
-      turno:        String(linha[COL_EST.TURNO]         || ''),
-      semestre:     String(linha[COL_EST.SEMESTRE]      || ''),
       modalidade:   String(linha[COL_EST.MODALIDADE]    || ''),
       cpf:          String(linha[COL_EST.CPF]           || ''),
       dataNasc:     String(linha[COL_EST.DATA_NASC]     || ''),
@@ -383,6 +404,7 @@ function buscarEstudantePorEmailECodigo_(emailEstudante, codigo) {
       uf:           String(linha[COL_EST.UF]            || ''),
       maiorIdade:   String(linha[COL_EST.MAIOR_IDADE]   || ''),
       nomeResp:     String(linha[COL_EST.NOME_RESP]     || ''),
+      cursos:       cursosArr,   // array [{curso, matricula}]
       status:       statusEst,
     };
   }

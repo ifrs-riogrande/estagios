@@ -110,6 +110,8 @@ var COL = {
   DATA_ATIVACAO:    34,
   OBJETIVOS:        35,
   FORMANDO:         36,
+  TURNO:            37,   // turno do estudante no curso (salvo na solicitação)
+  SEMESTRE_SOL:     38,   // período/semestre atual (salvo na solicitação)
 };
 
 // ─────────────────────────────────────────────────────────────────
@@ -856,6 +858,8 @@ function montarVariaveis_(r) {
   vars['{{PLANO_ATIVIDADES}}']      = String(r[COL.PLANO_ATIVIDADES]  || '');
   vars['{{OBJETIVOS}}']             = String(r[COL.OBJETIVOS]          || '');
   vars['{{FORMANDO}}']              = String(r[COL.FORMANDO]           || '');
+  vars['{{TURNO}}']                 = String(r[COL.TURNO]              || '');  // da solicitação
+  vars['{{SEMESTRE}}']              = String(r[COL.SEMESTRE_SOL]       || '');  // da solicitação
   vars['{{DATA_GERACAO}}']          = Utilities.formatDate(hoje, 'America/Sao_Paulo', 'dd/MM/yyyy');
   vars['{{ANO_VIGENTE}}']           = String(hoje.getFullYear());
 
@@ -921,9 +925,8 @@ function montarVariaveis_(r) {
       for (var j = 1; j < dadosEst.length; j++) {
         if (String(dadosEst[j][2]||'').toLowerCase() === emailEst) {   // EMAIL_INST
           vars['{{EMAIL_PESSOAL}}']          = String(dadosEst[j][3]  || '');
-          vars['{{TURNO}}']                  = String(dadosEst[j][6]  || '');  // Manhã/Tarde/Noite
-          vars['{{SEMESTRE}}']               = String(dadosEst[j][7]  || '');
           vars['{{MODALIDADE}}']             = String(dadosEst[j][21] || '');  // Integrado/Subsequente/Superior
+          // TURNO e SEMESTRE são lidos da solicitação (cols 37/38), não do cadastro
           vars['{{DATA_NASCIMENTO}}']        = formatarData_(dadosEst[j][9]);
           vars['{{TELEFONE_ESTUDANTE}}']     = String(dadosEst[j][10] || '');
           vars['{{ENDERECO_ESTUDANTE}}']     = String(dadosEst[j][11] || '');
