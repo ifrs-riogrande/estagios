@@ -70,6 +70,16 @@
               <span id="codigo-acesso-hint" class="form-hint">Código recebido por e-mail quando seu cadastro foi validado pelo setor. Formato: SGE-XXXX-XXXX-XXXX. Em caso de dúvidas, contate o setor.</span>
               <span id="codigo-acesso-error" class="form-error hidden" role="alert"></span>
             </div>
+
+            <div class="form-group" id="grupo-vinculo" style="display:none;">
+              <label class="form-label required" for="vinculo-estagio">Vínculo acadêmico para este estágio</label>
+              <select id="vinculo-estagio" class="form-control" disabled
+                aria-describedby="vinculo-estagio-hint vinculo-estagio-error">
+                <option value="">Selecione o vínculo...</option>
+              </select>
+              <span id="vinculo-estagio-hint" class="form-hint">Selecione o curso, matrícula e e-mail institucional que serão usados neste estágio.</span>
+              <span id="vinculo-estagio-error" class="form-error hidden" role="alert"></span>
+            </div>
           </div>
 
           <!-- ── Seção 2: Dados acadêmicos ── -->
@@ -81,20 +91,18 @@
 
             <div class="form-row">
               <div class="form-group">
-                <label class="form-label required" for="curso-estagio">Curso para este estágio</label>
-                <select id="curso-estagio" name="cursoEstagio" class="form-control" required aria-required="true"
-                  aria-describedby="curso-estagio-hint curso-estagio-error" disabled>
-                  <option value="">Preencha o código de acesso primeiro...</option>
-                </select>
-                <span id="curso-estagio-hint" class="form-hint">Cursos cadastrados no seu perfil. Selecione o curso que será vinculado a este estágio.</span>
-                <span id="curso-estagio-error" class="form-error hidden" role="alert"></span>
+                <label class="form-label">Curso para este estágio</label>
+                <input type="text" id="curso-estagio" name="cursoEstagio" class="form-control" readonly
+                  placeholder="Definido pelo vínculo selecionado na Seção 1"
+                  style="background:var(--color-surface-secondary,#f8f9fa);cursor:not-allowed;">
+                <span class="form-hint">Preenchido automaticamente conforme o vínculo selecionado.</span>
               </div>
               <div class="form-group">
-                <label class="form-label" for="matricula-estagio">Matrícula</label>
+                <label class="form-label">Matrícula</label>
                 <input type="text" id="matricula-estagio" name="matriculaEstagio" class="form-control"
-                  readonly placeholder="Preenchida automaticamente" aria-describedby="matricula-estagio-hint"
+                  readonly placeholder="Preenchida automaticamente"
                   style="background:var(--color-surface-secondary,#f8f9fa);cursor:not-allowed;">
-                <span id="matricula-estagio-hint" class="form-hint">Preenchida automaticamente conforme o curso selecionado.</span>
+                <span class="form-hint">Preenchida automaticamente conforme o vínculo selecionado.</span>
               </div>
             </div>
 
@@ -527,38 +535,6 @@
       }
     });
 
-    // ── Curso selecionado → preenche matrícula e semestre ───────────────────
-    document.getElementById('curso-estagio').addEventListener('change', function () {
-      const cursoNome = this.value;
-      const selSem    = document.getElementById('semestre-atual');
-      const inpMat    = document.getElementById('matricula-estagio');
-
-      if (!cursoNome || !dadosEstudante) {
-        inpMat.value = '';
-        selSem.innerHTML = '<option value="">Selecione o curso primeiro...</option>';
-        selSem.disabled  = true;
-        return;
-      }
-
-      // Preenche matrícula e e-mail institucional correspondentes ao curso
-      const entry = (dadosEstudante.cursos || []).find(c => c.curso === cursoNome);
-      inpMat.value     = entry ? entry.matricula : '';
-      emailInstEstagio = entry ? (entry.emailInst || '') : '';
-
-      // Popula opções de semestre
-      const tipo   = tipoDoCursoSol(cursoNome);
-      const opcoes = OPCOES_SEMESTRE_SOL[tipo] || OPCOES_SEMESTRE_SOL.bacharelado;
-      selSem.innerHTML = '<option value="">Selecione...</option>' +
-        opcoes.map(o => `<option value="${o}">${o}</option>`).join('');
-      selSem.disabled  = false;
-      selSem.value     = '';
-
-      // Recarrega orientadores filtrados pelo curso selecionado
-      carregarOrientadores(cursoNome);
-
-      clearFieldError('curso-estagio');
-      clearFieldError('semestre-atual');
-    });
 
     // ── Carrega empresas ──
     async function carregarEmpresas() {
@@ -620,51 +596,96 @@
       this.value = grupos.length ? 'SGE-' + grupos.join('-') : (v ? 'SGE-' + v : '');
     });
 
-    // ── Código preenchido → busca dados do estudante e popula cursos ─────────
+    // Enter no campo de código: dispara a busca (não submete o formulário)
+    document.getElementById('codigo-acesso').addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        this.blur();
+      }
+    });
+
+    // ── Código preenchido → busca dados do estudante e popula vínculos ────────
     document.getElementById('codigo-acesso').addEventListener('blur', async function () {
-      const cod = this.value.trim().toUpperCase();
-      const errEl    = document.getElementById('codigo-acesso-error');
-      const selCurso = document.getElementById('curso-estagio');
+      const cod   = this.value.trim().toUpperCase();
+      const errEl = document.getElementById('codigo-acesso-error');
 
       if (!cod.match(/^SGE-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$/)) return;
 
       // Limpa estado anterior
       dadosEstudante = null;
       emailInstEstagio = '';
-      populateSelect('curso-estagio', [], 'Buscando seus dados...');
-      selCurso.disabled = true;
+      document.getElementById('curso-estagio').value    = '';
       document.getElementById('matricula-estagio').value = '';
       document.getElementById('semestre-atual').innerHTML = '<option value="">Selecione o curso primeiro...</option>';
       document.getElementById('semestre-atual').disabled  = true;
+      document.getElementById('grupo-vinculo').style.display = 'none';
       errEl.textContent = ''; errEl.classList.add('hidden');
 
       try {
         const dados = await API.get('obterMeuCadastro', { codigoAcesso: cod, authToken: getAccessToken() });
         dadosEstudante = dados;
         const cursos = dados.cursos || [];
+        const selVinculo = document.getElementById('vinculo-estagio');
         if (cursos.length === 0) {
-          populateSelect('curso-estagio', [], 'Nenhum curso cadastrado — contate o setor');
+          populateSelect('vinculo-estagio', [], 'Nenhum curso cadastrado — contate o setor');
+          selVinculo.disabled = true;
         } else {
-          populateSelect('curso-estagio',
+          populateSelect('vinculo-estagio',
             cursos.map(c => ({
               value: c.curso,
-              label: c.curso + ' (mat. ' + c.matricula + ')' + (c.emailInst ? ' — ' + c.emailInst : ''),
+              label: c.curso + ' · Mat. ' + c.matricula + (c.emailInst ? ' · ' + c.emailInst : ''),
             })),
-            'Selecione o curso para este estágio...'
+            'Selecione o vínculo para este estágio...'
           );
-          selCurso.disabled = false;
+          selVinculo.disabled = false;
+          // Se só há um vínculo, seleciona automaticamente
+          if (cursos.length === 1) {
+            selVinculo.value = cursos[0].curso;
+            selVinculo.dispatchEvent(new Event('change'));
+          }
         }
+        document.getElementById('grupo-vinculo').style.display = 'block';
         clearFieldError('codigo-acesso');
         markFieldValid('codigo-acesso');
       } catch (err) {
         dadosEstudante = null;
         emailInstEstagio = '';
-        populateSelect('curso-estagio', [], 'Preencha o código de acesso primeiro...');
-        selCurso.disabled = true;
+        document.getElementById('grupo-vinculo').style.display = 'none';
         errEl.textContent = err.message || 'Código inválido ou cadastro não encontrado.';
         errEl.classList.remove('hidden');
         document.getElementById('codigo-acesso').classList.add('is-invalid');
       }
+    });
+
+    // ── Vínculo selecionado → preenche curso, matrícula e semestre ────────────
+    document.getElementById('vinculo-estagio').addEventListener('change', function () {
+      const cursoNome = this.value;
+      const selSem    = document.getElementById('semestre-atual');
+
+      if (!cursoNome || !dadosEstudante) {
+        document.getElementById('curso-estagio').value    = '';
+        document.getElementById('matricula-estagio').value = '';
+        selSem.innerHTML = '<option value="">Selecione o curso primeiro...</option>';
+        selSem.disabled  = true;
+        emailInstEstagio = '';
+        return;
+      }
+
+      const entry = (dadosEstudante.cursos || []).find(c => c.curso === cursoNome);
+      document.getElementById('curso-estagio').value     = cursoNome;
+      document.getElementById('matricula-estagio').value = entry ? entry.matricula : '';
+      emailInstEstagio = entry ? (entry.emailInst || '') : '';
+
+      const tipo   = tipoDoCursoSol(cursoNome);
+      const opcoes = OPCOES_SEMESTRE_SOL[tipo] || OPCOES_SEMESTRE_SOL.bacharelado;
+      selSem.innerHTML = '<option value="">Selecione...</option>' +
+        opcoes.map(o => `<option value="${o}">${o}</option>`).join('');
+      selSem.disabled  = false;
+      selSem.value     = '';
+
+      carregarOrientadores(cursoNome);
+      clearFieldError('vinculo-estagio');
+      clearFieldError('semestre-atual');
     });
 
     // Exibe nomes de arquivos selecionados
@@ -693,7 +714,7 @@
       } else if (!dadosEstudante) {
         fail('codigo-acesso', 'Não foi possível validar o código. Clique fora do campo para tentar novamente.');
       }
-      if (!document.getElementById('curso-estagio').value)     fail('curso-estagio', 'Selecione o curso para este estágio.');
+      if (!document.getElementById('vinculo-estagio').value)    fail('vinculo-estagio', 'Selecione o vínculo acadêmico na Seção 1.');
       if (!document.getElementById('turno').value)             fail('turno', 'Selecione o turno.');
       if (!document.getElementById('semestre-atual').value)    fail('semestre-atual', 'Selecione o período/semestre atual.');
       if (!document.getElementById('formando').value)          fail('formando', 'Informe se é formando(a).');
@@ -806,6 +827,11 @@
       form.reset();
       dadosEstudante   = null;
       emailInstEstagio = '';
+      document.getElementById('grupo-vinculo').style.display = 'none';
+      document.getElementById('vinculo-estagio').innerHTML = '<option value="">Selecione o vínculo...</option>';
+      document.getElementById('vinculo-estagio').disabled = true;
+      document.getElementById('curso-estagio').value = '';
+      document.getElementById('matricula-estagio').value = '';
       form.querySelectorAll('.form-control').forEach(el => { el.classList.remove('is-invalid','is-valid'); el.removeAttribute('aria-invalid'); });
       form.querySelectorAll('.form-error').forEach(el => { el.textContent = ''; el.classList.add('hidden'); });
       hideFormFeedback('form-feedback');
