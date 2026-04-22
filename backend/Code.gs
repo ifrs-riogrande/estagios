@@ -66,6 +66,7 @@ var POST_ROUTES = {
 
   // Estudantes
   'cadastrarEstudante':        doPostEstudantes,
+  'atualizarMeuCadastro':      doPostEstudantes,
 
   // Estudantes — Admin
   'validarCadastroAdmin':      doPostAdmin,
@@ -160,12 +161,17 @@ function doGetEstudantes(e) {
 }
 
 function doPostEstudantes(e) {
-  return cadastrarEstudante_(JSON.parse(e.postData ? e.postData.contents : '{}'));
+  var body = e._body || JSON.parse(e.postData ? e.postData.contents : '{}');
+  if (body.action === 'atualizarMeuCadastro') return atualizarMeuCadastro_(body);
+  return cadastrarEstudante_(body);
 }
 
 function doGetServidores(e) {
   var action = e.parameter && e.parameter.action;
-  if (action === 'listarOrientadores')  return listarOrientadores_(e);
+  if (action === 'listarOrientadores') {
+    var curso = (e.parameter && e.parameter.curso) ? decodeURIComponent(e.parameter.curso) : '';
+    return listarOrientadores_(curso);
+  }
   if (action === 'listarCoordenadores') return listarCoordenadores_(e);
   return jsonError_('Ação não implementada: ' + action, 'NOT_IMPLEMENTED');
 }
