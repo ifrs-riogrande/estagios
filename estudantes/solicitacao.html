@@ -177,6 +177,11 @@
               <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/></svg>
               Seção 3 — Tipo de Estágio
             </h2>
+            <!-- Aviso de modalidade não habilitada para o curso -->
+            <div id="msg-modalidade-bloqueio" class="alert alert-warning" style="display:none;margin-bottom:var(--space-4);" role="alert">
+              <svg class="alert-icon" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+              <div class="alert-content" id="msg-modalidade-texto"></div>
+            </div>
             <div class="form-group">
               <label class="form-label required" for="tipo-estagio">Tipo de estágio solicitado</label>
               <select id="tipo-estagio" name="tipoEstagio" class="form-control" required aria-required="true" aria-describedby="tipo-estagio-error">
@@ -483,6 +488,7 @@
     let dadosEstudante = null;
     let emailInstEstagio = '';   // e-mail institucional do vínculo selecionado
     let idadeEstudante = 0;      // calculado ao validar o código
+    let configCursos = null;     // { obrigatorio: [...] | null, naoObrigatorio: [...] | null }
 
     function calcularIdadeEstudante(dataNasc) {
       if (!dataNasc) return 99;
@@ -545,7 +551,7 @@
         }
       });
 
-      await Promise.all([carregarEmpresas(), carregarAgentes()]);
+      await Promise.all([carregarEmpresas(), carregarAgentes(), carregarConfigCursos()]);
     });
 
     // ── Tipo de estágio → exibe seção de remuneração correta ──
@@ -635,6 +641,15 @@
       } catch (e) {
         populateSelect('agente', [{ value: 'Não', label: 'Não — sem agente de integração' }], 'Selecione...');
         document.getElementById('agente').disabled = false;
+      }
+    }
+
+    // ── Carrega configuração de modalidades por curso ──
+    async function carregarConfigCursos() {
+      try {
+        configCursos = await API.get('obterConfigCursos');
+      } catch (e) {
+        configCursos = null; // fail-open: sem restrição se API falhar
       }
     }
 
@@ -764,32 +779,85 @@
     });
 
     /**
-     * Bloqueia a opção "Estágio Obrigatório" quando o semestre atual está
-     * nos períodos iniciais do curso, onde o obrigatório ainda não é permitido.
-     * Regra: Integrado (1º-2º Ano), Subsequente (1º-2º Sem.), Tecnólogo (1º-3º Sem.),
-     *        Bacharelado/Superior (1º-5º Sem.)
+     * Aplica as restrições de modalidade no select tipo-estagio:
+     *   1. Configuração admin: cursos habilitados/desabilitados por modalidade
+     *   2. Regra de semestre: bloqueia Obrigatório nos períodos iniciais
+     *      (Integrado 1º-2º Ano, Subsequente 1º-2º Sem., Tecnólogo 1º-3º Sem.,
+     *       Bacharelado 1º-5º Sem.)
      */
     function atualizarBloqueioTipoEstagio() {
       const curso    = document.getElementById('curso-estagio').value;
       const semestre = document.getElementById('semestre-atual').value;
       const selTipo  = document.getElementById('tipo-estagio');
-      const optObrig = selTipo.querySelector('option[value="Obrigatório"]');
+      const optObrig    = selTipo.querySelector('option[value="Obrigatório"]');
+      const optNaoObrig = selTipo.querySelector('option[value="Não Obrigatório"]');
+      const msgEl    = document.getElementById('msg-modalidade-bloqueio');
+      const textoEl  = document.getElementById('msg-modalidade-texto');
       if (!optObrig) return;
 
-      if (!semestre || !curso) { optObrig.disabled = false; return; }
+      // Sem curso: restaura tudo
+      if (!curso) {
+        optObrig.disabled    = false;
+        optNaoObrig.disabled = false;
+        if (msgEl) msgEl.style.display = 'none';
+        return;
+      }
 
-      const tipo = tipoDoCursoSol(curso);
-      let bloqueado = false;
-      if (tipo === 'integrado')   bloqueado = ['1º Ano','2º Ano'].includes(semestre);
-      if (tipo === 'subsequente') bloqueado = ['1º Semestre','2º Semestre'].includes(semestre);
-      if (tipo === 'tecnologo')   bloqueado = ['1º Semestre','2º Semestre','3º Semestre'].includes(semestre);
-      if (tipo === 'bacharelado') bloqueado = ['1º Semestre','2º Semestre','3º Semestre','4º Semestre','5º Semestre'].includes(semestre);
+      // 1. Restrição por configuração admin
+      let cfgBloqObrig    = false;
+      let cfgBloqNaoObrig = false;
+      if (configCursos) {
+        if (Array.isArray(configCursos.obrigatorio))
+          cfgBloqObrig    = !configCursos.obrigatorio.includes(curso);
+        if (Array.isArray(configCursos.naoObrigatorio))
+          cfgBloqNaoObrig = !configCursos.naoObrigatorio.includes(curso);
+      }
 
-      optObrig.disabled = bloqueado;
-      if (bloqueado && selTipo.value === 'Obrigatório') {
+      // 2. Restrição por semestre (somente Obrigatório)
+      let semBloqObrig = false;
+      if (semestre) {
+        const tipo = tipoDoCursoSol(curso);
+        if (tipo === 'integrado')   semBloqObrig = ['1º Ano','2º Ano'].includes(semestre);
+        if (tipo === 'subsequente') semBloqObrig = ['1º Semestre','2º Semestre'].includes(semestre);
+        if (tipo === 'tecnologo')   semBloqObrig = ['1º Semestre','2º Semestre','3º Semestre'].includes(semestre);
+        if (tipo === 'bacharelado') semBloqObrig = ['1º Semestre','2º Semestre','3º Semestre','4º Semestre','5º Semestre'].includes(semestre);
+      }
+
+      const bloqObrig    = cfgBloqObrig    || semBloqObrig;
+      const bloqNaoObrig = cfgBloqNaoObrig;
+
+      optObrig.disabled    = bloqObrig;
+      optNaoObrig.disabled = bloqNaoObrig;
+
+      // Reseta seleção se a opção escolhida foi desabilitada
+      if (bloqObrig && selTipo.value === 'Obrigatório') {
         selTipo.value = '';
         toggleSection('secao-rem-obrig', false);
         toggleSection('secao-rem-naobrig', false);
+      }
+      if (bloqNaoObrig && selTipo.value === 'Não Obrigatório') {
+        selTipo.value = '';
+        toggleSection('secao-rem-obrig', false);
+        toggleSection('secao-rem-naobrig', false);
+      }
+
+      // Mensagem informativa
+      if (msgEl && textoEl) {
+        if (cfgBloqObrig && cfgBloqNaoObrig) {
+          msgEl.className = 'alert alert-danger';
+          textoEl.innerHTML = '<strong>Atenção:</strong> O curso <em>' + escapeHtml(curso) + '</em> não está habilitado para nenhuma modalidade de estágio no momento. Entre em contato com o setor de estágios.';
+          msgEl.style.display = 'block';
+        } else if (cfgBloqObrig) {
+          msgEl.className = 'alert alert-warning';
+          textoEl.innerHTML = '<strong>Atenção:</strong> O curso <em>' + escapeHtml(curso) + '</em> não está habilitado para <strong>Estágio Obrigatório</strong>.';
+          msgEl.style.display = 'block';
+        } else if (cfgBloqNaoObrig) {
+          msgEl.className = 'alert alert-warning';
+          textoEl.innerHTML = '<strong>Atenção:</strong> O curso <em>' + escapeHtml(curso) + '</em> não está habilitado para <strong>Estágio Não Obrigatório</strong>.';
+          msgEl.style.display = 'block';
+        } else {
+          msgEl.style.display = 'none';
+        }
       }
     }
 
@@ -959,9 +1027,11 @@
       hideFormFeedback('form-feedback');
       toggleSection('secao-rem-obrig', false);
       toggleSection('secao-rem-naobrig', false);
-      // Re-habilita opção Obrigatório
-      const optObrig = document.getElementById('tipo-estagio').querySelector('option[value="Obrigatório"]');
-      if (optObrig) optObrig.disabled = false;
+      // Re-habilita opções de tipo de estágio e oculta msg de restrição
+      const selTipoLimpar = document.getElementById('tipo-estagio');
+      selTipoLimpar.querySelectorAll('option').forEach(o => { o.disabled = false; });
+      const msgModalidade = document.getElementById('msg-modalidade-bloqueio');
+      if (msgModalidade) msgModalidade.style.display = 'none';
     });
   </script>
 </body>
