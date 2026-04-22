@@ -406,13 +406,11 @@
       btn.classList.add('is-loading');
 
       try {
-        await API.post({
-          action:    'atualizarMeuCadastroOrientador',
-          authToken: getAccessToken(),
+        await API.post('atualizarMeuCadastroOrientador', {
           tel,
           titulacao,
           area,
-          cursos:    cursosSel.join(', '),
+          cursos: cursosSel.join(', '),
         });
 
         // Recarrega dados atualizados
