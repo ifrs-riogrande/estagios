@@ -70,9 +70,9 @@ function configurarPlanilha() {
     {
       nome: 'Orientadores',
       cabecalho: [
-        'Timestamp', 'Tipo Vínculo', 'Regime', 'Fim Contrato',
-        'Nome', 'Matrícula SIAPE', 'SIAPE', 'Área',
-        'E-mail', 'Titulação', 'Cursos', 'Telefone', 'Status',
+        'Timestamp', 'Tipo Vínculo', 'Início Contrato', 'Fim Contrato',
+        'Nome', 'CPF', 'SIAPE', 'Telefone',
+        'E-mail', 'Titulação', 'Área de Formação', 'Cursos', 'Status',
       ],
     },
 
@@ -191,4 +191,29 @@ function configurarPlanilha() {
     aviso +
     '\n\nPróximo passo: preencha a aba "Diretor Geral" com os dados do DG.'
   );
+}
+
+/**
+ * Corrige apenas o cabeçalho da aba Orientadores na planilha existente.
+ * Execute manualmente no editor GAS: Executar → corrigirCabecalhoOrientadores
+ */
+function corrigirCabecalhoOrientadores() {
+  var ss    = SpreadsheetApp.openById('1zVyseifVC6xeMpNjqwYd6jCq9HTJ2NS8BlN1dtM4s7Y');
+  var sheet = ss.getSheetByName('Orientadores');
+  if (!sheet) { SpreadsheetApp.getUi().alert('Aba "Orientadores" não encontrada.'); return; }
+
+  var cabecalho = [
+    'Timestamp', 'Tipo Vínculo', 'Início Contrato', 'Fim Contrato',
+    'Nome', 'CPF', 'SIAPE', 'Telefone',
+    'E-mail', 'Titulação', 'Área de Formação', 'Cursos', 'Status',
+  ];
+
+  var range = sheet.getRange(1, 1, 1, cabecalho.length);
+  range.setValues([cabecalho]);
+  range.setFontWeight('bold');
+  range.setBackground('#1a73e8');
+  range.setFontColor('#ffffff');
+  sheet.setFrozenRows(1);
+
+  SpreadsheetApp.getUi().alert('✅ Cabeçalho da aba "Orientadores" atualizado com sucesso!');
 }
