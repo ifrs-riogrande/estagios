@@ -57,8 +57,8 @@
               <label class="form-label required" for="tipo-vinculo">Vínculo com o IFRS</label>
               <select id="tipo-vinculo" name="tipoVinculo" class="form-control" required aria-required="true" aria-describedby="tipo-vinculo-error">
                 <option value="">Selecione...</option>
-                <option value="Efetivo">Servidor efetivo</option>
-                <option value="Substituto">Servidor substituto / temporário</option>
+                <option value="Efetivo">Professor</option>
+                <option value="Substituto">Professor substituto / temporário</option>
               </select>
               <span id="tipo-vinculo-error" class="form-error hidden" role="alert"></span>
             </div>
@@ -174,56 +174,78 @@
               <fieldset>
                 <legend class="form-label required" style="margin-bottom:var(--space-3);">Selecione os cursos para os quais deseja ser orientador</legend>
 
-                <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:var(--space-2);">
+                <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:var(--space-2);">
 
-                  <p class="text-sm text-muted" style="grid-column:1/-1;margin-bottom:var(--space-1);">Cursos Técnicos</p>
+                  <p class="text-sm text-muted" style="grid-column:1/-1;margin-bottom:var(--space-1);">Técnico Integrado</p>
+                  <label class="form-check" style="align-items:flex-start;">
+                    <input type="checkbox" name="cursos" value="Técnico Integrado em Automação Industrial">
+                    <span class="form-check-label">Técnico Integrado em Automação Industrial</span>
+                  </label>
+                  <label class="form-check" style="align-items:flex-start;">
+                    <input type="checkbox" name="cursos" value="Técnico Integrado em Eletrotécnica">
+                    <span class="form-check-label">Técnico Integrado em Eletrotécnica</span>
+                  </label>
+                  <label class="form-check" style="align-items:flex-start;">
+                    <input type="checkbox" name="cursos" value="Técnico Integrado em Geoprocessamento">
+                    <span class="form-check-label">Técnico Integrado em Geoprocessamento</span>
+                  </label>
+                  <label class="form-check" style="align-items:flex-start;">
+                    <input type="checkbox" name="cursos" value="Técnico Integrado em Informática para Internet">
+                    <span class="form-check-label">Técnico Integrado em Informática para Internet</span>
+                  </label>
+                  <label class="form-check" style="align-items:flex-start;">
+                    <input type="checkbox" name="cursos" value="Técnico Integrado em Mecânica">
+                    <span class="form-check-label">Técnico Integrado em Mecânica</span>
+                  </label>
+                  <label class="form-check" style="align-items:flex-start;">
+                    <input type="checkbox" name="cursos" value="Técnico Integrado em Refrigeração e Climatização">
+                    <span class="form-check-label">Técnico Integrado em Refrigeração e Climatização</span>
+                  </label>
 
+                  <p class="text-sm text-muted" style="grid-column:1/-1;margin-top:var(--space-3);margin-bottom:var(--space-1);">Técnico Subsequente</p>
                   <label class="form-check" style="align-items:flex-start;">
-                    <input type="checkbox" name="cursos" value="Técnico em Administração">
-                    <span class="form-check-label">Técnico em Administração</span>
+                    <input type="checkbox" name="cursos" value="Técnico Subsequente em Automação Industrial">
+                    <span class="form-check-label">Técnico Subsequente em Automação Industrial</span>
                   </label>
                   <label class="form-check" style="align-items:flex-start;">
-                    <input type="checkbox" name="cursos" value="Técnico em Eletrotécnica">
-                    <span class="form-check-label">Técnico em Eletrotécnica</span>
+                    <input type="checkbox" name="cursos" value="Técnico Subsequente em Eletrotécnica">
+                    <span class="form-check-label">Técnico Subsequente em Eletrotécnica</span>
                   </label>
                   <label class="form-check" style="align-items:flex-start;">
-                    <input type="checkbox" name="cursos" value="Técnico em Informática">
-                    <span class="form-check-label">Técnico em Informática</span>
+                    <input type="checkbox" name="cursos" value="Técnico Subsequente em Enfermagem">
+                    <span class="form-check-label">Técnico Subsequente em Enfermagem</span>
                   </label>
                   <label class="form-check" style="align-items:flex-start;">
-                    <input type="checkbox" name="cursos" value="Técnico em Química">
-                    <span class="form-check-label">Técnico em Química</span>
+                    <input type="checkbox" name="cursos" value="Técnico Subsequente em Fabricação Mecânica">
+                    <span class="form-check-label">Técnico Subsequente em Fabricação Mecânica</span>
                   </label>
                   <label class="form-check" style="align-items:flex-start;">
-                    <input type="checkbox" name="cursos" value="Técnico em Segurança do Trabalho">
-                    <span class="form-check-label">Técnico em Segurança do Trabalho</span>
+                    <input type="checkbox" name="cursos" value="Técnico Subsequente em Geoprocessamento">
+                    <span class="form-check-label">Técnico Subsequente em Geoprocessamento</span>
+                  </label>
+                  <label class="form-check" style="align-items:flex-start;">
+                    <input type="checkbox" name="cursos" value="Técnico Subsequente em Refrigeração e Climatização">
+                    <span class="form-check-label">Técnico Subsequente em Refrigeração e Climatização</span>
                   </label>
 
-                  <p class="text-sm text-muted" style="grid-column:1/-1;margin-top:var(--space-3);margin-bottom:var(--space-1);">Cursos de Graduação</p>
+                  <p class="text-sm text-muted" style="grid-column:1/-1;margin-top:var(--space-3);margin-bottom:var(--space-1);">Tecnologia</p>
+                  <label class="form-check" style="align-items:flex-start;">
+                    <input type="checkbox" name="cursos" value="Tecnologia em Análise e Desenvolvimento de Sistemas">
+                    <span class="form-check-label">Tecnologia em Análise e Desenvolvimento de Sistemas</span>
+                  </label>
+                  <label class="form-check" style="align-items:flex-start;">
+                    <input type="checkbox" name="cursos" value="Tecnologia em Construção de Edifícios">
+                    <span class="form-check-label">Tecnologia em Construção de Edifícios</span>
+                  </label>
 
+                  <p class="text-sm text-muted" style="grid-column:1/-1;margin-top:var(--space-3);margin-bottom:var(--space-1);">Bacharelado</p>
                   <label class="form-check" style="align-items:flex-start;">
-                    <input type="checkbox" name="cursos" value="Análise e Desenvolvimento de Sistemas">
-                    <span class="form-check-label">Análise e Desenvolvimento de Sistemas</span>
+                    <input type="checkbox" name="cursos" value="Bacharelado em Engenharia Mecânica">
+                    <span class="form-check-label">Bacharelado em Engenharia Mecânica</span>
                   </label>
                   <label class="form-check" style="align-items:flex-start;">
-                    <input type="checkbox" name="cursos" value="Engenharia de Computação">
-                    <span class="form-check-label">Engenharia de Computação</span>
-                  </label>
-                  <label class="form-check" style="align-items:flex-start;">
-                    <input type="checkbox" name="cursos" value="Engenharia Elétrica">
-                    <span class="form-check-label">Engenharia Elétrica</span>
-                  </label>
-                  <label class="form-check" style="align-items:flex-start;">
-                    <input type="checkbox" name="cursos" value="Licenciatura em Computação">
-                    <span class="form-check-label">Licenciatura em Computação</span>
-                  </label>
-                  <label class="form-check" style="align-items:flex-start;">
-                    <input type="checkbox" name="cursos" value="Tecnologia em Gestão Pública">
-                    <span class="form-check-label">Tecnologia em Gestão Pública</span>
-                  </label>
-                  <label class="form-check" style="align-items:flex-start;">
-                    <input type="checkbox" name="cursos" value="Tecnologia em Processos Gerenciais">
-                    <span class="form-check-label">Tecnologia em Processos Gerenciais</span>
+                    <input type="checkbox" name="cursos" value="Bacharelado em Arquitetura e Urbanismo">
+                    <span class="form-check-label">Bacharelado em Arquitetura e Urbanismo</span>
                   </label>
                 </div>
               </fieldset>
