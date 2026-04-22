@@ -1,9 +1,9 @@
-﻿<!DOCTYPE html>
+?<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Meus Dados â€” Central de EstÃ¡gios IFRS</title>
+  <title>Meus Dados — Central de Estágios IFRS</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
@@ -23,7 +23,7 @@
     .codigo-input-wrapper{display:flex;gap:var(--space-3);align-items:flex-start;flex-wrap:wrap;}
     .codigo-input-wrapper .form-group{flex:1;min-width:200px;margin-bottom:0;}
 
-    /* VÃ­nculos de ediÃ§Ã£o */
+    /* Vínculos de edição */
     .vinculo-edit-card{background:var(--color-surface-secondary,#f8f9fa);border:1px solid var(--color-border);border-radius:var(--radius-md);padding:var(--space-4);margin-bottom:var(--space-3);position:relative;}
     .vinculo-edit-card .remove-vinculo{position:absolute;top:var(--space-3);right:var(--space-3);background:none;border:none;cursor:pointer;color:var(--color-text-muted);font-size:1.1em;line-height:1;}
     .vinculo-edit-card .remove-vinculo:hover{color:var(--color-danger,#dc3545);}
@@ -41,7 +41,7 @@
         <a href="../index.html" class="header-brand">
           <div class="header-logo-fallback" aria-hidden="true">IFRS</div>
           <div class="header-brand-text">
-            <span class="header-brand-name">Central de EstÃ¡gios</span>
+            <span class="header-brand-name">Central de Estágios</span>
             <span class="header-brand-sub">IFRS Campus Rio Grande</span>
           </div>
         </a>
@@ -62,20 +62,20 @@
 
         <div class="form-page-header">
           <h1>Meus Dados Cadastrais</h1>
-          <p>Consulte e atualize suas informaÃ§Ãµes de contato, endereÃ§o e vÃ­nculos acadÃªmicos.</p>
+          <p>Consulte e atualize suas informações de contato, endereço e vínculos acadêmicos.</p>
         </div>
 
-        <!-- Painel de verificaÃ§Ã£o de cÃ³digo -->
+        <!-- Painel de verificação de código -->
         <div id="painel-verificacao">
           <div class="info-banner" role="note">
-            <strong>CÃ³digo de acesso necessÃ¡rio.</strong>
-            Digite o cÃ³digo que vocÃª recebeu por e-mail quando seu cadastro foi validado pelo setor de estÃ¡gios.
+            <strong>Código de acesso necessário.</strong>
+            Digite o código que você recebeu por e-mail quando seu cadastro foi validado pelo setor de estágios.
           </div>
 
           <div class="form-section" style="margin-top:var(--space-5);">
             <div class="codigo-input-wrapper">
               <div class="form-group">
-                <label class="form-label required" for="codigo-acesso">CÃ³digo de acesso</label>
+                <label class="form-label required" for="codigo-acesso">Código de acesso</label>
                 <input type="text" id="codigo-acesso" class="form-control"
                   placeholder="SGE-XXXX-XXXX-XXXX" maxlength="19"
                   style="text-transform:uppercase;letter-spacing:.05em;font-size:1.1em;"
@@ -93,7 +93,7 @@
           </div>
         </div>
 
-        <!-- Painel com os dados (visualizaÃ§Ã£o) -->
+        <!-- Painel com os dados (visualização) -->
         <div id="painel-dados">
           <div class="alert alert-success" style="margin-bottom:var(--space-6);" id="alerta-identificado">
             <svg class="alert-icon" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
@@ -107,20 +107,20 @@
               <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor" style="margin-right:4px"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/></svg>
               Editar dados
             </button>
-            <button class="btn btn-ghost btn-sm" onclick="limpar()">Consultar outro cÃ³digo</button>
+            <button class="btn btn-ghost btn-sm" onclick="limpar()">Consultar outro código</button>
           </div>
 
           <p style="margin-top:var(--space-4);font-size:var(--font-size-sm);color:var(--color-text-muted);">
-            Para solicitar alteraÃ§Ãµes nos dados de identificaÃ§Ã£o (nome, CPF, nascimento), entre em contato:
+            Para solicitar alterações nos dados de identificação (nome, CPF, nascimento), entre em contato:
             <a href="mailto:estagios@riogrande.ifrs.edu.br" class="link">estagios@riogrande.ifrs.edu.br</a>
           </p>
         </div>
 
-        <!-- Painel de ediÃ§Ã£o -->
+        <!-- Painel de edição -->
         <div id="painel-edicao">
           <div class="alert alert-warning" style="margin-bottom:var(--space-5);">
             <svg class="alert-icon" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
-            <div class="alert-content">VocÃª pode editar contato, endereÃ§o e vÃ­nculos acadÃªmicos. Dados de identificaÃ§Ã£o (nome, CPF, nascimento) sÃ³ podem ser alterados pelo setor.</div>
+            <div class="alert-content">Você pode editar contato, endereço e vínculos acadêmicos. Dados de identificação (nome, CPF, nascimento) só podem ser alterados pelo setor.</div>
           </div>
 
           <div id="edicao-feedback" style="display:none;margin-bottom:var(--space-5);"></div>
@@ -140,13 +140,13 @@
             </div>
           </div>
 
-          <!-- EndereÃ§o -->
+          <!-- Endereço -->
           <div class="form-section">
-            <h3 class="form-section-title">EndereÃ§o</h3>
+            <h3 class="form-section-title">Endereço</h3>
             <div class="form-row">
               <div class="form-group" style="flex:2;">
                 <label class="form-label" for="edit-endereco">Logradouro</label>
-                <input type="text" id="edit-endereco" class="form-control" placeholder="Rua, Av., nÃºmero...">
+                <input type="text" id="edit-endereco" class="form-control" placeholder="Rua, Av., número...">
               </div>
               <div class="form-group">
                 <label class="form-label" for="edit-bairro">Bairro</label>
@@ -169,17 +169,17 @@
             </div>
           </div>
 
-          <!-- VÃ­nculos acadÃªmicos -->
+          <!-- Vínculos acadêmicos -->
           <div class="form-section">
-            <h3 class="form-section-title">VÃ­nculos AcadÃªmicos</h3>
+            <h3 class="form-section-title">Vínculos Acadêmicos</h3>
             <p style="font-size:var(--font-size-sm);color:var(--color-text-muted);margin-bottom:var(--space-4);">
-              Cada vÃ­nculo deve ter um e-mail institucional <code>@aluno.riogrande.ifrs.edu.br</code> Ãºnico.
+              Cada vínculo deve ter um e-mail institucional <code>@aluno.riogrande.ifrs.edu.br</code> único.
             </p>
             <div id="lista-vinculos-edicao"></div>
 
-            <!-- Adicionar novo vÃ­nculo -->
+            <!-- Adicionar novo vínculo -->
             <div style="border:1px dashed var(--color-border);border-radius:var(--radius-md);padding:var(--space-4);margin-top:var(--space-3);">
-              <p style="font-size:var(--font-size-xs);font-weight:600;text-transform:uppercase;color:var(--color-text-muted);margin-bottom:var(--space-3);">Adicionar vÃ­nculo</p>
+              <p style="font-size:var(--font-size-xs);font-weight:600;text-transform:uppercase;color:var(--color-text-muted);margin-bottom:var(--space-3);">Adicionar vínculo</p>
               <div class="add-vinculo-row">
                 <div class="form-group" style="margin-bottom:0;">
                   <label class="form-label" for="add-emailInst">E-mail institucional</label>
@@ -187,10 +187,10 @@
                 </div>
                 <div class="form-group" style="margin-bottom:0;">
                   <label class="form-label" for="add-curso">Curso</label>
-                  <input type="text" id="add-curso" class="form-control" placeholder="Ex: AnÃ¡lise e Desenvolvimento de Sistemas">
+                  <input type="text" id="add-curso" class="form-control" placeholder="Ex: Análise e Desenvolvimento de Sistemas">
                 </div>
                 <div class="form-group" style="margin-bottom:0;">
-                  <label class="form-label" for="add-matricula">MatrÃ­cula</label>
+                  <label class="form-label" for="add-matricula">Matrícula</label>
                   <input type="text" id="add-matricula" class="form-control" placeholder="Ex: 2024001">
                 </div>
                 <div>
@@ -203,7 +203,7 @@
             </div>
           </div>
           <div style="display:flex;gap:var(--space-3);flex-wrap:wrap;margin-top:var(--space-6);">
-            <button id="btn-salvar" class="btn btn-primary" onclick="salvarEdicao()">Salvar alteraÃ§Ãµes</button>
+            <button id="btn-salvar" class="btn btn-primary" onclick="salvarEdicao()">Salvar alterações</button>
             <button class="btn btn-ghost" onclick="cancelarEdicao()">Cancelar</button>
           </div>
         </div>
@@ -215,7 +215,7 @@
   <footer id="app-footer">
     <div class="container">
       <div class="footer-inner">
-        <span class="footer-copy">&copy; <script>document.write(new Date().getFullYear())</script> Central de EstÃ¡gios â€” IFRS Campus Rio Grande</span>
+        <span class="footer-copy">&copy; <script>document.write(new Date().getFullYear())</script> Central de Estágios — IFRS Campus Rio Grande</span>
         <nav class="footer-links"><a href="mailto:estagios@riogrande.ifrs.edu.br">estagios@riogrande.ifrs.edu.br</a></nav>
       </div>
     </div>
@@ -260,7 +260,7 @@
       input.classList.remove('is-invalid');
 
       if (!cod.match(/^SGE-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$/)) {
-        errEl.textContent = 'CÃ³digo invÃ¡lido. Formato: SGE-XXXX-XXXX-XXXX';
+        errEl.textContent = 'Código inválido. Formato: SGE-XXXX-XXXX-XXXX';
         errEl.classList.remove('hidden');
         input.classList.add('is-invalid');
         input.focus();
@@ -277,7 +277,7 @@
         codigoAtivo = cod;
         exibirDados(dados);
       } catch (err) {
-        errEl.textContent = err.message || 'CÃ³digo invÃ¡lido ou cadastro nÃ£o encontrado.';
+        errEl.textContent = err.message || 'Código inválido ou cadastro não encontrado.';
         errEl.classList.remove('hidden');
         input.classList.add('is-invalid');
       } finally {
@@ -292,43 +292,43 @@
       document.getElementById('painel-dados').style.display = 'block';
 
       const primeiroVinculo = (d.cursos && d.cursos.length > 0) ? d.cursos[0] : null;
-      const labelResumo = (d.nome || '') + (primeiroVinculo ? ' â€” ' + primeiroVinculo.curso : (d.curso ? ' â€” ' + d.curso : ''));
+      const labelResumo = (d.nome || '') + (primeiroVinculo ? ' — ' + primeiroVinculo.curso : (d.curso ? ' — ' + d.curso : ''));
       document.getElementById('alerta-texto').textContent = 'Cadastro encontrado: ' + labelResumo;
 
-      const val = v => v ? `<p>${escapeHtml(v)}</p>` : `<p class="vazio">NÃ£o informado</p>`;
-      const enderecoCompleto = [d.endereco, d.bairro, d.cidade && d.uf ? d.cidade + ' â€” ' + d.uf : (d.cidade || d.uf), d.cep ? 'CEP ' + d.cep : ''].filter(Boolean).join(', ');
+      const val = v => v ? `<p>${escapeHtml(v)}</p>` : `<p class="vazio">Não informado</p>`;
+      const enderecoCompleto = [d.endereco, d.bairro, d.cidade && d.uf ? d.cidade + ' — ' + d.uf : (d.cidade || d.uf), d.cep ? 'CEP ' + d.cep : ''].filter(Boolean).join(', ');
 
       let cursosHtml = '';
       if (d.cursos && d.cursos.length > 0) {
         cursosHtml = d.cursos.map((c, idx) => `
           <div class="dado-item dado-full" style="background:var(--color-surface-secondary,#f8f9fa);border:1px solid var(--color-border);border-radius:var(--radius-md);padding:var(--space-3) var(--space-4);">
-            <label>VÃ­nculo ${idx + 1}</label>
+            <label>Vínculo ${idx + 1}</label>
             <p>${escapeHtml(c.curso || '')}
-              &nbsp;Â·&nbsp; Mat.&nbsp;${escapeHtml(c.matricula || '')}
-              &nbsp;Â·&nbsp; ${escapeHtml(c.emailInst || d.emailInst || '')}
+              &nbsp;·&nbsp; Mat.&nbsp;${escapeHtml(c.matricula || '')}
+              &nbsp;·&nbsp; ${escapeHtml(c.emailInst || d.emailInst || '')}
             </p>
           </div>`).join('');
       } else {
         cursosHtml = `
           <div class="dado-item"><label>Curso</label>${val(d.curso)}</div>
-          <div class="dado-item"><label>MatrÃ­cula</label>${val(d.matricula)}</div>`;
+          <div class="dado-item"><label>Matrícula</label>${val(d.matricula)}</div>`;
       }
 
       document.getElementById('dados-content').innerHTML = `
-        <div class="section-title">IdentificaÃ§Ã£o</div>
+        <div class="section-title">Identificação</div>
         <div class="dado-item"><label>Nome Completo</label>${val(d.nome)}</div>
         <div class="dado-item"><label>CPF</label>${val(d.cpf)}</div>
         <div class="dado-item"><label>Data de Nascimento</label>${val(d.dataNasc)}</div>
         <div class="dado-item"><label>Maior de idade?</label>${val(d.maiorIdade)}</div>
 
-        <div class="section-title">Dados AcadÃªmicos</div>
+        <div class="section-title">Dados Acadêmicos</div>
         ${cursosHtml}
         <div class="dado-item"><label>Modalidade</label>${val(d.modalidade)}</div>
 
         <div class="section-title">Contato</div>
         <div class="dado-item"><label>E-mail Pessoal</label>${val(d.emailPessoal)}</div>
         <div class="dado-item"><label>Telefone</label>${val(d.telefone)}</div>
-        <div class="dado-item dado-full"><label>EndereÃ§o</label>${val(enderecoCompleto)}</div>
+        <div class="dado-item dado-full"><label>Endereço</label>${val(enderecoCompleto)}</div>
       `;
     }
 
@@ -340,14 +340,14 @@
       document.getElementById('edit-emailPessoal').value = d.emailPessoal || '';
       document.getElementById('edit-telefone').value = d.telefone || '';
 
-      // Preenche endereÃ§o
+      // Preenche endereço
       document.getElementById('edit-endereco').value = d.endereco || '';
       document.getElementById('edit-bairro').value = d.bairro || '';
       document.getElementById('edit-cidade').value = d.cidade || '';
       document.getElementById('edit-uf').value = d.uf || '';
       document.getElementById('edit-cep').value = d.cep || '';
 
-      // Preenche responsÃ¡vel
+      // Preenche responsável
 
       // Inicializa cursos
       if (d.cursos && d.cursos.length > 0) {
@@ -356,7 +356,7 @@
         cursosEditando = d.curso ? [{ emailInst: d.emailInst || '', curso: d.curso, matricula: d.matricula || '' }] : [];
       }
 
-      // Limpa campos de adiÃ§Ã£o
+      // Limpa campos de adição
       document.getElementById('add-emailInst').value = '';
       document.getElementById('add-curso').value = '';
       document.getElementById('add-matricula').value = '';
@@ -383,12 +383,12 @@
     function renderizarCursosEdicao() {
       const container = document.getElementById('lista-vinculos-edicao');
       if (cursosEditando.length === 0) {
-        container.innerHTML = '<p style="color:var(--color-text-muted);font-size:var(--font-size-sm);margin-bottom:var(--space-3);">Nenhum vÃ­nculo cadastrado. Adicione ao menos um abaixo.</p>';
+        container.innerHTML = '<p style="color:var(--color-text-muted);font-size:var(--font-size-sm);margin-bottom:var(--space-3);">Nenhum vínculo cadastrado. Adicione ao menos um abaixo.</p>';
         return;
       }
       container.innerHTML = cursosEditando.map((c, idx) => `
         <div class="vinculo-edit-card">
-          <button type="button" class="remove-vinculo" onclick="removerCursoEdicao(${idx})" title="Remover vÃ­nculo" ${cursosEditando.length === 1 ? 'disabled' : ''}>âœ•</button>
+          <button type="button" class="remove-vinculo" onclick="removerCursoEdicao(${idx})" title="Remover vínculo" ${cursosEditando.length === 1 ? 'disabled' : ''}>✕</button>
           <div class="vinculo-edit-row">
             <div class="form-group" style="margin-bottom:0;">
               <label class="form-label form-label-sm">E-mail institucional</label>
@@ -401,7 +401,7 @@
                 onchange="cursosEditando[${idx}].curso = this.value.trim()">
             </div>
             <div class="form-group" style="margin-bottom:0;">
-              <label class="form-label form-label-sm">MatrÃ­cula</label>
+              <label class="form-label form-label-sm">Matrícula</label>
               <input type="text" class="form-control form-control-sm" value="${escapeHtml(c.matricula)}"
                 onchange="cursosEditando[${idx}].matricula = this.value.trim()">
             </div>
@@ -421,8 +421,8 @@
       if (!emailInst) { errEl.textContent = 'Informe o e-mail institucional.'; errEl.classList.remove('hidden'); return; }
       if (!/@aluno\.riogrande\.ifrs\.edu\.br$/i.test(emailInst)) { errEl.textContent = 'E-mail deve terminar em @aluno.riogrande.ifrs.edu.br'; errEl.classList.remove('hidden'); return; }
       if (!curso)     { errEl.textContent = 'Informe o curso.'; errEl.classList.remove('hidden'); return; }
-      if (!matricula) { errEl.textContent = 'Informe a matrÃ­cula.'; errEl.classList.remove('hidden'); return; }
-      if (cursosEditando.some(c => c.emailInst.toLowerCase() === emailInst)) { errEl.textContent = 'Este e-mail jÃ¡ estÃ¡ na lista.'; errEl.classList.remove('hidden'); return; }
+      if (!matricula) { errEl.textContent = 'Informe a matrícula.'; errEl.classList.remove('hidden'); return; }
+      if (cursosEditando.some(c => c.emailInst.toLowerCase() === emailInst)) { errEl.textContent = 'Este e-mail já está na lista.'; errEl.classList.remove('hidden'); return; }
 
       cursosEditando.push({ emailInst, curso, matricula });
       document.getElementById('add-emailInst').value = '';
@@ -441,7 +441,7 @@
       const fb  = document.getElementById('edicao-feedback');
       const btn = document.getElementById('btn-salvar');
 
-      // Coleta valores atuais dos inputs inline dos vÃ­nculos
+      // Coleta valores atuais dos inputs inline dos vínculos
       const cardsInputs = document.querySelectorAll('#lista-vinculos-edicao .vinculo-edit-card');
       cardsInputs.forEach((card, idx) => {
         const inputs = card.querySelectorAll('input');
@@ -450,20 +450,20 @@
         if (inputs[2]) cursosEditando[idx].matricula   = inputs[2].value.trim();
       });
 
-      // Valida vÃ­nculos
+      // Valida vínculos
       for (let i = 0; i < cursosEditando.length; i++) {
         const c = cursosEditando[i];
         if (!c.emailInst || !/@aluno\.riogrande\.ifrs\.edu\.br$/i.test(c.emailInst)) {
-          mostrarFeedbackEdicao('error', `VÃ­nculo ${i+1}: e-mail institucional invÃ¡lido.`); return;
+          mostrarFeedbackEdicao('error', `Vínculo ${i+1}: e-mail institucional inválido.`); return;
         }
-        if (!c.curso) { mostrarFeedbackEdicao('error', `VÃ­nculo ${i+1}: informe o curso.`); return; }
-        if (!c.matricula) { mostrarFeedbackEdicao('error', `VÃ­nculo ${i+1}: informe a matrÃ­cula.`); return; }
+        if (!c.curso) { mostrarFeedbackEdicao('error', `Vínculo ${i+1}: informe o curso.`); return; }
+        if (!c.matricula) { mostrarFeedbackEdicao('error', `Vínculo ${i+1}: informe a matrícula.`); return; }
       }
 
       // Verifica duplicatas de e-mail
       const emails = cursosEditando.map(c => c.emailInst.toLowerCase());
       if (new Set(emails).size !== emails.length) {
-        mostrarFeedbackEdicao('error', 'HÃ¡ e-mails institucionais duplicados nos vÃ­nculos.'); return;
+        mostrarFeedbackEdicao('error', 'Há e-mails institucionais duplicados nos vínculos.'); return;
       }
 
       btn.disabled = true;
@@ -482,7 +482,7 @@
           cursos:       cursosEditando,
         });
 
-        // Atualiza cache e volta para visualizaÃ§Ã£o
+        // Atualiza cache e volta para visualização
         const dadosNovos = await API.get('obterMeuCadastro', { codigoAcesso: codigoAtivo, authToken: getAccessToken() });
         dadosCache = dadosNovos;
         exibirDados(dadosNovos);
