@@ -30,6 +30,8 @@ function configurarPlanilha() {
         'Link Doc. Boletim', 'Status', 'Obs. Setor', 'Motivo Reprovação',
         'Drive URL', 'Data Aprovação', 'Data Doc. Enviado', 'Data Ativação',
         'Objetivos', 'Formando',
+        'Turno', 'Semestre', 'E-mail Inst. Estágio',
+        'Nome Responsável', 'CPF Responsável', 'Tel. Responsável',
       ],
     },
 
@@ -216,4 +218,41 @@ function corrigirCabecalhoOrientadores_() {
   sheet.setFrozenRows(1);
 
   return jsonOk_({ mensagem: 'Cabeçalho corrigido.' });
+}
+
+/**
+ * Corrige/atualiza o cabeçalho da aba Solicitações para incluir as colunas
+ * Turno (37), Semestre (38), E-mail Inst. Estágio (39),
+ * Nome Responsável (40), CPF Responsável (41), Tel. Responsável (42).
+ * Execute via rota GET temporária ou manualmente no editor GAS.
+ */
+function corrigirCabecalhoSolicitacoes_() {
+  var ss    = SpreadsheetApp.openById('1zVyseifVC6xeMpNjqwYd6jCq9HTJ2NS8BlN1dtM4s7Y');
+  var sheet = ss.getSheetByName('Solicitações');
+  if (!sheet) return jsonError_('Aba Solicitações não encontrada.', 'NOT_FOUND');
+
+  var cabecalho = [
+    'Timestamp', 'ID Estágio', 'E-mail Estudante', 'Nome Estudante',
+    'Matrícula', 'Curso', 'CPF', 'Data Nasc.', 'Telefone',
+    'Tipo Estágio', 'Nome Empresa', 'CNPJ Empresa',
+    'Nome Supervisor', 'E-mail Supervisor', 'Nome Agente',
+    'Nome Orientador', 'E-mail Orientador',
+    'Data Início', 'Data Término', 'Carga Horária',
+    'Horário', 'Remunerado', 'Valor Bolsa', 'Valor Transporte',
+    'Plano de Atividades', 'Link Doc. Matrícula', 'Link Doc. Identidade',
+    'Link Doc. Boletim', 'Status', 'Obs. Setor', 'Motivo Reprovação',
+    'Drive URL', 'Data Aprovação', 'Data Doc. Enviado', 'Data Ativação',
+    'Objetivos', 'Formando',
+    'Turno', 'Semestre', 'E-mail Inst. Estágio',
+    'Nome Responsável', 'CPF Responsável', 'Tel. Responsável',
+  ];
+
+  var range = sheet.getRange(1, 1, 1, cabecalho.length);
+  range.setValues([cabecalho]);
+  range.setFontWeight('bold');
+  range.setBackground('#1a73e8');
+  range.setFontColor('#ffffff');
+  sheet.setFrozenRows(1);
+
+  return jsonOk_({ mensagem: 'Cabeçalho de Solicitações corrigido com sucesso.' });
 }

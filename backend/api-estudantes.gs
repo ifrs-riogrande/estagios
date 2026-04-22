@@ -90,13 +90,16 @@ function cadastrarEstudante_(dados) {
   var cep        = sanitizar_(dados.cep, 9);
   var cidade     = sanitizar_(dados.cidade, 100);
   var uf         = sanitizar_(dados.uf, 2);
-  var maiorIdade = sanitizar_(dados.maiorIdade, 3);
-  var nomeResp   = sanitizar_(dados.nomeResponsavel, 200);
-  var cpfResp    = sanitizar_(dados.cpfResponsavel, 14).replace(/\D/g, '');
-  var telResp    = sanitizar_(dados.telResponsavel, 30);
-  var emailResp  = sanitizar_(dados.emailResponsavel, 100).toLowerCase();
-  var docResp    = sanitizar_(dados.docResponsavel, 300);
-
+  var dnStr = sanitizar_(dados.dataNascimento, 10);
+  var maiorIdade = 'Sim';
+  if (dnStr) {
+    var dn = new Date(dnStr + 'T00:00:00');
+    var hoje2 = new Date();
+    var age = hoje2.getFullYear() - dn.getFullYear();
+    var m2 = hoje2.getMonth() - dn.getMonth();
+    if (m2 < 0 || (m2 === 0 && hoje2.getDate() < dn.getDate())) age--;
+    if (age < 18) maiorIdade = 'Não';
+  }
   // ── Cursos (array [{emailInst, curso, matricula}]) ───────────────────────
   var cursos = [];
   var cursosInput = dados.cursos;
@@ -140,12 +143,6 @@ function cadastrarEstudante_(dados) {
   if (!telefone)   return jsonError_('Telefone é obrigatório.', 'VALIDATION');
   if (emailPes && !validarEmail_(emailPes)) return jsonError_('E-mail pessoal inválido.', 'VALIDATION');
 
-  // Menor de idade — responsável obrigatório
-  if (maiorIdade === 'Não') {
-    if (!nomeResp) return jsonError_('Nome do responsável legal é obrigatório para menores.', 'VALIDATION');
-    if (cpfResp && !validarCPF_(cpfResp)) return jsonError_('CPF do responsável inválido.', 'VALIDATION');
-  }
-
   var sheet = abrirAba_(CFG_EST.SS_ID, CFG_EST.ABA);
 
   // Verifica duplicidade por CPF (matrícula não é verificada pois pode ter várias)
@@ -172,11 +169,6 @@ function cadastrarEstudante_(dados) {
   linha[COL_EST.CIDADE]        = cidade;
   linha[COL_EST.UF]            = uf;
   linha[COL_EST.MAIOR_IDADE]   = maiorIdade;
-  linha[COL_EST.NOME_RESP]     = nomeResp;
-  linha[COL_EST.CPF_RESP]      = cpfResp;
-  linha[COL_EST.TEL_RESP]      = telResp;
-  linha[COL_EST.EMAIL_RESP]    = emailResp;
-  linha[COL_EST.DOC_RESP]      = docResp;
   linha[COL_EST.MODALIDADE]    = modalidade;
   linha[COL_EST.STATUS]        = 'Aguardando Validação';
   linha[COL_EST.COD_ACESSO]    = '';
@@ -448,7 +440,6 @@ function buscarEstudantePorEmailECodigo_(emailEstudante, codigo) {
     cidade:       String(linha[COL_EST.CIDADE]        || ''),
     uf:           String(linha[COL_EST.UF]            || ''),
     maiorIdade:   String(linha[COL_EST.MAIOR_IDADE]   || ''),
-    nomeResp:     String(linha[COL_EST.NOME_RESP]     || ''),
     cursos:       cursosArrFinal,   // array [{emailInst, curso, matricula}]
     status:       statusEst,
   };
@@ -480,6 +471,117 @@ function resolverEmailPrimario_(emailQualquer) {
     } catch (_) {}
   }
   return norm;  // não encontrado — retorna como está
+}
+
+// ---------------------------------------------------------------------------
+// POST — Atualizar dados do próprio cadastro
+// ---------------------------------------------------------------------------
+
+/**
+ * Permite ao estudante autenticado atualizar contato, endereço e vínculos.
+ * Campos imutáveis pelo próprio estudante: nome, CPF, data de nascimento.
+ */
+function atualizarMeuCadastro_(dados) {
+  var tokenInfo = validarTokenEstudante_(dados.authToken);
+
+  if (!checkRateLimit_('atualizarMeuCadastro')) {
+    return jsonError_('Muitas requisições. Aguarde um momento.', 'RATE_LIMIT');
+  }
+
+  var codigo = sanitizar_(dados.codigoAcesso || '', 20).trim().toUpperCase();
+  if (!codigo) return jsonError_('Código de acesso é obrigatório.', 'VALIDATION');
+
+  // Campos atualizáveis
+  var emailPes = sanitizar_(dados.emailPessoal || '', 100).toLowerCase();
+  var telefone = sanitizar_(dados.telefone     || '', 30);
+  var endereco = sanitizar_(dados.endereco     || '', 300);
+  var bairro   = sanitizar_(dados.bairro       || '', 100);
+  var cep      = sanitizar_(dados.cep          || '', 9);
+  var cidade   = sanitizar_(dados.cidade       || '', 100);
+  var uf       = sanitizar_(dados.uf           || '', 2);
+  if (!telefone) return jsonError_('Telefone é obrigatório.', 'VALIDATION');
+  if (!endereco) return jsonError_('Endereço é obrigatório.', 'VALIDATION');
+  if (!cep)      return jsonError_('CEP é obrigatório.', 'VALIDATION');
+  if (!bairro)   return jsonError_('Bairro é obrigatório.', 'VALIDATION');
+  if (!cidade)   return jsonError_('Cidade é obrigatória.', 'VALIDATION');
+  if (emailPes && !validarEmail_(emailPes)) return jsonError_('E-mail pessoal inválido.', 'VALIDATION');
+
+  // Vínculos acadêmicos (obrigatório ao menos 1)
+  var cursos = [];
+  var cursosInput = dados.cursos;
+  if (cursosInput && typeof cursosInput === 'object') {
+    var cursosArr = Array.isArray(cursosInput) ? cursosInput : Object.values(cursosInput);
+    for (var ci = 0; ci < cursosArr.length && cursos.length < 6; ci++) {
+      var item = cursosArr[ci];
+      if (!item) continue;
+      var nomeCurso    = String(item.curso     || '').trim().slice(0, 100);
+      var numMatricula = String(item.matricula || '').replace(/\D/g, '').slice(0, 20);
+      var emailCurso   = sanitizar_(String(item.emailInst || ''), 100).toLowerCase();
+      if (!nomeCurso || !numMatricula) continue;
+      if (!/@aluno\.riogrande\.ifrs\.edu\.br$/i.test(emailCurso)) {
+        return jsonError_('E-mail institucional inválido para "' + nomeCurso + '".', 'VALIDATION');
+      }
+      cursos.push({ emailInst: emailCurso, curso: nomeCurso, matricula: numMatricula });
+    }
+  }
+  if (cursos.length === 0) {
+    return jsonError_('Ao menos um vínculo acadêmico é obrigatório.', 'VALIDATION');
+  }
+
+  // Localiza a linha do estudante (aceita e-mail principal ou e-mail de vínculo)
+  var sheet = abrirAba_(CFG_EST.SS_ID, CFG_EST.ABA);
+  var todosOsDados = sheet.getDataRange().getValues();
+  var emailNorm  = String(tokenInfo.email || '').toLowerCase().trim();
+  var codigoNorm = codigo;
+  var rowIdx = -1;
+
+  for (var i = 1; i < todosOsDados.length; i++) {
+    var linha = todosOsDados[i];
+    var emailMatch = String(linha[COL_EST.EMAIL_INST] || '').toLowerCase().trim() === emailNorm;
+
+    if (!emailMatch) {
+      var cjAtualizar = String(linha[COL_EST.CURSOS_JSON] || '').trim();
+      if (cjAtualizar) {
+        try {
+          var arrAtualizar = JSON.parse(cjAtualizar);
+          for (var ci2 = 0; ci2 < arrAtualizar.length; ci2++) {
+            if (String(arrAtualizar[ci2].emailInst || '').toLowerCase().trim() === emailNorm) {
+              emailMatch = true; break;
+            }
+          }
+        } catch (_) {}
+      }
+    }
+    if (!emailMatch) continue;
+
+    var statusLinha = String(linha[COL_EST.STATUS] || '').trim();
+    if (statusLinha !== 'Ativo') {
+      return jsonError_('Cadastro não está ativo.', 'AUTH_ERROR');
+    }
+    var codPlan = String(linha[COL_EST.COD_ACESSO] || '').trim().toUpperCase();
+    if (codPlan !== codigoNorm) {
+      return jsonError_('Código de acesso inválido.', 'AUTH_ERROR');
+    }
+    rowIdx = i;
+    break;
+  }
+
+  if (rowIdx === -1) return jsonError_('Estudante não encontrado.', 'NOT_FOUND');
+
+  var rowNum = rowIdx + 1;
+  sheet.getRange(rowNum, COL_EST.EMAIL_PESSOAL + 1).setValue(emailPes);
+  sheet.getRange(rowNum, COL_EST.TELEFONE      + 1).setValue(telefone);
+  sheet.getRange(rowNum, COL_EST.ENDERECO      + 1).setValue(endereco);
+  sheet.getRange(rowNum, COL_EST.BAIRRO        + 1).setValue(bairro);
+  sheet.getRange(rowNum, COL_EST.CEP           + 1).setValue(cep);
+  sheet.getRange(rowNum, COL_EST.CIDADE        + 1).setValue(cidade);
+  sheet.getRange(rowNum, COL_EST.UF            + 1).setValue(uf);
+  sheet.getRange(rowNum, COL_EST.CURSOS_JSON   + 1).setValue(JSON.stringify(cursos));
+  // Mantém colunas legadas sincronizadas com o primeiro vínculo
+  sheet.getRange(rowNum, COL_EST.CURSO         + 1).setValue(cursos[0].curso);
+  sheet.getRange(rowNum, COL_EST.MATRICULA     + 1).setValue(cursos[0].matricula);
+
+  return jsonOk_({ mensagem: 'Dados atualizados com sucesso!' });
 }
 
 /**

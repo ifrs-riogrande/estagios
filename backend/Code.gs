@@ -1,28 +1,28 @@
-/**
- * Code.gs — Roteador principal do Web App SGE
- * SGE — Sistema de Gestão de Estágios · IFRS Campus Rio Grande
+﻿/**
+ * Code.gs â€” Roteador principal do Web App SGE
+ * SGE â€” Sistema de GestÃ£o de EstÃ¡gios Â· IFRS Campus Rio Grande
  *
- * Um único deployment URL atende todas as chamadas.
- * O parâmetro ?action= (GET) ou body.action (POST) determina o módulo.
+ * Um Ãºnico deployment URL atende todas as chamadas.
+ * O parÃ¢metro ?action= (GET) ou body.action (POST) determina o mÃ³dulo.
  *
- * Módulos:
- *   api-empresas.gs         → empresas, supervisores, oportunidades
- *   api-estudantes.gs       → cadastro e consulta de estudantes
- *   api-servidores.gs       → orientadores e coordenadores
- *   api-solicitacao.gs      → solicitações de estágio e documentos do estudante
- *   api-admin.gs            → operações administrativas (restrito)
- *   api-dashboard.gs        → dashboard do setor (restrito)
- *   api-agentes.gs          → agentes de integração
- *   api-oportunidades.gs    → portal de oportunidades
+ * MÃ³dulos:
+ *   api-empresas.gs         â†’ empresas, supervisores, oportunidades
+ *   api-estudantes.gs       â†’ cadastro e consulta de estudantes
+ *   api-servidores.gs       â†’ orientadores e coordenadores
+ *   api-solicitacao.gs      â†’ solicitaÃ§Ãµes de estÃ¡gio e documentos do estudante
+ *   api-admin.gs            â†’ operaÃ§Ãµes administrativas (restrito)
+ *   api-dashboard.gs        â†’ dashboard do setor (restrito)
+ *   api-agentes.gs          â†’ agentes de integraÃ§Ã£o
+ *   api-oportunidades.gs    â†’ portal de oportunidades
  *
- * Para adicionar um módulo:
+ * Para adicionar um mÃ³dulo:
  *   1. Crie o arquivo api-xxx.gs com doGetXxx(e) e doPostXxx(e).
  *   2. Mapeie as actions no switch abaixo.
  */
 
 'use strict';
 
-// ── Mapeamento action → módulo (GET) ─────────────────────────────
+// â”€â”€ Mapeamento action â†’ mÃ³dulo (GET) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 var GET_ROUTES = {
   // Empresas
   'listarEmpresas':          doGetEmpresas,
@@ -42,7 +42,7 @@ var GET_ROUTES = {
   // Agentes
   'listarAgentes':           doGetAgentes,
 
-  // Solicitações (estudante)
+  // SolicitaÃ§Ãµes (estudante)
   'verificarIdEstagio':      doGetSolicitacao,
 
   // Admin
@@ -56,9 +56,10 @@ var GET_ROUTES = {
 
   // Dashboard
   'dashboard':               doGetDash,
+
 };
 
-// ── Mapeamento action → módulo (POST) ────────────────────────────
+// â”€â”€ Mapeamento action â†’ mÃ³dulo (POST) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 var POST_ROUTES = {
   // Empresas
   'cadastrarEmpresa':          doPostEmpresas,
@@ -68,7 +69,7 @@ var POST_ROUTES = {
   'cadastrarEstudante':        doPostEstudantes,
   'atualizarMeuCadastro':      doPostEstudantes,
 
-  // Estudantes — Admin
+  // Estudantes â€” Admin
   'validarCadastroAdmin':      doPostAdmin,
   'reenviarCodigoAdmin':       doPostAdmin,
 
@@ -76,7 +77,7 @@ var POST_ROUTES = {
   'cadastrarOrientador':       doPostServidores,
   'cadastrarCoordenador':      doPostAdmin,
 
-  // Solicitações (estudante + DG)
+  // SolicitaÃ§Ãµes (estudante + DG)
   'solicitarEstagio':          doPostSolicitacao,
   'enviarRelatorioParcial':    doPostSolicitacao,
   'enviarRelatorioFinal':      doPostSolicitacao,
@@ -84,7 +85,7 @@ var POST_ROUTES = {
   'enviarDocumentosAssinados': doPostSolicitacao,
   'enviarDocumentoDG':         doPostSolicitacao,
 
-  // Agentes (público)
+  // Agentes (pÃºblico)
   'cadastrarAgente':           doPostAgentes,
 
   // Oportunidades
@@ -108,12 +109,12 @@ var POST_ROUTES = {
   'reativarAgente':            doPostAdmin,
 };
 
-// ── Ponto de entrada GET ──────────────────────────────────────────
+// â”€â”€ Ponto de entrada GET â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function doGet(e) {
   try {
     var action = (e.parameter && e.parameter.action) || '';
     var handler = GET_ROUTES[action];
-    if (!handler) return jsonError_('Ação GET desconhecida: ' + action, 'UNKNOWN_ACTION');
+    if (!handler) return jsonError_('AÃ§Ã£o GET desconhecida: ' + action, 'UNKNOWN_ACTION');
     return handler(e);
   } catch (err) {
     logErro_('Code.doGet', err);
@@ -121,14 +122,14 @@ function doGet(e) {
   }
 }
 
-// ── Ponto de entrada POST ─────────────────────────────────────────
+// â”€â”€ Ponto de entrada POST â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function doPost(e) {
   try {
     var body   = JSON.parse(e.postData.contents);
     var action = body.action || '';
     var handler = POST_ROUTES[action];
-    if (!handler) return jsonError_('Ação POST desconhecida: ' + action, 'UNKNOWN_ACTION');
-    // Recria o "event" com o body já parseado para compatibilidade com os módulos
+    if (!handler) return jsonError_('AÃ§Ã£o POST desconhecida: ' + action, 'UNKNOWN_ACTION');
+    // Recria o "event" com o body jÃ¡ parseado para compatibilidade com os mÃ³dulos
     e._body = body;
     return handler(e);
   } catch (err) {
@@ -137,8 +138,8 @@ function doPost(e) {
   }
 }
 
-// ── Stubs dos módulos (cada módulo define suas funções) ───────────
-// Os módulos api-*.gs expõem as funções abaixo:
+// â”€â”€ Stubs dos mÃ³dulos (cada mÃ³dulo define suas funÃ§Ãµes) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Os mÃ³dulos api-*.gs expÃµem as funÃ§Ãµes abaixo:
 //   doGetEmpresas(e), doPostEmpresas(e)
 //   doGetEstudantes(e), doPostEstudantes(e)
 //   doGetServidores(e), doPostServidores(e)
@@ -148,7 +149,7 @@ function doPost(e) {
 //   doGetAgentes(e), doPostAgentes(e)
 //   doGetOportunidades(e), doPostOportunidades(e)
 //
-// Se um módulo ainda não implementar sua função, use o stub abaixo
+// Se um mÃ³dulo ainda nÃ£o implementar sua funÃ§Ã£o, use o stub abaixo
 // para evitar erros em runtime:
 
 function doGetEstudantes(e) {
@@ -157,7 +158,7 @@ function doGetEstudantes(e) {
   if (action === 'verificarEstudante') return verificarEstudante_(e);
   if (action === 'obterMeuCadastro')   return obterMeuCadastro_(e);
   if (action === 'verificarCpf')       return verificarCpf_(e);
-  return jsonError_('Ação não implementada: ' + action, 'NOT_IMPLEMENTED');
+  return jsonError_('AÃ§Ã£o nÃ£o implementada: ' + action, 'NOT_IMPLEMENTED');
 }
 
 function doPostEstudantes(e) {
@@ -173,7 +174,7 @@ function doGetServidores(e) {
     return listarOrientadores_(curso);
   }
   if (action === 'listarCoordenadores') return listarCoordenadores_(e);
-  return jsonError_('Ação não implementada: ' + action, 'NOT_IMPLEMENTED');
+  return jsonError_('AÃ§Ã£o nÃ£o implementada: ' + action, 'NOT_IMPLEMENTED');
 }
 
 function doPostServidores(e) {
@@ -195,7 +196,7 @@ function doPostSolicitacao(e) {
     case 'enviarAdendo':              return enviarAdendo_(body);
     case 'enviarDocumentosAssinados': return enviarDocumentosAssinados_(body);
     case 'enviarDocumentoDG':         return enviarDocumentoDG_(body);
-    default: return jsonError_('Ação não implementada: ' + action, 'NOT_IMPLEMENTED');
+    default: return jsonError_('AÃ§Ã£o nÃ£o implementada: ' + action, 'NOT_IMPLEMENTED');
   }
 }
 
@@ -225,7 +226,7 @@ function doGetEmpresas(e) {
   var action = e.parameter && e.parameter.action;
   if (action === 'listarEmpresas')     return listarEmpresasPublicas_(e);
   if (action === 'listarSupervisores') return listarSupervisores_(e);
-  return jsonError_('Ação não implementada: ' + action, 'NOT_IMPLEMENTED');
+  return jsonError_('AÃ§Ã£o nÃ£o implementada: ' + action, 'NOT_IMPLEMENTED');
 }
 
 function doPostEmpresas(e) {
@@ -233,5 +234,10 @@ function doPostEmpresas(e) {
   var action = body.action || '';
   if (action === 'cadastrarEmpresa')    return cadastrarEmpresa_(body);
   if (action === 'cadastrarSupervisor') return cadastrarSupervisor_(body);
-  return jsonError_('Ação não implementada: ' + action, 'NOT_IMPLEMENTED');
+  return jsonError_('AÃ§Ã£o nÃ£o implementada: ' + action, 'NOT_IMPLEMENTED');
+}
+
+
+function doGetFixCabecalhoSol_(e) {
+  return corrigirCabecalhoSolicitacoes_();
 }

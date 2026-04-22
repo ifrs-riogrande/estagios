@@ -80,6 +80,36 @@
               <span id="vinculo-estagio-hint" class="form-hint">Selecione o curso, matrícula e e-mail institucional que serão usados neste estágio.</span>
               <span id="vinculo-estagio-error" class="form-error hidden" role="alert"></span>
             </div>
+
+            <!-- Bloqueio: menor de 16 anos -->
+            <div id="msg-idade-bloqueio" class="alert alert-danger" style="display:none;margin-top:var(--space-4);" role="alert">
+              <svg class="alert-icon" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+              <div class="alert-content"><strong>Estágio não permitido:</strong> estudantes com menos de 16 anos não podem realizar estágio, conforme a Lei nº 11.788/2008. Entre em contato com o setor de estágios.</div>
+            </div>
+
+            <!-- Seção 1B: Responsável legal (menores de 16–18 anos) -->
+            <div id="secao-responsavel-sol" style="display:none;margin-top:var(--space-5);">
+              <div class="alert alert-warning" style="margin-bottom:var(--space-4);">
+                <svg class="alert-icon" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+                <div class="alert-content"><strong>Menor de 18 anos:</strong> preencha os dados do responsável legal.</div>
+              </div>
+              <div class="form-row">
+                <div class="form-group" style="flex:2;">
+                  <label class="form-label required" for="nome-responsavel">Nome do responsável legal</label>
+                  <input type="text" id="nome-responsavel" class="form-control" placeholder="Nome completo do responsável" aria-describedby="nome-responsavel-error">
+                  <span id="nome-responsavel-error" class="form-error hidden" role="alert"></span>
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="cpf-responsavel">CPF do responsável</label>
+                  <input type="text" id="cpf-responsavel" class="form-control" placeholder="000.000.000-00" maxlength="14" inputmode="numeric">
+                </div>
+              </div>
+              <div class="form-group" style="max-width:280px;">
+                <label class="form-label required" for="tel-responsavel">Telefone do responsável</label>
+                <input type="tel" id="tel-responsavel" class="form-control" placeholder="(53) 999999999" inputmode="tel" aria-describedby="tel-responsavel-error">
+                <span id="tel-responsavel-error" class="form-error hidden" role="alert"></span>
+              </div>
+            </div>
           </div>
 
           <!-- ── Seção 2: Dados acadêmicos ── -->
@@ -452,6 +482,19 @@
     // ── Dados do estudante (carregados ao validar o código) ──────────────────
     let dadosEstudante = null;
     let emailInstEstagio = '';   // e-mail institucional do vínculo selecionado
+    let idadeEstudante = 0;      // calculado ao validar o código
+
+    function calcularIdadeEstudante(dataNasc) {
+      if (!dataNasc) return 99;
+      const partes = String(dataNasc).split('-');
+      if (partes.length < 3) return 99;
+      const nasc  = new Date(parseInt(partes[0]), parseInt(partes[1]) - 1, parseInt(partes[2]));
+      const hoje  = new Date();
+      let idade   = hoje.getFullYear() - nasc.getFullYear();
+      const m     = hoje.getMonth() - nasc.getMonth();
+      if (m < 0 || (m === 0 && hoje.getDate() < nasc.getDate())) idade--;
+      return idade;
+    }
 
     // Opções de semestre por tipo de curso (espelha cadastro.html)
     const OPCOES_SEMESTRE_SOL = {
@@ -624,6 +667,24 @@
       try {
         const dados = await API.get('obterMeuCadastro', { codigoAcesso: cod, authToken: getAccessToken() });
         dadosEstudante = dados;
+        idadeEstudante = calcularIdadeEstudante(dados.dataNasc);
+
+        // Verificação de idade
+        const msgIdade  = document.getElementById('msg-idade-bloqueio');
+        const secaoResp = document.getElementById('secao-responsavel-sol');
+        if (idadeEstudante < 16) {
+          msgIdade.style.display  = 'block';
+          secaoResp.style.display = 'none';
+          document.getElementById('grupo-vinculo').style.display = 'none';
+          document.getElementById('btn-enviar').disabled = true;
+          clearFieldError('codigo-acesso');
+          markFieldValid('codigo-acesso');
+          return;
+        }
+        msgIdade.style.display  = 'none';
+        secaoResp.style.display = idadeEstudante < 18 ? 'block' : 'none';
+        document.getElementById('btn-enviar').disabled = false;
+
         const cursos = dados.cursos || [];
         const selVinculo = document.getElementById('vinculo-estagio');
         if (cursos.length === 0) {
@@ -686,7 +747,43 @@
       carregarOrientadores(cursoNome);
       clearFieldError('vinculo-estagio');
       clearFieldError('semestre-atual');
+      atualizarBloqueioTipoEstagio();
     });
+
+    // ── Semestre → verifica bloqueio de Estágio Obrigatório ──────────────────
+    document.getElementById('semestre-atual').addEventListener('change', function () {
+      atualizarBloqueioTipoEstagio();
+    });
+
+    /**
+     * Bloqueia a opção "Estágio Obrigatório" quando o semestre atual está
+     * nos períodos iniciais do curso, onde o obrigatório ainda não é permitido.
+     * Regra: Integrado (1º-2º Ano), Subsequente (1º-2º Sem.), Tecnólogo (1º-3º Sem.),
+     *        Bacharelado/Superior (1º-5º Sem.)
+     */
+    function atualizarBloqueioTipoEstagio() {
+      const curso    = document.getElementById('curso-estagio').value;
+      const semestre = document.getElementById('semestre-atual').value;
+      const selTipo  = document.getElementById('tipo-estagio');
+      const optObrig = selTipo.querySelector('option[value="Obrigatório"]');
+      if (!optObrig) return;
+
+      if (!semestre || !curso) { optObrig.disabled = false; return; }
+
+      const tipo = tipoDoCursoSol(curso);
+      let bloqueado = false;
+      if (tipo === 'integrado')   bloqueado = ['1º Ano','2º Ano'].includes(semestre);
+      if (tipo === 'subsequente') bloqueado = ['1º Semestre','2º Semestre'].includes(semestre);
+      if (tipo === 'tecnologo')   bloqueado = ['1º Semestre','2º Semestre','3º Semestre'].includes(semestre);
+      if (tipo === 'bacharelado') bloqueado = ['1º Semestre','2º Semestre','3º Semestre','4º Semestre','5º Semestre'].includes(semestre);
+
+      optObrig.disabled = bloqueado;
+      if (bloqueado && selTipo.value === 'Obrigatório') {
+        selTipo.value = '';
+        toggleSection('secao-rem-obrig', false);
+        toggleSection('secao-rem-naobrig', false);
+      }
+    }
 
     // Exibe nomes de arquivos selecionados
     [['comprovante-matricula','matricula-doc-name'],
@@ -715,6 +812,16 @@
         fail('codigo-acesso', 'Não foi possível validar o código. Clique fora do campo para tentar novamente.');
       }
       if (!document.getElementById('vinculo-estagio').value)    fail('vinculo-estagio', 'Selecione o vínculo acadêmico na Seção 1.');
+
+      // Responsável legal (obrigatório para menores de 16-18 anos)
+      if (idadeEstudante > 0 && idadeEstudante < 16) {
+        fail('codigo-acesso', 'Estudantes com menos de 16 anos não podem solicitar estágio.');
+      }
+      if (idadeEstudante >= 16 && idadeEstudante < 18) {
+        if (!document.getElementById('nome-responsavel').value.trim()) fail('nome-responsavel', 'Nome do responsável legal é obrigatório para menores de 18 anos.');
+        if (!document.getElementById('tel-responsavel').value.trim())  fail('tel-responsavel', 'Telefone do responsável legal é obrigatório para menores de 18 anos.');
+      }
+
       if (!document.getElementById('turno').value)             fail('turno', 'Selecione o turno.');
       if (!document.getElementById('semestre-atual').value)    fail('semestre-atual', 'Selecione o período/semestre atual.');
       if (!document.getElementById('formando').value)          fail('formando', 'Informe se é formando(a).');
@@ -778,6 +885,9 @@
 
       const dados = {
         codigoAcesso:       document.getElementById('codigo-acesso').value.trim().toUpperCase(),
+        nomeResponsavel:    document.getElementById('nome-responsavel').value.trim(),
+        cpfResponsavel:     document.getElementById('cpf-responsavel').value.trim(),
+        telResponsavel:     document.getElementById('tel-responsavel').value.trim(),
         cursoEstagio:       document.getElementById('curso-estagio').value,
         matriculaEstagio:   document.getElementById('matricula-estagio').value,
         emailInstEstagio:   emailInstEstagio,
@@ -827,6 +937,10 @@
       form.reset();
       dadosEstudante   = null;
       emailInstEstagio = '';
+      idadeEstudante   = 0;
+      document.getElementById('msg-idade-bloqueio').style.display  = 'none';
+      document.getElementById('secao-responsavel-sol').style.display = 'none';
+      document.getElementById('btn-enviar').disabled = false;
       document.getElementById('grupo-vinculo').style.display = 'none';
       document.getElementById('vinculo-estagio').innerHTML = '<option value="">Selecione o vínculo...</option>';
       document.getElementById('vinculo-estagio').disabled = true;
@@ -837,6 +951,9 @@
       hideFormFeedback('form-feedback');
       toggleSection('secao-rem-obrig', false);
       toggleSection('secao-rem-naobrig', false);
+      // Re-habilita opção Obrigatório
+      const optObrig = document.getElementById('tipo-estagio').querySelector('option[value="Obrigatório"]');
+      if (optObrig) optObrig.disabled = false;
     });
   </script>
 </body>

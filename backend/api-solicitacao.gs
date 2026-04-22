@@ -66,6 +66,9 @@ var COL_SOL = {
   TURNO:             37,   // Turno do estudante no curso (informado na solicitação)
   SEMESTRE_SOL:      38,   // Período/Semestre atual (informado na solicitação)
   EMAIL_INST_ESTAGIO:39,   // E-mail institucional do vínculo usado neste estágio
+  NOME_RESP:         40,   // Nome do responsável legal (menores de 18 anos)
+  CPF_RESP:          41,   // CPF do responsável legal
+  TEL_RESP:          42,   // Telefone do responsável legal
 };
 
 /** Colunas da aba Relatórios Parciais (base 0). */
@@ -194,6 +197,33 @@ function solicitarEstagio_(dados) {
   // E-mail institucional do vínculo deste estágio (pode diferir do e-mail principal do cadastro)
   var emailInstEstagio   = sanitizar_(dados.emailInstEstagio || '', 100).toLowerCase() || estudante.emailInst;
 
+  // ── Validação de idade ────────────────────────────────────────────────────
+  var idadeEstudante = 99; // fallback seguro: sem restrição
+  var dnEst = String(estudante.dataNasc || '').trim();
+  if (dnEst) {
+    var partesDn = dnEst.split('-');
+    if (partesDn.length === 3) {
+      var dnObj = new Date(parseInt(partesDn[0]), parseInt(partesDn[1]) - 1, parseInt(partesDn[2]));
+      var hojeEst = new Date();
+      idadeEstudante = hojeEst.getFullYear() - dnObj.getFullYear();
+      var mEst = hojeEst.getMonth() - dnObj.getMonth();
+      if (mEst < 0 || (mEst === 0 && hojeEst.getDate() < dnObj.getDate())) idadeEstudante--;
+    }
+  }
+  if (idadeEstudante < 16) {
+    return jsonError_('Estudantes com menos de 16 anos não podem realizar estágio (Lei nº 11.788/2008).', 'VALIDATION');
+  }
+
+  // ── Responsável legal (obrigatório para menores de 18 anos) ──────────────
+  var nomeResp = sanitizar_(dados.nomeResponsavel || '', 200);
+  var cpfResp  = sanitizar_(dados.cpfResponsavel  || '', 14).replace(/\D/g, '');
+  var telResp  = sanitizar_(dados.telResponsavel  || '', 30);
+  if (idadeEstudante < 18) {
+    if (!nomeResp) return jsonError_('Nome do responsável legal é obrigatório para menores de 18 anos.', 'VALIDATION');
+    if (!telResp)  return jsonError_('Telefone do responsável legal é obrigatório para menores de 18 anos.', 'VALIDATION');
+    if (cpfResp && !validarCPF_(cpfResp)) return jsonError_('CPF do responsável legal inválido.', 'VALIDATION');
+  }
+
   // Validações
   if (!tipoEstagio)    return jsonError_('Tipo de estágio é obrigatório.', 'VALIDATION');
   if (!nomeEmpresa)    return jsonError_('Empresa é obrigatória.', 'VALIDATION');
@@ -259,6 +289,9 @@ function solicitarEstagio_(dados) {
   linha[COL_SOL.TURNO]              = turno;
   linha[COL_SOL.SEMESTRE_SOL]       = semestreAtual;
   linha[COL_SOL.EMAIL_INST_ESTAGIO] = emailInstEstagio;
+  linha[COL_SOL.NOME_RESP]          = nomeResp;
+  linha[COL_SOL.CPF_RESP]           = cpfResp;
+  linha[COL_SOL.TEL_RESP]           = telResp;
   linha[COL_SOL.LINK_DOC_MAT]       = docMat;
   linha[COL_SOL.LINK_DOC_ID]      = docId;
   linha[COL_SOL.LINK_DOC_BOL]     = docBol;
