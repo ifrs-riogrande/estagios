@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Meus Dados — Central de Estágios IFRS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/base.css">
+  <link rel="stylesheet" href="../assets/css/components.css">
+  <link rel="stylesheet" href="../assets/css/layout.css">
+  <style>
+    .dados-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-5) var(--space-8); }
+    @media (max-width: 600px) { .dados-grid { grid-template-columns: 1fr; } }
+    .dado-full  { grid-column: 1 / -1; }
+    .dado-item label { font-size: var(--font-size-xs); color: var(--color-text-muted); font-weight: 600;
+      text-transform: uppercase; letter-spacing: .05em; display: block; margin-bottom: 4px; }
+    .dado-item p { font-size: var(--font-size-base); color: var(--color-text); word-break: break-word; margin: 0; }
+    .dado-item p.vazio { color: var(--color-text-muted); font-style: italic; }
+    .section-title { font-size: var(--font-size-sm); font-weight: 600; color: var(--color-text-muted);
+      text-transform: uppercase; letter-spacing: .06em;
+      margin: var(--space-6) 0 var(--space-4); padding-bottom: var(--space-2);
+      border-bottom: 1px solid var(--color-border); grid-column: 1 / -1; }
+    #painel-carregando { text-align: center; padding: var(--space-12) 0; color: var(--color-text-muted); }
+    #painel-dados  { display: none; }
+    #painel-edicao { display: none; }
+    .tag-status { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: var(--font-size-xs);
+      font-weight: 600; letter-spacing: .03em; }
+    .tag-status.ativo   { background: #d1fae5; color: #065f46; }
+    .tag-status.inativo { background: #fee2e2; color: #991b1b; }
+  </style>
+</head>
+<body>
+
+  <header id="app-header">
+    <div class="container">
+      <div class="header-inner">
+        <a href="../index.html" class="header-brand">
+          <div class="header-logo-fallback" aria-hidden="true">IFRS</div>
+          <div class="header-brand-text">
+            <span class="header-brand-name">Central de Estágios</span>
+            <span class="header-brand-sub">IFRS Campus Rio Grande</span>
+          </div>
+        </a>
+        <div style="display:flex;align-items:center;gap:var(--space-3);">
+          <div id="header-user-area"></div>
+          <a href="index.html" class="back-link">
+            <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd"/></svg>
+            Servidores
+          </a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="form-page" id="main-content">
+    <div class="container">
+      <div class="form-wrapper">
+
+        <div class="form-page-header">
+          <h1>Meus Dados de Orientador</h1>
+          <p>Consulte e atualize suas informações de contato, titulação e cursos que orienta.</p>
+        </div>
+
+        <!-- Carregando -->
+        <div id="painel-carregando">
+          <div class="spinner" aria-label="Carregando..." style="margin:0 auto var(--space-4);"></div>
+          <p>Carregando seus dados...</p>
+        </div>
+
+        <!-- Painel com os dados (visualização) -->
+        <div id="painel-dados">
+          <div class="alert alert-success" style="margin-bottom:var(--space-6);" id="alerta-identificado">
+            <svg class="alert-icon" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+            <div class="alert-content" id="alerta-texto">Cadastro encontrado.</div>
+          </div>
+
+          <div class="dados-grid" id="dados-content"></div>
+
+          <div style="margin-top:var(--space-8);padding-top:var(--space-5);border-top:1px solid var(--color-border);display:flex;gap:var(--space-3);flex-wrap:wrap;align-items:center;">
+            <button class="btn btn-primary btn-sm" onclick="iniciarEdicao()">
+              <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor" style="margin-right:4px"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/></svg>
+              Editar dados
+            </button>
+          </div>
+
+          <p style="margin-top:var(--space-4);font-size:var(--font-size-sm);color:var(--color-text-muted);">
+            Para alterar dados de identificação (nome, CPF, SIAPE, vínculo), entre em contato:
+            <a href="mailto:estagios@riogrande.ifrs.edu.br" class="link">estagios@riogrande.ifrs.edu.br</a>
+          </p>
+        </div>
+
+        <!-- Painel de edição -->
+        <div id="painel-edicao">
+          <div class="alert alert-warning" style="margin-bottom:var(--space-5);">
+            <svg class="alert-icon" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+            <div class="alert-content">Você pode editar telefone, titulação, área de formação e cursos que orienta. Dados de identificação (nome, CPF, SIAPE, vínculo) só podem ser alterados pelo setor.</div>
+          </div>
+
+          <div id="edicao-feedback" style="display:none;margin-bottom:var(--space-5);"></div>
+
+          <!-- Contato -->
+          <div class="form-section">
+            <h3 class="form-section-title">Contato</h3>
+            <div class="form-group">
+              <label class="form-label required" for="edit-tel">Telefone</label>
+              <input type="tel" id="edit-tel" class="form-control" placeholder="(53) 99999-9999" data-mask="phone" inputmode="numeric">
+              <span id="edit-tel-error" class="form-error hidden" role="alert"></span>
+            </div>
+          </div>
+
+          <!-- Formação -->
+          <div class="form-section">
+            <h3 class="form-section-title">Formação Acadêmica</h3>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label required" for="edit-titulacao">Titulação</label>
+                <select id="edit-titulacao" class="form-control">
+                  <option value="">Selecione...</option>
+                  <option value="Especialização">Especialização</option>
+                  <option value="Mestrado">Mestrado</option>
+                  <option value="Doutorado">Doutorado</option>
+                  <option value="Pós-doutorado">Pós-doutorado</option>
+                  <option value="Graduação">Graduação</option>
+                </select>
+                <span id="edit-titulacao-error" class="form-error hidden" role="alert"></span>
+              </div>
+              <div class="form-group">
+                <label class="form-label required" for="edit-area">Área de formação</label>
+                <input type="text" id="edit-area" class="form-control" placeholder="Ex.: Ciência da Computação">
+                <span id="edit-area-error" class="form-error hidden" role="alert"></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Cursos -->
+          <div class="form-section">
+            <h3 class="form-section-title">Cursos que Orienta</h3>
+            <div class="form-group">
+              <fieldset>
+                <legend class="form-label required" style="margin-bottom:var(--space-3);">Selecione os cursos para os quais deseja ser orientador</legend>
+                <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:var(--space-2);">
+
+                  <p class="text-sm text-muted" style="grid-column:1/-1;margin-bottom:var(--space-1);">Técnico Integrado</p>
+                  <label class="form-check" style="align-items:flex-start;">
+                    <input type="checkbox" name="edit-cursos" value="Técnico Integrado em Automação Industrial">
+                    <span class="form-check-label">Técnico Integrado em Automação Industrial</span>
+                  </label>
+                  <label class="form-check" style="align-items:flex-start;">
+                    <input type="checkbox" name="edit-cursos" value="Técnico Integrado em Eletrotécnica">
+                    <span class="form-check-label">Técnico Integrado em Eletrotécnica</span>
+                  </label>
+                  <label class="form-check" style="align-items:flex-start;">
+                    <input type="checkbox" name="edit-cursos" value="Técnico Integrado em Geoprocessamento">
+                    <span class="form-check-label">Técnico Integrado em Geoprocessamento</span>
+                  </label>
+                  <label class="form-check" style="align-items:flex-start;">
+                    <input type="checkbox" name="edit-cursos" value="Técnico Integrado em Informática para Internet">
+                    <span class="form-check-label">Técnico Integrado em Informática para Internet</span>
+                  </label>
+                  <label class="form-check" style="align-items:flex-start;">
+                    <input type="checkbox" name="edit-cursos" value="Técnico Integrado em Mecânica">
+                    <span class="form-check-label">Técnico Integrado em Mecânica</span>
+                  </label>
+                  <label class="form-check" style="align-items:flex-start;">
+                    <input type="checkbox" name="edit-cursos" value="Técnico Integrado em Refrigeração e Climatização">
+                    <span class="form-check-label">Técnico Integrado em Refrigeração e Climatização</span>
+                  </label>
+
+                  <p class="text-sm text-muted" style="grid-column:1/-1;margin-top:var(--space-3);margin-bottom:var(--space-1);">Técnico Subsequente</p>
+                  <label class="form-check" style="align-items:flex-start;">
+                    <input type="checkbox" name="edit-cursos" value="Técnico Subsequente em Automação Industrial">
+                    <span class="form-check-label">Técnico Subsequente em Automação Industrial</span>
+                  </label>
+                  <label class="form-check" style="align-items:flex-start;">
+                    <input type="checkbox" name="edit-cursos" value="Técnico Subsequente em Eletrotécnica">
+                    <span class="form-check-label">Técnico Subsequente em Eletrotécnica</span>
+                  </label>
+                  <label class="form-check" style="align-items:flex-start;">
+                    <input type="checkbox" name="edit-cursos" value="Técnico Subsequente em Enfermagem">
+                    <span class="form-check-label">Técnico Subsequente em Enfermagem</span>
+                  </label>
+                  <label class="form-check" style="align-items:flex-start;">
+                    <input type="checkbox" name="edit-cursos" value="Técnico Subsequente em Fabricação Mecânica">
+                    <span class="form-check-label">Técnico Subsequente em Fabricação Mecânica</span>
+                  </label>
+                  <label class="form-check" style="align-items:flex-start;">
+                    <input type="checkbox" name="edit-cursos" value="Técnico Subsequente em Geoprocessamento">
+                    <span class="form-check-label">Técnico Subsequente em Geoprocessamento</span>
+                  </label>
+                  <label class="form-check" style="align-items:flex-start;">
+                    <input type="checkbox" name="edit-cursos" value="Técnico Subsequente em Refrigeração e Climatização">
+                    <span class="form-check-label">Técnico Subsequente em Refrigeração e Climatização</span>
+                  </label>
+
+                  <p class="text-sm text-muted" style="grid-column:1/-1;margin-top:var(--space-3);margin-bottom:var(--space-1);">Tecnologia</p>
+                  <label class="form-check" style="align-items:flex-start;">
+                    <input type="checkbox" name="edit-cursos" value="Tecnologia em Análise e Desenvolvimento de Sistemas">
+                    <span class="form-check-label">Tecnologia em Análise e Desenvolvimento de Sistemas</span>
+                  </label>
+                  <label class="form-check" style="align-items:flex-start;">
+                    <input type="checkbox" name="edit-cursos" value="Tecnologia em Construção de Edifícios">
+                    <span class="form-check-label">Tecnologia em Construção de Edifícios</span>
+                  </label>
+
+                  <p class="text-sm text-muted" style="grid-column:1/-1;margin-top:var(--space-3);margin-bottom:var(--space-1);">Bacharelado</p>
+                  <label class="form-check" style="align-items:flex-start;">
+                    <input type="checkbox" name="edit-cursos" value="Bacharelado em Engenharia Mecânica">
+                    <span class="form-check-label">Bacharelado em Engenharia Mecânica</span>
+                  </label>
+                  <label class="form-check" style="align-items:flex-start;">
+                    <input type="checkbox" name="edit-cursos" value="Bacharelado em Arquitetura e Urbanismo">
+                    <span class="form-check-label">Bacharelado em Arquitetura e Urbanismo</span>
+                  </label>
+                </div>
+              </fieldset>
+              <span id="edit-cursos-error" class="form-error hidden" role="alert" style="display:block;margin-top:var(--space-2);"></span>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:var(--space-3);flex-wrap:wrap;margin-top:var(--space-6);">
+            <button id="btn-salvar" class="btn btn-primary" onclick="salvarEdicao()">Salvar alterações</button>
+            <button class="btn btn-ghost" onclick="cancelarEdicao()">Cancelar</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <footer id="app-footer">
+    <div class="container">
+      <div class="footer-inner">
+        <span class="footer-copy">&copy; <script>document.write(new Date().getFullYear())</script> Central de Estágios — IFRS Campus Rio Grande</span>
+        <nav class="footer-links"><a href="mailto:estagios@riogrande.ifrs.edu.br">estagios@riogrande.ifrs.edu.br</a></nav>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://accounts.google.com/gsi/client" async></script>
+  <script src="../assets/js/utils.js"></script>
+  <script src="../assets/js/auth.js"></script>
+  <script src="../assets/js/api.js"></script>
+  <script>
+    'use strict';
+
+    let dadosCache = null;
+
+    document.addEventListener('DOMContentLoaded', async function () {
+      if (!requireStaffAuth()) return;
+      applyMasks();
+      await carregarDados();
+    });
+
+    async function carregarDados() {
+      document.getElementById('painel-carregando').style.display = 'block';
+      document.getElementById('painel-dados').style.display      = 'none';
+      document.getElementById('painel-edicao').style.display     = 'none';
+
+      try {
+        const dados = await API.get('obterMeuCadastroOrientador', { authToken: getAccessToken() });
+        dadosCache = dados;
+        exibirDados(dados);
+      } catch (err) {
+        document.getElementById('painel-carregando').innerHTML =
+          `<div class="alert alert-danger"><div class="alert-content">${escapeHtml(err.message || 'Erro ao carregar dados. Tente recarregar a página.')}</div></div>`;
+      }
+    }
+
+    function exibirDados(d) {
+      document.getElementById('painel-carregando').style.display = 'none';
+      document.getElementById('painel-edicao').style.display     = 'none';
+      document.getElementById('painel-dados').style.display      = 'block';
+
+      document.getElementById('alerta-texto').textContent = 'Cadastro encontrado: ' + (d.nome || '');
+
+      const val = v => v ? `<p>${escapeHtml(String(v))}</p>` : `<p class="vazio">Não informado</p>`;
+
+      const statusCls  = (d.status || '').toLowerCase() === 'ativo' ? 'ativo' : 'inativo';
+      const statusHtml = `<p><span class="tag-status ${statusCls}">${escapeHtml(d.status || 'Desconhecido')}</span></p>`;
+
+      const contrato = d.tipoVinculo === 'Substituto'
+        ? (d.iniContrato && d.fimContrato
+            ? formatarDataExibicao(d.iniContrato) + ' até ' + formatarDataExibicao(d.fimContrato)
+            : (d.iniContrato || d.fimContrato || null))
+        : null;
+
+      const cursosLista = d.cursos
+        ? d.cursos.split(',').map(c => `<li style="margin-bottom:2px;">${escapeHtml(c.trim())}</li>`).join('')
+        : '';
+      const cursosHtml = cursosLista
+        ? `<p><ul style="margin:0;padding-left:1.2em;">${cursosLista}</ul></p>`
+        : `<p class="vazio">Nenhum curso cadastrado</p>`;
+
+      document.getElementById('dados-content').innerHTML = `
+        <div class="section-title">Identificação</div>
+        <div class="dado-item" style="grid-column:1/-1;"><label>Nome</label>${val(d.nome)}</div>
+        <div class="dado-item"><label>CPF</label>${val(d.cpf ? d.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4') : '')}</div>
+        <div class="dado-item"><label>SIAPE</label>${val(d.siape)}</div>
+        <div class="dado-item"><label>E-mail institucional</label>${val(d.email)}</div>
+        <div class="dado-item"><label>Status</label>${statusHtml}</div>
+
+        <div class="section-title">Vínculo</div>
+        <div class="dado-item"><label>Tipo de Vínculo</label>${val(d.tipoVinculo)}</div>
+        ${contrato ? `<div class="dado-item"><label>Período do Contrato</label>${val(contrato)}</div>` : '<div class="dado-item"></div>'}
+
+        <div class="section-title">Contato e Formação</div>
+        <div class="dado-item"><label>Telefone</label>${val(d.tel)}</div>
+        <div class="dado-item"><label>Titulação</label>${val(d.titulacao)}</div>
+        <div class="dado-item dado-full"><label>Área de Formação</label>${val(d.area)}</div>
+
+        <div class="section-title">Cursos que Orienta</div>
+        <div class="dado-item dado-full"><label>Cursos</label>${cursosHtml}</div>
+      `;
+    }
+
+    function formatarDataExibicao(iso) {
+      if (!iso) return '';
+      const p = iso.split('-');
+      if (p.length < 3) return iso;
+      return p[2] + '/' + p[1] + '/' + p[0];
+    }
+
+    function iniciarEdicao() {
+      if (!dadosCache) return;
+      const d = dadosCache;
+
+      document.getElementById('edit-tel').value = d.tel || '';
+
+      const selTitulacao = document.getElementById('edit-titulacao');
+      selTitulacao.value = d.titulacao || '';
+
+      document.getElementById('edit-area').value = d.area || '';
+
+      // Marca cursos existentes
+      const cursosSalvos = (d.cursos || '').split(',').map(c => c.trim()).filter(Boolean);
+      document.querySelectorAll('input[name="edit-cursos"]').forEach(cb => {
+        cb.checked = cursosSalvos.includes(cb.value);
+      });
+
+      // Limpa erros e feedback
+      ['edit-tel', 'edit-titulacao', 'edit-area'].forEach(id => {
+        const el = document.getElementById(id + '-error');
+        if (el) { el.textContent = ''; el.classList.add('hidden'); }
+      });
+      const cursosErr = document.getElementById('edit-cursos-error');
+      cursosErr.textContent = '';
+      cursosErr.classList.add('hidden');
+
+      const fb = document.getElementById('edicao-feedback');
+      fb.style.display = 'none';
+      fb.innerHTML = '';
+
+      document.getElementById('painel-dados').style.display  = 'none';
+      document.getElementById('painel-edicao').style.display = 'block';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function cancelarEdicao() {
+      document.getElementById('painel-edicao').style.display = 'none';
+      document.getElementById('painel-dados').style.display  = 'block';
+    }
+
+    async function salvarEdicao() {
+      const fb  = document.getElementById('edicao-feedback');
+      const btn = document.getElementById('btn-salvar');
+
+      // Coleta valores
+      const tel      = document.getElementById('edit-tel').value.trim();
+      const titulacao = document.getElementById('edit-titulacao').value;
+      const area     = document.getElementById('edit-area').value.trim();
+      const cursosSel = Array.from(document.querySelectorAll('input[name="edit-cursos"]:checked'))
+        .map(cb => cb.value);
+
+      // Validação inline
+      let valid = true;
+      function falhar(id, msg) {
+        const el = document.getElementById(id + '-error') || document.getElementById(id);
+        if (el) { el.textContent = msg; el.classList.remove('hidden'); }
+        valid = false;
+      }
+
+      ['edit-tel', 'edit-titulacao', 'edit-area'].forEach(id => {
+        const el = document.getElementById(id + '-error');
+        if (el) { el.textContent = ''; el.classList.add('hidden'); }
+      });
+      document.getElementById('edit-cursos-error').textContent = '';
+      document.getElementById('edit-cursos-error').classList.add('hidden');
+
+      if (!tel)      falhar('edit-tel',      'Informe o telefone.');
+      if (!titulacao) falhar('edit-titulacao', 'Selecione a titulação.');
+      if (!area)     falhar('edit-area',     'Informe a área de formação.');
+      if (cursosSel.length === 0) {
+        const el = document.getElementById('edit-cursos-error');
+        el.textContent = 'Selecione ao menos um curso.';
+        el.classList.remove('hidden');
+        valid = false;
+      }
+
+      if (!valid) return;
+
+      fb.style.display = 'none';
+      fb.innerHTML = '';
+      btn.disabled = true;
+      btn.classList.add('is-loading');
+
+      try {
+        await API.post({
+          action:    'atualizarMeuCadastroOrientador',
+          authToken: getAccessToken(),
+          tel,
+          titulacao,
+          area,
+          cursos:    cursosSel.join(', '),
+        });
+
+        // Recarrega dados atualizados
+        const novos = await API.get('obterMeuCadastroOrientador', { authToken: getAccessToken() });
+        dadosCache = novos;
+        exibirDados(novos);
+
+        const alertaEl = document.getElementById('alerta-texto');
+        const textoOriginal = alertaEl.textContent;
+        alertaEl.textContent = 'Dados atualizados com sucesso!';
+        setTimeout(() => { alertaEl.textContent = textoOriginal; }, 3000);
+      } catch (err) {
+        mostrarFeedback('error', err.message || 'Erro ao salvar. Tente novamente.');
+      } finally {
+        btn.disabled = false;
+        btn.classList.remove('is-loading');
+      }
+    }
+
+    function mostrarFeedback(tipo, msg) {
+      const fb  = document.getElementById('edicao-feedback');
+      const cls = tipo === 'error' ? 'alert-danger' : 'alert-success';
+      fb.style.display = 'block';
+      fb.innerHTML = `<div class="alert ${cls}"><div class="alert-content">${escapeHtml(msg)}</div></div>`;
+      fb.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  </script>
+</body>
+</html>

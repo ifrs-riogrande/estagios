@@ -36,8 +36,9 @@ var GET_ROUTES = {
   'verificarCpf':            doGetEstudantes,
 
   // Servidores / Orientadores
-  'listarOrientadores':      doGetServidores,
-  'listarCoordenadores':     doGetServidores,
+  'listarOrientadores':           doGetServidores,
+  'listarCoordenadores':          doGetServidores,
+  'obterMeuCadastroOrientador':   doGetServidores,
 
   // Agentes
   'listarAgentes':           doGetAgentes,
@@ -74,8 +75,9 @@ var POST_ROUTES = {
   'reenviarCodigoAdmin':       doPostAdmin,
 
   // Servidores
-  'cadastrarOrientador':       doPostServidores,
-  'cadastrarCoordenador':      doPostAdmin,
+  'cadastrarOrientador':            doPostServidores,
+  'atualizarMeuCadastroOrientador': doPostServidores,
+  'cadastrarCoordenador':           doPostAdmin,
 
   // SolicitaÃ§Ãµes (estudante + DG)
   'solicitarEstagio':          doPostSolicitacao,
@@ -173,13 +175,17 @@ function doGetServidores(e) {
     var curso = (e.parameter && e.parameter.curso) ? decodeURIComponent(e.parameter.curso) : '';
     return listarOrientadores_(curso);
   }
-  if (action === 'listarCoordenadores') return listarCoordenadores_(e);
+  if (action === 'listarCoordenadores')        return listarCoordenadores_(e);
+  if (action === 'obterMeuCadastroOrientador') return obterMeuCadastroOrientador_(e);
   return jsonError_('AÃ§Ã£o nÃ£o implementada: ' + action, 'NOT_IMPLEMENTED');
 }
 
 function doPostServidores(e) {
-  var body = JSON.parse(e.postData ? e.postData.contents : '{}');
-  return cadastrarOrientador_(body);
+  var body = e._body || JSON.parse(e.postData ? e.postData.contents : '{}');
+  var action = body.action || '';
+  if (action === 'cadastrarOrientador')            return cadastrarOrientador_(body);
+  if (action === 'atualizarMeuCadastroOrientador') return atualizarMeuCadastroOrientador_(body);
+  return jsonError_('AÃ§Ã£o nÃ£o implementada: ' + action, 'NOT_IMPLEMENTED');
 }
 
 function doGetSolicitacao(e) {

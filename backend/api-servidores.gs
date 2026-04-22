@@ -167,7 +167,7 @@ function cadastrarOrientador_(dados) {
   if (idx !== -1) {
     // Atualiza cadastro existente em vez de duplicar
     var rowIdx = idx + 1; // base-1 para sheet
-    sheet.getRange(rowIdx, COL_ORI.VINCULO + 1).setValue(vinculo);
+    sheet.getRange(rowIdx, COL_ORI.TIPO_VINCULO + 1).setValue(vinculo);
     sheet.getRange(rowIdx, COL_ORI.TEL + 1).setValue(tel);
     sheet.getRange(rowIdx, COL_ORI.TITULACAO + 1).setValue(titulac);
     sheet.getRange(rowIdx, COL_ORI.AREA + 1).setValue(area);
@@ -202,4 +202,71 @@ function cadastrarOrientador_(dados) {
   try { enviarEmailNovoOrientador_(dados); } catch (e) { logErro_('cadastrarOrientador_.mail', e); }
 
   return jsonOk_({ mensagem: 'Orientador cadastrado com sucesso!' });
+}
+
+// ---------------------------------------------------------------------------
+// GET — Obter meu cadastro de orientador (autenticado por Google)
+// ---------------------------------------------------------------------------
+
+function obterMeuCadastroOrientador_(e) {
+  var authToken = e.parameter && e.parameter.authToken;
+  var tokenInfo = validarTokenServidor_(authToken);
+  var email = tokenInfo.email.toLowerCase();
+
+  var sheet = abrirAba_(CFG_SRV.SS_ID, CFG_SRV.ABA);
+  var idx   = buscarNaColuna_(sheet, COL_ORI.EMAIL, email);
+  if (idx === -1) return jsonError_('Orientador não encontrado para este e-mail.', 'NOT_FOUND');
+
+  var dados = sheet.getDataRange().getValues();
+  var linha = dados[idx];
+
+  return jsonOk_({
+    tipoVinculo: String(linha[COL_ORI.TIPO_VINCULO] || ''),
+    iniContrato: normalizarDataISO_(linha[COL_ORI.INI_CONTRATO]),
+    fimContrato: normalizarDataISO_(linha[COL_ORI.FIM_CONTRATO]),
+    nome:        String(linha[COL_ORI.NOME]      || ''),
+    cpf:         String(linha[COL_ORI.CPF]       || ''),
+    siape:       String(linha[COL_ORI.SIAPE]     || ''),
+    tel:         String(linha[COL_ORI.TEL]       || ''),
+    email:       String(linha[COL_ORI.EMAIL]     || ''),
+    titulacao:   String(linha[COL_ORI.TITULACAO] || ''),
+    area:        String(linha[COL_ORI.AREA]      || ''),
+    cursos:      String(linha[COL_ORI.CURSOS]    || ''),
+    status:      String(linha[COL_ORI.STATUS]    || ''),
+  });
+}
+
+// ---------------------------------------------------------------------------
+// POST — Atualizar meu cadastro de orientador (autenticado por Google)
+// ---------------------------------------------------------------------------
+
+function atualizarMeuCadastroOrientador_(dados) {
+  var tokenInfo = validarTokenServidor_(dados.authToken);
+  var email = tokenInfo.email.toLowerCase();
+
+  if (!checkRateLimit_('atualizarMeuCadastroOrientador')) {
+    return jsonError_('Muitas requisições. Aguarde um momento.', 'RATE_LIMIT');
+  }
+
+  var tel     = sanitizar_(dados.tel,      30);
+  var titulac = sanitizar_(dados.titulacao, 50);
+  var area    = sanitizar_(dados.area,     200);
+  var cursos  = sanitizar_(dados.cursos,   500);
+
+  if (!tel)     return jsonError_('Telefone é obrigatório.', 'VALIDATION');
+  if (!titulac) return jsonError_('Titulação é obrigatória.', 'VALIDATION');
+  if (!area)    return jsonError_('Área de formação é obrigatória.', 'VALIDATION');
+  if (!cursos)  return jsonError_('Selecione ao menos um curso.', 'VALIDATION');
+
+  var sheet = abrirAba_(CFG_SRV.SS_ID, CFG_SRV.ABA);
+  var idx   = buscarNaColuna_(sheet, COL_ORI.EMAIL, email);
+  if (idx === -1) return jsonError_('Orientador não encontrado para este e-mail.', 'NOT_FOUND');
+
+  var rowIdx = idx + 1; // base-1 para sheet
+  sheet.getRange(rowIdx, COL_ORI.TEL      + 1).setValue(tel);
+  sheet.getRange(rowIdx, COL_ORI.TITULACAO + 1).setValue(titulac);
+  sheet.getRange(rowIdx, COL_ORI.AREA     + 1).setValue(area);
+  sheet.getRange(rowIdx, COL_ORI.CURSOS   + 1).setValue(cursos);
+
+  return jsonOk_({ mensagem: 'Dados atualizados com sucesso!' });
 }
