@@ -197,10 +197,10 @@ function configurarPlanilha() {
  * Corrige apenas o cabeçalho da aba Orientadores na planilha existente.
  * Execute manualmente no editor GAS: Executar → corrigirCabecalhoOrientadores
  */
-function corrigirCabecalhoOrientadores() {
+function corrigirCabecalhoOrientadores_() {
   var ss    = SpreadsheetApp.openById('1zVyseifVC6xeMpNjqwYd6jCq9HTJ2NS8BlN1dtM4s7Y');
   var sheet = ss.getSheetByName('Orientadores');
-  if (!sheet) { SpreadsheetApp.getUi().alert('Aba "Orientadores" não encontrada.'); return; }
+  if (!sheet) return jsonError_('Aba Orientadores não encontrada.', 'NOT_FOUND');
 
   var cabecalho = [
     'Timestamp', 'Tipo Vínculo', 'Início Contrato', 'Fim Contrato',
@@ -215,5 +215,5 @@ function corrigirCabecalhoOrientadores() {
   range.setFontColor('#ffffff');
   sheet.setFrozenRows(1);
 
-  SpreadsheetApp.getUi().alert('✅ Cabeçalho da aba "Orientadores" atualizado com sucesso!');
+  return jsonOk_({ mensagem: 'Cabeçalho corrigido.' });
 }
