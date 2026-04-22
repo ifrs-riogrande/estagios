@@ -404,17 +404,17 @@ function listarOrientadoresAdmin_() {
   var lista = [];
   for (var i = 1; i < dados.length; i++) {
     var r = dados[i];
-    if (!r[3]) continue; // sem e-mail
-    var emailOri = String(r[3] || '').toLowerCase();
+    if (!r[COL_ORI.EMAIL]) continue; // sem e-mail
+    var emailOri = String(r[COL_ORI.EMAIL] || '').toLowerCase();
     lista.push({
-      nome:        String(r[0] || ''),
-      siape:       String(r[1] || ''),
-      titulacao:   String(r[2] || ''),
+      nome:        String(r[COL_ORI.NOME]         || ''),
+      siape:       String(r[COL_ORI.SIAPE]        || ''),
+      titulacao:   String(r[COL_ORI.TITULACAO]    || ''),
       email:       emailOri,
-      tipoVinculo: String(r[4] || ''),
-      fimContrato: formatarData_(r[5]),
-      cursos:      String(r[6] || '').split(',').map(function(c){ return c.trim(); }).filter(Boolean),
-      status:      String(r[7] || 'Ativo'),
+      tipoVinculo: String(r[COL_ORI.TIPO_VINCULO] || ''),
+      fimContrato: formatarData_(r[COL_ORI.FIM_CONTRATO]),
+      cursos:      String(r[COL_ORI.CURSOS] || '').split(',').map(function(c){ return c.trim(); }).filter(Boolean),
+      status:      String(r[COL_ORI.STATUS] || 'Ativo'),
       estagiosAtivos: ativosPorOri[emailOri] || 0,
     });
   }
@@ -696,8 +696,8 @@ function alterarStatusOrientador_(email, novoStatus) {
   if (!sheet) return jsonError_('Aba de orientadores não encontrada.', 'NOT_FOUND');
   var dados = sheet.getDataRange().getValues();
   for (var i = 1; i < dados.length; i++) {
-    if (String(dados[i][3] || '').toLowerCase().trim() === emailLower) {
-      sheet.getRange(i + 1, 8).setValue(novoStatus); // col index 7 = status
+    if (String(dados[i][COL_ORI.EMAIL] || '').toLowerCase().trim() === emailLower) {
+      sheet.getRange(i + 1, COL_ORI.STATUS + 1).setValue(novoStatus);
       return jsonOk_({ status: novoStatus });
     }
   }
