@@ -149,17 +149,47 @@ function gerarIdEstagio_() {
 // ---------------------------------------------------------------------------
 
 /**
- * Formata Date ou string ISO para DD/MM/AAAA.
+ * Normaliza qualquer representação de data para o formato ISO AAAA-MM-DD.
+ * Aceita: Date object, string ISO ("2015-04-06"), string longa do GAS
+ * ("Sun Apr 06 2015 00:00:00 GMT...") e string DD/MM/AAAA.
+ * Retorna '' se a data for inválida ou vazia.
+ * @param {Date|string} data
+ * @returns {string}  "AAAA-MM-DD" ou ''
+ */
+function normalizarDataISO_(data) {
+  if (!data) return '';
+  var d;
+  if (data instanceof Date) {
+    d = data;
+  } else {
+    var s = String(data).trim();
+    if (!s) return '';
+    // Formato ISO já correto: AAAA-MM-DD
+    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+    // Formato brasileiro DD/MM/AAAA
+    var brMatch = s.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    if (brMatch) return brMatch[3] + '-' + brMatch[2] + '-' + brMatch[1];
+    // Qualquer outro formato (string longa do GAS, etc.) — deixa o Date constructor resolver
+    d = new Date(s);
+  }
+  if (!d || isNaN(d.getTime())) return '';
+  var yyyy = d.getFullYear();
+  var mm   = String(d.getMonth() + 1).padStart(2, '0');
+  var dd   = String(d.getDate()).padStart(2, '0');
+  return yyyy + '-' + mm + '-' + dd;
+}
+
+/**
+ * Formata Date ou string (qualquer formato) para DD/MM/AAAA.
  * @param {Date|string} data
  * @returns {string}
  */
 function formatarData_(data) {
   if (!data) return '';
-  var d = data instanceof Date ? data : new Date(data);
-  if (isNaN(d.getTime())) return String(data);
-  var dd = String(d.getDate()).padStart(2, '0');
-  var mm = String(d.getMonth() + 1).padStart(2, '0');
-  return dd + '/' + mm + '/' + d.getFullYear();
+  var iso = normalizarDataISO_(data);
+  if (!iso) return '';
+  var partes = iso.split('-');
+  return partes[2] + '/' + partes[1] + '/' + partes[0];
 }
 
 /**

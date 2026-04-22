@@ -430,7 +430,7 @@ function buscarEstudantePorEmailECodigo_(emailEstudante, codigo) {
     curso:        String(linha[COL_EST.CURSO]         || ''),
     modalidade:   String(linha[COL_EST.MODALIDADE]    || ''),
     cpf:          String(linha[COL_EST.CPF]           || ''),
-    dataNasc:     String(linha[COL_EST.DATA_NASC]     || ''),
+    dataNasc:     normalizarDataISO_(linha[COL_EST.DATA_NASC]),
     telefone:     String(linha[COL_EST.TELEFONE]      || ''),
     emailInst:    String(linha[COL_EST.EMAIL_INST]    || ''),
     emailPessoal: String(linha[COL_EST.EMAIL_PESSOAL] || ''),
