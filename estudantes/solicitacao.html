@@ -486,9 +486,17 @@
 
     function calcularIdadeEstudante(dataNasc) {
       if (!dataNasc) return 99;
-      const partes = String(dataNasc).split('-');
-      if (partes.length < 3) return 99;
-      const nasc  = new Date(parseInt(partes[0]), parseInt(partes[1]) - 1, parseInt(partes[2]));
+      const s = String(dataNasc);
+      let nasc;
+      // Tenta formato ISO YYYY-MM-DD (vindo do input date ou da planilha como texto)
+      const partes = s.split('-');
+      if (partes.length >= 3 && /^\d{4}$/.test(partes[0])) {
+        nasc = new Date(parseInt(partes[0]), parseInt(partes[1]) - 1, parseInt(partes[2]));
+      } else {
+        // Fallback: Google Sheets pode devolver Date como string longa ("Sun Apr 06 2015...")
+        nasc = new Date(s);
+      }
+      if (!nasc || isNaN(nasc.getTime())) return 99;
       const hoje  = new Date();
       let idade   = hoje.getFullYear() - nasc.getFullYear();
       const m     = hoje.getMonth() - nasc.getMonth();

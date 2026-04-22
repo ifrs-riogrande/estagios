@@ -201,9 +201,16 @@ function solicitarEstagio_(dados) {
   var idadeEstudante = 99; // fallback seguro: sem restrição
   var dnEst = String(estudante.dataNasc || '').trim();
   if (dnEst) {
+    var dnObj = null;
     var partesDn = dnEst.split('-');
-    if (partesDn.length === 3) {
-      var dnObj = new Date(parseInt(partesDn[0]), parseInt(partesDn[1]) - 1, parseInt(partesDn[2]));
+    if (partesDn.length >= 3 && /^\d{4}$/.test(partesDn[0])) {
+      // Formato ISO YYYY-MM-DD (texto puro)
+      dnObj = new Date(parseInt(partesDn[0]), parseInt(partesDn[1]) - 1, parseInt(partesDn[2]));
+    } else {
+      // Fallback: Google Sheets converteu para Date e String() gerou formato longo
+      dnObj = new Date(dnEst);
+    }
+    if (dnObj && !isNaN(dnObj.getTime())) {
       var hojeEst = new Date();
       idadeEstudante = hojeEst.getFullYear() - dnObj.getFullYear();
       var mEst = hojeEst.getMonth() - dnObj.getMonth();
