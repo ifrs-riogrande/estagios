@@ -1,0 +1,1010 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Meu Perfil — Central de Estágios IFRS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/base.css">
+  <link rel="stylesheet" href="../assets/css/components.css">
+  <link rel="stylesheet" href="../assets/css/layout.css">
+  <style>
+    /* ── Painéis ── */
+    #painel-carregando,
+    #painel-erro-inicial,
+    #painel-aguardando,
+    #painel-verificacao,
+    #painel-dados,
+    #painel-edicao { display: none; }
+
+    /* ── Grade de visualização de dados ── */
+    .dados-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-5) var(--space-8); }
+    @media (max-width: 600px) { .dados-grid { grid-template-columns: 1fr; } }
+    .dado-full { grid-column: 1 / -1; }
+    .dado-item label { font-size: var(--font-size-xs); color: var(--color-text-muted); font-weight: 600;
+      text-transform: uppercase; letter-spacing: .05em; display: block; margin-bottom: 4px; }
+    .dado-item p { font-size: var(--font-size-base); color: var(--color-text); word-break: break-word; margin: 0; }
+    .dado-item p.vazio { color: var(--color-text-muted); font-style: italic; }
+    .section-divider { font-size: var(--font-size-sm); font-weight: 600; color: var(--color-text-muted);
+      text-transform: uppercase; letter-spacing: .06em; margin: var(--space-6) 0 var(--space-4);
+      padding-bottom: var(--space-2); border-bottom: 1px solid var(--color-border); grid-column: 1 / -1; }
+
+    /* ── Código de acesso ── */
+    .codigo-input-wrapper { display: flex; gap: var(--space-3); align-items: flex-start; flex-wrap: wrap; }
+    .codigo-input-wrapper .form-group { flex: 1; min-width: 200px; margin-bottom: 0; }
+
+    /* ── Vínculos no painel de edição ── */
+    .vinculo-edit-card { background: var(--color-surface-secondary, #f8f9fa); border: 1px solid var(--color-border);
+      border-radius: var(--radius-md); padding: var(--space-4); margin-bottom: var(--space-3); position: relative; }
+    .vinculo-edit-card .remove-vinculo { position: absolute; top: var(--space-3); right: var(--space-3);
+      background: none; border: none; cursor: pointer; color: var(--color-text-muted); font-size: 1.1em; line-height: 1; }
+    .vinculo-edit-card .remove-vinculo:hover { color: var(--color-danger, #dc3545); }
+    .vinculo-edit-row { display: grid; grid-template-columns: 1.5fr 2fr 1fr; gap: var(--space-3); }
+    @media (max-width: 600px) { .vinculo-edit-row { grid-template-columns: 1fr; } }
+    .add-vinculo-row { display: grid; grid-template-columns: 1.5fr 2fr 1fr auto; gap: var(--space-3); align-items: flex-end; }
+    @media (max-width: 600px) { .add-vinculo-row { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+
+  <header id="app-header">
+    <div class="container">
+      <div class="header-inner">
+        <a href="../index.html" class="header-brand">
+          <div class="header-logo-fallback" aria-hidden="true">IFRS</div>
+          <div class="header-brand-text">
+            <span class="header-brand-name">Central de Estágios</span>
+            <span class="header-brand-sub">IFRS Campus Rio Grande</span>
+          </div>
+        </a>
+        <div style="display:flex;align-items:center;gap:var(--space-3);">
+          <div id="header-user-area"></div>
+          <a href="index.html" class="back-link">
+            <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd"/>
+            </svg>
+            Estudantes
+          </a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="form-page" id="main-content">
+    <div class="container">
+      <div class="form-wrapper">
+
+        <div class="form-page-header">
+          <h1>Meu Perfil</h1>
+          <p id="subtitulo-pagina">Verificando seu cadastro...</p>
+        </div>
+
+        <!-- ══════════════════════════════════════════════
+             PAINEL: Carregando (verificação inicial)
+        ══════════════════════════════════════════════ -->
+        <div id="painel-carregando" style="text-align:center;padding:var(--space-12) 0;">
+          <div class="spinner" style="margin:0 auto var(--space-4);"></div>
+          <p style="color:var(--color-text-muted);">Verificando seu cadastro...</p>
+        </div>
+
+        <!-- ══════════════════════════════════════════════
+             PAINEL: Erro na verificação inicial
+        ══════════════════════════════════════════════ -->
+        <div id="painel-erro-inicial">
+          <div class="alert alert-danger" id="msg-erro-inicial">
+            <div class="alert-content">Erro ao verificar cadastro. Tente novamente.</div>
+          </div>
+          <div style="margin-top:var(--space-5);">
+            <button class="btn btn-primary" onclick="iniciar()">Tentar novamente</button>
+          </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════════
+             PAINEL: Cadastro aguardando validação
+        ══════════════════════════════════════════════ -->
+        <div id="painel-aguardando">
+          <div class="alert alert-warning">
+            <svg class="alert-icon" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/></svg>
+            <div class="alert-content">
+              <strong>Cadastro em análise.</strong> Seu cadastro foi recebido e está aguardando validação pelo setor de estágios. Assim que aprovado, você receberá um e-mail com seu <strong>código de acesso</strong>.
+            </div>
+          </div>
+          <p style="margin-top:var(--space-5);font-size:var(--font-size-sm);color:var(--color-text-muted);">
+            Dúvidas? Entre em contato: <a href="mailto:estagios@riogrande.ifrs.edu.br" class="link">estagios@riogrande.ifrs.edu.br</a>
+          </p>
+        </div>
+
+        <!-- ══════════════════════════════════════════════
+             PAINEL: Novo cadastro (estudante não registrado)
+        ══════════════════════════════════════════════ -->
+        <div id="painel-novo">
+
+          <div class="info-banner" role="note">
+            <strong>Primeiro acesso.</strong> Preencha seus dados para se cadastrar. Após o envio, o setor de estágios validará seu cadastro e você receberá o <strong>código de acesso</strong> por e-mail.
+            Dúvidas: <a href="mailto:estagios@riogrande.ifrs.edu.br">estagios@riogrande.ifrs.edu.br</a>
+          </div>
+
+          <form id="form-cadastro" novalidate>
+
+            <!-- Seção 1: Identificação -->
+            <div class="form-section">
+              <h2 class="form-section-title">
+                <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"/></svg>
+                Seção 1 — Identificação
+              </h2>
+              <div class="form-group">
+                <label class="form-label required" for="cad-nome">Nome completo</label>
+                <input type="text" id="cad-nome" class="form-control" placeholder="Conforme consta no RG e CPF"
+                  required aria-required="true" aria-describedby="cad-nome-error" autocomplete="name">
+                <span id="cad-nome-error" class="form-error hidden" role="alert"></span>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label required" for="cad-cpf">CPF</label>
+                  <input type="text" id="cad-cpf" class="form-control" placeholder="000.000.000-00"
+                    required aria-required="true" data-mask="cpf" inputmode="numeric"
+                    aria-describedby="cad-cpf-hint cad-cpf-error">
+                  <span id="cad-cpf-hint" class="form-hint">11 dígitos. Ex: 123.456.789-09</span>
+                  <span id="cad-cpf-error" class="form-error hidden" role="alert"></span>
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label required" for="cad-nascimento">Data de nascimento</label>
+                  <input type="date" id="cad-nascimento" class="form-control"
+                    required aria-required="true" aria-describedby="cad-nascimento-error">
+                  <span id="cad-nascimento-error" class="form-error hidden" role="alert"></span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Seção 2: Contato -->
+            <div class="form-section">
+              <h2 class="form-section-title">
+                <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z"/></svg>
+                Seção 2 — Contato
+              </h2>
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label required" for="cad-email-inst">E-mail institucional</label>
+                  <input type="email" id="cad-email-inst" class="form-control"
+                    placeholder="matricula@aluno.riogrande.ifrs.edu.br" required aria-required="true"
+                    aria-describedby="cad-email-inst-hint cad-email-inst-error" autocomplete="email">
+                  <span id="cad-email-inst-hint" class="form-hint">Domínio @aluno.riogrande.ifrs.edu.br</span>
+                  <span id="cad-email-inst-error" class="form-error hidden" role="alert"></span>
+                </div>
+                <div class="form-group">
+                  <label class="form-label required" for="cad-email-pessoal">E-mail pessoal</label>
+                  <input type="email" id="cad-email-pessoal" class="form-control"
+                    placeholder="seuemail@gmail.com" required aria-required="true"
+                    aria-describedby="cad-email-pessoal-error" autocomplete="email">
+                  <span id="cad-email-pessoal-error" class="form-error hidden" role="alert"></span>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label required" for="cad-telefone">Telefone celular (WhatsApp preferencial)</label>
+                <input type="tel" id="cad-telefone" class="form-control" placeholder="(53)999999999"
+                  required aria-required="true" data-mask="phone" inputmode="tel"
+                  aria-describedby="cad-telefone-hint cad-telefone-error" autocomplete="tel">
+                <span id="cad-telefone-hint" class="form-hint">DDD + número, sem espaços ou traços.</span>
+                <span id="cad-telefone-error" class="form-error hidden" role="alert"></span>
+              </div>
+            </div>
+
+            <!-- Seção 3: Endereço -->
+            <div class="form-section">
+              <h2 class="form-section-title">
+                <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/></svg>
+                Seção 3 — Endereço
+              </h2>
+              <div class="form-group">
+                <label class="form-label required" for="cad-endereco">Endereço</label>
+                <input type="text" id="cad-endereco" class="form-control"
+                  placeholder="Rua ou avenida, número, bloco, apartamento"
+                  required aria-required="true" autocomplete="street-address" aria-describedby="cad-endereco-error">
+                <span id="cad-endereco-error" class="form-error hidden" role="alert"></span>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label required" for="cad-cep">CEP</label>
+                  <input type="text" id="cad-cep" class="form-control" placeholder="00000-000"
+                    data-mask="cep" inputmode="numeric" required aria-required="true"
+                    autocomplete="postal-code" aria-describedby="cad-cep-error">
+                  <span id="cad-cep-error" class="form-error hidden" role="alert"></span>
+                </div>
+                <div class="form-group">
+                  <label class="form-label required" for="cad-bairro">Bairro</label>
+                  <input type="text" id="cad-bairro" class="form-control" placeholder="Bairro"
+                    required aria-required="true" aria-describedby="cad-bairro-error">
+                  <span id="cad-bairro-error" class="form-error hidden" role="alert"></span>
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label required" for="cad-cidade">Cidade</label>
+                  <input type="text" id="cad-cidade" class="form-control" placeholder="Cidade"
+                    value="Rio Grande" required aria-required="true"
+                    autocomplete="address-level2" aria-describedby="cad-cidade-error">
+                  <span id="cad-cidade-error" class="form-error hidden" role="alert"></span>
+                </div>
+                <div class="form-group">
+                  <label class="form-label required" for="cad-uf">UF</label>
+                  <select id="cad-uf" class="form-control" required aria-required="true" autocomplete="address-level1">
+                    <option value="RS" selected>RS</option>
+                    <option value="AC">AC</option><option value="AL">AL</option><option value="AP">AP</option>
+                    <option value="AM">AM</option><option value="BA">BA</option><option value="CE">CE</option>
+                    <option value="DF">DF</option><option value="ES">ES</option><option value="GO">GO</option>
+                    <option value="MA">MA</option><option value="MT">MT</option><option value="MS">MS</option>
+                    <option value="MG">MG</option><option value="PA">PA</option><option value="PB">PB</option>
+                    <option value="PR">PR</option><option value="PE">PE</option><option value="PI">PI</option>
+                    <option value="RJ">RJ</option><option value="RN">RN</option><option value="RO">RO</option>
+                    <option value="RR">RR</option><option value="SC">SC</option><option value="SP">SP</option>
+                    <option value="SE">SE</option><option value="TO">TO</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- Seção 4: Dados Acadêmicos -->
+            <div class="form-section">
+              <h2 class="form-section-title">
+                <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3zM3.31 9.397L5 10.12v4.102a8.969 8.969 0 00-1.05-.174 1 1 0 01-.89-.89 11.115 11.115 0 01.25-3.762zM9.3 16.573A9.026 9.026 0 007 14.935v-3.957l1.818.78a3 3 0 002.364 0l5.508-2.361a11.026 11.026 0 01.25 3.762 1 1 0 01-.89.89 8.968 8.968 0 00-5.35 2.524 1 1 0 01-1.4 0zM6 18a1 1 0 001-1v-2.065a8.935 8.935 0 00-2-.712V17a1 1 0 001 1z"/></svg>
+                Seção 4 — Dados Acadêmicos
+              </h2>
+              <p class="form-hint" style="margin-bottom:var(--space-4);">
+                Informe todos os cursos em que está matriculado (máximo 6). Para cada um, selecione o curso e informe a matrícula correspondente.
+              </p>
+
+              <div style="display:flex;gap:var(--space-3);align-items:flex-end;flex-wrap:wrap;margin-bottom:var(--space-3);">
+                <div class="form-group" style="flex:1.5;min-width:220px;margin-bottom:0;">
+                  <label class="form-label required" for="cad-email-inst-add">E-mail institucional do curso</label>
+                  <input type="email" id="cad-email-inst-add" class="form-control"
+                    placeholder="matricula@aluno.riogrande.ifrs.edu.br" autocomplete="email">
+                  <span class="form-hint" style="font-size:var(--font-size-xs);">Domínio @aluno.riogrande.ifrs.edu.br</span>
+                </div>
+                <div class="form-group" style="flex:2;min-width:220px;margin-bottom:0;">
+                  <label class="form-label required" for="cad-curso-add">Curso</label>
+                  <select id="cad-curso-add" class="form-control">
+                    <option value="">Selecione o curso...</option>
+                    <optgroup label="Técnico Integrado">
+                      <option value="Técnico Integrado em Automação Industrial">Técnico Integrado em Automação Industrial</option>
+                      <option value="Técnico Integrado em Eletrotécnica">Técnico Integrado em Eletrotécnica</option>
+                      <option value="Técnico Integrado em Geoprocessamento">Técnico Integrado em Geoprocessamento</option>
+                      <option value="Técnico Integrado em Informática para Internet">Técnico Integrado em Informática para Internet</option>
+                      <option value="Técnico Integrado em Mecânica">Técnico Integrado em Mecânica</option>
+                      <option value="Técnico Integrado em Refrigeração e Climatização">Técnico Integrado em Refrigeração e Climatização</option>
+                    </optgroup>
+                    <optgroup label="Técnico Subsequente">
+                      <option value="Técnico Subsequente em Automação Industrial">Técnico Subsequente em Automação Industrial</option>
+                      <option value="Técnico Subsequente em Eletrotécnica">Técnico Subsequente em Eletrotécnica</option>
+                      <option value="Técnico Subsequente em Enfermagem">Técnico Subsequente em Enfermagem</option>
+                      <option value="Técnico Subsequente em Fabricação Mecânica">Técnico Subsequente em Fabricação Mecânica</option>
+                      <option value="Técnico Subsequente em Geoprocessamento">Técnico Subsequente em Geoprocessamento</option>
+                      <option value="Técnico Subsequente em Refrigeração e Climatização">Técnico Subsequente em Refrigeração e Climatização</option>
+                    </optgroup>
+                    <optgroup label="Tecnólogo">
+                      <option value="Tecnologia em Análise e Desenvolvimento de Sistemas">Tecnologia em Análise e Desenvolvimento de Sistemas</option>
+                      <option value="Tecnologia em Construção de Edifícios">Tecnologia em Construção de Edifícios</option>
+                    </optgroup>
+                    <optgroup label="Bacharelado">
+                      <option value="Bacharelado em Engenharia Mecânica">Bacharelado em Engenharia Mecânica</option>
+                      <option value="Bacharelado em Arquitetura e Urbanismo">Bacharelado em Arquitetura e Urbanismo</option>
+                    </optgroup>
+                  </select>
+                </div>
+                <div class="form-group" style="flex:1;min-width:150px;margin-bottom:0;">
+                  <label class="form-label required" for="cad-matricula-add">Matrícula</label>
+                  <input type="text" id="cad-matricula-add" class="form-control"
+                    placeholder="Ex.: 2023100001" inputmode="numeric">
+                </div>
+                <div style="padding-bottom:2px;">
+                  <button type="button" id="cad-btn-add-curso" class="btn btn-secondary" onclick="cadAdicionarCurso()">
+                    <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" style="margin-right:4px"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"/></svg>
+                    Adicionar
+                  </button>
+                </div>
+              </div>
+              <span id="cad-cursos-error" class="form-error hidden" role="alert" style="display:block;margin-bottom:var(--space-3);"></span>
+
+              <div id="cad-cursos-lista" style="display:none;margin-bottom:var(--space-2);">
+                <p style="font-size:var(--font-size-xs);color:var(--color-text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:var(--space-2);">Cursos adicionados</p>
+                <ul id="cad-cursos-ul" style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:var(--space-2);"></ul>
+              </div>
+            </div>
+
+            <!-- Seção 5: Declaração -->
+            <div class="form-section">
+              <h2 class="form-section-title">
+                <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                Seção 5 — Declaração
+              </h2>
+              <div class="declaration-box">
+                <p>Declaro que todas as informações prestadas são verdadeiras, que estou regularmente matriculado(a) no IFRS Campus Rio Grande e que estou ciente das regras de estágio previstas na Lei nº 11.788/2008 e na Instrução Normativa IFRS.</p>
+                <div class="form-check">
+                  <input type="checkbox" id="cad-declaracao" required aria-required="true" aria-describedby="cad-declaracao-error">
+                  <label class="form-check-label required" for="cad-declaracao">
+                    Declaro que as informações são verdadeiras e concordo com as condições acima.
+                  </label>
+                </div>
+                <span id="cad-declaracao-error" class="form-error hidden" role="alert" style="margin-top:var(--space-2);display:block;"></span>
+              </div>
+            </div>
+
+            <div id="cad-feedback" class="form-feedback" role="status" aria-live="polite"></div>
+
+            <div class="form-actions form-actions--between">
+              <button type="button" id="cad-btn-limpar" class="btn btn-ghost">Limpar</button>
+              <button type="submit" id="cad-btn-enviar" class="btn btn-primary btn-lg">
+                <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z"/></svg>
+                Enviar Cadastro
+              </button>
+            </div>
+
+          </form>
+        </div>
+
+        <!-- ══════════════════════════════════════════════
+             PAINEL: Verificação do código de acesso
+        ══════════════════════════════════════════════ -->
+        <div id="painel-verificacao">
+          <div class="info-banner" role="note">
+            <strong>Código de acesso necessário.</strong>
+            Digite o código que você recebeu por e-mail quando seu cadastro foi validado pelo setor de estágios.
+          </div>
+          <div class="form-section" style="margin-top:var(--space-5);">
+            <div class="codigo-input-wrapper">
+              <div class="form-group">
+                <label class="form-label required" for="codigo-acesso">Código de acesso</label>
+                <input type="text" id="codigo-acesso" class="form-control"
+                  placeholder="SGE-XXXX-XXXX-XXXX" maxlength="19"
+                  style="text-transform:uppercase;letter-spacing:.05em;font-size:1.1em;"
+                  aria-describedby="codigo-hint codigo-error">
+                <span id="codigo-hint" class="form-hint">Formato: SGE-XXXX-XXXX-XXXX</span>
+                <span id="codigo-error" class="form-error hidden" role="alert"></span>
+              </div>
+              <div style="padding-top:28px;">
+                <button id="btn-consultar" class="btn btn-primary">
+                  <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" style="margin-right:4px"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/></svg>
+                  Consultar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════════
+             PAINEL: Visualização dos dados
+        ══════════════════════════════════════════════ -->
+        <div id="painel-dados">
+          <div class="alert alert-success" style="margin-bottom:var(--space-6);" id="alerta-identificado">
+            <svg class="alert-icon" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+            <div class="alert-content" id="alerta-texto">Cadastro encontrado.</div>
+          </div>
+
+          <div class="dados-grid" id="dados-content"></div>
+
+          <div style="margin-top:var(--space-8);padding-top:var(--space-5);border-top:1px solid var(--color-border);display:flex;gap:var(--space-3);flex-wrap:wrap;align-items:center;">
+            <button class="btn btn-primary btn-sm" onclick="iniciarEdicao()">
+              <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor" style="margin-right:4px"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/></svg>
+              Editar dados
+            </button>
+            <button class="btn btn-ghost btn-sm" onclick="voltarParaVerificacao()">Usar outro código</button>
+          </div>
+
+          <p style="margin-top:var(--space-4);font-size:var(--font-size-sm);color:var(--color-text-muted);">
+            Para solicitar alterações nos dados de identificação (nome, CPF, nascimento), entre em contato:
+            <a href="mailto:estagios@riogrande.ifrs.edu.br" class="link">estagios@riogrande.ifrs.edu.br</a>
+          </p>
+        </div>
+
+        <!-- ══════════════════════════════════════════════
+             PAINEL: Edição dos dados
+        ══════════════════════════════════════════════ -->
+        <div id="painel-edicao">
+          <div class="alert alert-warning" style="margin-bottom:var(--space-5);">
+            <svg class="alert-icon" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+            <div class="alert-content">Você pode editar contato, endereço e vínculos acadêmicos. Dados de identificação (nome, CPF, nascimento) só podem ser alterados pelo setor.</div>
+          </div>
+
+          <div id="edicao-feedback" style="display:none;margin-bottom:var(--space-5);"></div>
+
+          <!-- Contato -->
+          <div class="form-section">
+            <h3 class="form-section-title">Contato</h3>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="edit-emailPessoal">E-mail pessoal</label>
+                <input type="email" id="edit-emailPessoal" class="form-control" placeholder="seu@email.com">
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="edit-telefone">Telefone / WhatsApp</label>
+                <input type="tel" id="edit-telefone" class="form-control" placeholder="(53) 99999-9999">
+              </div>
+            </div>
+          </div>
+
+          <!-- Endereço -->
+          <div class="form-section">
+            <h3 class="form-section-title">Endereço</h3>
+            <div class="form-row">
+              <div class="form-group" style="flex:2;">
+                <label class="form-label" for="edit-endereco">Logradouro</label>
+                <input type="text" id="edit-endereco" class="form-control" placeholder="Rua, Av., número...">
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="edit-bairro">Bairro</label>
+                <input type="text" id="edit-bairro" class="form-control">
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group" style="flex:2;">
+                <label class="form-label" for="edit-cidade">Cidade</label>
+                <input type="text" id="edit-cidade" class="form-control">
+              </div>
+              <div class="form-group" style="flex:0 0 80px;">
+                <label class="form-label" for="edit-uf">UF</label>
+                <input type="text" id="edit-uf" class="form-control" maxlength="2" style="text-transform:uppercase;">
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="edit-cep">CEP</label>
+                <input type="text" id="edit-cep" class="form-control" placeholder="00000-000" maxlength="9">
+              </div>
+            </div>
+          </div>
+
+          <!-- Vínculos acadêmicos -->
+          <div class="form-section">
+            <h3 class="form-section-title">Vínculos Acadêmicos</h3>
+            <p style="font-size:var(--font-size-sm);color:var(--color-text-muted);margin-bottom:var(--space-4);">
+              Cada vínculo deve ter um e-mail institucional <code>@aluno.riogrande.ifrs.edu.br</code> único.
+            </p>
+            <div id="lista-vinculos-edicao"></div>
+
+            <div style="border:1px dashed var(--color-border);border-radius:var(--radius-md);padding:var(--space-4);margin-top:var(--space-3);">
+              <p style="font-size:var(--font-size-xs);font-weight:600;text-transform:uppercase;color:var(--color-text-muted);margin-bottom:var(--space-3);">Adicionar vínculo</p>
+              <div class="add-vinculo-row">
+                <div class="form-group" style="margin-bottom:0;">
+                  <label class="form-label" for="add-emailInst">E-mail institucional</label>
+                  <input type="email" id="add-emailInst" class="form-control" placeholder="matricula@aluno...">
+                </div>
+                <div class="form-group" style="margin-bottom:0;">
+                  <label class="form-label" for="add-curso">Curso</label>
+                  <input type="text" id="add-curso" class="form-control" placeholder="Nome do curso">
+                </div>
+                <div class="form-group" style="margin-bottom:0;">
+                  <label class="form-label" for="add-matricula">Matrícula</label>
+                  <input type="text" id="add-matricula" class="form-control" placeholder="Ex: 2024001">
+                </div>
+                <div>
+                  <button type="button" class="btn btn-secondary btn-sm" onclick="adicionarVinculoEdicao()" style="white-space:nowrap;">+ Adicionar</button>
+                </div>
+              </div>
+              <span id="add-vinculo-error" class="form-error hidden" role="alert"></span>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:var(--space-3);flex-wrap:wrap;margin-top:var(--space-6);">
+            <button id="btn-salvar-edicao" class="btn btn-primary" onclick="salvarEdicao()">Salvar alterações</button>
+            <button class="btn btn-ghost" onclick="cancelarEdicao()">Cancelar</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <footer id="app-footer">
+    <div class="container">
+      <div class="footer-inner">
+        <span class="footer-copy">&copy; <script>document.write(new Date().getFullYear())</script> Central de Estágios — IFRS Campus Rio Grande</span>
+        <nav class="footer-links"><a href="mailto:estagios@riogrande.ifrs.edu.br">estagios@riogrande.ifrs.edu.br</a></nav>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://accounts.google.com/gsi/client" async></script>
+  <script src="../assets/js/utils.js"></script>
+  <script src="../assets/js/auth.js"></script>
+  <script src="../assets/js/api.js"></script>
+  <script>
+    'use strict';
+
+    // ── Estado global ─────────────────────────────────────────────────────────
+    let dadosCache     = null;
+    let codigoAtivo    = '';
+    let cursosEditando = [];
+    let cadCursos      = [];   // cursos adicionados no formulário de cadastro
+
+    // ── Utilitário: exibe um único painel ─────────────────────────────────────
+    const PAINEIS = ['painel-carregando','painel-erro-inicial','painel-aguardando',
+                     'painel-novo','painel-verificacao','painel-dados','painel-edicao'];
+
+    function mostrarPainel(id) {
+      PAINEIS.forEach(function(p) {
+        document.getElementById(p).style.display = (p === id) ? '' : 'none';
+      });
+    }
+
+    // ── Inicialização ─────────────────────────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', function () {
+      if (!requireStudentAuth()) return;
+      iniciar();
+
+      // Formata código de acesso em tempo real
+      var inputCod = document.getElementById('codigo-acesso');
+      inputCod.addEventListener('input', function () {
+        var v = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+        if (v.startsWith('SGE')) v = v.slice(3);
+        var grupos = [];
+        for (var i = 0; i < v.length && grupos.length < 3; i += 4) grupos.push(v.slice(i, i + 4));
+        this.value = grupos.length ? 'SGE-' + grupos.join('-') : (v ? 'SGE-' + v : '');
+      });
+      inputCod.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') consultar();
+      });
+      document.getElementById('btn-consultar').addEventListener('click', consultar);
+
+      // Enter nos campos de adição de cursos (cadastro)
+      ['cad-email-inst-add','cad-matricula-add'].forEach(function(id) {
+        document.getElementById(id).addEventListener('keydown', function(e) {
+          if (e.key === 'Enter') { e.preventDefault(); cadAdicionarCurso(); }
+        });
+      });
+
+      // Formulário de cadastro
+      document.getElementById('form-cadastro').addEventListener('submit', enviarCadastro);
+      document.getElementById('cad-btn-limpar').addEventListener('click', limparCadastro);
+
+      // CPF — validação em tempo real
+      document.getElementById('cad-cpf').addEventListener('blur', async function () {
+        var val = this.value.trim();
+        if (!val) return;
+        if (!validateCPF(val)) { showFieldError('cad-cpf', 'CPF inválido.'); return; }
+        var cpfDigitos = val.replace(/\D/g, '');
+        try {
+          var res = await API.get('verificarCpf', { cpf: cpfDigitos, authToken: getAccessToken() });
+          if (res && res.existe) showFieldError('cad-cpf', 'Este CPF já está cadastrado. Se você já tem cadastro, seu perfil deve aparecer após inserir o código de acesso.');
+          else { clearFieldError('cad-cpf'); markFieldValid('cad-cpf'); }
+        } catch (_) { clearFieldError('cad-cpf'); }
+      });
+
+      document.getElementById('cad-email-pessoal').addEventListener('blur', function () {
+        if (!this.value.trim()) return;
+        if (!validateEmail(this.value)) showFieldError('cad-email-pessoal', 'Informe um e-mail válido.');
+        else { clearFieldError('cad-email-pessoal'); markFieldValid('cad-email-pessoal'); }
+      });
+    });
+
+    // ── Verificação inicial ───────────────────────────────────────────────────
+    async function iniciar() {
+      mostrarPainel('painel-carregando');
+      document.getElementById('subtitulo-pagina').textContent = 'Verificando seu cadastro...';
+      try {
+        var res = await API.get('verificarEstudante', { authToken: getAccessToken() });
+        if (!res || !res.cadastrado) {
+          // Não cadastrado → mostra formulário de cadastro
+          document.getElementById('subtitulo-pagina').textContent = 'Complete seus dados para se cadastrar.';
+          var emailLogado = getCurrentUserEmail();
+          if (emailLogado) {
+            document.getElementById('cad-email-inst').value    = emailLogado;
+            document.getElementById('cad-email-inst').disabled = true;
+            document.getElementById('cad-email-inst-add').value = emailLogado;
+          }
+          mostrarPainel('painel-novo');
+        } else if (res.status === 'Aguardando Validação') {
+          // Cadastrado mas ainda não validado pelo admin
+          document.getElementById('subtitulo-pagina').textContent = 'Cadastro em análise.';
+          mostrarPainel('painel-aguardando');
+        } else {
+          // Ativo → pede código de acesso
+          document.getElementById('subtitulo-pagina').textContent = 'Insira seu código de acesso para visualizar seus dados.';
+          mostrarPainel('painel-verificacao');
+          document.getElementById('codigo-acesso').focus();
+        }
+      } catch (err) {
+        document.getElementById('msg-erro-inicial').querySelector('.alert-content').textContent =
+          'Erro ao verificar cadastro: ' + (err.message || 'tente novamente.');
+        mostrarPainel('painel-erro-inicial');
+      }
+    }
+
+    // ── Consultar dados com código de acesso ──────────────────────────────────
+    async function consultar() {
+      var input = document.getElementById('codigo-acesso');
+      var errEl = document.getElementById('codigo-error');
+      var cod   = input.value.trim().toUpperCase();
+
+      errEl.textContent = '';
+      errEl.classList.add('hidden');
+      input.classList.remove('is-invalid');
+
+      if (!cod.match(/^SGE-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$/)) {
+        errEl.textContent = 'Código inválido. Formato: SGE-XXXX-XXXX-XXXX';
+        errEl.classList.remove('hidden');
+        input.classList.add('is-invalid');
+        input.focus();
+        return;
+      }
+
+      var btn = document.getElementById('btn-consultar');
+      btn.disabled = true;
+      btn.classList.add('is-loading');
+
+      try {
+        var dados = await API.get('obterMeuCadastro', { codigoAcesso: cod, authToken: getAccessToken() });
+        dadosCache  = dados;
+        codigoAtivo = cod;
+        exibirDados(dados);
+      } catch (err) {
+        errEl.textContent = err.message || 'Código inválido ou cadastro não encontrado.';
+        errEl.classList.remove('hidden');
+        input.classList.add('is-invalid');
+      } finally {
+        btn.disabled = false;
+        btn.classList.remove('is-loading');
+      }
+    }
+
+    function voltarParaVerificacao() {
+      dadosCache  = null;
+      codigoAtivo = '';
+      var input = document.getElementById('codigo-acesso');
+      input.value = '';
+      input.classList.remove('is-invalid');
+      document.getElementById('codigo-error').textContent = '';
+      document.getElementById('codigo-error').classList.add('hidden');
+      document.getElementById('subtitulo-pagina').textContent = 'Insira seu código de acesso para visualizar seus dados.';
+      mostrarPainel('painel-verificacao');
+      input.focus();
+    }
+
+    // ── Exibir dados (painel de visualização) ─────────────────────────────────
+    function exibirDados(d) {
+      document.getElementById('subtitulo-pagina').textContent = 'Seus dados cadastrais.';
+      var primeiroVinculo = (d.cursos && d.cursos.length > 0) ? d.cursos[0] : null;
+      var labelResumo = (d.nome || '') + (primeiroVinculo ? ' — ' + primeiroVinculo.curso : (d.curso ? ' — ' + d.curso : ''));
+      document.getElementById('alerta-texto').textContent = 'Cadastro encontrado: ' + labelResumo;
+
+      var val = function(v) { return v ? '<p>' + escapeHtml(v) + '</p>' : '<p class="vazio">Não informado</p>'; };
+      var enderecoCompleto = [d.endereco, d.bairro,
+        d.cidade && d.uf ? d.cidade + ' — ' + d.uf : (d.cidade || d.uf),
+        d.cep ? 'CEP ' + d.cep : ''
+      ].filter(Boolean).join(', ');
+
+      var cursosHtml = '';
+      if (d.cursos && d.cursos.length > 0) {
+        cursosHtml = d.cursos.map(function(c, idx) {
+          return '<div class="dado-item dado-full" style="background:var(--color-surface-secondary,#f8f9fa);border:1px solid var(--color-border);border-radius:var(--radius-md);padding:var(--space-3) var(--space-4);">' +
+            '<label>Vínculo ' + (idx + 1) + '</label>' +
+            '<p>' + escapeHtml(c.curso || '') + ' &nbsp;·&nbsp; Mat.&nbsp;' + escapeHtml(c.matricula || '') +
+            ' &nbsp;·&nbsp; ' + escapeHtml(c.emailInst || d.emailInst || '') + '</p></div>';
+        }).join('');
+      } else {
+        cursosHtml = '<div class="dado-item"><label>Curso</label>' + val(d.curso) + '</div>' +
+                     '<div class="dado-item"><label>Matrícula</label>' + val(d.matricula) + '</div>';
+      }
+
+      document.getElementById('dados-content').innerHTML =
+        '<div class="section-divider">Identificação</div>' +
+        '<div class="dado-item"><label>Nome Completo</label>' + val(d.nome) + '</div>' +
+        '<div class="dado-item"><label>CPF</label>' + val(d.cpf) + '</div>' +
+        '<div class="dado-item"><label>Data de Nascimento</label>' + val(d.dataNasc) + '</div>' +
+        '<div class="dado-item"><label>Maior de idade?</label>' + val(d.maiorIdade) + '</div>' +
+        '<div class="section-divider">Dados Acadêmicos</div>' +
+        cursosHtml +
+        '<div class="dado-item"><label>Modalidade</label>' + val(d.modalidade) + '</div>' +
+        '<div class="section-divider">Contato</div>' +
+        '<div class="dado-item"><label>E-mail Pessoal</label>' + val(d.emailPessoal) + '</div>' +
+        '<div class="dado-item"><label>Telefone</label>' + val(d.telefone) + '</div>' +
+        '<div class="dado-item dado-full"><label>Endereço</label>' + val(enderecoCompleto) + '</div>';
+
+      mostrarPainel('painel-dados');
+    }
+
+    // ── Edição ────────────────────────────────────────────────────────────────
+    function iniciarEdicao() {
+      if (!dadosCache) return;
+      var d = dadosCache;
+
+      document.getElementById('edit-emailPessoal').value = d.emailPessoal || '';
+      document.getElementById('edit-telefone').value     = d.telefone     || '';
+      document.getElementById('edit-endereco').value     = d.endereco     || '';
+      document.getElementById('edit-bairro').value       = d.bairro       || '';
+      document.getElementById('edit-cidade').value       = d.cidade       || '';
+      document.getElementById('edit-uf').value           = d.uf           || '';
+      document.getElementById('edit-cep').value          = d.cep          || '';
+
+      if (d.cursos && d.cursos.length > 0) {
+        cursosEditando = d.cursos.map(function(c) {
+          return { emailInst: c.emailInst || '', curso: c.curso || '', matricula: c.matricula || '' };
+        });
+      } else {
+        cursosEditando = d.curso ? [{ emailInst: d.emailInst || '', curso: d.curso, matricula: d.matricula || '' }] : [];
+      }
+
+      document.getElementById('add-emailInst').value = '';
+      document.getElementById('add-curso').value     = '';
+      document.getElementById('add-matricula').value = '';
+      document.getElementById('add-vinculo-error').textContent = '';
+      document.getElementById('add-vinculo-error').classList.add('hidden');
+
+      var fb = document.getElementById('edicao-feedback');
+      fb.style.display = 'none'; fb.innerHTML = '';
+
+      renderizarVinculosEdicao();
+      document.getElementById('subtitulo-pagina').textContent = 'Atualize seus dados de contato, endereço ou vínculos.';
+      mostrarPainel('painel-edicao');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function cancelarEdicao() {
+      document.getElementById('subtitulo-pagina').textContent = 'Seus dados cadastrais.';
+      mostrarPainel('painel-dados');
+    }
+
+    function renderizarVinculosEdicao() {
+      var container = document.getElementById('lista-vinculos-edicao');
+      if (cursosEditando.length === 0) {
+        container.innerHTML = '<p style="color:var(--color-text-muted);font-size:var(--font-size-sm);margin-bottom:var(--space-3);">Nenhum vínculo cadastrado. Adicione ao menos um abaixo.</p>';
+        return;
+      }
+      container.innerHTML = cursosEditando.map(function(c, idx) {
+        return '<div class="vinculo-edit-card">' +
+          '<button type="button" class="remove-vinculo" onclick="removerVinculoEdicao(' + idx + ')" title="Remover vínculo"' + (cursosEditando.length === 1 ? ' disabled' : '') + '>✕</button>' +
+          '<div class="vinculo-edit-row">' +
+          '<div class="form-group" style="margin-bottom:0;"><label class="form-label form-label-sm">E-mail institucional</label>' +
+          '<input type="email" class="form-control form-control-sm" value="' + escapeHtml(c.emailInst) + '" onchange="cursosEditando[' + idx + '].emailInst = this.value.trim()"></div>' +
+          '<div class="form-group" style="margin-bottom:0;"><label class="form-label form-label-sm">Curso</label>' +
+          '<input type="text" class="form-control form-control-sm" value="' + escapeHtml(c.curso) + '" onchange="cursosEditando[' + idx + '].curso = this.value.trim()"></div>' +
+          '<div class="form-group" style="margin-bottom:0;"><label class="form-label form-label-sm">Matrícula</label>' +
+          '<input type="text" class="form-control form-control-sm" value="' + escapeHtml(c.matricula) + '" onchange="cursosEditando[' + idx + '].matricula = this.value.trim()"></div>' +
+          '</div></div>';
+      }).join('');
+    }
+
+    function adicionarVinculoEdicao() {
+      var emailInst = document.getElementById('add-emailInst').value.trim().toLowerCase();
+      var curso     = document.getElementById('add-curso').value.trim();
+      var matricula = document.getElementById('add-matricula').value.trim();
+      var errEl     = document.getElementById('add-vinculo-error');
+      errEl.textContent = ''; errEl.classList.add('hidden');
+
+      if (!emailInst) { errEl.textContent = 'Informe o e-mail institucional.'; errEl.classList.remove('hidden'); return; }
+      if (!/@aluno\.riogrande\.ifrs\.edu\.br$/i.test(emailInst)) { errEl.textContent = 'E-mail deve terminar em @aluno.riogrande.ifrs.edu.br'; errEl.classList.remove('hidden'); return; }
+      if (!curso)     { errEl.textContent = 'Informe o curso.'; errEl.classList.remove('hidden'); return; }
+      if (!matricula) { errEl.textContent = 'Informe a matrícula.'; errEl.classList.remove('hidden'); return; }
+      if (cursosEditando.some(function(c) { return c.emailInst.toLowerCase() === emailInst; })) {
+        errEl.textContent = 'Este e-mail já está na lista.'; errEl.classList.remove('hidden'); return;
+      }
+
+      cursosEditando.push({ emailInst: emailInst, curso: curso, matricula: matricula });
+      document.getElementById('add-emailInst').value = '';
+      document.getElementById('add-curso').value     = '';
+      document.getElementById('add-matricula').value = '';
+      renderizarVinculosEdicao();
+    }
+
+    function removerVinculoEdicao(idx) {
+      if (cursosEditando.length <= 1) return;
+      cursosEditando.splice(idx, 1);
+      renderizarVinculosEdicao();
+    }
+
+    async function salvarEdicao() {
+      var fb  = document.getElementById('edicao-feedback');
+      var btn = document.getElementById('btn-salvar-edicao');
+
+      // Lê valores atuais dos inputs inline antes de salvar
+      var cards = document.querySelectorAll('#lista-vinculos-edicao .vinculo-edit-card');
+      cards.forEach(function(card, idx) {
+        var inputs = card.querySelectorAll('input');
+        if (inputs[0]) cursosEditando[idx].emailInst  = inputs[0].value.trim();
+        if (inputs[1]) cursosEditando[idx].curso       = inputs[1].value.trim();
+        if (inputs[2]) cursosEditando[idx].matricula   = inputs[2].value.trim();
+      });
+
+      // Valida vínculos
+      for (var i = 0; i < cursosEditando.length; i++) {
+        var c = cursosEditando[i];
+        if (!c.emailInst || !/@aluno\.riogrande\.ifrs\.edu\.br$/i.test(c.emailInst)) {
+          mostrarFeedbackEdicao('error', 'Vínculo ' + (i+1) + ': e-mail institucional inválido.'); return;
+        }
+        if (!c.curso)     { mostrarFeedbackEdicao('error', 'Vínculo ' + (i+1) + ': informe o curso.'); return; }
+        if (!c.matricula) { mostrarFeedbackEdicao('error', 'Vínculo ' + (i+1) + ': informe a matrícula.'); return; }
+      }
+      var emails = cursosEditando.map(function(c) { return c.emailInst.toLowerCase(); });
+      if (new Set(emails).size !== emails.length) {
+        mostrarFeedbackEdicao('error', 'Há e-mails institucionais duplicados nos vínculos.'); return;
+      }
+
+      btn.disabled = true; btn.classList.add('is-loading');
+      try {
+        await apiAtualizarMeuCadastro({
+          authToken:    getAccessToken(),
+          codigoAcesso: codigoAtivo,
+          emailPessoal: document.getElementById('edit-emailPessoal').value.trim(),
+          telefone:     document.getElementById('edit-telefone').value.trim(),
+          endereco:     document.getElementById('edit-endereco').value.trim(),
+          bairro:       document.getElementById('edit-bairro').value.trim(),
+          cidade:       document.getElementById('edit-cidade').value.trim(),
+          uf:           document.getElementById('edit-uf').value.trim().toUpperCase(),
+          cursos:       cursosEditando,
+        });
+
+        var dadosNovos = await API.get('obterMeuCadastro', { codigoAcesso: codigoAtivo, authToken: getAccessToken() });
+        dadosCache = dadosNovos;
+        exibirDados(dadosNovos);
+
+        // Breve mensagem de sucesso no painel de dados
+        var alertaEl = document.getElementById('alerta-texto');
+        var textoOriginal = alertaEl.textContent;
+        alertaEl.textContent = 'Dados atualizados com sucesso!';
+        setTimeout(function() { alertaEl.textContent = textoOriginal; }, 3000);
+      } catch (err) {
+        mostrarFeedbackEdicao('error', err.message || 'Erro ao salvar. Tente novamente.');
+      } finally {
+        btn.disabled = false; btn.classList.remove('is-loading');
+      }
+    }
+
+    function mostrarFeedbackEdicao(tipo, msg) {
+      var fb  = document.getElementById('edicao-feedback');
+      var cls = tipo === 'error' ? 'alert-danger' : 'alert-success';
+      fb.style.display = 'block';
+      fb.innerHTML = '<div class="alert ' + cls + '"><div class="alert-content">' + escapeHtml(msg) + '</div></div>';
+      fb.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    // ── Formulário de cadastro ────────────────────────────────────────────────
+    function cadAdicionarCurso() {
+      var inpEmail = document.getElementById('cad-email-inst-add');
+      var selCurso = document.getElementById('cad-curso-add');
+      var inpMat   = document.getElementById('cad-matricula-add');
+      var errEl    = document.getElementById('cad-cursos-error');
+      var emailCurso = inpEmail.value.trim().toLowerCase();
+      var curso      = selCurso.value.trim();
+      var mat        = inpMat.value.trim().replace(/\D/g, '');
+
+      errEl.textContent = ''; errEl.classList.add('hidden');
+
+      if (!emailCurso) { errEl.textContent = 'Informe o e-mail institucional do curso.'; errEl.classList.remove('hidden'); inpEmail.focus(); return; }
+      if (!isStudentEmail(emailCurso)) { errEl.textContent = 'O e-mail deve ser do domínio @aluno.riogrande.ifrs.edu.br.'; errEl.classList.remove('hidden'); inpEmail.focus(); return; }
+      if (!curso)      { errEl.textContent = 'Selecione um curso.'; errEl.classList.remove('hidden'); selCurso.focus(); return; }
+      if (!mat)        { errEl.textContent = 'Informe a matrícula do curso.'; errEl.classList.remove('hidden'); inpMat.focus(); return; }
+      if (cadCursos.length >= 6) { errEl.textContent = 'Limite de 6 cursos atingido.'; errEl.classList.remove('hidden'); return; }
+      if (cadCursos.some(function(c) { return c.curso === curso; })) { errEl.textContent = 'Este curso já foi adicionado.'; errEl.classList.remove('hidden'); selCurso.focus(); return; }
+
+      cadCursos.push({ emailInst: emailCurso, curso: curso, matricula: mat });
+      selCurso.value = ''; inpMat.value = '';
+      cadRenderizarCursos();
+    }
+
+    function cadRemoverCurso(idx) {
+      cadCursos.splice(idx, 1);
+      cadRenderizarCursos();
+    }
+
+    function cadRenderizarCursos() {
+      var ul    = document.getElementById('cad-cursos-ul');
+      var lista = document.getElementById('cad-cursos-lista');
+      ul.innerHTML = '';
+      cadCursos.forEach(function(item, idx) {
+        var li = document.createElement('li');
+        li.style.cssText = 'display:flex;align-items:center;gap:var(--space-3);background:var(--color-surface-secondary,#f8f9fa);border:1px solid var(--color-border);border-radius:var(--radius-md);padding:var(--space-2) var(--space-3);font-size:var(--font-size-sm);';
+        li.innerHTML = '<span style="flex:1;"><strong>' + escapeHtml(item.curso) + '</strong>' +
+          '<span style="color:var(--color-text-muted);">— Mat. ' + escapeHtml(item.matricula) + '</span>' +
+          '<span style="color:var(--color-text-muted);font-size:var(--font-size-xs);display:block;margin-top:2px;">' + escapeHtml(item.emailInst || '') + '</span></span>' +
+          '<button type="button" class="btn btn-ghost btn-sm" style="color:var(--color-danger,#dc3545);padding:2px 8px;" onclick="cadRemoverCurso(' + idx + ')" aria-label="Remover curso">✕</button>';
+        ul.appendChild(li);
+      });
+      lista.style.display = cadCursos.length ? 'block' : 'none';
+      document.getElementById('cad-btn-add-curso').disabled = cadCursos.length >= 6;
+    }
+
+    function cadValidarForm() {
+      var valid = true, firstInvalid = null;
+      function fail(id, msg) {
+        showFieldError(id, msg);
+        if (!firstInvalid) firstInvalid = id;
+        valid = false;
+      }
+
+      if (!document.getElementById('cad-nome').value.trim())    fail('cad-nome', 'Informe seu nome completo.');
+      if (!document.getElementById('cad-cpf').value.trim())     fail('cad-cpf', 'Informe seu CPF.');
+      else if (!validateCPF(document.getElementById('cad-cpf').value)) fail('cad-cpf', 'CPF inválido.');
+      if (!document.getElementById('cad-nascimento').value)     fail('cad-nascimento', 'Informe sua data de nascimento.');
+
+      var emailInst = document.getElementById('cad-email-inst').value.trim();
+      if (!emailInst) fail('cad-email-inst', 'Informe seu e-mail institucional.');
+      else if (!isStudentEmail(emailInst)) fail('cad-email-inst', 'O e-mail deve ser do domínio @aluno.riogrande.ifrs.edu.br.');
+
+      if (!document.getElementById('cad-email-pessoal').value.trim()) fail('cad-email-pessoal', 'Informe seu e-mail pessoal.');
+      else if (!validateEmail(document.getElementById('cad-email-pessoal').value)) fail('cad-email-pessoal', 'E-mail pessoal inválido.');
+
+      var tel = document.getElementById('cad-telefone').value.replace(/\D/g, '');
+      if (!tel) fail('cad-telefone', 'Informe seu telefone celular.');
+      else if (tel.length < 10) fail('cad-telefone', 'Telefone inválido. Informe DDD + número.');
+
+      if (!document.getElementById('cad-endereco').value.trim()) fail('cad-endereco', 'Informe seu endereço.');
+      if (!document.getElementById('cad-cep').value.trim())      fail('cad-cep', 'Informe o CEP.');
+      if (!document.getElementById('cad-bairro').value.trim())   fail('cad-bairro', 'Informe o bairro.');
+      if (!document.getElementById('cad-cidade').value.trim())   fail('cad-cidade', 'Informe a cidade.');
+
+      var errCursos = document.getElementById('cad-cursos-error');
+      if (cadCursos.length === 0) {
+        errCursos.textContent = 'Adicione pelo menos um curso.'; errCursos.classList.remove('hidden');
+        if (!firstInvalid) firstInvalid = 'cad-curso-add'; valid = false;
+      } else { errCursos.textContent = ''; errCursos.classList.add('hidden'); }
+
+      if (!document.getElementById('cad-declaracao').checked) fail('cad-declaracao', 'Aceite a declaração para continuar.');
+
+      if (firstInvalid) {
+        var el = document.getElementById(firstInvalid);
+        if (el) { el.focus(); el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+      }
+      return valid;
+    }
+
+    async function enviarCadastro(e) {
+      e.preventDefault();
+      hideFormFeedback('cad-feedback');
+      if (!cadValidarForm()) return;
+
+      function modalidadeDoCurso(curso) {
+        if (curso.startsWith('Técnico Integrado'))   return 'Integrado';
+        if (curso.startsWith('Técnico Subsequente')) return 'Subsequente';
+        return 'Superior';
+      }
+
+      var dados = {
+        nome:           document.getElementById('cad-nome').value.trim(),
+        cpf:            document.getElementById('cad-cpf').value.trim(),
+        dataNascimento: document.getElementById('cad-nascimento').value,
+        emailPessoal:   document.getElementById('cad-email-pessoal').value.trim(),
+        telefone:       document.getElementById('cad-telefone').value.trim(),
+        endereco:       document.getElementById('cad-endereco').value.trim(),
+        cep:            document.getElementById('cad-cep').value.trim(),
+        bairro:         document.getElementById('cad-bairro').value.trim(),
+        cidade:         document.getElementById('cad-cidade').value.trim(),
+        uf:             document.getElementById('cad-uf').value,
+        modalidade:     modalidadeDoCurso(cadCursos[0].curso),
+        cursos:         cadCursos,
+      };
+
+      var btnEnviar = document.getElementById('cad-btn-enviar');
+      await submitWithFeedback(
+        function() { return apiCadastrarEstudante(dados); },
+        btnEnviar,
+        'cad-feedback',
+        'Cadastro enviado com sucesso!',
+        'Seu cadastro foi recebido. O setor de estágios irá validá-lo e você receberá seu código de acesso por e-mail.',
+        function() {
+          // Após envio bem-sucedido, desabilita o formulário e transita para aguardando
+          document.getElementById('form-cadastro').querySelectorAll('input,select,textarea,button').forEach(function(el) { el.disabled = true; });
+          setTimeout(function() {
+            document.getElementById('subtitulo-pagina').textContent = 'Cadastro em análise.';
+            mostrarPainel('painel-aguardando');
+          }, 3000);
+        }
+      );
+    }
+
+    function limparCadastro() {
+      document.getElementById('form-cadastro').reset();
+      cadCursos = [];
+      cadRenderizarCursos();
+      var emailLogado = getCurrentUserEmail();
+      if (emailLogado) document.getElementById('cad-email-inst-add').value = emailLogado;
+      document.getElementById('form-cadastro').querySelectorAll('.form-control').forEach(function(el) {
+        el.classList.remove('is-invalid','is-valid'); el.removeAttribute('aria-invalid');
+      });
+      document.getElementById('form-cadastro').querySelectorAll('.form-error').forEach(function(el) {
+        el.textContent = ''; el.classList.add('hidden');
+      });
+      hideFormFeedback('cad-feedback');
+    }
+  </script>
+</body>
+</html>

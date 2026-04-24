@@ -58,6 +58,9 @@ var GET_ROUTES = {
   // Dashboard
   'dashboard':               doGetDash,
 
+  // ConfiguraÃ§Ãµes (pÃºblico â€" sem auth)
+  'obterConfigCursos':       doGetPublicConfig,
+
 };
 
 // â”€â”€ Mapeamento action â†’ mÃ³dulo (POST) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -92,6 +95,9 @@ var POST_ROUTES = {
 
   // Oportunidades
   'cadastrarOportunidade':     doPostOportunidades,
+
+  // ConfiguraÃ§Ãµes (admin)
+  'salvarConfigCursos':        doPostAdmin,
 
   // Admin
   'aprovarSolicitacao':        doPostAdmin,
@@ -243,6 +249,12 @@ function doPostEmpresas(e) {
   return jsonError_('AÃ§Ã£o nÃ£o implementada: ' + action, 'NOT_IMPLEMENTED');
 }
 
+
+function doGetPublicConfig(e) {
+  var action = e.parameter && e.parameter.action;
+  if (action === 'obterConfigCursos') return obterConfigCursos_();
+  return jsonError_('AÃ§Ã£o nÃ£o implementada.', 'NOT_IMPLEMENTED');
+}
 
 function doGetFixCabecalhoSol_(e) {
   return corrigirCabecalhoSolicitacoes_();

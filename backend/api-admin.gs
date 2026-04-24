@@ -169,6 +169,8 @@ function doPostAdmin(e) {
       // Estudantes — validação de cadastro e reenvio de código
       case 'validarCadastroAdmin':   return validarCadastroAdmin_(body);
       case 'reenviarCodigoAdmin':    return reenviarCodigoAdmin_(body);
+      // Configurações
+      case 'salvarConfigCursos':     return salvarConfigCursos_(body);
       default: return jsonError_('Ação POST não reconhecida: ' + action, 'UNKNOWN_ACTION');
     }
   } catch (err) {
@@ -1128,4 +1130,38 @@ function obterOuCriarAba_(ss, nome, cabecalho) {
     }
   }
   return sheet;
+}
+
+// ---------------------------------------------------------------------------
+// GET — Configuração de cursos habilitados por modalidade (público, sem auth)
+// ---------------------------------------------------------------------------
+
+/**
+ * Retorna { obrigatorio: [...] | null, naoObrigatorio: [...] | null }
+ * null = sem restrição configurada (todos os cursos habilitados).
+ */
+function obterConfigCursos_() {
+  try {
+    var raw = PropertiesService.getScriptProperties().getProperty('config_cursos');
+    if (!raw) return jsonOk_({ obrigatorio: null, naoObrigatorio: null });
+    return jsonOk_(JSON.parse(raw));
+  } catch (e) {
+    return jsonOk_({ obrigatorio: null, naoObrigatorio: null }); // fail-open
+  }
+}
+
+// ---------------------------------------------------------------------------
+// POST — Salvar configuração de cursos habilitados (admin)
+// ---------------------------------------------------------------------------
+
+function salvarConfigCursos_(body) {
+  if (!checkRateLimit_('salvarConfigCursos', 10)) {
+    return jsonError_('Muitas requisições. Aguarde um momento.', 'RATE_LIMIT');
+  }
+  var config = {
+    obrigatorio:    Array.isArray(body.obrigatorio)    ? body.obrigatorio    : [],
+    naoObrigatorio: Array.isArray(body.naoObrigatorio) ? body.naoObrigatorio : [],
+  };
+  PropertiesService.getScriptProperties().setProperty('config_cursos', JSON.stringify(config));
+  return jsonOk_({ mensagem: 'Configuração salva com sucesso!' });
 }

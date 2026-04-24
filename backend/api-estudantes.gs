@@ -287,6 +287,55 @@ function reenviarCodigoAdmin_(body) {
 }
 
 // ---------------------------------------------------------------------------
+// GET — Verificar se o e-mail logado já possui cadastro (página Perfil)
+// ---------------------------------------------------------------------------
+
+/**
+ * Retorna { cadastrado: bool, status: string|null } para o e-mail do token.
+ * Requer autenticação de estudante.
+ * Usado pela página perfil.html para decidir entre exibir o formulário de
+ * cadastro (novo aluno) ou o painel de consulta (aluno já registrado).
+ */
+function verificarEstudante_(e) {
+  var params = e.parameter || {};
+  var tokenInfo;
+  try {
+    tokenInfo = validarTokenEstudante_(params.authToken);
+  } catch (err) {
+    return jsonError_(err.message, 'AUTH_ERROR');
+  }
+
+  var email = (tokenInfo.email || '').toLowerCase().trim();
+  if (!email) return jsonOk_({ cadastrado: false, status: null });
+
+  var sheet = abrirAba_(CFG_EST.SS_ID, CFG_EST.ABA);
+  var dados  = sheet.getDataRange().getValues();
+
+  // 1ª passagem: e-mail principal
+  for (var i = 1; i < dados.length; i++) {
+    if (String(dados[i][COL_EST.EMAIL_INST] || '').toLowerCase().trim() === email) {
+      return jsonOk_({ cadastrado: true, status: String(dados[i][COL_EST.STATUS] || '').trim() });
+    }
+  }
+
+  // 2ª passagem: qualquer emailInst dentro de CURSOS_JSON
+  for (var j = 1; j < dados.length; j++) {
+    var cj = String(dados[j][COL_EST.CURSOS_JSON] || '').trim();
+    if (!cj) continue;
+    try {
+      var arr = JSON.parse(cj);
+      for (var k = 0; k < arr.length; k++) {
+        if (String(arr[k].emailInst || '').toLowerCase().trim() === email) {
+          return jsonOk_({ cadastrado: true, status: String(dados[j][COL_EST.STATUS] || '').trim() });
+        }
+      }
+    } catch (_) {}
+  }
+
+  return jsonOk_({ cadastrado: false, status: null });
+}
+
+// ---------------------------------------------------------------------------
 // GET — Verificar se CPF já está cadastrado (tempo real no formulário)
 // ---------------------------------------------------------------------------
 

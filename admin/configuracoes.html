@@ -25,7 +25,6 @@
       text-transform: uppercase; letter-spacing: .06em; padding: var(--space-4) var(--space-4) var(--space-2);
       background: transparent; border-bottom: 1px solid var(--color-border); }
     .check-all-row { display: flex; gap: var(--space-4); align-items: center; flex-wrap: wrap; }
-    #feedback { display: none; margin-bottom: var(--space-5); }
     #loading-overlay { text-align: center; padding: var(--space-12); color: var(--color-text-muted); }
   </style>
 </head>
@@ -71,8 +70,6 @@
 
         <div id="config-content" style="display:none;">
 
-          <div id="feedback"></div>
-
           <!-- Atalhos selecionar/limpar -->
           <div style="display:flex;gap:var(--space-4);flex-wrap:wrap;margin-bottom:var(--space-5);padding:var(--space-4);background:var(--color-surface-secondary,#f8f9fa);border-radius:var(--radius-md);border:1px solid var(--color-border);">
             <div style="flex:1;min-width:220px;">
@@ -105,7 +102,9 @@
             </table>
           </div>
 
-          <div style="margin-top:var(--space-8);display:flex;gap:var(--space-3);align-items:center;flex-wrap:wrap;">
+          <div id="feedback" style="margin-top:var(--space-6);"></div>
+
+          <div style="margin-top:var(--space-4);display:flex;gap:var(--space-3);align-items:center;flex-wrap:wrap;">
             <button id="btn-salvar" class="btn btn-primary" onclick="salvar()">
               <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" style="margin-right:4px"><path d="M7.707 10.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V6h5a2 2 0 012 2v7a2 2 0 01-2 2H4a2 2 0 01-2-2V8a2 2 0 012-2h5v5.586l-1.293-1.293zM9 4a1 1 0 012 0v2H9V4z"/></svg>
               Salvar configuração
@@ -223,29 +222,37 @@
       const btn = document.getElementById('btn-salvar');
       const fb  = document.getElementById('feedback');
 
-      const obrigatorio    = Array.from(document.querySelectorAll('.cb-obrig:checked')).map(cb => CURSOS[+cb.dataset.idx].nome);
-      const naoObrigatorio = Array.from(document.querySelectorAll('.cb-nao:checked')).map(cb => CURSOS[+cb.dataset.idx].nome);
+      // Desabilita o botão imediatamente para evitar cliques duplos
+      if (btn) { btn.disabled = true; btn.classList.add('is-loading'); }
+      if (fb)  { fb.style.display = 'none'; fb.innerHTML = ''; }
 
-      fb.style.display = 'none';
-      fb.innerHTML = '';
-      btn.disabled = true;
-      btn.classList.add('is-loading');
+      function mostrarErro(msg) {
+        if (fb) {
+          fb.style.display = 'block';
+          fb.innerHTML = '<div class="alert alert-danger"><div class="alert-content"><strong>Erro ao salvar:</strong> ' + msg + '</div></div>';
+        } else {
+          alert('Erro ao salvar: ' + msg);
+        }
+      }
 
       try {
+        const obrigatorio    = Array.from(document.querySelectorAll('.cb-obrig:checked')).map(function(cb) { return CURSOS[+cb.dataset.idx].nome; });
+        const naoObrigatorio = Array.from(document.querySelectorAll('.cb-nao:checked')).map(function(cb) { return CURSOS[+cb.dataset.idx].nome; });
+
         await API.post('salvarConfigCursos', { obrigatorio, naoObrigatorio });
 
-        fb.style.display = 'block';
-        fb.innerHTML = `<div class="alert alert-success"><svg class="alert-icon" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg><div class="alert-content"><strong>Configuração salva!</strong> ${obrigatorio.length} cursos habilitados para Obrigatório · ${naoObrigatorio.length} para Não Obrigatório.</div></div>`;
-
+        if (fb) {
+          fb.style.display = 'block';
+          fb.innerHTML = '<div class="alert alert-success"><svg class="alert-icon" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg><div class="alert-content"><strong>Configuração salva com sucesso!</strong> ' + obrigatorio.length + ' cursos habilitados para Obrigatório · ' + naoObrigatorio.length + ' para Não Obrigatório.</div></div>';
+        }
         const agora = new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });
-        document.getElementById('ultima-atualizacao').textContent = 'Última atualização: ' + agora;
-        fb.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        const spanAtu = document.getElementById('ultima-atualizacao');
+        if (spanAtu) spanAtu.textContent = 'Última atualização: ' + agora;
       } catch (err) {
-        fb.style.display = 'block';
-        fb.innerHTML = `<div class="alert alert-danger"><div class="alert-content"><strong>Erro ao salvar:</strong> ${escapeHtml(err.message || 'Tente novamente.')}</div></div>`;
+        console.error('[configuracoes] salvar:', err);
+        mostrarErro((err && err.message) ? err.message : 'Tente novamente.');
       } finally {
-        btn.disabled = false;
-        btn.classList.remove('is-loading');
+        if (btn) { btn.disabled = false; btn.classList.remove('is-loading'); }
       }
     }
   </script>
