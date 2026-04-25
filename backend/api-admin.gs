@@ -131,6 +131,8 @@ function doGetAdmin(e) {
       case 'listarAlunosAdmin':        return listarAlunosAdmin_();
       case 'listarEmpresasAdmin':      return listarEmpresasAdmin_();
       case 'listarOrientadoresAdmin':  return listarOrientadoresAdmin_();
+      case 'listarCoordenadoresAdmin': return listarCoordenadoresAdmin_();
+      case 'listarCadastrosPendentes': return listarCadastrosPendentes_();
       case 'listarAdendosAdmin':       return listarAdendosAdmin_();
       case 'listarAgentesAdmin':       return listarAgentesAdmin_();
       default: return jsonError_('Ação GET não reconhecida: ' + action, 'UNKNOWN_ACTION');
@@ -163,9 +165,11 @@ function doPostAdmin(e) {
       case 'reativarOrientador':   return alterarStatusOrientador_(body.email, 'Ativo');
       case 'aprovarAdendo':        return processarAdendo_(body, 'Aprovado');
       case 'reprovarAdendo':       return processarAdendo_(body, 'Reprovado');
-      case 'inativarAgente':         return alterarStatusAgente_(body.cnpj, 'Inativo');
-      case 'reativarAgente':         return alterarStatusAgente_(body.cnpj, 'Ativo');
-      case 'cadastrarCoordenador':   return cadastrarCoordenador_(body);
+      case 'inativarAgente':            return alterarStatusAgente_(body.cnpj, 'Inativo');
+      case 'reativarAgente':            return alterarStatusAgente_(body.cnpj, 'Ativo');
+      case 'aprovarCadastroServidor':   return aprovarCadastroServidor_(body);
+      case 'inativarCoordenador':       return alterarStatusCoordenador_(body.email, 'Inativo');
+      case 'reativarCoordenador':       return alterarStatusCoordenador_(body.email, 'Ativo');
       // Estudantes — validação de cadastro e reenvio de código
       case 'validarCadastroAdmin':   return validarCadastroAdmin_(body);
       case 'reenviarCodigoAdmin':    return reenviarCodigoAdmin_(body);
@@ -1118,6 +1122,178 @@ function formatarData_(val) {
     if (isNaN(d.getTime())) return String(val);
     return Utilities.formatDate(d, 'America/Sao_Paulo', 'dd/MM/yyyy');
   } catch(e) { return String(val); }
+}
+
+// ─────────────────────────────────────────────────────────────────
+// GET — Listar coordenadores (admin)
+// ─────────────────────────────────────────────────────────────────
+
+function listarCoordenadoresAdmin_() {
+  var ss    = SpreadsheetApp.openById(CFG_ADMIN.SS_ID);
+  var sheet = ss.getSheetByName(CFG_ADMIN.ABA_COORDENADORES);
+  if (!sheet) return jsonOk_([]);
+  var dados = sheet.getDataRange().getValues();
+  var lista = [];
+  for (var i = 1; i < dados.length; i++) {
+    var r = dados[i];
+    if (!r[3]) continue; // sem e-mail
+    lista.push({
+      cpf:       String(r[0] || ''),
+      siape:     String(r[1] || ''),
+      nome:      String(r[2] || ''),
+      email:     String(r[3] || ''),
+      tel:       String(r[4] || ''),
+      titulacao: String(r[5] || ''),
+      curso:     String(r[6] || ''),
+      timestamp: formatarData_(r[7]),
+      status:    String(r[8] || 'Pendente'),
+    });
+  }
+  lista.reverse(); // mais recentes primeiro
+  return jsonOk_(lista);
+}
+
+// ─────────────────────────────────────────────────────────────────
+// GET — Listar cadastros pendentes (orientadores + coordenadores)
+// ─────────────────────────────────────────────────────────────────
+
+function listarCadastrosPendentes_() {
+  var ss = SpreadsheetApp.openById(CFG_ADMIN.SS_ID);
+  var resultado = { orientadores: [], coordenadores: [] };
+
+  // Orientadores pendentes
+  var shOri = ss.getSheetByName(CFG_ADMIN.ABA_ORIENTADORES);
+  if (shOri) {
+    var dadosOri = shOri.getDataRange().getValues();
+    for (var i = 1; i < dadosOri.length; i++) {
+      if (String(dadosOri[i][COL_ORI.STATUS] || '').trim() === 'Pendente') {
+        resultado.orientadores.push({
+          nome:        String(dadosOri[i][COL_ORI.NOME]         || ''),
+          email:       String(dadosOri[i][COL_ORI.EMAIL]        || ''),
+          siape:       String(dadosOri[i][COL_ORI.SIAPE]        || ''),
+          tipoVinculo: String(dadosOri[i][COL_ORI.TIPO_VINCULO] || ''),
+          titulacao:   String(dadosOri[i][COL_ORI.TITULACAO]    || ''),
+          area:        String(dadosOri[i][COL_ORI.AREA]         || ''),
+          cursos:      String(dadosOri[i][COL_ORI.CURSOS]       || ''),
+          tipo:        'orientador',
+        });
+      }
+    }
+  }
+
+  // Coordenadores pendentes
+  var shCoord = ss.getSheetByName(CFG_ADMIN.ABA_COORDENADORES);
+  if (shCoord) {
+    var dadosCoord = shCoord.getDataRange().getValues();
+    for (var j = 1; j < dadosCoord.length; j++) {
+      if (String(dadosCoord[j][8] || '').trim() !== 'Pendente') continue;
+      var cursoCoord = String(dadosCoord[j][6] || '');
+      // Verifica se há coordenador Ativo para o mesmo curso
+      var coordAtualNome = null;
+      var coordAtualEmail = null;
+      for (var k = 1; k < dadosCoord.length; k++) {
+        if (k !== j && String(dadosCoord[k][6] || '') === cursoCoord && String(dadosCoord[k][8] || '') === 'Ativo') {
+          coordAtualNome  = String(dadosCoord[k][2] || '');
+          coordAtualEmail = String(dadosCoord[k][3] || '');
+          break;
+        }
+      }
+      resultado.coordenadores.push({
+        nome:           String(dadosCoord[j][2] || ''),
+        email:          String(dadosCoord[j][3] || ''),
+        siape:          String(dadosCoord[j][1] || ''),
+        titulacao:      String(dadosCoord[j][5] || ''),
+        curso:          cursoCoord,
+        tipo:           'coordenador',
+        coordAtualNome:  coordAtualNome,
+        coordAtualEmail: coordAtualEmail,
+      });
+    }
+  }
+
+  return jsonOk_(resultado);
+}
+
+// ─────────────────────────────────────────────────────────────────
+// POST — Aprovar / reprovar cadastro de servidor (orientador ou coordenador)
+// ─────────────────────────────────────────────────────────────────
+
+function aprovarCadastroServidor_(body) {
+  var tipo       = String(body.tipo       || '');
+  var email      = String(body.email      || '').toLowerCase().trim();
+  var novoStatus = String(body.novoStatus || 'Ativo');
+  var ss = SpreadsheetApp.openById(CFG_ADMIN.SS_ID);
+
+  if (tipo === 'orientador') {
+    var sheet = ss.getSheetByName(CFG_ADMIN.ABA_ORIENTADORES);
+    if (!sheet) return jsonError_('Aba de orientadores não encontrada.', 'NOT_FOUND');
+    var dados = sheet.getDataRange().getValues();
+    var found = false;
+    for (var i = 1; i < dados.length; i++) {
+      if (String(dados[i][COL_ORI.EMAIL] || '').toLowerCase() === email &&
+          String(dados[i][COL_ORI.STATUS] || '') === 'Pendente') {
+        sheet.getRange(i + 1, COL_ORI.STATUS + 1).setValue(novoStatus);
+        found = true;
+        break;
+      }
+    }
+    if (!found) return jsonError_('Orientador pendente não encontrado.', 'NOT_FOUND');
+    return jsonOk_({ status: novoStatus });
+  }
+
+  if (tipo === 'coordenador') {
+    var shCoord = ss.getSheetByName(CFG_ADMIN.ABA_COORDENADORES);
+    if (!shCoord) return jsonError_('Aba de coordenadores não encontrada.', 'NOT_FOUND');
+    var dadosCoord = shCoord.getDataRange().getValues();
+    var pendIdx = -1;
+    var cursoAlvo = '';
+    for (var i = 1; i < dadosCoord.length; i++) {
+      if (String(dadosCoord[i][3] || '').toLowerCase() === email &&
+          String(dadosCoord[i][8] || '') === 'Pendente') {
+        pendIdx   = i;
+        cursoAlvo = String(dadosCoord[i][6] || '');
+        break;
+      }
+    }
+    if (pendIdx === -1) return jsonError_('Coordenador pendente não encontrado.', 'NOT_FOUND');
+    shCoord.getRange(pendIdx + 1, 9).setValue(novoStatus);
+
+    // Se aprovando (Ativo) e solicitado inativar o anterior do mesmo curso
+    if (novoStatus === 'Ativo' && body.inativarAnterior && cursoAlvo) {
+      for (var j = 1; j < dadosCoord.length; j++) {
+        if (j !== pendIdx &&
+            String(dadosCoord[j][6] || '') === cursoAlvo &&
+            String(dadosCoord[j][3] || '').toLowerCase() !== email &&
+            String(dadosCoord[j][8] || '') === 'Ativo') {
+          shCoord.getRange(j + 1, 9).setValue('Inativo');
+        }
+      }
+    }
+    return jsonOk_({ status: novoStatus });
+  }
+
+  return jsonError_('Tipo inválido: ' + tipo, 'VALIDATION');
+}
+
+// ─────────────────────────────────────────────────────────────────
+// POST — Inativar / reativar coordenador (por e-mail)
+// ─────────────────────────────────────────────────────────────────
+
+function alterarStatusCoordenador_(email, novoStatus) {
+  var emailLower = String(email || '').toLowerCase().trim();
+  var ss    = SpreadsheetApp.openById(CFG_ADMIN.SS_ID);
+  var sheet = ss.getSheetByName(CFG_ADMIN.ABA_COORDENADORES);
+  if (!sheet) return jsonError_('Aba de coordenadores não encontrada.', 'NOT_FOUND');
+  var dados = sheet.getDataRange().getValues();
+  var found = false;
+  for (var i = 1; i < dados.length; i++) {
+    if (String(dados[i][3] || '').toLowerCase().trim() === emailLower) {
+      sheet.getRange(i + 1, 9).setValue(novoStatus);
+      found = true;
+    }
+  }
+  if (!found) return jsonError_('Coordenador não encontrado.', 'NOT_FOUND');
+  return jsonOk_({ status: novoStatus });
 }
 
 function obterOuCriarAba_(ss, nome, cabecalho) {

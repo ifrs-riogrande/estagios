@@ -229,6 +229,29 @@ var MAIL = (function () {
     enviar_(SETOR_EMAIL, assunto, htmlBase_('[SGE] Novo Orientador', corpo));
   }
 
+  function enviarEmailNovoCoordenador(dados) {
+    var assunto = '[SGE] Novo coordenador cadastrado: ' + dados.nome + ' (' + dados.curso + ')';
+    var corpo = '<p>Um novo coordenador de curso foi cadastrado e aguarda aprovação.</p>'
+      + campo_('Nome', dados.nome)
+      + campo_('E-mail', dados.email)
+      + campo_('SIAPE', dados.siape)
+      + campo_('Curso', dados.curso)
+      + '<p style="margin-top:24px;">Acesse o painel administrativo para aprovar ou reprovar o cadastro.</p>';
+    enviar_(SETOR_EMAIL, assunto, htmlBase_('[SGE] Novo Coordenador', corpo));
+  }
+
+  function enviarEmailAtualizacaoServidor(dados) {
+    var tipo  = dados.tipo === 'coordenador' ? 'coordenador de curso' : 'orientador de estágio';
+    var extra = dados.curso ? ' — ' + dados.curso : '';
+    var assunto = '[SGE] Cadastro atualizado (' + tipo + '): ' + dados.nome;
+    var corpo = '<p>Um servidor atualizou seus dados de ' + tipo + ' e aguarda aprovação.</p>'
+      + campo_('Nome', dados.nome)
+      + campo_('E-mail', dados.email)
+      + (dados.curso ? campo_('Curso', dados.curso + extra) : '')
+      + '<p style="margin-top:24px;">Acesse o painel administrativo para revisar e aprovar.</p>';
+    enviar_(SETOR_EMAIL, assunto, htmlBase_('[SGE] Atualização de Cadastro', corpo));
+  }
+
   function enviarEmailNovoAgente(dados) {
     var assunto = '[SGE] Novo agente de integração cadastrado: ' + (dados.siglaAgente || dados.nomeAgente);
     var corpo = '<p>Um novo agente de integração foi cadastrado e aguarda ativação.</p>'
@@ -254,6 +277,8 @@ var MAIL = (function () {
     enviarEmailRelatorioFinalRecebido:   enviarEmailRelatorioFinalRecebido,
     enviarEmailAdendoRecebido:           enviarEmailAdendoRecebido,
     enviarEmailNovoOrientador:           enviarEmailNovoOrientador,
+    enviarEmailNovoCoordenador:          enviarEmailNovoCoordenador,
+    enviarEmailAtualizacaoServidor:      enviarEmailAtualizacaoServidor,
     enviarEmailNovoAgente:               enviarEmailNovoAgente,
   };
 })();
@@ -268,4 +293,6 @@ function enviarEmailRelatorioParcialRecebido_(d) { return MAIL.enviarEmailRelato
 function enviarEmailRelatorioFinalRecebido_(d)   { return MAIL.enviarEmailRelatorioFinalRecebido(d); }
 function enviarEmailAdendoRecebido_(d)           { return MAIL.enviarEmailAdendoRecebido(d); }
 function enviarEmailNovoOrientador_(d)           { return MAIL.enviarEmailNovoOrientador(d); }
+function enviarEmailNovoCoordenador_(d)          { return MAIL.enviarEmailNovoCoordenador(d); }
+function enviarEmailAtualizacaoServidor_(d)      { return MAIL.enviarEmailAtualizacaoServidor(d); }
 function enviarEmailNovoAgente_(d)               { return MAIL.enviarEmailNovoAgente(d); }

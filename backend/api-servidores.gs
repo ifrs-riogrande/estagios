@@ -165,21 +165,23 @@ function cadastrarOrientador_(dados) {
   var sheet = abrirAba_(CFG_SRV.SS_ID, CFG_SRV.ABA);
   var idx   = buscarNaColuna_(sheet, COL_ORI.CPF, cpf);
   if (idx !== -1) {
-    // Atualiza cadastro existente em vez de duplicar
+    // Atualiza cadastro existente em vez de duplicar — volta para Pendente
     var rowIdx = idx + 1; // base-1 para sheet
     sheet.getRange(rowIdx, COL_ORI.TIPO_VINCULO + 1).setValue(vinculo);
     sheet.getRange(rowIdx, COL_ORI.TEL + 1).setValue(tel);
     sheet.getRange(rowIdx, COL_ORI.TITULACAO + 1).setValue(titulac);
     sheet.getRange(rowIdx, COL_ORI.AREA + 1).setValue(area);
     sheet.getRange(rowIdx, COL_ORI.CURSOS + 1).setValue(cursos);
+    sheet.getRange(rowIdx, COL_ORI.STATUS + 1).setValue('Pendente');
     if (vinculo === 'Substituto') {
       sheet.getRange(rowIdx, COL_ORI.INI_CONTRATO + 1).setValue(iniCont);
       sheet.getRange(rowIdx, COL_ORI.FIM_CONTRATO + 1).setValue(fimCont);
     }
-    return jsonOk_({ mensagem: 'Cadastro atualizado com sucesso.' });
+    try { enviarEmailAtualizacaoServidor_({ nome: nome, email: email, tipo: 'orientador' }); } catch (e) { logErro_('cadastrarOrientador_.mailAtualiza', e); }
+    return jsonOk_({ mensagem: 'Cadastro atualizado. Aguardando aprovação do setor.', pendente: true });
   }
 
-  // Nova linha
+  // Nova linha — inicia como Pendente, aguarda aprovação do admin
   var now  = new Date();
   var linha = [];
   linha[COL_ORI.TIMESTAMP]    = now;
@@ -194,14 +196,14 @@ function cadastrarOrientador_(dados) {
   linha[COL_ORI.TITULACAO]    = titulac;
   linha[COL_ORI.AREA]         = area;
   linha[COL_ORI.CURSOS]       = cursos;
-  linha[COL_ORI.STATUS]       = 'Ativo';
+  linha[COL_ORI.STATUS]       = 'Pendente';
 
   sheet.appendRow(linha);
 
   // Notificação ao setor
   try { enviarEmailNovoOrientador_(dados); } catch (e) { logErro_('cadastrarOrientador_.mail', e); }
 
-  return jsonOk_({ mensagem: 'Orientador cadastrado com sucesso!' });
+  return jsonOk_({ mensagem: 'Cadastro recebido! Aguardando aprovação do setor.', pendente: true });
 }
 
 // ---------------------------------------------------------------------------
@@ -267,6 +269,184 @@ function atualizarMeuCadastroOrientador_(dados) {
   sheet.getRange(rowIdx, COL_ORI.TITULACAO + 1).setValue(titulac);
   sheet.getRange(rowIdx, COL_ORI.AREA     + 1).setValue(area);
   sheet.getRange(rowIdx, COL_ORI.CURSOS   + 1).setValue(cursos);
+  sheet.getRange(rowIdx, COL_ORI.STATUS   + 1).setValue('Pendente');
 
-  return jsonOk_({ mensagem: 'Dados atualizados com sucesso!' });
+  var nomeSalvo = String(sheet.getDataRange().getValues()[idx][COL_ORI.NOME] || '');
+  try { enviarEmailAtualizacaoServidor_({ nome: nomeSalvo, email: email, tipo: 'orientador' }); } catch (e) { logErro_('atualizarMeuCadastroOrientador_.mail', e); }
+
+  return jsonOk_({ mensagem: 'Dados atualizados. Aguardando aprovação do setor.', pendente: true });
+}
+
+// ---------------------------------------------------------------------------
+// Coordenadores — mapa de colunas (aba Coordenadores, base 0)
+// Cabeçalho: CPF | Matrícula SIAPE | Nome | E-mail | Telefone | Titulação | Curso | Timestamp | Status
+// ---------------------------------------------------------------------------
+
+var COL_COORD = {
+  CPF:       0,
+  SIAPE:     1,
+  NOME:      2,
+  EMAIL:     3,
+  TEL:       4,
+  TITULACAO: 5,
+  CURSO:     6,
+  TIMESTAMP: 7,
+  STATUS:    8,
+};
+
+// ---------------------------------------------------------------------------
+// GET — Obter meu cadastro de coordenador (autenticado por Google)
+// ---------------------------------------------------------------------------
+
+function obterMeuCadastroCoordenador_(e) {
+  var authToken = e.parameter && e.parameter.authToken;
+  var tokenInfo = validarTokenServidor_(authToken);
+  var email = tokenInfo.email.toLowerCase();
+
+  var ss    = SpreadsheetApp.openById(CFG_SRV.SS_ID);
+  var sheet = ss.getSheetByName(CFG_SRV.ABA_COORD);
+  if (!sheet) return jsonError_('Coordenador não encontrado para este e-mail.', 'NOT_FOUND');
+
+  var dados = sheet.getDataRange().getValues();
+  // Retorna o registro mais recente (ou o Ativo) para este e-mail
+  var encontrado = null;
+  for (var i = 1; i < dados.length; i++) {
+    if (String(dados[i][COL_COORD.EMAIL] || '').toLowerCase() === email) {
+      if (!encontrado || String(dados[i][COL_COORD.STATUS] || '') === 'Ativo') {
+        encontrado = dados[i];
+      }
+    }
+  }
+  if (!encontrado) return jsonError_('Coordenador não encontrado para este e-mail.', 'NOT_FOUND');
+
+  return jsonOk_({
+    nome:      String(encontrado[COL_COORD.NOME]      || ''),
+    cpf:       String(encontrado[COL_COORD.CPF]       || ''),
+    siape:     String(encontrado[COL_COORD.SIAPE]     || ''),
+    email:     String(encontrado[COL_COORD.EMAIL]     || ''),
+    tel:       String(encontrado[COL_COORD.TEL]       || ''),
+    titulacao: String(encontrado[COL_COORD.TITULACAO] || ''),
+    curso:     String(encontrado[COL_COORD.CURSO]     || ''),
+    status:    String(encontrado[COL_COORD.STATUS]    || ''),
+  });
+}
+
+// ---------------------------------------------------------------------------
+// POST — Cadastrar coordenador (auto-cadastro do servidor — status Pendente)
+// ---------------------------------------------------------------------------
+
+function cadastrarCoordenador_(dados) {
+  var tokenInfo = validarTokenServidor_(dados.authToken);
+  var email = tokenInfo.email.toLowerCase();
+
+  if (!checkRateLimit_('cadastrarCoordenador')) {
+    return jsonError_('Muitas requisições. Aguarde um momento.', 'RATE_LIMIT');
+  }
+
+  var nome      = sanitizar_(dados.nome,      200);
+  var cpf       = sanitizar_(dados.cpf,        14).replace(/\D/g, '');
+  var siape     = sanitizar_(dados.siape,      10).replace(/\D/g, '');
+  var tel       = sanitizar_(dados.telefone,   30);
+  var titulacao = sanitizar_(dados.titulacao,  50);
+  var curso     = sanitizar_(dados.curso,     200);
+
+  if (!nome)                      return jsonError_('Nome é obrigatório.', 'VALIDATION');
+  if (!validarCPF_(cpf))          return jsonError_('CPF inválido.', 'VALIDATION');
+  if (!siape || siape.length < 6) return jsonError_('SIAPE inválido.', 'VALIDATION');
+  if (!titulacao)                 return jsonError_('Titulação é obrigatória.', 'VALIDATION');
+  if (!curso)                     return jsonError_('Curso é obrigatório.', 'VALIDATION');
+
+  var ss    = SpreadsheetApp.openById(CFG_SRV.SS_ID);
+  var sheet = obterOuCriarAbaCoord_(ss);
+  var dadosPlanilha = sheet.getDataRange().getValues();
+
+  // Verifica se já existe registro para este email+curso → atualiza
+  for (var i = 1; i < dadosPlanilha.length; i++) {
+    if (String(dadosPlanilha[i][COL_COORD.EMAIL] || '').toLowerCase() === email &&
+        String(dadosPlanilha[i][COL_COORD.CURSO] || '') === curso) {
+      var rowIdx = i + 1;
+      sheet.getRange(rowIdx, COL_COORD.CPF       + 1).setValue(cpf);
+      sheet.getRange(rowIdx, COL_COORD.SIAPE     + 1).setValue(siape);
+      sheet.getRange(rowIdx, COL_COORD.NOME      + 1).setValue(nome);
+      sheet.getRange(rowIdx, COL_COORD.TEL       + 1).setValue(tel);
+      sheet.getRange(rowIdx, COL_COORD.TITULACAO + 1).setValue(titulacao);
+      sheet.getRange(rowIdx, COL_COORD.TIMESTAMP + 1).setValue(new Date());
+      sheet.getRange(rowIdx, COL_COORD.STATUS    + 1).setValue('Pendente');
+      try { enviarEmailAtualizacaoServidor_({ nome: nome, email: email, tipo: 'coordenador', curso: curso }); } catch (e) { logErro_('cadastrarCoordenador_.mailAtualiza', e); }
+      return jsonOk_({ mensagem: 'Cadastro atualizado. Aguardando aprovação do setor.', pendente: true });
+    }
+  }
+
+  // Nova linha — status Pendente
+  var novaLinha = new Array(9);
+  novaLinha[COL_COORD.CPF]       = cpf;
+  novaLinha[COL_COORD.SIAPE]     = siape;
+  novaLinha[COL_COORD.NOME]      = nome;
+  novaLinha[COL_COORD.EMAIL]     = email;
+  novaLinha[COL_COORD.TEL]       = tel;
+  novaLinha[COL_COORD.TITULACAO] = titulacao;
+  novaLinha[COL_COORD.CURSO]     = curso;
+  novaLinha[COL_COORD.TIMESTAMP] = new Date();
+  novaLinha[COL_COORD.STATUS]    = 'Pendente';
+  sheet.appendRow(novaLinha);
+
+  try { enviarEmailNovoCoordenador_({ nome: nome, email: email, curso: curso, siape: siape }); } catch (e) { logErro_('cadastrarCoordenador_.mail', e); }
+  return jsonOk_({ mensagem: 'Cadastro recebido! Aguardando aprovação do setor.', pendente: true });
+}
+
+// ---------------------------------------------------------------------------
+// POST — Atualizar meu cadastro de coordenador (autenticado por Google)
+// ---------------------------------------------------------------------------
+
+function atualizarMeuCadastroCoordenador_(dados) {
+  var tokenInfo = validarTokenServidor_(dados.authToken);
+  var email = tokenInfo.email.toLowerCase();
+
+  if (!checkRateLimit_('atualizarMeuCadastroCoordenador')) {
+    return jsonError_('Muitas requisições. Aguarde um momento.', 'RATE_LIMIT');
+  }
+
+  var tel       = sanitizar_(dados.tel,       30);
+  var titulacao = sanitizar_(dados.titulacao,  50);
+
+  if (!tel)       return jsonError_('Telefone é obrigatório.', 'VALIDATION');
+  if (!titulacao) return jsonError_('Titulação é obrigatória.', 'VALIDATION');
+
+  var ss    = SpreadsheetApp.openById(CFG_SRV.SS_ID);
+  var sheet = ss.getSheetByName(CFG_SRV.ABA_COORD);
+  if (!sheet) return jsonError_('Coordenador não encontrado.', 'NOT_FOUND');
+  var dadosPlanilha = sheet.getDataRange().getValues();
+
+  // Atualiza o registro mais recente (ou Ativo) deste e-mail
+  var rowIdx = -1, nomeSalvo = '', cursoSalvo = '';
+  for (var i = 1; i < dadosPlanilha.length; i++) {
+    if (String(dadosPlanilha[i][COL_COORD.EMAIL] || '').toLowerCase() === email) {
+      rowIdx    = i + 1;
+      nomeSalvo = String(dadosPlanilha[i][COL_COORD.NOME]  || '');
+      cursoSalvo = String(dadosPlanilha[i][COL_COORD.CURSO] || '');
+    }
+  }
+  if (rowIdx === -1) return jsonError_('Coordenador não encontrado.', 'NOT_FOUND');
+
+  sheet.getRange(rowIdx, COL_COORD.TEL       + 1).setValue(tel);
+  sheet.getRange(rowIdx, COL_COORD.TITULACAO + 1).setValue(titulacao);
+  sheet.getRange(rowIdx, COL_COORD.STATUS    + 1).setValue('Pendente');
+
+  try { enviarEmailAtualizacaoServidor_({ nome: nomeSalvo, email: email, tipo: 'coordenador', curso: cursoSalvo }); } catch (e) { logErro_('atualizarMeuCadastroCoordenador_.mail', e); }
+  return jsonOk_({ mensagem: 'Dados atualizados. Aguardando aprovação do setor.', pendente: true });
+}
+
+// ---------------------------------------------------------------------------
+// Helper — obtém ou cria aba Coordenadores com cabeçalho padrão
+// ---------------------------------------------------------------------------
+
+function obterOuCriarAbaCoord_(ss) {
+  var sheet = ss.getSheetByName(CFG_SRV.ABA_COORD);
+  if (!sheet) {
+    sheet = ss.insertSheet(CFG_SRV.ABA_COORD);
+    var cab = ['CPF','Matrícula SIAPE','Nome','E-mail','Telefone','Titulação','Curso','Timestamp','Status'];
+    sheet.getRange(1, 1, 1, cab.length).setValues([cab]);
+    sheet.getRange(1, 1, 1, cab.length).setFontWeight('bold');
+  }
+  return sheet;
 }
