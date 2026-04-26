@@ -178,7 +178,7 @@ function solicitarEstagio_(dados) {
   var dataInicio     = sanitizar_(dados.dataInicio, 10);
   var dataTermino    = sanitizar_(dados.dataTermino, 10);
   var cargaHor       = sanitizar_(dados.cargaHoraria, 20);
-  var horario        = sanitizar_(dados.horario, 100);
+  var horario        = sanitizar_(dados.diasHorarios, 500);
   var remuneracao    = sanitizar_(dados.remunerado, 5);
   var valorBolsa     = sanitizar_(dados.valorBolsa, 20);
   var valorTransp    = sanitizar_(dados.valorTransporte, 20);

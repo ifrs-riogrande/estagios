@@ -10,6 +10,81 @@
   <link rel="stylesheet" href="../assets/css/base.css">
   <link rel="stylesheet" href="../assets/css/components.css">
   <link rel="stylesheet" href="../assets/css/layout.css">
+  <style>
+    /* ── Widget Dias e Horários ──────────────────────────────────── */
+    .dias-widget {
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      background: var(--color-surface, #fff);
+      outline: none;
+    }
+    .dias-widget.is-invalid { border-color: var(--color-danger, #dc2626); }
+    .dias-widget-head {
+      display: grid;
+      grid-template-columns: 1fr 110px 110px 68px 36px;
+      gap: var(--space-2);
+      padding: var(--space-2) var(--space-3);
+      background: var(--color-surface-secondary, #f8f9fa);
+      border-bottom: 1px solid var(--color-border);
+      font-size: var(--font-size-xs);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      color: var(--color-text-muted);
+    }
+    .dias-row {
+      display: grid;
+      grid-template-columns: 1fr 110px 110px 68px 36px;
+      gap: var(--space-2);
+      padding: var(--space-2) var(--space-3);
+      align-items: center;
+      border-bottom: 1px solid var(--color-border);
+    }
+    .dias-row:last-child { border-bottom: none; }
+    .dias-row .form-control { margin-bottom: 0; }
+    .dias-diaria {
+      font-size: var(--font-size-sm);
+      font-weight: 600;
+      color: var(--color-text);
+      text-align: center;
+      white-space: nowrap;
+    }
+    .dias-diaria.invalido { color: var(--color-danger, #dc2626); font-weight: 400; }
+    .dias-remove-btn {
+      display: flex; align-items: center; justify-content: center;
+      width: 30px; height: 30px; border: none; background: transparent;
+      color: var(--color-text-muted); cursor: pointer;
+      border-radius: var(--radius-sm); transition: background .15s, color .15s;
+      flex-shrink: 0;
+    }
+    .dias-remove-btn:hover { background: #fef2f2; color: var(--color-danger, #dc2626); }
+    .dias-empty {
+      padding: var(--space-5) var(--space-4);
+      text-align: center;
+      color: var(--color-text-muted);
+      font-size: var(--font-size-sm);
+    }
+    .dias-widget-footer {
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: var(--space-3);
+      padding: var(--space-2) var(--space-3);
+      background: var(--color-surface-secondary, #f8f9fa);
+      border-top: 1px solid var(--color-border);
+    }
+    .dias-total {
+      font-size: var(--font-size-sm);
+      font-weight: 600;
+      color: var(--color-text);
+    }
+    @media (max-width: 540px) {
+      .dias-widget-head { display: none; }
+      .dias-row { grid-template-columns: 1fr 1fr; grid-template-rows: auto auto; row-gap: var(--space-1); }
+      .dias-row .dias-sel-dia  { grid-column: 1 / 3; }
+      .dias-row .dias-diaria   { grid-column: 1; text-align: left; }
+      .dias-row .dias-remove-btn { grid-column: 2; justify-self: end; }
+    }
+  </style>
 </head>
 <body>
 
@@ -317,15 +392,11 @@
             </div>
             <div class="form-row">
               <div class="form-group">
-                <label class="form-label required" for="carga-horaria">Carga horária semanal (horas)</label>
-                <select id="carga-horaria" name="cargaHoraria" class="form-control" required aria-required="true" aria-describedby="carga-horaria-hint carga-horaria-error">
-                  <option value="">Selecione...</option>
-                  <option value="20h">20h semanais (máx. NEE)</option>
-                  <option value="25h">25h semanais</option>
-                  <option value="30h">30h semanais (máx. regular)</option>
-                  <option value="40h">40h semanais (alternância, se previsto no PPC)</option>
-                </select>
-                <span id="carga-horaria-hint" class="form-hint">Máx.: 20h (NEE) · 30h (regular) · 40h (alternância, se previsto no PPC). Vedado período noturno (22h–6h).</span>
+                <label class="form-label required" for="carga-horaria">Carga horária semanal</label>
+                <input type="text" id="carga-horaria" name="cargaHoraria" class="form-control" readonly
+                  placeholder="Calculada automaticamente" aria-describedby="carga-horaria-hint carga-horaria-error"
+                  style="background:var(--color-surface-secondary,#f8f9fa);cursor:default;">
+                <span id="carga-horaria-hint" class="form-hint">Calculada automaticamente a partir dos dias e horários. Máx.: 20h (NEE) · 30h (regular) · 40h (alternância, se previsto no PPC). Vedado período noturno (22h–6h).</span>
                 <span id="carga-horaria-error" class="form-error hidden" role="alert"></span>
               </div>
               <div class="form-group">
@@ -335,8 +406,28 @@
               </div>
             </div>
             <div class="form-group">
-              <label class="form-label required" for="dias-horarios">Dias e horários de estágio</label>
-              <input type="text" id="dias-horarios" name="diasHorarios" class="form-control" placeholder="Ex.: Segunda a Sexta, das 08h às 12h" required aria-required="true" aria-describedby="dias-horarios-error">
+              <label class="form-label required">Dias e horários de estágio</label>
+              <!-- Widget dinâmico -->
+              <div id="dias-horarios" class="dias-widget" tabindex="-1" role="group" aria-describedby="dias-horarios-error">
+                <div class="dias-widget-head" aria-hidden="true">
+                  <span>Dia da semana</span>
+                  <span>Entrada</span>
+                  <span>Saída</span>
+                  <span style="text-align:center;">Diária</span>
+                  <span></span>
+                </div>
+                <div id="dias-rows"></div>
+                <div id="dias-vazio" class="dias-empty">Nenhum dia adicionado ainda. Clique em <strong>+ Adicionar dia</strong> para começar.</div>
+                <div class="dias-widget-footer">
+                  <button type="button" id="dias-add-btn" class="btn btn-ghost btn-sm" onclick="adicionarDia()">
+                    <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" style="margin-right:4px"><path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd"/></svg>
+                    Adicionar dia
+                  </button>
+                  <span id="dias-total" class="dias-total">Total semanal: —</span>
+                </div>
+              </div>
+              <!-- Valor serializado enviado ao backend -->
+              <input type="hidden" id="dias-horarios-value" name="diasHorarios">
               <span id="dias-horarios-error" class="form-error hidden" role="alert"></span>
             </div>
             <div class="form-group">
@@ -932,9 +1023,8 @@
           fail('data-termino', 'A duração máxima do estágio é de 2 anos na mesma concedente.');
         }
       }
-      if (!document.getElementById('carga-horaria').value)     fail('carga-horaria', 'Selecione a carga horária.');
       if (!document.getElementById('area-setor').value.trim()) fail('area-setor', 'Informe a área/setor do estágio.');
-      if (!document.getElementById('dias-horarios').value.trim()) fail('dias-horarios', 'Informe os dias e horários.');
+      if (!document.getElementById('dias-horarios-value').value.trim()) fail('dias-horarios', 'Adicione ao menos um dia de estágio com horários válidos.');
       if (!document.getElementById('objetivos').value.trim())  fail('objetivos', 'Descreva os objetivos do estágio.');
       if (!document.getElementById('atividades-prev').value.trim()) fail('atividades-prev', 'Descreva as atividades previstas.');
       if (!document.getElementById('agente').value)            fail('agente', 'Informe se há agente de integração.');
@@ -986,7 +1076,7 @@
         dataInicio:         document.getElementById('data-inicio').value,
         dataTermino:        document.getElementById('data-termino').value,
         cargaHoraria:       document.getElementById('carga-horaria').value,
-        diasHorarios:       document.getElementById('dias-horarios').value.trim(),
+        diasHorarios:       document.getElementById('dias-horarios-value').value.trim(),
         areaSetor:          document.getElementById('area-setor').value.trim(),
         objetivos:          document.getElementById('objetivos').value.trim(),
         atividadesPrevistas:document.getElementById('atividades-prev').value.trim(),
@@ -1032,7 +1122,127 @@
       selTipoLimpar.querySelectorAll('option').forEach(o => { o.disabled = false; });
       const msgModalidade = document.getElementById('msg-modalidade-bloqueio');
       if (msgModalidade) msgModalidade.style.display = 'none';
+      _resetDiasWidget();
     });
+
+    // ── Widget: Dias e Horários de Estágio ─────────────────────────────────
+    var _diasLista = []; // [{ dia, entrada, saida }, ...]
+
+    var _DIAS_OPCOES = [
+      'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira',
+      'Sexta-feira', 'Sábado', 'Domingo'
+    ];
+
+    function adicionarDia() {
+      _diasLista.push({ dia: 'Segunda-feira', entrada: '08:00', saida: '12:00' });
+      _renderDias();
+    }
+
+    function _removerDia(idx) {
+      _diasLista.splice(idx, 1);
+      _renderDias();
+    }
+
+    function _onDiaChange(sel) {
+      _diasLista[+sel.dataset.idx].dia = sel.value;
+      _renderDias();
+    }
+
+    function _onTimeChange(input, campo) {
+      _diasLista[+input.dataset.idx][campo] = input.value;
+      _renderDias();
+    }
+
+    function _calcMins(entrada, saida) {
+      if (!entrada || !saida) return 0;
+      var partsE = entrada.split(':').map(Number);
+      var partsS = saida.split(':').map(Number);
+      return (partsS[0] * 60 + partsS[1]) - (partsE[0] * 60 + partsE[1]);
+    }
+
+    function _formatHoras(mins) {
+      if (mins <= 0) return null;
+      var h = Math.floor(mins / 60);
+      var m = mins % 60;
+      if (m === 0) return h + 'h';
+      return (h > 0 ? h + 'h' : '') + m + 'min';
+    }
+
+    function _renderDias() {
+      var container = document.getElementById('dias-rows');
+      var vazio     = document.getElementById('dias-vazio');
+      var totalEl   = document.getElementById('dias-total');
+      var cargaEl   = document.getElementById('carga-horaria');
+      var hiddenEl  = document.getElementById('dias-horarios-value');
+
+      if (_diasLista.length === 0) {
+        container.innerHTML = '';
+        vazio.style.display = 'block';
+        totalEl.textContent = 'Total semanal: —';
+        if (cargaEl)  cargaEl.value  = '';
+        if (hiddenEl) hiddenEl.value = '';
+        return;
+      }
+
+      vazio.style.display = 'none';
+
+      var totalMins = 0;
+      var linhas    = [];
+      var html      = '';
+
+      _diasLista.forEach(function (d, i) {
+        var mins   = _calcMins(d.entrada, d.saida);
+        var valido = mins > 0;
+        if (valido) totalMins += mins;
+
+        var diariaTxt  = valido ? escapeHtml(_formatHoras(mins)) : 'inválido';
+        var diariaHtml = valido
+          ? '<span class="dias-diaria">'   + diariaTxt + '</span>'
+          : '<span class="dias-diaria invalido">' + diariaTxt + '</span>';
+
+        var opcoesHtml = _DIAS_OPCOES.map(function (op) {
+          return '<option value="' + op + '"' + (op === d.dia ? ' selected' : '') + '>' + op + '</option>';
+        }).join('');
+
+        html += '<div class="dias-row">' +
+          '<select class="form-control form-control-sm dias-sel-dia" data-idx="' + i + '" aria-label="Dia da semana" onchange="_onDiaChange(this)">' + opcoesHtml + '</select>' +
+          '<input type="time" class="form-control form-control-sm dias-entrada" data-idx="' + i + '" value="' + d.entrada + '" aria-label="Horário de entrada" onchange="_onTimeChange(this,\'entrada\')">' +
+          '<input type="time" class="form-control form-control-sm dias-saida"   data-idx="' + i + '" value="' + d.saida   + '" aria-label="Horário de saída"   onchange="_onTimeChange(this,\'saida\')">' +
+          diariaHtml +
+          '<button type="button" class="dias-remove-btn" aria-label="Remover ' + d.dia + '" onclick="_removerDia(' + i + ')">' +
+            '<svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>' +
+          '</button>' +
+        '</div>';
+
+        if (valido) {
+          linhas.push(d.dia + ': ' + d.entrada + '–' + d.saida + ' (' + _formatHoras(mins) + ')');
+        } else {
+          linhas.push(d.dia + ': ' + d.entrada + '–' + d.saida + ' (horário inválido)');
+        }
+      });
+
+      container.innerHTML = html;
+
+      var totalStr = _formatHoras(totalMins);
+      totalEl.textContent = 'Total semanal: ' + (totalStr || '—');
+
+      if (totalStr) linhas.push('Total semanal: ' + totalStr);
+
+      if (cargaEl)  cargaEl.value  = totalStr ? totalStr + ' semanais' : '';
+      if (hiddenEl) hiddenEl.value = linhas.join('\n');
+    }
+
+    function _resetDiasWidget() {
+      _diasLista = [];
+      _renderDias();
+    }
+
+    // Inicializa o widget vazio
+    document.addEventListener('DOMContentLoaded', function () {
+      _renderDias();
+    });
+    // ── fim Widget Dias e Horários ─────────────────────────────────────────
+
   </script>
 </body>
 </html>
