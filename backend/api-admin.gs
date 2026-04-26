@@ -113,6 +113,10 @@ var COL = {
   TURNO:             37,   // turno do estudante no curso (salvo na solicitação)
   SEMESTRE_SOL:      38,   // período/semestre atual (salvo na solicitação)
   EMAIL_INST_ESTAGIO:39,   // e-mail institucional do vínculo usado neste estágio
+  NOME_RESP:         40,   // Nome do responsável legal (menores de 18 anos)
+  CPF_RESP:          41,   // CPF do responsável legal
+  TEL_RESP:          42,   // Telefone do responsável legal
+  NEE:               43,   // Portador de Necessidades Específicas — copiado do cadastro
 };
 
 // ─────────────────────────────────────────────────────────────────
@@ -866,6 +870,7 @@ function montarVariaveis_(r) {
   vars['{{PLANO_ATIVIDADES}}']      = String(r[COL.PLANO_ATIVIDADES]  || '');
   vars['{{OBJETIVOS}}']             = String(r[COL.OBJETIVOS]          || '');
   vars['{{FORMANDO}}']              = String(r[COL.FORMANDO]           || '');
+  vars['{{NEE}}']                   = String(r[COL.NEE]                || 'Não');
   vars['{{TURNO}}']                 = String(r[COL.TURNO]              || '');  // da solicitação
   vars['{{SEMESTRE}}']              = String(r[COL.SEMESTRE_SOL]       || '');  // da solicitação
   vars['{{DATA_GERACAO}}']          = Utilities.formatDate(hoje, 'America/Sao_Paulo', 'dd/MM/yyyy');

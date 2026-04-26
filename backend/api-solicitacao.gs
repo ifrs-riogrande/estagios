@@ -69,6 +69,7 @@ var COL_SOL = {
   NOME_RESP:         40,   // Nome do responsável legal (menores de 18 anos)
   CPF_RESP:          41,   // CPF do responsável legal
   TEL_RESP:          42,   // Telefone do responsável legal
+  NEE:               43,   // Portador de Necessidades Específicas — copiado do cadastro do estudante
 };
 
 /** Colunas da aba Relatórios Parciais (base 0). */
@@ -299,6 +300,7 @@ function solicitarEstagio_(dados) {
   linha[COL_SOL.NOME_RESP]          = nomeResp;
   linha[COL_SOL.CPF_RESP]           = cpfResp;
   linha[COL_SOL.TEL_RESP]           = telResp;
+  linha[COL_SOL.NEE]                = estudante.nee || 'Não';
   linha[COL_SOL.LINK_DOC_MAT]       = docMat;
   linha[COL_SOL.LINK_DOC_ID]      = docId;
   linha[COL_SOL.LINK_DOC_BOL]     = docBol;

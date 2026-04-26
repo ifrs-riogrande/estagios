@@ -53,6 +53,7 @@ var COL_EST = {
   CIDADE:          24,
   UF:              25,
   CURSOS_JSON:     26,   // JSON array [{emailInst, curso, matricula}] — todos os cursos do aluno
+  NEE:             27,   // Portador de Necessidades Específicas: "Sim" ou "Não"
 };
 
 // ---------------------------------------------------------------------------
@@ -91,6 +92,7 @@ function cadastrarEstudante_(dados) {
   var cidade     = sanitizar_(dados.cidade, 100);
   var uf         = sanitizar_(dados.uf, 2);
   var dnStr = sanitizar_(dados.dataNascimento, 10);
+  var nee        = sanitizar_(dados.nee, 5).indexOf('Sim') === 0 ? 'Sim' : 'Não';
   var maiorIdade = 'Sim';
   if (dnStr) {
     var dn = new Date(dnStr + 'T00:00:00');
@@ -169,6 +171,7 @@ function cadastrarEstudante_(dados) {
   linha[COL_EST.CIDADE]        = cidade;
   linha[COL_EST.UF]            = uf;
   linha[COL_EST.MAIOR_IDADE]   = maiorIdade;
+  linha[COL_EST.NEE]           = nee;
   linha[COL_EST.MODALIDADE]    = modalidade;
   linha[COL_EST.STATUS]        = 'Aguardando Validação';
   linha[COL_EST.COD_ACESSO]    = '';
@@ -489,6 +492,7 @@ function buscarEstudantePorEmailECodigo_(emailEstudante, codigo) {
     cidade:       String(linha[COL_EST.CIDADE]        || ''),
     uf:           String(linha[COL_EST.UF]            || ''),
     maiorIdade:   String(linha[COL_EST.MAIOR_IDADE]   || ''),
+    nee:          String(linha[COL_EST.NEE]           || 'Não'),
     cursos:       cursosArrFinal,   // array [{emailInst, curso, matricula}]
     status:       statusEst,
   };
@@ -543,6 +547,7 @@ function atualizarMeuCadastro_(dados) {
   // Campos atualizáveis
   var emailPes = sanitizar_(dados.emailPessoal || '', 100).toLowerCase();
   var telefone = sanitizar_(dados.telefone     || '', 30);
+  var neeUpd   = dados.nee !== undefined ? (sanitizar_(dados.nee, 5).indexOf('Sim') === 0 ? 'Sim' : 'Não') : null;
   var endereco = sanitizar_(dados.endereco     || '', 300);
   var bairro   = sanitizar_(dados.bairro       || '', 100);
   var cep      = sanitizar_(dados.cep          || '', 9);
@@ -626,6 +631,7 @@ function atualizarMeuCadastro_(dados) {
   sheet.getRange(rowNum, COL_EST.CIDADE        + 1).setValue(cidade);
   sheet.getRange(rowNum, COL_EST.UF            + 1).setValue(uf);
   sheet.getRange(rowNum, COL_EST.CURSOS_JSON   + 1).setValue(JSON.stringify(cursos));
+  if (neeUpd !== null) sheet.getRange(rowNum, COL_EST.NEE + 1).setValue(neeUpd);
   // Mantém colunas legadas sincronizadas com o primeiro vínculo
   sheet.getRange(rowNum, COL_EST.CURSO         + 1).setValue(cursos[0].curso);
   sheet.getRange(rowNum, COL_EST.MATRICULA     + 1).setValue(cursos[0].matricula);

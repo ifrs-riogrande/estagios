@@ -138,6 +138,15 @@
                 <input type="tel" id="edit-telefone" class="form-control" placeholder="(53) 99999-9999">
               </div>
             </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="edit-nee">Portador de Necessidades Específicas (NEE)?</label>
+                <select id="edit-nee" class="form-control">
+                  <option value="Não">Não</option>
+                  <option value="Sim">Sim</option>
+                </select>
+              </div>
+            </div>
           </div>
 
           <!-- Endereço -->
@@ -320,6 +329,7 @@
         <div class="dado-item"><label>CPF</label>${val(d.cpf)}</div>
         <div class="dado-item"><label>Data de Nascimento</label>${val(d.dataNasc)}</div>
         <div class="dado-item"><label>Maior de idade?</label>${val(d.maiorIdade)}</div>
+        <div class="dado-item"><label>NEE</label>${val(d.nee || 'Não')}</div>
 
         <div class="section-title">Dados Acadêmicos</div>
         ${cursosHtml}
@@ -339,6 +349,7 @@
       // Preenche campos de contato
       document.getElementById('edit-emailPessoal').value = d.emailPessoal || '';
       document.getElementById('edit-telefone').value = d.telefone || '';
+      document.getElementById('edit-nee').value = d.nee || 'Não';
 
       // Preenche endereço
       document.getElementById('edit-endereco').value = d.endereco || '';
@@ -475,6 +486,7 @@
           codigoAcesso: codigoAtivo,
           emailPessoal: document.getElementById('edit-emailPessoal').value.trim(),
           telefone:     document.getElementById('edit-telefone').value.trim(),
+          nee:          document.getElementById('edit-nee').value,
           endereco:     document.getElementById('edit-endereco').value.trim(),
           bairro:       document.getElementById('edit-bairro').value.trim(),
           cidade:       document.getElementById('edit-cidade').value.trim(),
