@@ -32,6 +32,7 @@ function configurarPlanilha() {
         'Objetivos', 'Formando',
         'Turno', 'Semestre', 'E-mail Inst. Estágio',
         'Nome Responsável', 'CPF Responsável', 'Tel. Responsável',
+        'NEE',
       ],
     },
 
@@ -45,6 +46,7 @@ function configurarPlanilha() {
         'E-mail Responsável', 'Doc. Responsável',
         'Status', 'Código Acesso', 'Expira Código',
         'Modalidade', 'Bairro', 'CEP', 'Cidade', 'UF',
+        'Cursos JSON', 'NEE',
       ],
     },
 
@@ -245,6 +247,7 @@ function corrigirCabecalhoSolicitacoes_() {
     'Objetivos', 'Formando',
     'Turno', 'Semestre', 'E-mail Inst. Estágio',
     'Nome Responsável', 'CPF Responsável', 'Tel. Responsável',
+    'NEE',
   ];
 
   var range = sheet.getRange(1, 1, 1, cabecalho.length);
@@ -255,4 +258,53 @@ function corrigirCabecalhoSolicitacoes_() {
   sheet.setFrozenRows(1);
 
   return jsonOk_({ mensagem: 'Cabeçalho de Solicitações corrigido com sucesso.' });
+}
+
+/**
+ * Adiciona as colunas novas à planilha existente SEM apagar dados.
+ * - Estudantes: col 27 = Cursos JSON (se ausente), col 28 = NEE (se ausente)
+ * - Solicitações: col 44 = NEE (se ausente)
+ *
+ * Execute manualmente no editor GAS: Executar → adicionarColunasNEE
+ */
+function adicionarColunasNEE() {
+  var ss = SpreadsheetApp.openById('1zVyseifVC6xeMpNjqwYd6jCq9HTJ2NS8BlN1dtM4s7Y');
+
+  // ── Estudantes ──────────────────────────────────────────────────────
+  var shEst = ss.getSheetByName('Estudantes');
+  if (shEst) {
+    var cabEst = shEst.getRange(1, 1, 1, shEst.getLastColumn()).getValues()[0];
+
+    // col 27 = índice 26 = Cursos JSON
+    if (cabEst[26] !== 'Cursos JSON') {
+      shEst.getRange(1, 27).setValue('Cursos JSON');
+      _formatarCelulaCabecalho_(shEst, 27);
+    }
+    // col 28 = índice 27 = NEE
+    if (cabEst[27] !== 'NEE') {
+      shEst.getRange(1, 28).setValue('NEE');
+      _formatarCelulaCabecalho_(shEst, 28);
+    }
+  }
+
+  // ── Solicitações ────────────────────────────────────────────────────
+  var shSol = ss.getSheetByName('Solicitações');
+  if (shSol) {
+    var cabSol = shSol.getRange(1, 1, 1, shSol.getLastColumn()).getValues()[0];
+
+    // col 44 = índice 43 = NEE
+    if (cabSol[43] !== 'NEE') {
+      shSol.getRange(1, 44).setValue('NEE');
+      _formatarCelulaCabecalho_(shSol, 44);
+    }
+  }
+
+  SpreadsheetApp.getUi().alert('✅ Colunas adicionadas!\n\n• Estudantes: Cursos JSON (col 27) e NEE (col 28)\n• Solicitações: NEE (col 44)');
+}
+
+function _formatarCelulaCabecalho_(sheet, col) {
+  var cell = sheet.getRange(1, col);
+  cell.setFontWeight('bold');
+  cell.setBackground('#1a73e8');
+  cell.setFontColor('#ffffff');
 }
