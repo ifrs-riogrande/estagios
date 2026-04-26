@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cursos Habilitados — Configurações · Admin · Central de Estágios IFRS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../assets/css/base.css">
+  <link rel="stylesheet" href="../../assets/css/components.css">
+  <link rel="stylesheet" href="../../assets/css/layout.css">
+  <style>
+    .config-table { width: 100%; border-collapse: collapse; font-size: var(--font-size-sm); }
+    .config-table th,
+    .config-table td { padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--color-border); vertical-align: middle; }
+    .config-table thead th { background: var(--color-surface-secondary, #f8f9fa); font-weight: 600;
+      font-size: var(--font-size-xs); text-transform: uppercase; letter-spacing: .05em; color: var(--color-text-muted); }
+    .config-table tbody tr:last-child td { border-bottom: none; }
+    .config-table tbody tr:hover td { background: var(--color-surface-secondary, #f8f9fa); }
+    .config-table td:first-child { color: var(--color-text); }
+    .config-table td.check-col { text-align: center; width: 140px; }
+    .config-table thead th.check-col { text-align: center; }
+    .group-label { font-size: var(--font-size-xs); font-weight: 600; color: var(--color-text-muted);
+      text-transform: uppercase; letter-spacing: .06em; padding: var(--space-4) var(--space-4) var(--space-2);
+      background: transparent; border-bottom: 1px solid var(--color-border); }
+    .check-all-row { display: flex; gap: var(--space-4); align-items: center; flex-wrap: wrap; }
+    #loading-overlay { text-align: center; padding: var(--space-12); color: var(--color-text-muted); }
+  </style>
+</head>
+<body>
+  <header id="app-header">
+    <div class="container">
+      <div class="header-inner">
+        <a href="../../index.html" class="header-brand">
+          <div class="header-logo-fallback" aria-hidden="true">IFRS</div>
+          <div class="header-brand-text">
+            <span class="header-brand-name">Central de Estágios</span>
+            <span class="header-brand-sub">IFRS Campus Rio Grande</span>
+          </div>
+        </a>
+        <div style="display:flex;align-items:center;gap:var(--space-3);">
+          <div id="header-user-area"></div>
+          <a href="../configuracoes.html" class="back-link">
+            <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd"/></svg>
+            Configurações
+          </a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="form-page" id="main-content">
+    <div class="container">
+      <div class="form-wrapper" style="max-width:800px;">
+
+        <div class="form-page-header">
+          <h1>Cursos Habilitados</h1>
+          <p>Defina quais cursos estão habilitados para Estágio Obrigatório e/ou Não Obrigatório. Cursos desmarcados não poderão selecionar a respectiva modalidade na solicitação de estágio.</p>
+        </div>
+
+        <div class="info-banner" role="note">
+          <strong>Padrão:</strong> enquanto nenhuma configuração for salva, todos os cursos são considerados habilitados para ambas as modalidades. Ao salvar pela primeira vez, somente os cursos marcados estarão habilitados.
+        </div>
+
+        <div id="loading-overlay">
+          <div class="spinner" style="margin:0 auto var(--space-4);"></div>
+          <p>Carregando configuração atual...</p>
+        </div>
+
+        <div id="config-content" style="display:none;">
+
+          <!-- Atalhos selecionar/limpar -->
+          <div style="display:flex;gap:var(--space-4);flex-wrap:wrap;margin-bottom:var(--space-5);padding:var(--space-4);background:var(--color-surface-secondary,#f8f9fa);border-radius:var(--radius-md);border:1px solid var(--color-border);">
+            <div style="flex:1;min-width:220px;">
+              <p style="font-size:var(--font-size-xs);font-weight:600;text-transform:uppercase;color:var(--color-text-muted);margin-bottom:var(--space-2);">Estágio Obrigatório</p>
+              <div class="check-all-row">
+                <button type="button" class="btn btn-ghost btn-sm" onclick="marcarTodos('obrig', true)">Marcar todos</button>
+                <button type="button" class="btn btn-ghost btn-sm" onclick="marcarTodos('obrig', false)">Desmarcar todos</button>
+              </div>
+            </div>
+            <div style="flex:1;min-width:220px;">
+              <p style="font-size:var(--font-size-xs);font-weight:600;text-transform:uppercase;color:var(--color-text-muted);margin-bottom:var(--space-2);">Estágio Não Obrigatório</p>
+              <div class="check-all-row">
+                <button type="button" class="btn btn-ghost btn-sm" onclick="marcarTodos('nao', true)">Marcar todos</button>
+                <button type="button" class="btn btn-ghost btn-sm" onclick="marcarTodos('nao', false)">Desmarcar todos</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tabela de cursos -->
+          <div style="overflow-x:auto;border:1px solid var(--color-border);border-radius:var(--radius-md);">
+            <table class="config-table">
+              <thead>
+                <tr>
+                  <th>Curso</th>
+                  <th class="check-col">Obrigatório</th>
+                  <th class="check-col">Não Obrigatório</th>
+                </tr>
+              </thead>
+              <tbody id="tabela-cursos"></tbody>
+            </table>
+          </div>
+
+          <div id="feedback" style="margin-top:var(--space-6);"></div>
+
+          <div style="margin-top:var(--space-4);display:flex;gap:var(--space-3);align-items:center;flex-wrap:wrap;">
+            <button id="btn-salvar" class="btn btn-primary" onclick="salvar()">
+              <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" style="margin-right:4px"><path d="M7.707 10.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V6h5a2 2 0 012 2v7a2 2 0 01-2 2H4a2 2 0 01-2-2V8a2 2 0 012-2h5v5.586l-1.293-1.293zM9 4a1 1 0 012 0v2H9V4z"/></svg>
+              Salvar configuração
+            </button>
+            <span id="ultima-atualizacao" style="font-size:var(--font-size-sm);color:var(--color-text-muted);"></span>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer id="app-footer">
+    <div class="container">
+      <div class="footer-inner">
+        <span class="footer-copy">&copy; <script>document.write(new Date().getFullYear())</script> Central de Estágios — IFRS Campus Rio Grande</span>
+        <nav class="footer-links"><a href="mailto:estagios@riogrande.ifrs.edu.br">estagios@riogrande.ifrs.edu.br</a></nav>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://accounts.google.com/gsi/client" async></script>
+  <script src="../../assets/js/utils.js"></script>
+  <script src="../../assets/js/auth.js"></script>
+  <script src="../../assets/js/api.js"></script>
+  <script>
+    'use strict';
+
+    const CURSOS = [
+      { grupo: 'Técnico Integrado', nome: 'Técnico Integrado em Automação Industrial' },
+      { grupo: 'Técnico Integrado', nome: 'Técnico Integrado em Eletrotécnica' },
+      { grupo: 'Técnico Integrado', nome: 'Técnico Integrado em Geoprocessamento' },
+      { grupo: 'Técnico Integrado', nome: 'Técnico Integrado em Informática para Internet' },
+      { grupo: 'Técnico Integrado', nome: 'Técnico Integrado em Mecânica' },
+      { grupo: 'Técnico Integrado', nome: 'Técnico Integrado em Refrigeração e Climatização' },
+      { grupo: 'Técnico Subsequente', nome: 'Técnico Subsequente em Automação Industrial' },
+      { grupo: 'Técnico Subsequente', nome: 'Técnico Subsequente em Eletrotécnica' },
+      { grupo: 'Técnico Subsequente', nome: 'Técnico Subsequente em Enfermagem' },
+      { grupo: 'Técnico Subsequente', nome: 'Técnico Subsequente em Fabricação Mecânica' },
+      { grupo: 'Técnico Subsequente', nome: 'Técnico Subsequente em Geoprocessamento' },
+      { grupo: 'Técnico Subsequente', nome: 'Técnico Subsequente em Refrigeração e Climatização' },
+      { grupo: 'Tecnologia', nome: 'Tecnologia em Análise e Desenvolvimento de Sistemas' },
+      { grupo: 'Tecnologia', nome: 'Tecnologia em Construção de Edifícios' },
+      { grupo: 'Bacharelado', nome: 'Bacharelado em Engenharia Mecânica' },
+      { grupo: 'Bacharelado', nome: 'Bacharelado em Arquitetura e Urbanismo' },
+    ];
+
+    document.addEventListener('DOMContentLoaded', async function () {
+      if (!requireAdminAuth()) return;
+      await carregarConfig();
+    });
+
+    async function carregarConfig() {
+      document.getElementById('loading-overlay').style.display = 'block';
+      document.getElementById('config-content').style.display  = 'none';
+
+      try {
+        const config = await API.get('obterConfigCursos');
+        renderTabela(config);
+        document.getElementById('loading-overlay').style.display = 'none';
+        document.getElementById('config-content').style.display  = 'block';
+      } catch (err) {
+        document.getElementById('loading-overlay').innerHTML =
+          `<div class="alert alert-danger"><div class="alert-content">Erro ao carregar configuração: ${escapeHtml(err.message || 'tente recarregar')}</div></div>`;
+      }
+    }
+
+    function renderTabela(config) {
+      const obrigSet    = config.obrigatorio    === null ? null : new Set(config.obrigatorio);
+      const naoObrigSet = config.naoObrigatorio === null ? null : new Set(config.naoObrigatorio);
+
+      const tbody = document.getElementById('tabela-cursos');
+      let html = '';
+      let grupoAtual = '';
+
+      CURSOS.forEach(c => {
+        if (c.grupo !== grupoAtual) {
+          grupoAtual = c.grupo;
+          html += `<tr><td colspan="3" class="group-label">${escapeHtml(c.grupo)}</td></tr>`;
+        }
+        const chkObrig    = (obrigSet    === null || obrigSet.has(c.nome))    ? 'checked' : '';
+        const chkNaoObrig = (naoObrigSet === null || naoObrigSet.has(c.nome)) ? 'checked' : '';
+        const idx = CURSOS.indexOf(c);
+        html += `
+          <tr>
+            <td>${escapeHtml(c.nome)}</td>
+            <td class="check-col">
+              <label class="form-check" style="justify-content:center;margin:0;">
+                <input type="checkbox" class="cb-obrig" data-idx="${idx}" ${chkObrig} aria-label="Obrigatório para ${escapeHtml(c.nome)}">
+              </label>
+            </td>
+            <td class="check-col">
+              <label class="form-check" style="justify-content:center;margin:0;">
+                <input type="checkbox" class="cb-nao" data-idx="${idx}" ${chkNaoObrig} aria-label="Não Obrigatório para ${escapeHtml(c.nome)}">
+              </label>
+            </td>
+          </tr>`;
+      });
+
+      tbody.innerHTML = html;
+
+      if (config.obrigatorio === null && config.naoObrigatorio === null) {
+        document.getElementById('ultima-atualizacao').textContent = 'Nenhuma configuração salva ainda — todos os cursos estão habilitados para ambas as modalidades.';
+      }
+    }
+
+    function marcarTodos(tipo, marcar) {
+      const cls = tipo === 'obrig' ? '.cb-obrig' : '.cb-nao';
+      document.querySelectorAll(cls).forEach(cb => { cb.checked = marcar; });
+    }
+
+    async function salvar() {
+      const btn = document.getElementById('btn-salvar');
+      const fb  = document.getElementById('feedback');
+
+      if (btn) { btn.disabled = true; btn.classList.add('is-loading'); }
+      if (fb)  { fb.style.display = 'none'; fb.innerHTML = ''; }
+
+      function mostrarErro(msg) {
+        if (fb) {
+          fb.style.display = 'block';
+          fb.innerHTML = '<div class="alert alert-danger"><div class="alert-content"><strong>Erro ao salvar:</strong> ' + msg + '</div></div>';
+        } else {
+          alert('Erro ao salvar: ' + msg);
+        }
+      }
+
+      try {
+        const obrigatorio    = Array.from(document.querySelectorAll('.cb-obrig:checked')).map(function(cb) { return CURSOS[+cb.dataset.idx].nome; });
+        const naoObrigatorio = Array.from(document.querySelectorAll('.cb-nao:checked')).map(function(cb) { return CURSOS[+cb.dataset.idx].nome; });
+
+        await API.post('salvarConfigCursos', { obrigatorio, naoObrigatorio, authToken: getAccessToken() });
+
+        if (fb) {
+          fb.style.display = 'block';
+          fb.innerHTML = '<div class="alert alert-success"><svg class="alert-icon" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg><div class="alert-content"><strong>Configuração salva com sucesso!</strong> ' + obrigatorio.length + ' cursos habilitados para Obrigatório · ' + naoObrigatorio.length + ' para Não Obrigatório.</div></div>';
+        }
+        const agora = new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+        const spanAtu = document.getElementById('ultima-atualizacao');
+        if (spanAtu) spanAtu.textContent = 'Última atualização: ' + agora;
+      } catch (err) {
+        console.error('[cursos-habilitados] salvar:', err);
+        mostrarErro((err && err.message) ? err.message : 'Tente novamente.');
+      } finally {
+        if (btn) { btn.disabled = false; btn.classList.remove('is-loading'); }
+      }
+    }
+  </script>
+</body>
+</html>
