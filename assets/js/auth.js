@@ -246,6 +246,25 @@ function requireStaffAuth(redirectAfter) {
 }
 
 /**
+ * Exige que o usuário esteja logado com qualquer conta Google (externos: empresas, supervisores).
+ * Não restringe por domínio — qualquer e-mail Google é aceito.
+ */
+function requireExternalAuth(redirectAfter) {
+  const session = getSession();
+  if (session && session.email) {
+    updateHeaderUser(session);
+    return true;
+  }
+  renderAuthGate(
+    'Acesso à área da Empresa',
+    'Entre com sua conta Google para acessar ou cadastrar os dados da sua empresa.',
+    redirectAfter || window.location.href,
+    'external'
+  );
+  return false;
+}
+
+/**
  * Verifica se o e-mail logado pertence ao Admin do setor de estágios.
  * @returns {boolean}
  */
@@ -333,7 +352,7 @@ function renderAuthGate(title, desc, redirectAfter, domain) {
         Entrar com Google
       </button>
       <p class="text-xs text-muted mt-4">
-        Use seu e-mail institucional IFRS para continuar.
+        ${domain === 'external' ? 'Use sua conta Google para continuar.' : 'Use seu e-mail institucional IFRS para continuar.'}
       </p>
     </div>
   `;
@@ -345,6 +364,10 @@ function renderAuthGate(title, desc, redirectAfter, domain) {
 
     requestLogin(
       (session) => {
+        if (domain === 'external') {
+          window.location.reload();
+          return;
+        }
         const requiredDomain = domain === 'student' ? AUTH_CONFIG.STUDENT_DOMAIN : AUTH_CONFIG.STAFF_DOMAIN;
         if (!session.email.endsWith(requiredDomain)) {
           clearSession();

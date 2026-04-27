@@ -81,6 +81,12 @@ function doGet(e) {
       case 'listarSupervisores':
         result = listarSupervisores_(e.parameter.empresa || '');
         break;
+      case 'obterMeuCadastroEmpresa':
+        result = obterMeuCadastroEmpresa_(e.parameter.authToken || '');
+        break;
+      case 'obterMeuCadastroSupervisor':
+        result = obterMeuCadastroSupervisor_(e.parameter.authToken || '');
+        break;
       default:
         return jsonError_('Ação GET não reconhecida: ' + action, 400);
     }
@@ -118,6 +124,12 @@ function doPost(e) {
         break;
       case 'cadastrarOportunidade':
         result = cadastrarOportunidade_(body);
+        break;
+      case 'salvarMeuCadastroEmpresa':
+        result = salvarMeuCadastroEmpresa_(body);
+        break;
+      case 'salvarMeuCadastroSupervisor':
+        result = salvarMeuCadastroSupervisor_(body);
         break;
       default:
         return jsonError_('Ação POST não reconhecida: ' + action, 400);
@@ -570,6 +582,321 @@ function cadastrarOportunidade_(dados) {
   );
 
   return { mensagem: 'Oportunidade enviada com sucesso! Será analisada antes da divulgação.' };
+}
+
+// ─────────────────────────────────────────
+//  GET: obterMeuCadastroEmpresa
+//  Busca empresa pelo e-mail do token Google
+// ─────────────────────────────────────────
+function obterMeuCadastroEmpresa_(token) {
+  var email = verificarTokenGoogle_(token);
+  var ss  = SpreadsheetApp.openById(CFG.ID_EMPRESAS);
+  var aba = ss.getSheetByName(CFG.ABA_EMPRESAS);
+  if (!aba) throw new Error('Planilha não configurada.');
+
+  var dados = aba.getDataRange().getValues();
+  for (var i = 1; i < dados.length; i++) {
+    var emailForm = String(dados[i][COL_EMP.EMAIL_FORM] || '').toLowerCase().trim();
+    var emailRep  = String(dados[i][COL_EMP.EMAIL_REP]  || '').toLowerCase().trim();
+    var status    = String(dados[i][COL_EMP.STATUS]     || '').trim();
+    if (status.indexOf('Processada') > -1) continue;
+    if (emailForm !== email && emailRep !== email) continue;
+
+    return {
+      razaoSocial:  String(dados[i][COL_EMP.RAZAO_SOCIAL]  || '').trim(),
+      nomeFantasia: String(dados[i][COL_EMP.NOME_FANTASIA]  || '').trim(),
+      cnpj:         String(dados[i][COL_EMP.CNPJ]           || '').trim(),
+      ramo:         String(dados[i][COL_EMP.RAMO]           || '').trim(),
+      endereco:     String(dados[i][COL_EMP.ENDERECO]       || '').trim(),
+      municipio:    String(dados[i][COL_EMP.MUNICIPIO]      || '').trim(),
+      uf:           String(dados[i][COL_EMP.UF]             || '').trim(),
+      cep:          String(dados[i][COL_EMP.CEP]            || '').trim(),
+      telEmpresa:   String(dados[i][COL_EMP.TEL_EMPRESA]    || '').trim(),
+      emailEmpresa: String(dados[i][COL_EMP.EMAIL_EMPRESA]  || '').trim(),
+      site:         String(dados[i][COL_EMP.SITE]           || '').trim(),
+      nomeRep:      String(dados[i][COL_EMP.NOME_REP]       || '').trim(),
+      cargoRep:     String(dados[i][COL_EMP.CARGO_REP]      || '').trim(),
+      emailRep:     String(dados[i][COL_EMP.EMAIL_REP]      || '').trim(),
+      cpfRep:       String(dados[i][COL_EMP.CPF_REP]        || '').trim(),
+      status:       status,
+    };
+  }
+  throw new Error('Empresa não encontrada para este e-mail.');
+}
+
+// ─────────────────────────────────────────
+//  POST: salvarMeuCadastroEmpresa
+//  Cria novo ou atualiza empresa existente (CNPJ como identificador)
+// ─────────────────────────────────────────
+function salvarMeuCadastroEmpresa_(body) {
+  var email = verificarTokenGoogle_(body.authToken || '');
+
+  var razaoSocial  = sanitizar_(body.razaoSocial);
+  var nomeFantasia = sanitizar_(body.nomeFantasia);
+  var cnpj         = sanitizar_(body.cnpj);
+  var ramo         = sanitizar_(body.ramo);
+  var endereco     = sanitizar_(body.endereco);
+  var municipio    = sanitizar_(body.municipio);
+  var uf           = sanitizar_(body.uf);
+  var cep          = sanitizar_(body.cep);
+  var telEmpresa   = sanitizar_(body.telEmpresa);
+  var emailEmp     = sanitizar_(body.emailEmpresa).toLowerCase();
+  var site         = sanitizar_(body.site);
+  var nomeRep      = sanitizar_(body.nomeRep);
+  var cargoRep     = sanitizar_(body.cargoRep);
+  var emailRep     = sanitizar_(body.emailRep).toLowerCase();
+  var cpfRep       = sanitizar_(body.cpfRep);
+
+  if (!razaoSocial)         throw new Error('Razão social é obrigatória.');
+  if (!validarCNPJ_(cnpj))  throw new Error('CNPJ inválido.');
+  if (!validarEmail_(emailEmp)) throw new Error('E-mail da empresa inválido.');
+  if (!validarEmail_(emailRep)) throw new Error('E-mail do representante inválido.');
+  if (!validarCPF_(cpfRep)) throw new Error('CPF do representante inválido.');
+
+  var ss  = SpreadsheetApp.openById(CFG.ID_EMPRESAS);
+  var aba = ss.getSheetByName(CFG.ABA_EMPRESAS);
+  if (!aba) throw new Error('Planilha não configurada.');
+
+  var cnpjNorm       = normalizarCNPJ_(cnpj);
+  var linhaExistente = buscarEmpresaPorCNPJ_(aba, cnpjNorm, -1);
+  var timestamp      = new Date();
+
+  if (linhaExistente > 0) {
+    // Atualiza linha existente
+    var campos = [
+      { col: COL_EMP.RAZAO_SOCIAL,  val: razaoSocial  },
+      { col: COL_EMP.NOME_FANTASIA, val: nomeFantasia  },
+      { col: COL_EMP.RAMO,          val: ramo          },
+      { col: COL_EMP.ENDERECO,      val: endereco      },
+      { col: COL_EMP.MUNICIPIO,     val: municipio     },
+      { col: COL_EMP.UF,            val: uf            },
+      { col: COL_EMP.CEP,           val: cep           },
+      { col: COL_EMP.TEL_EMPRESA,   val: telEmpresa    },
+      { col: COL_EMP.EMAIL_EMPRESA, val: emailEmp      },
+      { col: COL_EMP.SITE,          val: site          },
+      { col: COL_EMP.NOME_REP,      val: nomeRep       },
+      { col: COL_EMP.CARGO_REP,     val: cargoRep      },
+      { col: COL_EMP.EMAIL_REP,     val: emailRep      },
+      { col: COL_EMP.DATA_ULT_ATZ,  val: timestamp     },
+    ];
+    campos.forEach(function(c) {
+      aba.getRange(linhaExistente, c.col + 1).setValue(c.val);
+    });
+    aba.getRange(linhaExistente, COL_EMP.STATUS + 1).setValue('Pendente');
+    registrarLog_(ss, cnpj, razaoSocial, 'Atualização via portal web', 'Dados atualizados', email);
+    notificarSetor_(razaoSocial, cnpj, emailRep, 'Atualização de cadastro');
+    return { mensagem: 'Dados atualizados. Aguarde validação do setor (prazo: 1 dia útil).', acao: 'atualizado' };
+  }
+
+  // Novo cadastro
+  var novaLinha = new Array(24).fill('');
+  novaLinha[COL_EMP.TIMESTAMP]    = timestamp;
+  novaLinha[COL_EMP.EMAIL_FORM]   = email;
+  novaLinha[COL_EMP.TIPO]         = 'Novo cadastro';
+  novaLinha[COL_EMP.RAZAO_SOCIAL] = razaoSocial;
+  novaLinha[COL_EMP.NOME_FANTASIA]= nomeFantasia;
+  novaLinha[COL_EMP.CNPJ]         = cnpj;
+  novaLinha[COL_EMP.RAMO]         = ramo;
+  novaLinha[COL_EMP.ENDERECO]     = endereco;
+  novaLinha[COL_EMP.MUNICIPIO]    = municipio;
+  novaLinha[COL_EMP.UF]           = uf;
+  novaLinha[COL_EMP.CEP]          = cep;
+  novaLinha[COL_EMP.TEL_EMPRESA]  = telEmpresa;
+  novaLinha[COL_EMP.EMAIL_EMPRESA]= emailEmp;
+  novaLinha[COL_EMP.SITE]         = site;
+  novaLinha[COL_EMP.NOME_REP]     = nomeRep;
+  novaLinha[COL_EMP.CARGO_REP]    = cargoRep;
+  novaLinha[COL_EMP.EMAIL_REP]    = emailRep;
+  novaLinha[COL_EMP.CPF_REP]      = cpfRep;
+  novaLinha[COL_EMP.DECLARACAO]   = 'Sim — via portal web';
+  novaLinha[COL_EMP.STATUS]       = 'Pendente';
+  novaLinha[COL_EMP.DATA_ULT_ATZ] = timestamp;
+
+  aba.appendRow(novaLinha);
+  aba.getRange(aba.getLastRow(), 1, 1, aba.getLastColumn()).setBackground('#FFF9C4');
+
+  notificarSetor_(razaoSocial, cnpj, emailRep, 'Novo cadastro');
+  enviarConfirmacao_(emailEmp, emailRep, nomeRep, razaoSocial, 'novo');
+
+  return { mensagem: 'Cadastro enviado! Você receberá confirmação por e-mail em até 1 dia útil.', acao: 'cadastrado' };
+}
+
+// ─────────────────────────────────────────
+//  GET: obterMeuCadastroSupervisor
+//  Busca supervisor pelo e-mail do token Google
+// ─────────────────────────────────────────
+function obterMeuCadastroSupervisor_(token) {
+  var email = verificarTokenGoogle_(token);
+  var ss  = SpreadsheetApp.openById(CFG.ID_SUPERVISORES);
+  var aba = ss.getSheetByName(CFG.ABA_SUP_RESPOSTAS);
+  if (!aba) throw new Error('Planilha não configurada.');
+
+  var dados = aba.getDataRange().getValues();
+  for (var i = 1; i < dados.length; i++) {
+    var emailForm = String(dados[i][COL_SUP.EMAIL_FORM] || '').toLowerCase().trim();
+    var emailSup  = String(dados[i][COL_SUP.EMAIL_SUP]  || '').toLowerCase().trim();
+    var status    = String(dados[i][COL_SUP.STATUS]     || '').trim();
+    if (status.indexOf('Processada') > -1) continue;
+    if (emailForm !== email && emailSup !== email) continue;
+
+    var empStr  = String(dados[i][COL_SUP.EMPRESA] || '');
+    var partes  = empStr.split('—');
+    var cnpjEmp = partes[0] ? partes[0].trim() : '';
+    var nomeEmp = partes[1] ? partes[1].trim() : empStr.trim();
+
+    return {
+      empresa:          cnpjEmp,
+      empresaNome:      nomeEmp,
+      setor:            String(dados[i][COL_SUP.SETOR]          || '').trim(),
+      enderecoSetor:    String(dados[i][COL_SUP.ENDERECO_SETOR] || '').trim(),
+      emailSetor:       String(dados[i][COL_SUP.EMAIL_SETOR_SUP]|| '').trim(),
+      telSetor:         String(dados[i][COL_SUP.TEL_SETOR]      || '').trim(),
+      nome:             String(dados[i][COL_SUP.NOME]           || '').trim(),
+      cpf:              String(dados[i][COL_SUP.CPF]            || '').trim(),
+      cargo:            String(dados[i][COL_SUP.CARGO]          || '').trim(),
+      telSupervisor:    String(dados[i][COL_SUP.TEL_SUP]        || '').trim(),
+      emailSupervisor:  String(dados[i][COL_SUP.EMAIL_SUP]      || '').trim(),
+      nivelFormacao:    String(dados[i][COL_SUP.NIVEL_FORMACAO] || '').trim(),
+      areaFormacao:     String(dados[i][COL_SUP.AREA_FORMACAO]  || '').trim(),
+      instituicao:      String(dados[i][COL_SUP.INSTITUICAO]    || '').trim(),
+      tempoExperiencia: String(dados[i][COL_SUP.TEMPO_EXP]      || '').trim(),
+      descExperiencia:  String(dados[i][COL_SUP.DESC_EXP]       || '').trim(),
+      status:           status,
+    };
+  }
+  throw new Error('Supervisor não encontrado para este e-mail.');
+}
+
+// ─────────────────────────────────────────
+//  POST: salvarMeuCadastroSupervisor
+//  Cria novo ou atualiza supervisor existente (CPF como identificador)
+// ─────────────────────────────────────────
+function salvarMeuCadastroSupervisor_(body) {
+  var email = verificarTokenGoogle_(body.authToken || '');
+
+  var empresa       = sanitizar_(body.empresa);
+  var empresaNome   = sanitizar_(body.empresaNome);
+  var setor         = sanitizar_(body.setor);
+  var telSetor      = sanitizar_(body.telSetor);
+  var emailSetorSup = sanitizar_(body.emailSetor).toLowerCase();
+  var endSetor      = sanitizar_(body.enderecoSetor);
+  var nome          = sanitizar_(body.nome);
+  var cpf           = sanitizar_(body.cpf);
+  var cargo         = sanitizar_(body.cargo);
+  var telSup        = sanitizar_(body.telSupervisor);
+  var emailSup      = sanitizar_(body.emailSupervisor).toLowerCase();
+  var nivelForm     = sanitizar_(body.nivelFormacao);
+  var areaForm      = sanitizar_(body.areaFormacao);
+  var instituicao   = sanitizar_(body.instituicao);
+  var tempoExp      = sanitizar_(body.tempoExperiencia);
+  var descExp       = sanitizar_(body.descExperiencia);
+
+  if (!nome)                   throw new Error('Nome é obrigatório.');
+  if (!validarCPF_(cpf))       throw new Error('CPF inválido.');
+  if (!validarEmail_(emailSup)) throw new Error('E-mail do supervisor inválido.');
+  if (!empresa)                throw new Error('Empresa é obrigatória.');
+  if (!setor)                  throw new Error('Setor é obrigatório.');
+  if (!nivelForm)              throw new Error('Nível de formação é obrigatório.');
+  if (!areaForm)               throw new Error('Área de formação é obrigatória.');
+  if (!tempoExp)               throw new Error('Tempo de experiência é obrigatório.');
+  if (!descExp || descExp.length < 50) throw new Error('Descrição da experiência muito curta.');
+
+  var ss  = SpreadsheetApp.openById(CFG.ID_SUPERVISORES);
+  var aba = ss.getSheetByName(CFG.ABA_SUP_RESPOSTAS);
+  if (!aba) throw new Error('Planilha não configurada.');
+
+  var timestamp      = new Date();
+  var cpfNorm        = normalizarCPF_(cpf);
+  var linhaExistente = buscarSupervisorPorCPF_(aba, cpfNorm, -1);
+
+  if (linhaExistente > 0) {
+    var campos = [
+      { col: COL_SUP.EMPRESA,         val: empresa + ' — ' + empresaNome },
+      { col: COL_SUP.SETOR,           val: setor         },
+      { col: COL_SUP.TEL_SETOR,       val: telSetor      },
+      { col: COL_SUP.EMAIL_SETOR_SUP, val: emailSetorSup },
+      { col: COL_SUP.ENDERECO_SETOR,  val: endSetor      },
+      { col: COL_SUP.CARGO,           val: cargo         },
+      { col: COL_SUP.TEL_SUP,         val: telSup        },
+      { col: COL_SUP.EMAIL_SUP,       val: emailSup      },
+      { col: COL_SUP.NIVEL_FORMACAO,  val: nivelForm     },
+      { col: COL_SUP.AREA_FORMACAO,   val: areaForm      },
+      { col: COL_SUP.INSTITUICAO,     val: instituicao   },
+      { col: COL_SUP.TEMPO_EXP,       val: tempoExp      },
+      { col: COL_SUP.DESC_EXP,        val: descExp       },
+      { col: COL_SUP.DATA_ULT_ATZ,    val: timestamp     },
+    ];
+    campos.forEach(function(c) {
+      aba.getRange(linhaExistente, c.col + 1).setValue(c.val);
+    });
+    aba.getRange(linhaExistente, COL_SUP.STATUS + 1).setValue('Pendente');
+    GmailApp.sendEmail(CFG.EMAIL_SETOR,
+      '[ATUALIZAÇÃO SUPERVISOR] ' + nome,
+      'Atualização de supervisor via portal web.\nNome: ' + nome + '\nEmpresa: ' + empresaNome,
+      { name: 'Sistema de Estágios IFRS' }
+    );
+    return { mensagem: 'Dados atualizados. Aguarde validação do setor (prazo: 1 dia útil).', acao: 'atualizado' };
+  }
+
+  // Novo cadastro
+  var novaLinha = new Array(24).fill('');
+  novaLinha[COL_SUP.TIMESTAMP]      = timestamp;
+  novaLinha[COL_SUP.EMAIL_FORM]     = email;
+  novaLinha[COL_SUP.TIPO]           = 'Novo cadastro';
+  novaLinha[COL_SUP.EMPRESA]        = empresa + ' — ' + empresaNome;
+  novaLinha[COL_SUP.SETOR]          = setor;
+  novaLinha[COL_SUP.ENDERECO_SETOR] = endSetor;
+  novaLinha[COL_SUP.EMAIL_SETOR_SUP]= emailSetorSup;
+  novaLinha[COL_SUP.TEL_SETOR]      = telSetor;
+  novaLinha[COL_SUP.NOME]           = nome;
+  novaLinha[COL_SUP.CPF]            = cpf;
+  novaLinha[COL_SUP.CARGO]          = cargo;
+  novaLinha[COL_SUP.TEL_SUP]        = telSup;
+  novaLinha[COL_SUP.EMAIL_SUP]      = emailSup;
+  novaLinha[COL_SUP.NIVEL_FORMACAO] = nivelForm;
+  novaLinha[COL_SUP.AREA_FORMACAO]  = areaForm;
+  novaLinha[COL_SUP.INSTITUICAO]    = instituicao;
+  novaLinha[COL_SUP.TEMPO_EXP]      = tempoExp;
+  novaLinha[COL_SUP.DESC_EXP]       = descExp;
+  novaLinha[COL_SUP.DECLARACAO]     = 'Sim — via portal web';
+  novaLinha[COL_SUP.STATUS]         = 'Pendente';
+  novaLinha[COL_SUP.DATA_ULT_ATZ]   = timestamp;
+
+  aba.appendRow(novaLinha);
+  aba.getRange(aba.getLastRow(), 1, 1, aba.getLastColumn()).setBackground('#FFF9C4');
+
+  GmailApp.sendEmail(CFG.EMAIL_SETOR,
+    '[NOVO SUPERVISOR] ' + nome + ' — ' + empresaNome,
+    'Novo supervisor cadastrado via portal.\nNome: ' + nome + '\nCPF: ' + cpf +
+    '\nEmpresa: ' + empresaNome + '\nSetor: ' + setor + '\nE-mail: ' + emailSup,
+    { name: 'Sistema de Estágios IFRS' }
+  );
+  GmailApp.sendEmail(emailSup,
+    '[IFRS Estágios] Cadastro recebido — ' + nome,
+    'Olá, ' + nome + ',\n\nSeu cadastro como supervisor de estágio foi recebido.\nApós validação (prazo: 1 dia útil), você receberá uma confirmação.\n\nDúvidas: ' + CFG.EMAIL_SETOR + '\n\nAtenciosamente,\n' + CFG.NOME_SETOR,
+    { name: CFG.NOME_SETOR, replyTo: CFG.EMAIL_SETOR }
+  );
+
+  return { mensagem: 'Cadastro enviado! Você receberá confirmação por e-mail em até 1 dia útil.', acao: 'cadastrado' };
+}
+
+// ─────────────────────────────────────────
+//  AUXILIAR — Verifica token Google OAuth
+//  Retorna o e-mail do usuário autenticado
+// ─────────────────────────────────────────
+function verificarTokenGoogle_(token) {
+  if (!token) throw new Error('Não autenticado. Faça login novamente.');
+  try {
+    var resp = UrlFetchApp.fetch(
+      'https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=' + encodeURIComponent(token),
+      { muteHttpExceptions: true }
+    );
+    var info = JSON.parse(resp.getContentText());
+    if (info.error || !info.email) throw new Error('Token inválido ou expirado.');
+    return info.email.toLowerCase().trim();
+  } catch (e) {
+    throw new Error('Falha na verificação do token: ' + e.message);
+  }
 }
 
 // ─────────────────────────────────────────

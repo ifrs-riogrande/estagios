@@ -206,6 +206,26 @@ async function apiCadastrarOportunidade(dados) {
   return API.post('cadastrarOportunidade', dados);
 }
 
+/** Obtém os dados de cadastro da empresa logada (por token). */
+async function apiObterMeuCadastroEmpresa() {
+  return API.get('obterMeuCadastroEmpresa', { authToken: getAccessToken() });
+}
+
+/** Salva (cria ou atualiza) cadastro de empresa da conta logada. */
+async function apiSalvarMeuCadastroEmpresa(dados) {
+  return API.post('salvarMeuCadastroEmpresa', { ...dados, authToken: getAccessToken() });
+}
+
+/** Obtém os dados de cadastro do supervisor logado (por token). */
+async function apiObterMeuCadastroSupervisor() {
+  return API.get('obterMeuCadastroSupervisor', { authToken: getAccessToken() });
+}
+
+/** Salva (cria ou atualiza) cadastro de supervisor da conta logada. */
+async function apiSalvarMeuCadastroSupervisor(dados) {
+  return API.post('salvarMeuCadastroSupervisor', { ...dados, authToken: getAccessToken() });
+}
+
 /** Envia formulário de cadastro de estudante. */
 async function apiCadastrarEstudante(dados) {
   return API.post('cadastrarEstudante', dados);
