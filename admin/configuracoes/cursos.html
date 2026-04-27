@@ -198,6 +198,18 @@
     </div>
   </footer>
 
+  <!-- Modal: confirmar exclusão -->
+  <div class="modal-overlay" id="modal-deletar" role="dialog" aria-modal="true" aria-labelledby="deletar-titulo">
+    <div class="modal-box" style="max-width:420px;">
+      <h2 class="modal-title" id="deletar-titulo" style="color:var(--color-danger,#dc2626);">⚠ Excluir curso?</h2>
+      <p id="deletar-msg" style="margin-bottom:var(--space-6);color:var(--color-text-secondary);"></p>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" id="btn-deletar-cancelar">Cancelar</button>
+        <button type="button" class="btn btn-danger" id="btn-deletar-confirmar">Sim, excluir permanentemente</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Modal: adicionar / editar curso -->
   <div class="modal-overlay" id="modal-curso" role="dialog" aria-modal="true" aria-labelledby="modal-titulo">
     <div class="modal-box">
@@ -389,20 +401,53 @@
     }
   }
 
-  async function deletarCurso(id) {
+  var _idParaDeletar = null;
+
+  function deletarCurso(id) {
     const curso = todosCursos.find(c => c.id === id);
     if (!curso) return;
-    if (!confirm(`Tem certeza que deseja EXCLUIR permanentemente o curso "${curso.nome}"?\n\nEsta ação não pode ser desfeita.`)) return;
+    _idParaDeletar = id;
+    document.getElementById('deletar-msg').textContent =
+      `Deseja excluir permanentemente o curso "${curso.nome}"? Esta ação não pode ser desfeita.`;
+    document.getElementById('modal-deletar').classList.add('is-active');
+  }
+
+  document.getElementById('btn-deletar-cancelar').addEventListener('click', function () {
+    document.getElementById('modal-deletar').classList.remove('is-active');
+    _idParaDeletar = null;
+  });
+
+  document.getElementById('modal-deletar').addEventListener('click', function (e) {
+    if (e.target === this) {
+      this.classList.remove('is-active');
+      _idParaDeletar = null;
+    }
+  });
+
+  document.getElementById('btn-deletar-confirmar').addEventListener('click', async function () {
+    if (!_idParaDeletar) return;
+    const id = _idParaDeletar;
+    const curso = todosCursos.find(c => c.id === id);
+    const btn = this;
+
+    btn.classList.add('is-loading');
+    btn.disabled = true;
 
     try {
       const res = await apiDeletarCurso(id);
       todosCursos = res.cursos || todosCursos;
+      document.getElementById('modal-deletar').classList.remove('is-active');
+      _idParaDeletar = null;
       renderizarTabela();
-      mostrarFeedbackGlobal('success', `Curso "${curso.nome}" excluído permanentemente.`);
+      mostrarFeedbackGlobal('success', `Curso "${curso ? curso.nome : ''}" excluído permanentemente.`);
     } catch (err) {
       mostrarFeedbackGlobal('error', err.message || 'Erro ao excluir curso.');
+      document.getElementById('modal-deletar').classList.remove('is-active');
+    } finally {
+      btn.classList.remove('is-loading');
+      btn.disabled = false;
     }
-  }
+  });
 
   // ── Submit do formulário ──────────────────────────────────
   document.getElementById('form-curso').addEventListener('submit', async function(e) {
