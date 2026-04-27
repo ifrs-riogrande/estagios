@@ -299,7 +299,7 @@ function adicionarColunasNEE() {
     }
   }
 
-  SpreadsheetApp.getUi().alert('✅ Colunas adicionadas!\n\n• Estudantes: Cursos JSON (col 27) e NEE (col 28)\n• Solicitações: NEE (col 44)');
+  Logger.log('✅ Colunas adicionadas! • Estudantes: Cursos JSON (col 27) e NEE (col 28) • Solicitações: NEE (col 44)');
 }
 
 function _formatarCelulaCabecalho_(sheet, col) {
