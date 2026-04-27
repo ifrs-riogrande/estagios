@@ -257,7 +257,8 @@
 
   // ── Init ────────────────────────────────────────────────
   document.addEventListener('DOMContentLoaded', function () {
-    requireAdminAuth(carregarCursos);
+    if (!requireAdminAuth()) return;
+    carregarCursos();
   });
 
   // ── Carregar ────────────────────────────────────────────

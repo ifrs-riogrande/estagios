@@ -1339,6 +1339,18 @@ var CURSOS_SEED_ = [
 ];
 
 /**
+ * Função pública para rodar manualmente no editor GAS.
+ * Inicializa (ou reinspeciona) a lista mestre de cursos no PropertiesService.
+ */
+function inicializarCursos() {
+  var cursos = obterListaCursos_();
+  Logger.log('✅ Lista de cursos inicializada com ' + cursos.length + ' cursos:');
+  cursos.forEach(function(c) {
+    Logger.log('  [' + c.status + '] ' + c.grupo + ' — ' + c.nome);
+  });
+}
+
+/**
  * Obtém (ou inicializa) a lista de cursos do PropertiesService.
  * @returns {Array} Array de {id, nome, grupo, status}
  */
