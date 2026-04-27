@@ -63,6 +63,10 @@ var GET_ROUTES = {
 
   // ConfiguraÃ§Ãµes (pÃºblico â€" sem auth)
   'obterConfigCursos':       doGetPublicConfig,
+  'listarCursos':            doGetPublicConfig,
+
+  // Cursos â€" admin
+  'listarTodosCursos':       doGetAdmin,
 
 };
 
@@ -102,6 +106,7 @@ var POST_ROUTES = {
 
   // ConfiguraÃ§Ãµes (admin)
   'salvarConfigCursos':        doPostAdmin,
+  'salvarCurso':               doPostAdmin,
 
   // Admin
   'aprovarSolicitacao':        doPostAdmin,
@@ -260,6 +265,7 @@ function doPostEmpresas(e) {
 function doGetPublicConfig(e) {
   var action = e.parameter && e.parameter.action;
   if (action === 'obterConfigCursos') return obterConfigCursos_();
+  if (action === 'listarCursos')      return listarCursos_();
   return jsonError_('AÃ§Ã£o nÃ£o implementada.', 'NOT_IMPLEMENTED');
 }
 

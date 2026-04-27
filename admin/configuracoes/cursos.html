@@ -10,6 +10,100 @@
   <link rel="stylesheet" href="../../assets/css/base.css">
   <link rel="stylesheet" href="../../assets/css/components.css">
   <link rel="stylesheet" href="../../assets/css/layout.css">
+  <style>
+    /* ── Tabela de cursos ── */
+    .cursos-table-wrap {
+      overflow-x: auto;
+      margin-top: var(--space-6);
+    }
+    .cursos-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .9rem;
+    }
+    .cursos-table th,
+    .cursos-table td {
+      padding: var(--space-3) var(--space-4);
+      text-align: left;
+      border-bottom: 1px solid var(--color-border);
+      vertical-align: middle;
+    }
+    .cursos-table th {
+      background: var(--color-surface);
+      font-weight: 600;
+      color: var(--color-text-secondary);
+      font-size: .78rem;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      white-space: nowrap;
+    }
+    .cursos-table tr:last-child td { border-bottom: none; }
+    .cursos-table tr:hover td { background: var(--color-surface-hover, #f9fafb); }
+    .badge-ativo   { display:inline-block; padding:2px 10px; border-radius:999px; font-size:.78rem; font-weight:600; background:#dcfce7; color:#166534; }
+    .badge-inativo { display:inline-block; padding:2px 10px; border-radius:999px; font-size:.78rem; font-weight:600; background:#fee2e2; color:#991b1b; }
+
+    /* ── Modal ── */
+    .modal-overlay {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.45);
+      z-index: 900;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-overlay.is-active { display: flex; }
+    .modal-box {
+      background: #fff;
+      border-radius: var(--radius-lg, 12px);
+      padding: var(--space-8);
+      width: 100%;
+      max-width: 480px;
+      box-shadow: 0 20px 60px rgba(0,0,0,.18);
+    }
+    .modal-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: var(--space-6);
+    }
+    .modal-actions {
+      display: flex;
+      gap: var(--space-3);
+      justify-content: flex-end;
+      margin-top: var(--space-6);
+    }
+
+    /* ── Toolbar ── */
+    .cursos-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: var(--space-3);
+      margin-bottom: var(--space-4);
+    }
+    .cursos-toolbar .filtros {
+      display: flex;
+      gap: var(--space-3);
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    /* ── Estado vazio / loading ── */
+    .estado-tabela {
+      text-align: center;
+      padding: var(--space-12) var(--space-4);
+      color: var(--color-text-secondary);
+    }
+    .estado-tabela .spinner {
+      width: 28px; height: 28px;
+      border: 3px solid var(--color-border);
+      border-top-color: var(--color-primary);
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+      margin: 0 auto var(--space-3);
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
 </head>
 <body>
   <header id="app-header">
@@ -37,15 +131,62 @@
     <section class="page-hero">
       <div class="container">
         <h1>Cursos</h1>
-        <p>Cadastre e gerencie os cursos disponíveis no sistema.</p>
+        <p>Lista mestre de cursos. Adicione, edite ou inative cursos — todas as outras partes do sistema usam esta lista.</p>
       </div>
     </section>
 
     <div class="container" style="padding-top:var(--space-8);padding-bottom:var(--space-12);">
-      <div class="info-banner" role="note" style="max-width:640px;">
-        <strong>Em desenvolvimento.</strong> Esta seção estará disponível em breve.
+
+      <!-- Feedback global -->
+      <div id="feedback-global" style="display:none;margin-bottom:var(--space-5);"></div>
+
+      <!-- Toolbar -->
+      <div class="cursos-toolbar">
+        <div class="filtros">
+          <select id="filtro-status" class="form-select" style="width:auto;">
+            <option value="">Todos os status</option>
+            <option value="Ativo">Ativos</option>
+            <option value="Inativo">Inativos</option>
+          </select>
+          <select id="filtro-grupo" class="form-select" style="width:auto;">
+            <option value="">Todos os grupos</option>
+          </select>
+          <input id="filtro-busca" type="search" class="form-input" placeholder="Buscar por nome…" style="width:220px;">
+        </div>
+        <button id="btn-novo" class="btn btn-primary" type="button">
+          + Novo curso
+        </button>
       </div>
-    </div>
+
+      <!-- Tabela -->
+      <div class="card" style="padding:0;overflow:hidden;">
+        <div class="cursos-table-wrap">
+          <table class="cursos-table" id="tabela-cursos" aria-label="Lista de cursos">
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th>Grupo</th>
+                <th>Status</th>
+                <th style="text-align:right;">Ações</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-cursos">
+              <tr>
+                <td colspan="4">
+                  <div class="estado-tabela">
+                    <div class="spinner"></div>
+                    Carregando cursos…
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <p id="contagem-cursos" style="margin-top:var(--space-3);font-size:.85rem;color:var(--color-text-secondary);"></p>
+
+    </div><!-- /container -->
   </main>
 
   <footer id="app-footer">
@@ -57,15 +198,248 @@
     </div>
   </footer>
 
+  <!-- Modal: adicionar / editar curso -->
+  <div class="modal-overlay" id="modal-curso" role="dialog" aria-modal="true" aria-labelledby="modal-titulo">
+    <div class="modal-box">
+      <h2 class="modal-title" id="modal-titulo">Novo curso</h2>
+
+      <div id="modal-feedback" style="display:none;margin-bottom:var(--space-4);"></div>
+
+      <form id="form-curso" novalidate>
+        <input type="hidden" id="campo-id">
+
+        <div class="form-group">
+          <label class="form-label" for="campo-nome">Nome do curso <span class="required-mark">*</span></label>
+          <input id="campo-nome" type="text" class="form-input" maxlength="120" required
+                 placeholder="Ex: Técnico Integrado em Informática">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="campo-grupo">Grupo / Modalidade <span class="required-mark">*</span></label>
+          <select id="campo-grupo" class="form-select" required>
+            <option value="">Selecione…</option>
+            <option value="Técnico Integrado">Técnico Integrado</option>
+            <option value="Técnico Subsequente">Técnico Subsequente</option>
+            <option value="Tecnologia">Tecnologia</option>
+            <option value="Bacharelado">Bacharelado</option>
+            <option value="Licenciatura">Licenciatura</option>
+            <option value="Especialização">Especialização</option>
+          </select>
+        </div>
+
+        <div class="form-group" id="grupo-status" style="display:none;">
+          <label class="form-label" for="campo-status">Status</label>
+          <select id="campo-status" class="form-select">
+            <option value="Ativo">Ativo</option>
+            <option value="Inativo">Inativo</option>
+          </select>
+          <p class="form-help">Cursos inativos não aparecem nos selects do sistema, mas preservam dados históricos.</p>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" id="btn-cancelar">Cancelar</button>
+          <button type="submit" class="btn btn-primary" id="btn-salvar">Salvar curso</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <script src="https://accounts.google.com/gsi/client" async></script>
   <script src="../../assets/js/utils.js"></script>
   <script src="../../assets/js/auth.js"></script>
   <script src="../../assets/js/api.js"></script>
   <script>
-    'use strict';
-    document.addEventListener('DOMContentLoaded', function () {
-      requireAdminAuth();
+  'use strict';
+
+  // ── Estado ──────────────────────────────────────────────
+  var todosCursos = [];   // cache completo (todos os status)
+  var cursoEmEdicao = null;
+
+  // ── Init ────────────────────────────────────────────────
+  document.addEventListener('DOMContentLoaded', function () {
+    requireAdminAuth(carregarCursos);
+  });
+
+  // ── Carregar ────────────────────────────────────────────
+  async function carregarCursos() {
+    try {
+      todosCursos = await apiListarTodosCursos();
+      renderizarTabela();
+      preencherFiltroGrupo();
+    } catch (err) {
+      document.getElementById('tbody-cursos').innerHTML =
+        '<tr><td colspan="4"><div class="estado-tabela">Erro ao carregar cursos. Recarregue a página.</div></td></tr>';
+      console.error(err);
+    }
+  }
+
+  // ── Filtro grupo ─────────────────────────────────────────
+  function preencherFiltroGrupo() {
+    const grupos = [...new Set(todosCursos.map(c => c.grupo))].sort();
+    const sel = document.getElementById('filtro-grupo');
+    grupos.forEach(g => {
+      const o = document.createElement('option');
+      o.value = g;
+      o.textContent = g;
+      sel.appendChild(o);
     });
+  }
+
+  // ── Renderizar tabela ────────────────────────────────────
+  function renderizarTabela() {
+    const filtroStatus = document.getElementById('filtro-status').value;
+    const filtroGrupo  = document.getElementById('filtro-grupo').value;
+    const filtroBusca  = document.getElementById('filtro-busca').value.trim().toLowerCase();
+
+    const filtrados = todosCursos.filter(c => {
+      if (filtroStatus && c.status !== filtroStatus) return false;
+      if (filtroGrupo  && c.grupo  !== filtroGrupo)  return false;
+      if (filtroBusca  && !c.nome.toLowerCase().includes(filtroBusca)) return false;
+      return true;
+    });
+
+    const tbody = document.getElementById('tbody-cursos');
+
+    if (filtrados.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="4"><div class="estado-tabela">Nenhum curso encontrado.</div></td></tr>';
+      document.getElementById('contagem-cursos').textContent = '';
+      return;
+    }
+
+    tbody.innerHTML = filtrados.map(c => `
+      <tr data-id="${escHtml(c.id)}">
+        <td><strong>${escHtml(c.nome)}</strong></td>
+        <td>${escHtml(c.grupo)}</td>
+        <td><span class="${c.status === 'Ativo' ? 'badge-ativo' : 'badge-inativo'}">${escHtml(c.status)}</span></td>
+        <td style="text-align:right;white-space:nowrap;">
+          <button class="btn btn-sm btn-secondary" onclick="abrirEdicao('${escHtml(c.id)}')">Editar</button>
+          ${c.status === 'Ativo'
+            ? `<button class="btn btn-sm btn-danger" style="margin-left:var(--space-2);" onclick="alterarStatus('${escHtml(c.id)}','Inativo')">Inativar</button>`
+            : `<button class="btn btn-sm btn-secondary" style="margin-left:var(--space-2);" onclick="alterarStatus('${escHtml(c.id)}','Ativo')">Reativar</button>`
+          }
+        </td>
+      </tr>
+    `).join('');
+
+    const ativos = filtrados.filter(c => c.status === 'Ativo').length;
+    document.getElementById('contagem-cursos').textContent =
+      `${filtrados.length} curso(s) exibido(s) — ${ativos} ativo(s)`;
+  }
+
+  function escHtml(str) {
+    return String(str ?? '')
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
+
+  // ── Filtros: escutar mudanças ─────────────────────────────
+  ['filtro-status','filtro-grupo','filtro-busca'].forEach(id => {
+    document.getElementById(id).addEventListener('input', renderizarTabela);
+    document.getElementById(id).addEventListener('change', renderizarTabela);
+  });
+
+  // ── Modal ────────────────────────────────────────────────
+  function abrirModal(curso) {
+    cursoEmEdicao = curso || null;
+    const ehNovo = !curso;
+
+    document.getElementById('modal-titulo').textContent = ehNovo ? 'Novo curso' : 'Editar curso';
+    document.getElementById('campo-id').value    = ehNovo ? '' : curso.id;
+    document.getElementById('campo-nome').value  = ehNovo ? '' : curso.nome;
+    document.getElementById('campo-grupo').value = ehNovo ? '' : curso.grupo;
+    document.getElementById('campo-status').value = ehNovo ? 'Ativo' : curso.status;
+    document.getElementById('grupo-status').style.display = ehNovo ? 'none' : '';
+    ocultarFeedbackModal();
+    document.getElementById('modal-curso').classList.add('is-active');
+    document.getElementById('campo-nome').focus();
+  }
+
+  function fecharModal() {
+    document.getElementById('modal-curso').classList.remove('is-active');
+    cursoEmEdicao = null;
+  }
+
+  document.getElementById('btn-novo').addEventListener('click', () => abrirModal(null));
+  document.getElementById('btn-cancelar').addEventListener('click', fecharModal);
+  document.getElementById('modal-curso').addEventListener('click', function(e) {
+    if (e.target === this) fecharModal();
+  });
+
+  // ── Editar / Inativar via tabela ──────────────────────────
+  function abrirEdicao(id) {
+    const curso = todosCursos.find(c => c.id === id);
+    if (curso) abrirModal(curso);
+  }
+
+  async function alterarStatus(id, novoStatus) {
+    const curso = todosCursos.find(c => c.id === id);
+    if (!curso) return;
+    const acao = novoStatus === 'Inativo' ? 'inativar' : 'reativar';
+    if (!confirm(`Deseja ${acao} o curso "${curso.nome}"?`)) return;
+
+    try {
+      const res = await apiSalvarCurso({ id: curso.id, nome: curso.nome, grupo: curso.grupo, status: novoStatus });
+      todosCursos = res.cursos || todosCursos;
+      renderizarTabela();
+      mostrarFeedbackGlobal('success', `Curso ${novoStatus === 'Inativo' ? 'inativado' : 'reativado'} com sucesso.`);
+    } catch (err) {
+      mostrarFeedbackGlobal('error', err.message || 'Erro ao alterar status.');
+    }
+  }
+
+  // ── Submit do formulário ──────────────────────────────────
+  document.getElementById('form-curso').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    ocultarFeedbackModal();
+
+    const id    = document.getElementById('campo-id').value.trim() || null;
+    const nome  = document.getElementById('campo-nome').value.trim();
+    const grupo = document.getElementById('campo-grupo').value;
+    const status = document.getElementById('campo-status').value;
+
+    if (!nome)  { mostrarFeedbackModal('error', 'Informe o nome do curso.'); return; }
+    if (!grupo) { mostrarFeedbackModal('error', 'Selecione o grupo/modalidade.'); return; }
+
+    const btn = document.getElementById('btn-salvar');
+    btn.classList.add('is-loading');
+    btn.disabled = true;
+
+    try {
+      const payload = id ? { id, nome, grupo, status } : { nome, grupo };
+      const res = await apiSalvarCurso(payload);
+      todosCursos = res.cursos || todosCursos;
+      renderizarTabela();
+      fecharModal();
+      mostrarFeedbackGlobal('success', id ? 'Curso atualizado com sucesso.' : 'Curso adicionado com sucesso.');
+    } catch (err) {
+      mostrarFeedbackModal('error', err.message || 'Erro ao salvar curso.');
+    } finally {
+      btn.classList.remove('is-loading');
+      btn.disabled = false;
+    }
+  });
+
+  // ── Feedback helpers ─────────────────────────────────────
+  function mostrarFeedbackGlobal(tipo, msg) {
+    const el = document.getElementById('feedback-global');
+    el.className = tipo === 'success' ? 'success-banner' : 'error-banner';
+    el.textContent = msg;
+    el.style.display = '';
+    setTimeout(() => { el.style.display = 'none'; }, 5000);
+  }
+
+  function mostrarFeedbackModal(tipo, msg) {
+    const el = document.getElementById('modal-feedback');
+    el.className = tipo === 'success' ? 'success-banner' : 'error-banner';
+    el.textContent = msg;
+    el.style.display = '';
+  }
+
+  function ocultarFeedbackModal() {
+    const el = document.getElementById('modal-feedback');
+    el.style.display = 'none';
+    el.textContent = '';
+  }
   </script>
 </body>
 </html>

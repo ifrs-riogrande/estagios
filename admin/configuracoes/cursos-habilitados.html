@@ -133,24 +133,8 @@
   <script>
     'use strict';
 
-    const CURSOS = [
-      { grupo: 'Técnico Integrado', nome: 'Técnico Integrado em Automação Industrial' },
-      { grupo: 'Técnico Integrado', nome: 'Técnico Integrado em Eletrotécnica' },
-      { grupo: 'Técnico Integrado', nome: 'Técnico Integrado em Geoprocessamento' },
-      { grupo: 'Técnico Integrado', nome: 'Técnico Integrado em Informática para Internet' },
-      { grupo: 'Técnico Integrado', nome: 'Técnico Integrado em Mecânica' },
-      { grupo: 'Técnico Integrado', nome: 'Técnico Integrado em Refrigeração e Climatização' },
-      { grupo: 'Técnico Subsequente', nome: 'Técnico Subsequente em Automação Industrial' },
-      { grupo: 'Técnico Subsequente', nome: 'Técnico Subsequente em Eletrotécnica' },
-      { grupo: 'Técnico Subsequente', nome: 'Técnico Subsequente em Enfermagem' },
-      { grupo: 'Técnico Subsequente', nome: 'Técnico Subsequente em Fabricação Mecânica' },
-      { grupo: 'Técnico Subsequente', nome: 'Técnico Subsequente em Geoprocessamento' },
-      { grupo: 'Técnico Subsequente', nome: 'Técnico Subsequente em Refrigeração e Climatização' },
-      { grupo: 'Tecnologia', nome: 'Tecnologia em Análise e Desenvolvimento de Sistemas' },
-      { grupo: 'Tecnologia', nome: 'Tecnologia em Construção de Edifícios' },
-      { grupo: 'Bacharelado', nome: 'Bacharelado em Engenharia Mecânica' },
-      { grupo: 'Bacharelado', nome: 'Bacharelado em Arquitetura e Urbanismo' },
-    ];
+    // CURSOS é carregado dinamicamente da API (lista mestre de cursos ativos).
+    var CURSOS = [];
 
     document.addEventListener('DOMContentLoaded', async function () {
       if (!requireAdminAuth()) return;
@@ -162,7 +146,12 @@
       document.getElementById('config-content').style.display  = 'none';
 
       try {
-        const config = await API.get('obterConfigCursos');
+        // Carrega lista mestre de cursos ativos + config habilitados em paralelo
+        const [cursosAtivos, config] = await Promise.all([
+          apiListarCursos(),
+          API.get('obterConfigCursos'),
+        ]);
+        CURSOS = cursosAtivos || [];
         renderTabela(config);
         document.getElementById('loading-overlay').style.display = 'none';
         document.getElementById('config-content').style.display  = 'block';
@@ -180,14 +169,13 @@
       let html = '';
       let grupoAtual = '';
 
-      CURSOS.forEach(c => {
+      CURSOS.forEach((c, idx) => {
         if (c.grupo !== grupoAtual) {
           grupoAtual = c.grupo;
           html += `<tr><td colspan="3" class="group-label">${escapeHtml(c.grupo)}</td></tr>`;
         }
         const chkObrig    = (obrigSet    === null || obrigSet.has(c.nome))    ? 'checked' : '';
         const chkNaoObrig = (naoObrigSet === null || naoObrigSet.has(c.nome)) ? 'checked' : '';
-        const idx = CURSOS.indexOf(c);
         html += `
           <tr>
             <td>${escapeHtml(c.nome)}</td>
@@ -204,7 +192,7 @@
           </tr>`;
       });
 
-      tbody.innerHTML = html;
+      tbody.innerHTML = html || '<tr><td colspan="3" style="text-align:center;padding:var(--space-8);color:var(--color-text-muted);">Nenhum curso ativo cadastrado. Adicione cursos em <a href="cursos.html">Configurações → Cursos</a>.</td></tr>';
 
       if (config.obrigatorio === null && config.naoObrigatorio === null) {
         document.getElementById('ultima-atualizacao').textContent = 'Nenhuma configuração salva ainda — todos os cursos estão habilitados para ambas as modalidades.';

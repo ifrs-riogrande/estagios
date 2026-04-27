@@ -266,32 +266,8 @@
                 </div>
                 <div class="form-group" style="flex:2;min-width:220px;margin-bottom:0;">
                   <label class="form-label required" for="cad-curso-add">Curso</label>
-                  <select id="cad-curso-add" class="form-control">
-                    <option value="">Selecione o curso...</option>
-                    <optgroup label="Técnico Integrado">
-                      <option value="Técnico Integrado em Automação Industrial">Técnico Integrado em Automação Industrial</option>
-                      <option value="Técnico Integrado em Eletrotécnica">Técnico Integrado em Eletrotécnica</option>
-                      <option value="Técnico Integrado em Geoprocessamento">Técnico Integrado em Geoprocessamento</option>
-                      <option value="Técnico Integrado em Informática para Internet">Técnico Integrado em Informática para Internet</option>
-                      <option value="Técnico Integrado em Mecânica">Técnico Integrado em Mecânica</option>
-                      <option value="Técnico Integrado em Refrigeração e Climatização">Técnico Integrado em Refrigeração e Climatização</option>
-                    </optgroup>
-                    <optgroup label="Técnico Subsequente">
-                      <option value="Técnico Subsequente em Automação Industrial">Técnico Subsequente em Automação Industrial</option>
-                      <option value="Técnico Subsequente em Eletrotécnica">Técnico Subsequente em Eletrotécnica</option>
-                      <option value="Técnico Subsequente em Enfermagem">Técnico Subsequente em Enfermagem</option>
-                      <option value="Técnico Subsequente em Fabricação Mecânica">Técnico Subsequente em Fabricação Mecânica</option>
-                      <option value="Técnico Subsequente em Geoprocessamento">Técnico Subsequente em Geoprocessamento</option>
-                      <option value="Técnico Subsequente em Refrigeração e Climatização">Técnico Subsequente em Refrigeração e Climatização</option>
-                    </optgroup>
-                    <optgroup label="Tecnólogo">
-                      <option value="Tecnologia em Análise e Desenvolvimento de Sistemas">Tecnologia em Análise e Desenvolvimento de Sistemas</option>
-                      <option value="Tecnologia em Construção de Edifícios">Tecnologia em Construção de Edifícios</option>
-                    </optgroup>
-                    <optgroup label="Bacharelado">
-                      <option value="Bacharelado em Engenharia Mecânica">Bacharelado em Engenharia Mecânica</option>
-                      <option value="Bacharelado em Arquitetura e Urbanismo">Bacharelado em Arquitetura e Urbanismo</option>
-                    </optgroup>
+                  <select id="cad-curso-add" class="form-control" disabled>
+                    <option value="">Carregando cursos…</option>
                   </select>
                 </div>
                 <div class="form-group" style="flex:1;min-width:150px;margin-bottom:0;">
@@ -531,6 +507,8 @@
     document.addEventListener('DOMContentLoaded', function () {
       if (!requireStudentAuth()) return;
       iniciar();
+      // Preenche select de cursos dinamicamente
+      preencherSelectCursos('cad-curso-add', 'Selecione o curso...');
 
       // Formata código de acesso em tempo real
       var inputCod = document.getElementById('codigo-acesso');

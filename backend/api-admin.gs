@@ -139,6 +139,7 @@ function doGetAdmin(e) {
       case 'listarCadastrosPendentes': return listarCadastrosPendentes_();
       case 'listarAdendosAdmin':       return listarAdendosAdmin_();
       case 'listarAgentesAdmin':       return listarAgentesAdmin_();
+      case 'listarTodosCursos':        return listarTodosCursos_();
       default: return jsonError_('Ação GET não reconhecida: ' + action, 'UNKNOWN_ACTION');
     }
   } catch (err) {
@@ -179,6 +180,7 @@ function doPostAdmin(e) {
       case 'reenviarCodigoAdmin':    return reenviarCodigoAdmin_(body);
       // Configurações
       case 'salvarConfigCursos':     return salvarConfigCursos_(body);
+      case 'salvarCurso':            return salvarCurso_(body);
       default: return jsonError_('Ação POST não reconhecida: ' + action, 'UNKNOWN_ACTION');
     }
   } catch (err) {
@@ -1311,6 +1313,123 @@ function obterOuCriarAba_(ss, nome, cabecalho) {
     }
   }
   return sheet;
+}
+
+// ---------------------------------------------------------------------------
+// CURSOS — lista mestre (PropertiesService key: 'cursos_lista')
+// ---------------------------------------------------------------------------
+
+var CURSOS_SEED_ = [
+  { grupo: 'Técnico Integrado',    nome: 'Técnico Integrado em Automação Industrial' },
+  { grupo: 'Técnico Integrado',    nome: 'Técnico Integrado em Eletrotécnica' },
+  { grupo: 'Técnico Integrado',    nome: 'Técnico Integrado em Geoprocessamento' },
+  { grupo: 'Técnico Integrado',    nome: 'Técnico Integrado em Informática para Internet' },
+  { grupo: 'Técnico Integrado',    nome: 'Técnico Integrado em Mecânica' },
+  { grupo: 'Técnico Integrado',    nome: 'Técnico Integrado em Refrigeração e Climatização' },
+  { grupo: 'Técnico Subsequente',  nome: 'Técnico Subsequente em Automação Industrial' },
+  { grupo: 'Técnico Subsequente',  nome: 'Técnico Subsequente em Eletrotécnica' },
+  { grupo: 'Técnico Subsequente',  nome: 'Técnico Subsequente em Enfermagem' },
+  { grupo: 'Técnico Subsequente',  nome: 'Técnico Subsequente em Fabricação Mecânica' },
+  { grupo: 'Técnico Subsequente',  nome: 'Técnico Subsequente em Geoprocessamento' },
+  { grupo: 'Técnico Subsequente',  nome: 'Técnico Subsequente em Refrigeração e Climatização' },
+  { grupo: 'Tecnologia',           nome: 'Tecnologia em Análise e Desenvolvimento de Sistemas' },
+  { grupo: 'Tecnologia',           nome: 'Tecnologia em Construção de Edifícios' },
+  { grupo: 'Bacharelado',          nome: 'Bacharelado em Engenharia Mecânica' },
+  { grupo: 'Bacharelado',          nome: 'Bacharelado em Arquitetura e Urbanismo' },
+];
+
+/**
+ * Obtém (ou inicializa) a lista de cursos do PropertiesService.
+ * @returns {Array} Array de {id, nome, grupo, status}
+ */
+function obterListaCursos_() {
+  var raw = PropertiesService.getScriptProperties().getProperty('cursos_lista');
+  if (raw) {
+    try {
+      var parsed = JSON.parse(raw);
+      if (Array.isArray(parsed.cursos)) return parsed.cursos;
+    } catch (e) { /* fall through to seed */ }
+  }
+  // Seed automático a partir da lista original
+  var cursos = CURSOS_SEED_.map(function(c, i) {
+    return {
+      id:     'curso_' + String(i + 1).padStart(3, '0'),
+      nome:   c.nome,
+      grupo:  c.grupo,
+      status: 'Ativo',
+    };
+  });
+  PropertiesService.getScriptProperties().setProperty('cursos_lista', JSON.stringify({ cursos: cursos }));
+  return cursos;
+}
+
+/**
+ * GET público — retorna apenas cursos Ativos [{id, nome, grupo}].
+ * Usado por todos os selects do sistema.
+ */
+function listarCursos_() {
+  try {
+    var todos = obterListaCursos_();
+    var ativos = todos.filter(function(c) { return c.status === 'Ativo'; })
+                      .map(function(c)    { return { id: c.id, nome: c.nome, grupo: c.grupo }; });
+    return jsonOk_(ativos);
+  } catch (e) {
+    return jsonError_('Erro ao listar cursos.', 'INTERNAL');
+  }
+}
+
+/**
+ * GET admin — retorna todos os cursos [{id, nome, grupo, status}].
+ */
+function listarTodosCursos_() {
+  try {
+    return jsonOk_(obterListaCursos_());
+  } catch (e) {
+    return jsonError_('Erro ao listar cursos.', 'INTERNAL');
+  }
+}
+
+/**
+ * POST admin — adiciona ou atualiza um curso.
+ * body.id:     null/undefined → adicionar; existente → atualizar
+ * body.nome:   string (obrigatório)
+ * body.grupo:  string (obrigatório)
+ * body.status: 'Ativo' | 'Inativo' (só para atualização)
+ */
+function salvarCurso_(body) {
+  if (!checkRateLimit_('salvarCurso', 30)) {
+    return jsonError_('Muitas requisições. Aguarde um momento.', 'RATE_LIMIT');
+  }
+  var nome  = (body.nome  || '').trim();
+  var grupo = (body.grupo || '').trim();
+  if (!nome || !grupo) return jsonError_('Nome e grupo são obrigatórios.', 'VALIDATION');
+
+  var cursos = obterListaCursos_();
+
+  if (!body.id) {
+    // Verifica duplicata (mesmo nome, case-insensitive)
+    var existe = cursos.some(function(c) { return c.nome.toLowerCase() === nome.toLowerCase(); });
+    if (existe) return jsonError_('Já existe um curso com esse nome.', 'DUPLICATE');
+    var novo = {
+      id:     'curso_' + Utilities.getUuid().replace(/-/g, '').substring(0, 8),
+      nome:   nome,
+      grupo:  grupo,
+      status: 'Ativo',
+    };
+    cursos.push(novo);
+  } else {
+    var idx = -1;
+    for (var i = 0; i < cursos.length; i++) {
+      if (cursos[i].id === body.id) { idx = i; break; }
+    }
+    if (idx === -1) return jsonError_('Curso não encontrado.', 'NOT_FOUND');
+    cursos[idx].nome   = nome;
+    cursos[idx].grupo  = grupo;
+    cursos[idx].status = (body.status === 'Inativo') ? 'Inativo' : 'Ativo';
+  }
+
+  PropertiesService.getScriptProperties().setProperty('cursos_lista', JSON.stringify({ cursos: cursos }));
+  return jsonOk_({ mensagem: 'Curso salvo com sucesso!', cursos: cursos });
 }
 
 // ---------------------------------------------------------------------------

@@ -140,80 +140,7 @@
             <div class="form-group">
               <fieldset>
                 <legend class="form-label required" style="margin-bottom:var(--space-3);">Selecione os cursos para os quais deseja ser orientador</legend>
-                <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:var(--space-2);">
-
-                  <p class="text-sm text-muted" style="grid-column:1/-1;margin-bottom:var(--space-1);">Técnico Integrado</p>
-                  <label class="form-check" style="align-items:flex-start;">
-                    <input type="checkbox" name="edit-cursos" value="Técnico Integrado em Automação Industrial">
-                    <span class="form-check-label">Técnico Integrado em Automação Industrial</span>
-                  </label>
-                  <label class="form-check" style="align-items:flex-start;">
-                    <input type="checkbox" name="edit-cursos" value="Técnico Integrado em Eletrotécnica">
-                    <span class="form-check-label">Técnico Integrado em Eletrotécnica</span>
-                  </label>
-                  <label class="form-check" style="align-items:flex-start;">
-                    <input type="checkbox" name="edit-cursos" value="Técnico Integrado em Geoprocessamento">
-                    <span class="form-check-label">Técnico Integrado em Geoprocessamento</span>
-                  </label>
-                  <label class="form-check" style="align-items:flex-start;">
-                    <input type="checkbox" name="edit-cursos" value="Técnico Integrado em Informática para Internet">
-                    <span class="form-check-label">Técnico Integrado em Informática para Internet</span>
-                  </label>
-                  <label class="form-check" style="align-items:flex-start;">
-                    <input type="checkbox" name="edit-cursos" value="Técnico Integrado em Mecânica">
-                    <span class="form-check-label">Técnico Integrado em Mecânica</span>
-                  </label>
-                  <label class="form-check" style="align-items:flex-start;">
-                    <input type="checkbox" name="edit-cursos" value="Técnico Integrado em Refrigeração e Climatização">
-                    <span class="form-check-label">Técnico Integrado em Refrigeração e Climatização</span>
-                  </label>
-
-                  <p class="text-sm text-muted" style="grid-column:1/-1;margin-top:var(--space-3);margin-bottom:var(--space-1);">Técnico Subsequente</p>
-                  <label class="form-check" style="align-items:flex-start;">
-                    <input type="checkbox" name="edit-cursos" value="Técnico Subsequente em Automação Industrial">
-                    <span class="form-check-label">Técnico Subsequente em Automação Industrial</span>
-                  </label>
-                  <label class="form-check" style="align-items:flex-start;">
-                    <input type="checkbox" name="edit-cursos" value="Técnico Subsequente em Eletrotécnica">
-                    <span class="form-check-label">Técnico Subsequente em Eletrotécnica</span>
-                  </label>
-                  <label class="form-check" style="align-items:flex-start;">
-                    <input type="checkbox" name="edit-cursos" value="Técnico Subsequente em Enfermagem">
-                    <span class="form-check-label">Técnico Subsequente em Enfermagem</span>
-                  </label>
-                  <label class="form-check" style="align-items:flex-start;">
-                    <input type="checkbox" name="edit-cursos" value="Técnico Subsequente em Fabricação Mecânica">
-                    <span class="form-check-label">Técnico Subsequente em Fabricação Mecânica</span>
-                  </label>
-                  <label class="form-check" style="align-items:flex-start;">
-                    <input type="checkbox" name="edit-cursos" value="Técnico Subsequente em Geoprocessamento">
-                    <span class="form-check-label">Técnico Subsequente em Geoprocessamento</span>
-                  </label>
-                  <label class="form-check" style="align-items:flex-start;">
-                    <input type="checkbox" name="edit-cursos" value="Técnico Subsequente em Refrigeração e Climatização">
-                    <span class="form-check-label">Técnico Subsequente em Refrigeração e Climatização</span>
-                  </label>
-
-                  <p class="text-sm text-muted" style="grid-column:1/-1;margin-top:var(--space-3);margin-bottom:var(--space-1);">Tecnologia</p>
-                  <label class="form-check" style="align-items:flex-start;">
-                    <input type="checkbox" name="edit-cursos" value="Tecnologia em Análise e Desenvolvimento de Sistemas">
-                    <span class="form-check-label">Tecnologia em Análise e Desenvolvimento de Sistemas</span>
-                  </label>
-                  <label class="form-check" style="align-items:flex-start;">
-                    <input type="checkbox" name="edit-cursos" value="Tecnologia em Construção de Edifícios">
-                    <span class="form-check-label">Tecnologia em Construção de Edifícios</span>
-                  </label>
-
-                  <p class="text-sm text-muted" style="grid-column:1/-1;margin-top:var(--space-3);margin-bottom:var(--space-1);">Bacharelado</p>
-                  <label class="form-check" style="align-items:flex-start;">
-                    <input type="checkbox" name="edit-cursos" value="Bacharelado em Engenharia Mecânica">
-                    <span class="form-check-label">Bacharelado em Engenharia Mecânica</span>
-                  </label>
-                  <label class="form-check" style="align-items:flex-start;">
-                    <input type="checkbox" name="edit-cursos" value="Bacharelado em Arquitetura e Urbanismo">
-                    <span class="form-check-label">Bacharelado em Arquitetura e Urbanismo</span>
-                  </label>
-                </div>
+                <div id="grid-edit-cursos" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:var(--space-2);"></div>
               </fieldset>
               <span id="edit-cursos-error" class="form-error hidden" role="alert" style="display:block;margin-top:var(--space-2);"></span>
             </div>
@@ -333,11 +260,9 @@
 
       document.getElementById('edit-area').value = d.area || '';
 
-      // Marca cursos existentes
+      // Preenche checkboxes de cursos dinamicamente e marca os já salvos
       const cursosSalvos = (d.cursos || '').split(',').map(c => c.trim()).filter(Boolean);
-      document.querySelectorAll('input[name="edit-cursos"]').forEach(cb => {
-        cb.checked = cursosSalvos.includes(cb.value);
-      });
+      await preencherCheckboxesCursos('grid-edit-cursos', 'edit-cursos', cursosSalvos);
 
       // Limpa erros e feedback
       ['edit-tel', 'edit-titulacao', 'edit-area'].forEach(id => {

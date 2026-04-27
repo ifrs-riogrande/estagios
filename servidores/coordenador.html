@@ -113,21 +113,8 @@
 
             <div class="form-group">
               <label class="form-label required" for="curso">Curso que coordena</label>
-              <select id="curso" name="curso" class="form-control" required aria-required="true">
-                <option value="">Selecione o curso…</option>
-                <option value="Técnico em Administração">Técnico em Administração</option>
-                <option value="Técnico em Informática">Técnico em Informática</option>
-                <option value="Técnico em Eletrotécnica">Técnico em Eletrotécnica</option>
-                <option value="Técnico em Mecânica">Técnico em Mecânica</option>
-                <option value="Técnico em Química">Técnico em Química</option>
-                <option value="Técnico em Edificações">Técnico em Edificações</option>
-                <option value="Técnico em Controle Ambiental">Técnico em Controle Ambiental</option>
-                <option value="Tecnologia em Gestão Ambiental">Tecnologia em Gestão Ambiental</option>
-                <option value="Tecnologia em Análise e Desenvolvimento de Sistemas">Tecnologia em Análise e Desenvolvimento de Sistemas</option>
-                <option value="Licenciatura em Computação">Licenciatura em Computação</option>
-                <option value="Licenciatura em Química">Licenciatura em Química</option>
-                <option value="Bacharelado em Engenharia de Controle e Automação">Bacharelado em Engenharia de Controle e Automação</option>
-                <option value="Outro">Outro (especificar abaixo)</option>
+              <select id="curso" name="curso" class="form-control" required aria-required="true" disabled>
+                <option value="">Carregando cursos…</option>
               </select>
             </div>
 
@@ -169,7 +156,7 @@
   <script>
     'use strict';
 
-    document.addEventListener('DOMContentLoaded', function () {
+    document.addEventListener('DOMContentLoaded', async function () {
       // Exige login de servidor
       const ok = requireStaffAuth();
       if (!ok) return;
@@ -178,6 +165,14 @@
       const emailInput = document.getElementById('email');
       const userEmail = getCurrentUserEmail();
       if (userEmail) emailInput.value = userEmail;
+
+      // Preenche select de cursos dinamicamente e adiciona opção "Outro"
+      await preencherSelectCursos('curso', 'Selecione o curso…');
+      const selCurso = document.getElementById('curso');
+      const optOutro = document.createElement('option');
+      optOutro.value = 'Outro';
+      optOutro.textContent = 'Outro (especificar abaixo)';
+      selCurso.appendChild(optOutro);
 
       // Exibe campo "outro curso" condicionalmente
       document.getElementById('curso').addEventListener('change', function () {

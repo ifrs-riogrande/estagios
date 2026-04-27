@@ -264,19 +264,8 @@
             <div class="filters--dash">
               <div class="form-group">
                 <label for="filtro-curso">Curso</label>
-                <select id="filtro-curso" class="form-control">
-                  <option value="">Todos os cursos</option>
-                  <option value="Técnico em Administração">Téc. Administração</option>
-                  <option value="Técnico em Eletrotécnica">Téc. Eletrotécnica</option>
-                  <option value="Técnico em Informática">Téc. Informática</option>
-                  <option value="Técnico em Química">Téc. Química</option>
-                  <option value="Técnico em Segurança do Trabalho">Téc. Seg. Trabalho</option>
-                  <option value="Análise e Desenvolvimento de Sistemas">ADS</option>
-                  <option value="Engenharia de Computação">Eng. Computação</option>
-                  <option value="Engenharia Elétrica">Eng. Elétrica</option>
-                  <option value="Licenciatura em Computação">Lic. Computação</option>
-                  <option value="Tecnologia em Gestão Pública">Gestão Pública</option>
-                  <option value="Tecnologia em Processos Gerenciais">Proc. Gerenciais</option>
+                <select id="filtro-curso" class="form-control" disabled>
+                  <option value="">Carregando cursos…</option>
                 </select>
               </div>
               <div class="form-group">
@@ -379,6 +368,8 @@
       requireStaffAuth();
       document.getElementById('semestre-atual').textContent = getCurrentSemester();
       carregarDashboard();
+      // Preenche filtro de curso dinamicamente (incluirTodos=true)
+      preencherSelectCursos('filtro-curso', 'Todos os cursos', true);
     });
 
     // Dados brutos para filtragem local

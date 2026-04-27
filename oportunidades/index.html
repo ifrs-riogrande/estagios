@@ -155,23 +155,8 @@
           </div>
           <div class="form-group">
             <label class="form-label" for="filtro-curso">Curso</label>
-            <select id="filtro-curso" class="form-control" aria-label="Filtrar por curso">
-              <option value="">Todos os cursos</option>
-              <optgroup label="Técnico">
-                <option value="Técnico em Administração">Téc. Administração</option>
-                <option value="Técnico em Eletrotécnica">Téc. Eletrotécnica</option>
-                <option value="Técnico em Informática">Téc. Informática</option>
-                <option value="Técnico em Química">Téc. Química</option>
-                <option value="Técnico em Segurança do Trabalho">Téc. Seg. Trabalho</option>
-              </optgroup>
-              <optgroup label="Graduação">
-                <option value="Análise e Desenvolvimento de Sistemas">ADS</option>
-                <option value="Engenharia de Computação">Eng. Computação</option>
-                <option value="Engenharia Elétrica">Eng. Elétrica</option>
-                <option value="Licenciatura em Computação">Lic. Computação</option>
-                <option value="Tecnologia em Gestão Pública">Gestão Pública</option>
-                <option value="Tecnologia em Processos Gerenciais">Proc. Gerenciais</option>
-              </optgroup>
+            <select id="filtro-curso" class="form-control" aria-label="Filtrar por curso" disabled>
+              <option value="">Carregando cursos…</option>
             </select>
           </div>
           <div class="form-group">
@@ -252,6 +237,8 @@
       const session = getSession();
       if (session) updateHeaderUser(session);
       carregarOportunidades();
+      // Preenche filtro de curso dinamicamente (incluirTodos=true)
+      preencherSelectCursos('filtro-curso', 'Todos os cursos', true);
     });
 
     let todasOportunidades = [];

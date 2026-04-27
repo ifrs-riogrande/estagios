@@ -138,26 +138,8 @@
             <div class="form-group">
               <label class="form-label required" for="area-curso">Área / Curso relacionado</label>
               <select id="area-curso" name="areaCurso" class="form-control" required
-                aria-required="true" aria-describedby="area-curso-error">
-                <option value="">Selecione o curso principal...</option>
-                <optgroup label="Cursos Técnicos">
-                  <option value="Técnico em Informática">Técnico em Informática</option>
-                  <option value="Técnico em Eletrotécnica">Técnico em Eletrotécnica</option>
-                  <option value="Técnico em Mecânica">Técnico em Mecânica</option>
-                  <option value="Técnico em Administração">Técnico em Administração</option>
-                  <option value="Técnico em Aquicultura">Técnico em Aquicultura</option>
-                  <option value="Técnico em Meio Ambiente">Técnico em Meio Ambiente</option>
-                  <option value="Técnico em Química">Técnico em Química</option>
-                </optgroup>
-                <optgroup label="Cursos de Graduação">
-                  <option value="Engenharia de Computação">Engenharia de Computação</option>
-                  <option value="Engenharia Elétrica">Engenharia Elétrica</option>
-                  <option value="Engenharia Mecânica">Engenharia Mecânica</option>
-                  <option value="Tecnologia em Análise e Desenvolvimento de Sistemas">Tecnologia em ADS</option>
-                  <option value="Tecnologia em Gestão Ambiental">Tecnologia em Gestão Ambiental</option>
-                </optgroup>
-                <option value="Qualquer curso">Qualquer curso</option>
-                <option value="Outros">Outros / Não especificado</option>
+                aria-required="true" aria-describedby="area-curso-error" disabled>
+                <option value="">Carregando cursos…</option>
               </select>
               <span id="area-curso-error" class="form-error hidden" role="alert"></span>
             </div>
@@ -395,6 +377,20 @@
 
     // Define prazo mínimo como amanhã
     document.getElementById('prazo-candidatura').min = getMinDateString(1);
+
+    // Preenche select de cursos dinamicamente + opções especiais
+    preencherSelectCursos('area-curso', 'Selecione o curso principal...').then(function () {
+      const sel = document.getElementById('area-curso');
+      if (!sel) return;
+      const optQualquer = document.createElement('option');
+      optQualquer.value = 'Qualquer curso';
+      optQualquer.textContent = 'Qualquer curso';
+      sel.appendChild(optQualquer);
+      const optOutros = document.createElement('option');
+      optOutros.value = 'Outros';
+      optOutros.textContent = 'Outros / Não especificado';
+      sel.appendChild(optOutros);
+    });
 
     // ── Validação em tempo real ──
 

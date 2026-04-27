@@ -186,6 +186,21 @@ async function apiListarAgentes() {
   return API.get('listarAgentes');
 }
 
+/** Lista cursos ativos (público — sem auth). Usado em todos os selects do sistema. */
+async function apiListarCursos() {
+  return API.get('listarCursos');
+}
+
+/** Lista todos os cursos com status (admin). */
+async function apiListarTodosCursos() {
+  return API.get('listarTodosCursos', { authToken: getAccessToken() });
+}
+
+/** Adiciona ou atualiza um curso (admin). */
+async function apiSalvarCurso(dados) {
+  return API.post('salvarCurso', { ...dados, authToken: getAccessToken() });
+}
+
 /** Lista oportunidades aprovadas (portal público). */
 async function apiListarOportunidades(filtros = {}) {
   return API.get('listarOportunidades', filtros);
@@ -383,5 +398,118 @@ async function submitWithFeedback(apiFn, submitBtn, feedbackId, successTitle, su
   } finally {
     submitBtn.classList.remove('is-loading');
     submitBtn.disabled = false;
+  }
+}
+
+// ─────────────────────────────────────────
+//  HELPER: preenche um <select> com cursos
+//  agrupados por optgroup, carregados da API.
+// ─────────────────────────────────────────
+
+/**
+ * Preenche um elemento <select> com cursos ativos agrupados por grupo.
+ *
+ * @param {string}  selectId      - ID do elemento <select>
+ * @param {string}  [placeholder] - Texto do option vazio inicial (default: 'Selecione o curso')
+ * @param {boolean} [incluirTodos]- Se true, adiciona option "Todos os cursos" (para filtros)
+ */
+async function preencherSelectCursos(selectId, placeholder = 'Selecione o curso', incluirTodos = false) {
+  const sel = document.getElementById(selectId);
+  if (!sel) return;
+
+  sel.innerHTML = '';
+  sel.disabled = true;
+
+  // Option inicial
+  const optBlank = document.createElement('option');
+  optBlank.value = '';
+  optBlank.textContent = placeholder;
+  sel.appendChild(optBlank);
+
+  if (incluirTodos) {
+    const optTodos = document.createElement('option');
+    optTodos.value = 'todos';
+    optTodos.textContent = 'Todos os cursos';
+    sel.appendChild(optTodos);
+  }
+
+  try {
+    const cursos = await apiListarCursos();
+    if (!Array.isArray(cursos) || cursos.length === 0) {
+      optBlank.textContent = 'Nenhum curso disponível';
+      return;
+    }
+
+    // Agrupa por grupo mantendo ordem de inserção
+    const grupos = {};
+    cursos.forEach(c => {
+      if (!grupos[c.grupo]) grupos[c.grupo] = [];
+      grupos[c.grupo].push(c);
+    });
+
+    Object.keys(grupos).sort().forEach(g => {
+      const og = document.createElement('optgroup');
+      og.label = g;
+      grupos[g].forEach(c => {
+        const op = document.createElement('option');
+        op.value = c.nome;   // valor = nome (compatível com campos existentes)
+        op.textContent = c.nome;
+        og.appendChild(op);
+      });
+      sel.appendChild(og);
+    });
+
+    sel.disabled = false;
+  } catch (err) {
+    optBlank.textContent = 'Erro ao carregar cursos';
+    console.error('[preencherSelectCursos]', err);
+  }
+}
+
+/**
+ * Preenche um container com checkboxes de cursos, agrupados por grupo.
+ * Substitui o conteúdo do container — ideal para formulários de orientadores.
+ *
+ * @param {string}   containerId    - ID do elemento container (div/fieldset)
+ * @param {string}   checkboxName   - Valor do atributo name dos checkboxes
+ * @param {string[]} [marcados]     - Nomes de cursos que devem iniciar marcados
+ */
+async function preencherCheckboxesCursos(containerId, checkboxName, marcados = []) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+
+  container.innerHTML = '<p style="color:var(--color-text-secondary)">Carregando cursos…</p>';
+
+  try {
+    const cursos = await apiListarCursos();
+    if (!Array.isArray(cursos) || cursos.length === 0) {
+      container.innerHTML = '<p style="color:var(--color-text-secondary)">Nenhum curso disponível.</p>';
+      return;
+    }
+
+    const marcadosSet = new Set(marcados);
+    const grupos = {};
+    cursos.forEach(c => {
+      if (!grupos[c.grupo]) grupos[c.grupo] = [];
+      grupos[c.grupo].push(c);
+    });
+
+    let html = '';
+    Object.keys(grupos).sort().forEach(g => {
+      html += `<p class="text-sm text-muted" style="grid-column:1/-1;margin-top:var(--space-3);margin-bottom:var(--space-1);">${g}</p>`;
+      grupos[g].forEach(c => {
+        const checked = marcadosSet.has(c.nome) ? ' checked' : '';
+        html += `
+          <label class="form-check" style="align-items:flex-start;">
+            <input type="checkbox" name="${checkboxName}" value="${c.nome.replace(/"/g,'&quot;')}"${checked}>
+            <span class="form-check-label">${c.nome.replace(/</g,'&lt;')}</span>
+          </label>`;
+      });
+    });
+
+    container.innerHTML = html;
+  } catch (err) {
+    container.innerHTML = '<p style="color:var(--color-danger,#dc2626)">Erro ao carregar cursos. Recarregue a página.</p>';
+    console.error('[preencherCheckboxesCursos]', err);
   }
 }

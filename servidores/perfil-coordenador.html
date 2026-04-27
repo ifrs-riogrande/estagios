@@ -158,32 +158,8 @@
               </div>
               <div class="form-group">
                 <label class="form-label required" for="curso">Curso que coordena</label>
-                <select id="curso" name="curso" class="form-control" required aria-required="true" aria-describedby="curso-error">
-                  <option value="">Selecione o curso...</option>
-                  <optgroup label="Técnico Integrado">
-                    <option>Técnico Integrado em Automação Industrial</option>
-                    <option>Técnico Integrado em Eletrotécnica</option>
-                    <option>Técnico Integrado em Geoprocessamento</option>
-                    <option>Técnico Integrado em Informática para Internet</option>
-                    <option>Técnico Integrado em Mecânica</option>
-                    <option>Técnico Integrado em Refrigeração e Climatização</option>
-                  </optgroup>
-                  <optgroup label="Técnico Subsequente">
-                    <option>Técnico Subsequente em Automação Industrial</option>
-                    <option>Técnico Subsequente em Eletrotécnica</option>
-                    <option>Técnico Subsequente em Enfermagem</option>
-                    <option>Técnico Subsequente em Fabricação Mecânica</option>
-                    <option>Técnico Subsequente em Geoprocessamento</option>
-                    <option>Técnico Subsequente em Refrigeração e Climatização</option>
-                  </optgroup>
-                  <optgroup label="Tecnologia">
-                    <option>Tecnologia em Análise e Desenvolvimento de Sistemas</option>
-                    <option>Tecnologia em Construção de Edifícios</option>
-                  </optgroup>
-                  <optgroup label="Bacharelado">
-                    <option>Bacharelado em Engenharia Mecânica</option>
-                    <option>Bacharelado em Arquitetura e Urbanismo</option>
-                  </optgroup>
+                <select id="curso" name="curso" class="form-control" required aria-required="true" aria-describedby="curso-error" disabled>
+                  <option value="">Carregando cursos…</option>
                 </select>
                 <span id="curso-error" class="form-error hidden" role="alert"></span>
               </div>
@@ -295,6 +271,8 @@
       if (!requireStaffAuth()) return;
       applyMasks();
       carregarDados();
+      // Preenche select de cursos dinamicamente
+      preencherSelectCursos('curso', 'Selecione o curso...');
 
       document.getElementById('cpf').addEventListener('blur', function () {
         var v = this.value.replace(/\D/g, '');
