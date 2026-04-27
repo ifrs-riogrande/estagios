@@ -201,6 +201,11 @@ async function apiSalvarCurso(dados) {
   return API.post('salvarCurso', { ...dados, authToken: getAccessToken() });
 }
 
+/** Exclui permanentemente um curso (admin). */
+async function apiDeletarCurso(id) {
+  return API.post('deletarCurso', { id, authToken: getAccessToken() });
+}
+
 /** Lista oportunidades aprovadas (portal público). */
 async function apiListarOportunidades(filtros = {}) {
   return API.get('listarOportunidades', filtros);

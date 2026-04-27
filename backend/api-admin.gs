@@ -181,6 +181,7 @@ function doPostAdmin(e) {
       // Configurações
       case 'salvarConfigCursos':     return salvarConfigCursos_(body);
       case 'salvarCurso':            return salvarCurso_(body);
+      case 'deletarCurso':           return deletarCurso_(body);
       default: return jsonError_('Ação POST não reconhecida: ' + action, 'UNKNOWN_ACTION');
     }
   } catch (err) {
@@ -1442,6 +1443,28 @@ function salvarCurso_(body) {
 
   PropertiesService.getScriptProperties().setProperty('cursos_lista', JSON.stringify({ cursos: cursos }));
   return jsonOk_({ mensagem: 'Curso salvo com sucesso!', cursos: cursos });
+}
+
+/**
+ * POST admin — exclui permanentemente um curso pelo id.
+ */
+function deletarCurso_(body) {
+  if (!checkRateLimit_('deletarCurso', 20)) {
+    return jsonError_('Muitas requisições. Aguarde um momento.', 'RATE_LIMIT');
+  }
+  var id = (body.id || '').trim();
+  if (!id) return jsonError_('ID do curso não informado.', 'VALIDATION');
+
+  var cursos = obterListaCursos_();
+  var idx = -1;
+  for (var i = 0; i < cursos.length; i++) {
+    if (cursos[i].id === id) { idx = i; break; }
+  }
+  if (idx === -1) return jsonError_('Curso não encontrado.', 'NOT_FOUND');
+
+  cursos.splice(idx, 1);
+  PropertiesService.getScriptProperties().setProperty('cursos_lista', JSON.stringify({ cursos: cursos }));
+  return jsonOk_({ mensagem: 'Curso excluído com sucesso!', cursos: cursos });
 }
 
 // ---------------------------------------------------------------------------

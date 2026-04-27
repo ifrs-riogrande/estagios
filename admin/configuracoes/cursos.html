@@ -318,6 +318,7 @@
             ? `<button class="btn btn-sm btn-danger" style="margin-left:var(--space-2);" onclick="alterarStatus('${escHtml(c.id)}','Inativo')">Inativar</button>`
             : `<button class="btn btn-sm btn-secondary" style="margin-left:var(--space-2);" onclick="alterarStatus('${escHtml(c.id)}','Ativo')">Reativar</button>`
           }
+          <button class="btn btn-sm btn-danger" style="margin-left:var(--space-2);" onclick="deletarCurso('${escHtml(c.id)}')">Excluir</button>
         </td>
       </tr>
     `).join('');
@@ -385,6 +386,21 @@
       mostrarFeedbackGlobal('success', `Curso ${novoStatus === 'Inativo' ? 'inativado' : 'reativado'} com sucesso.`);
     } catch (err) {
       mostrarFeedbackGlobal('error', err.message || 'Erro ao alterar status.');
+    }
+  }
+
+  async function deletarCurso(id) {
+    const curso = todosCursos.find(c => c.id === id);
+    if (!curso) return;
+    if (!confirm(`Tem certeza que deseja EXCLUIR permanentemente o curso "${curso.nome}"?\n\nEsta ação não pode ser desfeita.`)) return;
+
+    try {
+      const res = await apiDeletarCurso(id);
+      todosCursos = res.cursos || todosCursos;
+      renderizarTabela();
+      mostrarFeedbackGlobal('success', `Curso "${curso.nome}" excluído permanentemente.`);
+    } catch (err) {
+      mostrarFeedbackGlobal('error', err.message || 'Erro ao excluir curso.');
     }
   }
 

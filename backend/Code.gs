@@ -107,6 +107,7 @@ var POST_ROUTES = {
   // ConfiguraÃ§Ãµes (admin)
   'salvarConfigCursos':        doPostAdmin,
   'salvarCurso':               doPostAdmin,
+  'deletarCurso':              doPostAdmin,
 
   // Admin
   'aprovarSolicitacao':        doPostAdmin,
