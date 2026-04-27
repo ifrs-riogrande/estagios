@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Perfil da Empresa — Central de Estágios IFRS</title>
+  <title>Perfil da Empresa / Concedente — Central de Estágios IFRS</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
@@ -12,11 +12,23 @@
   <link rel="stylesheet" href="../assets/css/layout.css">
   <style>
     /* ── Painéis ── */
+    #painel-busca,
     #painel-carregando,
     #painel-erro-inicial,
     #painel-novo,
     #painel-dados,
     #painel-edicao { display: none; }
+
+    /* ── Painel busca ── */
+    .busca-card { max-width: 520px; margin: 0 auto; }
+    .tipo-concedente { display: flex; flex-direction: column; gap: var(--space-2); margin-bottom: var(--space-5); }
+    .tipo-option { display: flex; align-items: flex-start; gap: var(--space-3); padding: var(--space-3) var(--space-4);
+      border: 2px solid var(--color-border); border-radius: var(--radius-md); cursor: pointer;
+      transition: border-color .15s, background .15s; }
+    .tipo-option:has(input:checked) { border-color: var(--color-primary); background: #eff6ff; }
+    .tipo-option input[type=radio] { margin-top: 2px; flex-shrink: 0; accent-color: var(--color-primary); }
+    .tipo-option-body strong { display: block; font-size: var(--font-size-base); color: var(--color-text); }
+    .tipo-option-body span   { font-size: var(--font-size-sm); color: var(--color-text-muted); }
 
     /* ── Grade de visualização ── */
     .dados-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-5) var(--space-8); }
@@ -50,13 +62,10 @@
             <span class="header-brand-sub">IFRS Campus Rio Grande</span>
           </div>
         </a>
-        <div style="display:flex;align-items:center;gap:var(--space-3);">
-          <div id="header-user-area"></div>
-          <a href="index.html" class="back-link">
-            <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd"/></svg>
-            Empresas
-          </a>
-        </div>
+        <a href="index.html" class="back-link">
+          <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd"/></svg>
+          Empresas
+        </a>
       </div>
     </div>
   </header>
@@ -66,16 +75,77 @@
       <div class="form-wrapper">
 
         <div class="form-page-header">
-          <h1>Perfil da Empresa</h1>
-          <p id="subtitulo-pagina">Verificando seu cadastro...</p>
+          <h1>Perfil do Concedente</h1>
+          <p id="subtitulo-pagina">Informe o tipo e o documento para acessar ou criar seu cadastro.</p>
         </div>
+
+        <!-- ══════════════════════════════════════════════
+             PAINEL: Busca (ponto de entrada)
+        ══════════════════════════════════════════════ -->
+        <div id="painel-busca">
+          <div class="busca-card">
+
+            <div class="form-section">
+              <h2 class="form-section-title" style="margin-bottom:var(--space-4);">
+                <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a1 1 0 110 2h-3a1 1 0 01-1-1v-2a1 1 0 00-1-1H9a1 1 0 00-1 1v2a1 1 0 01-1 1H4a1 1 0 110-2V4zm3 1h2v2H7V5zm2 4H7v2h2V9zm2-4h2v2h-2V5zm2 4h-2v2h2V9z" clip-rule="evenodd"/>
+                </svg>
+                Tipo de concedente
+              </h2>
+              <div class="tipo-concedente" role="radiogroup" aria-label="Tipo de concedente">
+                <label class="tipo-option">
+                  <input type="radio" name="tipo-concedente" value="Pessoa Jurídica" id="tipo-pj">
+                  <div class="tipo-option-body">
+                    <strong>Pessoa Jurídica</strong>
+                    <span>Empresa, organização ou instituição com CNPJ</span>
+                  </div>
+                </label>
+                <label class="tipo-option">
+                  <input type="radio" name="tipo-concedente" value="Profissional Liberal" id="tipo-pl">
+                  <div class="tipo-option-body">
+                    <strong>Profissional Liberal</strong>
+                    <span>Profissional de nível superior registrado em conselho de fiscalização (CPF)</span>
+                  </div>
+                </label>
+                <label class="tipo-option">
+                  <input type="radio" name="tipo-concedente" value="Produtor Rural" id="tipo-pr">
+                  <div class="tipo-option-body">
+                    <strong>Produtor Rural</strong>
+                    <span>Produtor com Bloco de Produtor Rural (CPF)</span>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label required" for="busca-doc" id="label-busca-doc">CNPJ / CPF</label>
+              <input type="text" id="busca-doc" class="form-control"
+                placeholder="Selecione o tipo acima" disabled
+                inputmode="numeric" aria-describedby="busca-doc-hint busca-doc-error"
+                autocomplete="off">
+              <span id="busca-doc-hint" class="form-hint">Informe o documento para localizar ou criar seu cadastro.</span>
+              <span id="busca-doc-error" class="form-error hidden" role="alert"></span>
+            </div>
+
+            <div id="feedback-busca" class="form-feedback" role="status" aria-live="polite"></div>
+
+            <div class="form-actions">
+              <button type="button" id="btn-buscar" class="btn btn-primary btn-lg" onclick="buscarCadastro()" disabled>
+                <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/>
+                </svg>
+                Buscar cadastro
+              </button>
+            </div>
+          </div>
+        </div><!-- /painel-busca -->
 
         <!-- ══════════════════════════════════════════════
              PAINEL: Carregando
         ══════════════════════════════════════════════ -->
         <div id="painel-carregando" style="text-align:center;padding:var(--space-12) 0;">
           <div class="spinner" style="margin:0 auto var(--space-4);"></div>
-          <p style="color:var(--color-text-muted);">Verificando seu cadastro...</p>
+          <p style="color:var(--color-text-muted);">Buscando cadastro...</p>
         </div>
 
         <!-- ══════════════════════════════════════════════
@@ -83,10 +153,14 @@
         ══════════════════════════════════════════════ -->
         <div id="painel-erro-inicial">
           <div class="alert alert-danger" id="msg-erro-inicial">
-            <div class="alert-content">Erro ao verificar cadastro. Tente novamente.</div>
+            <div class="alert-content">Erro ao buscar cadastro. Tente novamente.</div>
           </div>
-          <div style="margin-top:var(--space-5);">
-            <button class="btn btn-primary" onclick="carregarDados()">Tentar novamente</button>
+          <div style="margin-top:var(--space-5);display:flex;gap:var(--space-3);">
+            <button class="btn btn-ghost" onclick="voltarBusca()">
+              <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd"/></svg>
+              Voltar
+            </button>
+            <button class="btn btn-primary" onclick="buscarCadastro()">Tentar novamente</button>
           </div>
         </div>
 
@@ -96,8 +170,12 @@
         <div id="painel-novo">
 
           <div class="info-banner" role="note">
-            <strong>Bem-vindo!</strong> Nenhum cadastro foi encontrado para sua conta. Preencha os dados abaixo para registrar sua empresa. Após validação pelo setor, você ficará disponível para solicitações de estágio.
+            <strong>Novo cadastro.</strong> Nenhum registro foi encontrado para este documento.
+            Preencha os dados abaixo. Após validação pelo setor de estágios, o cadastro será ativado no sistema.
           </div>
+
+          <!-- Tipo de concedente (oculto — readonly) -->
+          <input type="hidden" id="novo-tipo">
 
           <form id="form-novo" novalidate>
 
@@ -107,36 +185,53 @@
                 <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                   <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a1 1 0 110 2h-3a1 1 0 01-1-1v-2a1 1 0 00-1-1H9a1 1 0 00-1 1v2a1 1 0 01-1 1H4a1 1 0 110-2V4zm3 1h2v2H7V5zm2 4H7v2h2V9zm2-4h2v2h-2V5zm2 4h-2v2h2V9z" clip-rule="evenodd"/>
                 </svg>
-                Identificação da Empresa
+                <span id="label-secao-identificacao">Identificação</span>
               </h2>
               <div class="form-row">
                 <div class="form-group">
-                  <label class="form-label required" for="razao-social">Razão Social</label>
-                  <input type="text" id="razao-social" class="form-control" placeholder="Conforme Cartão CNPJ"
+                  <label class="form-label required" for="razao-social" id="label-razao-social">Razão Social</label>
+                  <input type="text" id="razao-social" class="form-control"
                     required aria-required="true" aria-describedby="razao-social-error" autocomplete="organization">
                   <span id="razao-social-error" class="form-error hidden" role="alert"></span>
                 </div>
-                <div class="form-group">
+                <!-- Nome Fantasia — visível somente PJ -->
+                <div class="form-group" id="secao-nome-fantasia">
                   <label class="form-label" for="nome-fantasia">Nome Fantasia</label>
                   <input type="text" id="nome-fantasia" class="form-control" placeholder="Se diferente da razão social">
                 </div>
               </div>
               <div class="form-row">
                 <div class="form-group">
-                  <label class="form-label required" for="cnpj">CNPJ</label>
-                  <input type="text" id="cnpj" class="form-control" placeholder="00.000.000/0000-00"
-                    required aria-required="true" data-mask="cnpj" inputmode="numeric"
-                    aria-describedby="cnpj-hint cnpj-error">
-                  <span id="cnpj-hint" class="form-hint">14 dígitos — será usado como identificador único.</span>
-                  <span id="cnpj-error" class="form-error hidden" role="alert"></span>
+                  <label class="form-label required" for="cnpj" id="label-cnpj">CNPJ / CPF</label>
+                  <input type="text" id="cnpj" class="form-control"
+                    readonly style="background:var(--color-surface-secondary,#f8f9fa);cursor:default;"
+                    aria-describedby="cnpj-hint">
+                  <span id="cnpj-hint" class="form-hint">Documento informado na busca. Não pode ser alterado.</span>
                 </div>
                 <div class="form-group">
-                  <label class="form-label required" for="ramo">Ramo de Atividade</label>
+                  <label class="form-label required" for="ramo" id="label-ramo">Ramo de Atividade</label>
                   <input type="text" id="ramo" class="form-control"
-                    placeholder="Ex.: Tecnologia da Informação, Saúde" required aria-required="true"
-                    aria-describedby="ramo-error">
+                    required aria-required="true" aria-describedby="ramo-error">
                   <span id="ramo-error" class="form-error hidden" role="alert"></span>
                 </div>
+              </div>
+              <!-- Registro Profissional — somente Profissional Liberal -->
+              <div class="form-group" id="secao-registro-prof" style="display:none;">
+                <label class="form-label required" for="registro-prof">Registro no Conselho Profissional</label>
+                <input type="text" id="registro-prof" class="form-control"
+                  placeholder="Ex.: CRM 12345, CREA 67890"
+                  aria-describedby="registro-prof-hint registro-prof-error">
+                <span id="registro-prof-hint" class="form-hint">Número de registro no conselho de fiscalização da profissão.</span>
+                <span id="registro-prof-error" class="form-error hidden" role="alert"></span>
+              </div>
+              <!-- Bloco de Produtor — somente Produtor Rural -->
+              <div class="form-group" id="secao-bloco-produtor" style="display:none;">
+                <label class="form-label required" for="bloco-produtor">Número do Bloco de Produtor Rural</label>
+                <input type="text" id="bloco-produtor" class="form-control"
+                  placeholder="Número/série do Bloco de Produtor"
+                  aria-describedby="bloco-produtor-hint bloco-produtor-error">
+                <span id="bloco-produtor-hint" class="form-hint">Emitido pela SEFAZ/Receita. Necessário para formalização do estágio.</span>
+                <span id="bloco-produtor-error" class="form-error hidden" role="alert"></span>
               </div>
             </div>
 
@@ -165,20 +260,14 @@
                   <label class="form-label required" for="uf">UF</label>
                   <select id="uf" class="form-control" required aria-required="true" aria-describedby="uf-error" autocomplete="address-level1">
                     <option value="">UF</option>
-                    <option value="AC">AC</option><option value="AL">AL</option>
-                    <option value="AP">AP</option><option value="AM">AM</option>
-                    <option value="BA">BA</option><option value="CE">CE</option>
-                    <option value="DF">DF</option><option value="ES">ES</option>
-                    <option value="GO">GO</option><option value="MA">MA</option>
-                    <option value="MT">MT</option><option value="MS">MS</option>
-                    <option value="MG">MG</option><option value="PA">PA</option>
-                    <option value="PB">PB</option><option value="PR">PR</option>
-                    <option value="PE">PE</option><option value="PI">PI</option>
-                    <option value="RJ">RJ</option><option value="RN">RN</option>
-                    <option value="RS" selected>RS</option>
-                    <option value="RO">RO</option><option value="RR">RR</option>
-                    <option value="SC">SC</option><option value="SP">SP</option>
-                    <option value="SE">SE</option><option value="TO">TO</option>
+                    <option>AC</option><option>AL</option><option>AP</option><option>AM</option>
+                    <option>BA</option><option>CE</option><option>DF</option><option>ES</option>
+                    <option>GO</option><option>MA</option><option>MT</option><option>MS</option>
+                    <option>MG</option><option>PA</option><option>PB</option><option>PR</option>
+                    <option>PE</option><option>PI</option><option>RJ</option><option>RN</option>
+                    <option selected>RS</option>
+                    <option>RO</option><option>RR</option><option>SC</option><option>SP</option>
+                    <option>SE</option><option>TO</option>
                   </select>
                   <span id="uf-error" class="form-error hidden" role="alert"></span>
                 </div>
@@ -196,21 +285,21 @@
                 <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                   <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z"/>
                 </svg>
-                Contato da Empresa
+                Contato
               </h2>
               <div class="form-row">
                 <div class="form-group">
                   <label class="form-label required" for="tel-empresa">Telefone</label>
-                  <input type="tel" id="tel-empresa" class="form-control" placeholder="(53)999999999"
+                  <input type="tel" id="tel-empresa" class="form-control" placeholder="(53) 99999-9999"
                     required aria-required="true" data-mask="phone" inputmode="tel"
-                    aria-describedby="tel-empresa-hint tel-empresa-error" autocomplete="tel">
-                  <span id="tel-empresa-hint" class="form-hint">DDD + número.</span>
+                    aria-describedby="tel-empresa-error" autocomplete="tel">
                   <span id="tel-empresa-error" class="form-error hidden" role="alert"></span>
                 </div>
                 <div class="form-group">
-                  <label class="form-label required" for="email-empresa">E-mail da Empresa</label>
+                  <label class="form-label required" for="email-empresa">E-mail de contato</label>
                   <input type="email" id="email-empresa" class="form-control" placeholder="contato@empresa.com.br"
-                    required aria-required="true" aria-describedby="email-empresa-error" autocomplete="email">
+                    required aria-required="true" aria-describedby="email-empresa-hint email-empresa-error" autocomplete="email">
+                  <span id="email-empresa-hint" class="form-hint">Será usado para envio de documentos do estágio.</span>
                   <span id="email-empresa-error" class="form-error hidden" role="alert"></span>
                 </div>
               </div>
@@ -222,8 +311,8 @@
               </div>
             </div>
 
-            <!-- Seção 4 — Representante Legal -->
-            <div class="form-section">
+            <!-- Seção 4 — Representante Legal (somente PJ) -->
+            <div class="form-section" id="secao-representante">
               <h2 class="form-section-title">
                 <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                   <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"/>
@@ -234,13 +323,13 @@
                 <div class="form-group">
                   <label class="form-label required" for="nome-rep">Nome do Representante</label>
                   <input type="text" id="nome-rep" class="form-control" placeholder="Nome completo"
-                    required aria-required="true" aria-describedby="nome-rep-error" autocomplete="name">
+                    aria-required="true" aria-describedby="nome-rep-error" autocomplete="name">
                   <span id="nome-rep-error" class="form-error hidden" role="alert"></span>
                 </div>
                 <div class="form-group">
                   <label class="form-label required" for="cargo-rep">Cargo</label>
                   <input type="text" id="cargo-rep" class="form-control" placeholder="Ex.: Diretor, Gerente"
-                    required aria-required="true" aria-describedby="cargo-rep-error" autocomplete="organization-title">
+                    aria-required="true" aria-describedby="cargo-rep-error" autocomplete="organization-title">
                   <span id="cargo-rep-error" class="form-error hidden" role="alert"></span>
                 </div>
               </div>
@@ -248,14 +337,14 @@
                 <div class="form-group">
                   <label class="form-label required" for="email-rep">E-mail do Representante</label>
                   <input type="email" id="email-rep" class="form-control" placeholder="representante@empresa.com.br"
-                    required aria-required="true" aria-describedby="email-rep-hint email-rep-error" autocomplete="email">
+                    aria-required="true" aria-describedby="email-rep-hint email-rep-error" autocomplete="email">
                   <span id="email-rep-hint" class="form-hint">Usado para envio de documentos para assinatura.</span>
                   <span id="email-rep-error" class="form-error hidden" role="alert"></span>
                 </div>
                 <div class="form-group">
                   <label class="form-label required" for="cpf-rep">CPF do Representante</label>
                   <input type="text" id="cpf-rep" class="form-control" placeholder="000.000.000-00"
-                    required aria-required="true" data-mask="cpf" inputmode="numeric"
+                    aria-required="true" data-mask="cpf" inputmode="numeric"
                     aria-describedby="cpf-rep-error">
                   <span id="cpf-rep-error" class="form-error hidden" role="alert"></span>
                 </div>
@@ -272,15 +361,15 @@
               </h2>
               <div class="declaration-box">
                 <p>
-                  Ao enviar este formulário, o representante legal declara que todas as informações
-                  prestadas são verdadeiras. A empresa está ciente de que o cadastro passará por
-                  validação da Central de Estágios antes de ser ativado no sistema.
+                  Ao enviar este formulário, o responsável pelo cadastro declara que todas as
+                  informações prestadas são verdadeiras. O cadastro passará por validação da
+                  Central de Estágios antes de ser ativado.
                 </p>
                 <div class="form-check">
                   <input type="checkbox" id="declaracao" required aria-required="true" aria-describedby="declaracao-error">
                   <label class="form-check-label required" for="declaracao">
-                    Declaro que as informações acima são verdadeiras e estou de acordo com os
-                    termos de uso dos dados para fins institucionais de estágio.
+                    Declaro que as informações acima são verdadeiras e estou de acordo com o
+                    uso dos dados para fins institucionais de estágio.
                   </label>
                 </div>
                 <span id="declaracao-error" class="form-error hidden" role="alert" style="margin-top:var(--space-2);display:block;"></span>
@@ -290,7 +379,10 @@
             <div id="feedback-novo" class="form-feedback" role="status" aria-live="polite"></div>
 
             <div class="form-actions form-actions--between">
-              <button type="button" id="btn-limpar-novo" class="btn btn-ghost">Limpar formulário</button>
+              <button type="button" class="btn btn-ghost" onclick="voltarBusca()">
+                <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd"/></svg>
+                Voltar
+              </button>
               <button type="submit" id="btn-enviar-novo" class="btn btn-primary btn-lg">
                 <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                   <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z"/>
@@ -305,7 +397,7 @@
              PAINEL: Dados (visualização)
         ══════════════════════════════════════════════ -->
         <div id="painel-dados">
-          <div class="alert alert-success" id="alerta-dados" style="margin-bottom:var(--space-6);">
+          <div class="alert alert-success" style="margin-bottom:var(--space-6);">
             <div class="alert-content" id="alerta-texto">Cadastro encontrado.</div>
           </div>
 
@@ -314,6 +406,10 @@
           </div>
 
           <div style="margin-top:var(--space-6);display:flex;gap:var(--space-3);flex-wrap:wrap;">
+            <button class="btn btn-ghost" onclick="voltarBusca()">
+              <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd"/></svg>
+              Nova busca
+            </button>
             <button class="btn btn-primary" onclick="iniciarEdicao()">
               <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                 <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/>
@@ -328,45 +424,61 @@
         ══════════════════════════════════════════════ -->
         <div id="painel-edicao">
           <div class="info-banner" role="note">
-            Atualize os dados da sua empresa. Após salvar, o cadastro voltará para análise do setor (status: Pendente).
+            Atualize os dados. Após salvar, o cadastro voltará para análise do setor (status: Pendente).
           </div>
 
           <form id="form-edicao" novalidate>
 
-            <!-- Identificação (CNPJ somente leitura) -->
+            <!-- Identificação (documento somente leitura) -->
             <div class="form-section">
               <h2 class="form-section-title">
                 <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                   <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a1 1 0 110 2h-3a1 1 0 01-1-1v-2a1 1 0 00-1-1H9a1 1 0 00-1 1v2a1 1 0 01-1 1H4a1 1 0 110-2V4zm3 1h2v2H7V5zm2 4H7v2h2V9zm2-4h2v2h-2V5zm2 4h-2v2h2V9z" clip-rule="evenodd"/>
                 </svg>
-                Identificação da Empresa
+                Identificação
               </h2>
               <div class="form-row">
                 <div class="form-group">
-                  <label class="form-label required" for="edit-razao-social">Razão Social</label>
+                  <label class="form-label required" for="edit-razao-social" id="edit-label-razao-social">Razão Social</label>
                   <input type="text" id="edit-razao-social" class="form-control"
                     required aria-required="true" aria-describedby="edit-razao-social-error">
                   <span id="edit-razao-social-error" class="form-error hidden" role="alert"></span>
                 </div>
-                <div class="form-group">
+                <!-- Nome Fantasia — visível somente PJ -->
+                <div class="form-group" id="edit-secao-nome-fantasia">
                   <label class="form-label" for="edit-nome-fantasia">Nome Fantasia</label>
                   <input type="text" id="edit-nome-fantasia" class="form-control">
                 </div>
               </div>
               <div class="form-row">
                 <div class="form-group">
-                  <label class="form-label">CNPJ</label>
+                  <label class="form-label" id="edit-label-cnpj">CNPJ / CPF</label>
                   <input type="text" id="edit-cnpj-display" class="form-control"
                     style="background:var(--color-surface-secondary,#f8f9fa);cursor:default;" readonly
                     aria-describedby="edit-cnpj-hint">
-                  <span id="edit-cnpj-hint" class="form-hint">O CNPJ não pode ser alterado. Entre em contato com o setor se necessário.</span>
+                  <span id="edit-cnpj-hint" class="form-hint">O documento não pode ser alterado. Contate o setor se necessário.</span>
                 </div>
                 <div class="form-group">
-                  <label class="form-label required" for="edit-ramo">Ramo de Atividade</label>
+                  <label class="form-label required" for="edit-ramo" id="edit-label-ramo">Ramo de Atividade</label>
                   <input type="text" id="edit-ramo" class="form-control"
                     required aria-required="true" aria-describedby="edit-ramo-error">
                   <span id="edit-ramo-error" class="form-error hidden" role="alert"></span>
                 </div>
+              </div>
+              <!-- Registro Profissional — somente PL -->
+              <div class="form-group" id="edit-secao-registro-prof" style="display:none;">
+                <label class="form-label required" for="edit-registro-prof">Registro no Conselho Profissional</label>
+                <input type="text" id="edit-registro-prof" class="form-control"
+                  placeholder="Ex.: CRM 12345, CREA 67890"
+                  aria-describedby="edit-registro-prof-error">
+                <span id="edit-registro-prof-error" class="form-error hidden" role="alert"></span>
+              </div>
+              <!-- Bloco de Produtor — somente PR -->
+              <div class="form-group" id="edit-secao-bloco-produtor" style="display:none;">
+                <label class="form-label required" for="edit-bloco-produtor">Número do Bloco de Produtor Rural</label>
+                <input type="text" id="edit-bloco-produtor" class="form-control"
+                  aria-describedby="edit-bloco-produtor-error">
+                <span id="edit-bloco-produtor-error" class="form-error hidden" role="alert"></span>
               </div>
             </div>
 
@@ -395,20 +507,14 @@
                   <label class="form-label required" for="edit-uf">UF</label>
                   <select id="edit-uf" class="form-control" required aria-required="true" aria-describedby="edit-uf-error">
                     <option value="">UF</option>
-                    <option value="AC">AC</option><option value="AL">AL</option>
-                    <option value="AP">AP</option><option value="AM">AM</option>
-                    <option value="BA">BA</option><option value="CE">CE</option>
-                    <option value="DF">DF</option><option value="ES">ES</option>
-                    <option value="GO">GO</option><option value="MA">MA</option>
-                    <option value="MT">MT</option><option value="MS">MS</option>
-                    <option value="MG">MG</option><option value="PA">PA</option>
-                    <option value="PB">PB</option><option value="PR">PR</option>
-                    <option value="PE">PE</option><option value="PI">PI</option>
-                    <option value="RJ">RJ</option><option value="RN">RN</option>
-                    <option value="RS">RS</option>
-                    <option value="RO">RO</option><option value="RR">RR</option>
-                    <option value="SC">SC</option><option value="SP">SP</option>
-                    <option value="SE">SE</option><option value="TO">TO</option>
+                    <option>AC</option><option>AL</option><option>AP</option><option>AM</option>
+                    <option>BA</option><option>CE</option><option>DF</option><option>ES</option>
+                    <option>GO</option><option>MA</option><option>MT</option><option>MS</option>
+                    <option>MG</option><option>PA</option><option>PB</option><option>PR</option>
+                    <option>PE</option><option>PI</option><option>RJ</option><option>RN</option>
+                    <option>RS</option>
+                    <option>RO</option><option>RR</option><option>SC</option><option>SP</option>
+                    <option>SE</option><option>TO</option>
                   </select>
                   <span id="edit-uf-error" class="form-error hidden" role="alert"></span>
                 </div>
@@ -426,7 +532,7 @@
                 <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                   <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z"/>
                 </svg>
-                Contato da Empresa
+                Contato
               </h2>
               <div class="form-row">
                 <div class="form-group">
@@ -437,7 +543,7 @@
                   <span id="edit-tel-empresa-error" class="form-error hidden" role="alert"></span>
                 </div>
                 <div class="form-group">
-                  <label class="form-label required" for="edit-email-empresa">E-mail da Empresa</label>
+                  <label class="form-label required" for="edit-email-empresa">E-mail de contato</label>
                   <input type="email" id="edit-email-empresa" class="form-control"
                     required aria-required="true" aria-describedby="edit-email-empresa-error" autocomplete="email">
                   <span id="edit-email-empresa-error" class="form-error hidden" role="alert"></span>
@@ -449,8 +555,8 @@
               </div>
             </div>
 
-            <!-- Representante Legal -->
-            <div class="form-section">
+            <!-- Representante Legal (somente PJ) -->
+            <div class="form-section" id="edit-secao-representante">
               <h2 class="form-section-title">
                 <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                   <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"/>
@@ -461,13 +567,13 @@
                 <div class="form-group">
                   <label class="form-label required" for="edit-nome-rep">Nome do Representante</label>
                   <input type="text" id="edit-nome-rep" class="form-control"
-                    required aria-required="true" aria-describedby="edit-nome-rep-error" autocomplete="name">
+                    aria-required="true" aria-describedby="edit-nome-rep-error" autocomplete="name">
                   <span id="edit-nome-rep-error" class="form-error hidden" role="alert"></span>
                 </div>
                 <div class="form-group">
                   <label class="form-label required" for="edit-cargo-rep">Cargo</label>
                   <input type="text" id="edit-cargo-rep" class="form-control"
-                    required aria-required="true" aria-describedby="edit-cargo-rep-error">
+                    aria-required="true" aria-describedby="edit-cargo-rep-error">
                   <span id="edit-cargo-rep-error" class="form-error hidden" role="alert"></span>
                 </div>
               </div>
@@ -475,7 +581,7 @@
                 <div class="form-group">
                   <label class="form-label required" for="edit-email-rep">E-mail do Representante</label>
                   <input type="email" id="edit-email-rep" class="form-control"
-                    required aria-required="true" aria-describedby="edit-email-rep-error" autocomplete="email">
+                    aria-required="true" aria-describedby="edit-email-rep-error" autocomplete="email">
                   <span id="edit-email-rep-error" class="form-error hidden" role="alert"></span>
                 </div>
                 <div class="form-group">
@@ -517,18 +623,18 @@
     </div>
   </footer>
 
-  <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script src="../assets/js/utils.js"></script>
-  <script src="../assets/js/auth.js"></script>
   <script src="../assets/js/api.js"></script>
   <script>
     'use strict';
 
     // ── Estado global ──────────────────────────────────────────────────────────
-    var dadosCache = null;
+    var dadosCache      = null;
+    var tipoSelecionado = '';
+    var docSelecionado  = '';
 
     // ── Painéis ────────────────────────────────────────────────────────────────
-    var PAINEIS = ['painel-carregando','painel-erro-inicial','painel-novo','painel-dados','painel-edicao'];
+    var PAINEIS = ['painel-busca','painel-carregando','painel-erro-inicial','painel-novo','painel-dados','painel-edicao'];
     function mostrarPainel(id) {
       PAINEIS.forEach(function(p) {
         document.getElementById(p).style.display = (p === id) ? 'block' : 'none';
@@ -537,66 +643,138 @@
 
     // ── Inicialização ──────────────────────────────────────────────────────────
     document.addEventListener('DOMContentLoaded', function () {
-      if (!requireExternalAuth()) return;
       applyMasks();
-      carregarDados();
+      mostrarPainel('painel-busca');
+
+      // Seleção do tipo de concedente — atualiza label e habilita campo
+      document.querySelectorAll('input[name="tipo-concedente"]').forEach(function(radio) {
+        radio.addEventListener('change', function () {
+          tipoSelecionado = this.value;
+          var isPJ = tipoSelecionado === 'Pessoa Jurídica';
+          var campo = document.getElementById('busca-doc');
+          campo.disabled = false;
+          campo.value = '';
+          campo.placeholder = isPJ ? '00.000.000/0000-00' : '000.000.000-00';
+          campo.dataset.mask = isPJ ? 'cnpj' : 'cpf';
+          document.getElementById('label-busca-doc').textContent = isPJ ? 'CNPJ' : 'CPF';
+          clearFieldError('busca-doc');
+          applyMasks(); // reaplica mascara para o campo atualizado
+          document.getElementById('btn-buscar').disabled = false;
+        });
+      });
+
+      // Submit busca via Enter no campo
+      document.getElementById('busca-doc').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') { e.preventDefault(); buscarCadastro(); }
+      });
+
+      // Validação inline busca
+      document.getElementById('busca-doc').addEventListener('blur', function () {
+        if (!this.value.trim()) return;
+        var isPJ = tipoSelecionado === 'Pessoa Jurídica';
+        if (isPJ && !validateCNPJ(this.value)) showFieldError('busca-doc', 'CNPJ inválido.');
+        else if (!isPJ && !validateCPF(this.value)) showFieldError('busca-doc', 'CPF inválido.');
+        else clearFieldError('busca-doc');
+      });
 
       // Validações inline — novo cadastro
-      document.getElementById('cnpj').addEventListener('blur', function () {
-        var v = this.value.replace(/\D/g, '');
-        if (v && !validateCNPJ(this.value)) showFieldError('cnpj', 'CNPJ inválido.');
-        else if (v) clearFieldError('cnpj');
+      document.getElementById('email-empresa').addEventListener('blur', function () {
+        if (this.value && !validateEmail(this.value)) showFieldError('email-empresa', 'E-mail inválido.');
+        else clearFieldError('email-empresa');
+      });
+      document.getElementById('email-rep').addEventListener('blur', function () {
+        if (this.value && !validateEmail(this.value)) showFieldError('email-rep', 'E-mail do representante inválido.');
+        else clearFieldError('email-rep');
       });
       document.getElementById('cpf-rep').addEventListener('blur', function () {
         var v = this.value.replace(/\D/g, '');
         if (v && !validateCPF(this.value)) showFieldError('cpf-rep', 'CPF inválido.');
         else if (v) clearFieldError('cpf-rep');
       });
-      ['email-empresa', 'email-rep'].forEach(function(id) {
-        document.getElementById(id).addEventListener('blur', function () {
-          if (this.value && !validateEmail(this.value)) showFieldError(id, 'E-mail inválido.');
-          else clearFieldError(id);
-        });
-      });
       ['razao-social','ramo','endereco','municipio','nome-rep','cargo-rep'].forEach(function(id) {
-        document.getElementById(id).addEventListener('input', function () { if (this.value.trim()) clearFieldError(id); });
+        var el = document.getElementById(id);
+        if (el) el.addEventListener('input', function () { if (this.value.trim()) clearFieldError(id); });
       });
 
       // Validações inline — edição
-      ['edit-email-empresa','edit-email-rep'].forEach(function(id) {
-        document.getElementById(id).addEventListener('blur', function () {
-          if (this.value && !validateEmail(this.value)) showFieldError(id, 'E-mail inválido.');
-          else clearFieldError(id);
-        });
+      document.getElementById('edit-email-empresa').addEventListener('blur', function () {
+        if (this.value && !validateEmail(this.value)) showFieldError('edit-email-empresa', 'E-mail inválido.');
+        else clearFieldError('edit-email-empresa');
+      });
+      document.getElementById('edit-email-rep').addEventListener('blur', function () {
+        if (this.value && !validateEmail(this.value)) showFieldError('edit-email-rep', 'E-mail do representante inválido.');
+        else clearFieldError('edit-email-rep');
       });
       ['edit-razao-social','edit-ramo','edit-endereco','edit-municipio','edit-nome-rep','edit-cargo-rep'].forEach(function(id) {
-        document.getElementById(id).addEventListener('input', function () { if (this.value.trim()) clearFieldError(id); });
+        var el = document.getElementById(id);
+        if (el) el.addEventListener('input', function () { if (this.value.trim()) clearFieldError(id); });
       });
 
-      // Submit — novo cadastro
+      // Submit forms
       document.getElementById('form-novo').addEventListener('submit', enviarNovoCadastro);
-      document.getElementById('btn-limpar-novo').addEventListener('click', function () {
-        document.getElementById('form-novo').reset();
-        document.getElementById('form-novo').querySelectorAll('.form-control').forEach(function(el) {
-          el.classList.remove('is-invalid','is-valid');
-          el.removeAttribute('aria-invalid');
-        });
-        document.getElementById('form-novo').querySelectorAll('.form-error').forEach(function(el) {
-          el.textContent = ''; el.classList.add('hidden');
-        });
-        hideFormFeedback('feedback-novo');
-      });
-
-      // Submit — edição
       document.getElementById('form-edicao').addEventListener('submit', salvarEdicao);
     });
 
-    // ── Carregamento inicial ───────────────────────────────────────────────────
-    async function carregarDados() {
+    // ── Adaptação do formulário por tipo ──────────────────────────────────────
+    function adaptarFormulario(tipo, pre) {
+      pre = pre || '';
+      var isPJ = tipo === 'Pessoa Jurídica';
+      var isPL = tipo === 'Profissional Liberal';
+      var isPR = tipo === 'Produtor Rural';
+
+      // Labels dinâmicos
+      var lbNome = document.getElementById(pre + 'label-razao-social');
+      if (lbNome) lbNome.textContent = isPJ ? 'Razão Social' : 'Nome completo';
+
+      var lbRamo = document.getElementById(pre + 'label-ramo');
+      if (lbRamo) lbRamo.textContent = isPJ ? 'Ramo de Atividade' : (isPL ? 'Profissão' : 'Atividade Rural');
+
+      // Seções condicionais
+      var toggle = function(id, show) {
+        var el = document.getElementById(id);
+        if (el) el.style.display = show ? '' : 'none';
+      };
+      toggle(pre + 'secao-nome-fantasia',  isPJ);
+      toggle(pre + 'secao-representante',  isPJ);
+      toggle(pre + 'secao-registro-prof',  isPL);
+      toggle(pre + 'secao-bloco-produtor', isPR);
+
+      // Required attributes
+      var setReq = function(id, req) {
+        var el = document.getElementById(id);
+        if (!el) return;
+        el.required = req;
+        if (req) el.setAttribute('aria-required', 'true');
+        else     el.removeAttribute('aria-required');
+      };
+      setReq(pre + 'nome-rep',      isPJ);
+      setReq(pre + 'cargo-rep',     isPJ);
+      setReq(pre + 'email-rep',     isPJ);
+      setReq(pre + 'cpf-rep',       isPJ);
+      setReq(pre + 'registro-prof', isPL);
+      setReq(pre + 'bloco-produtor',isPR);
+    }
+
+    // ── Busca ─────────────────────────────────────────────────────────────────
+    async function buscarCadastro() {
+      if (!tipoSelecionado) {
+        showFormFeedback('feedback-busca', 'error', 'Tipo obrigatório', 'Selecione o tipo de concedente antes de buscar.');
+        return;
+      }
+      var campo = document.getElementById('busca-doc');
+      var doc   = campo.value.trim();
+      if (!doc) { showFieldError('busca-doc', 'Informe o documento.'); campo.focus(); return; }
+
+      var isPJ = tipoSelecionado === 'Pessoa Jurídica';
+      if (isPJ  && !validateCNPJ(doc)) { showFieldError('busca-doc', 'CNPJ inválido.'); campo.focus(); return; }
+      if (!isPJ && !validateCPF(doc))  { showFieldError('busca-doc', 'CPF inválido.');  campo.focus(); return; }
+      clearFieldError('busca-doc');
+
+      docSelecionado = doc.replace(/\D/g, '');
       mostrarPainel('painel-carregando');
-      document.getElementById('subtitulo-pagina').textContent = 'Verificando seu cadastro...';
+
       try {
-        var dados = await apiObterMeuCadastroEmpresa();
+        var dados = await apiObterCadastroEmpresa(docSelecionado);
         dadosCache = dados;
         exibirDados(dados);
       } catch (err) {
@@ -605,39 +783,79 @@
           mostrarPainelNovo();
         } else {
           document.getElementById('msg-erro-inicial').querySelector('.alert-content').textContent =
-            'Erro ao verificar cadastro: ' + (err.message || 'tente novamente.');
+            'Erro ao buscar cadastro: ' + (err.message || 'tente novamente.');
           mostrarPainel('painel-erro-inicial');
         }
       }
     }
 
+    function voltarBusca() {
+      dadosCache     = null;
+      docSelecionado = '';
+      hideFormFeedback('feedback-busca');
+      mostrarPainel('painel-busca');
+    }
+
+    // ── Painel Novo ───────────────────────────────────────────────────────────
     function mostrarPainelNovo() {
-      document.getElementById('subtitulo-pagina').textContent = 'Preencha os dados para cadastrar sua empresa.';
+      document.getElementById('subtitulo-pagina').textContent =
+        'Nenhum cadastro encontrado. Preencha os dados abaixo.';
+      document.getElementById('novo-tipo').value = tipoSelecionado;
+
+      // Preenche o campo de documento (readonly)
+      var isPJ = tipoSelecionado === 'Pessoa Jurídica';
+      var rawDoc = docSelecionado;
+      var docFmt = isPJ
+        ? rawDoc.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5')
+        : rawDoc.replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, '$1.$2.$3-$4');
+      document.getElementById('cnpj').value = docFmt || rawDoc;
+
+      adaptarFormulario(tipoSelecionado, '');
       mostrarPainel('painel-novo');
     }
 
     // ── Exibir dados ───────────────────────────────────────────────────────────
     function exibirDados(d) {
-      document.getElementById('subtitulo-pagina').textContent = 'Dados cadastrais da sua empresa.';
+      document.getElementById('subtitulo-pagina').textContent = 'Dados cadastrais do concedente.';
       document.getElementById('alerta-texto').textContent = 'Cadastro encontrado: ' + (d.razaoSocial || '');
 
       var val = function(v) {
         return v ? '<p>' + escapeHtml(String(v)) + '</p>' : '<p class="vazio">Não informado</p>';
       };
 
-      var st  = (d.status || '').toLowerCase();
+      var tipo = d.tipo || 'Pessoa Jurídica';
+      var isPJ = tipo === 'Pessoa Jurídica';
+      var isPL = tipo === 'Profissional Liberal';
+
+      var st    = (d.status || '').toLowerCase();
       var stCls = st === 'validada' ? 'validada' : (st === 'pendente' ? 'pendente' : 'reprovada');
       var statusHtml = '<p><span class="tag-status ' + stCls + '">' + escapeHtml(d.status || 'Desconhecido') + '</span></p>'
         + (st === 'pendente' ? '<p style="font-size:var(--font-size-sm);color:#92400e;margin-top:4px;">Aguardando análise do setor.</p>' : '');
 
-      var cnpjFmt = d.cnpj ? d.cnpj.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5') : d.cnpj;
+      var rawDoc = (d.cnpj || '').replace(/\D/g, '');
+      var docFmt = isPJ
+        ? rawDoc.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5')
+        : rawDoc.replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, '$1.$2.$3-$4');
+      var docLabel = isPJ ? 'CNPJ' : 'CPF';
 
-      document.getElementById('dados-content').innerHTML =
+      var html =
         '<div class="section-divider">Identificação</div>' +
-        '<div class="dado-item dado-full"><label>Razão Social</label>' + val(d.razaoSocial) + '</div>' +
-        '<div class="dado-item"><label>Nome Fantasia</label>' + val(d.nomeFantasia) + '</div>' +
-        '<div class="dado-item"><label>CNPJ</label>' + val(cnpjFmt) + '</div>' +
-        '<div class="dado-item"><label>Ramo de Atividade</label>' + val(d.ramo) + '</div>' +
+        '<div class="dado-item"><label>Tipo</label>' + val(tipo) + '</div>' +
+        '<div class="dado-item"><label>' + escapeHtml(docLabel) + '</label>' + val(docFmt) + '</div>' +
+        '<div class="dado-item dado-full"><label>' + escapeHtml(isPJ ? 'Razão Social' : 'Nome') + '</label>' + val(d.razaoSocial) + '</div>';
+
+      if (isPJ) {
+        html += '<div class="dado-item"><label>Nome Fantasia</label>' + val(d.nomeFantasia) + '</div>';
+      }
+      html += '<div class="dado-item"><label>' + escapeHtml(isPJ ? 'Ramo de Atividade' : (isPL ? 'Profissão' : 'Atividade Rural')) + '</label>' + val(d.ramo) + '</div>';
+      if (isPL) {
+        html += '<div class="dado-item"><label>Registro Profissional</label>' + val(d.registroProf) + '</div>';
+      }
+      if (!isPJ && !isPL) {
+        html += '<div class="dado-item"><label>Bloco de Produtor Rural</label>' + val(d.blocoProdutor) + '</div>';
+      }
+
+      html +=
         '<div class="dado-item"><label>Status</label>' + statusHtml + '</div>' +
         '<div class="section-divider">Localização</div>' +
         '<div class="dado-item dado-full"><label>Endereço</label>' + val(d.endereco) + '</div>' +
@@ -647,36 +865,47 @@
         '<div class="section-divider">Contato</div>' +
         '<div class="dado-item"><label>Telefone</label>' + val(d.telEmpresa) + '</div>' +
         '<div class="dado-item"><label>E-mail</label>' + val(d.emailEmpresa) + '</div>' +
-        '<div class="dado-item dado-full"><label>Site</label>' + val(d.site) + '</div>' +
-        '<div class="section-divider">Representante Legal</div>' +
-        '<div class="dado-item"><label>Nome</label>' + val(d.nomeRep) + '</div>' +
-        '<div class="dado-item"><label>Cargo</label>' + val(d.cargoRep) + '</div>' +
-        '<div class="dado-item"><label>E-mail</label>' + val(d.emailRep) + '</div>' +
-        '<div class="dado-item"><label>CPF</label>' + val(d.cpfRep ? d.cpfRep.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4') : '') + '</div>';
+        '<div class="dado-item dado-full"><label>Site</label>' + val(d.site) + '</div>';
 
+      if (isPJ) {
+        var cpfFmt = (d.cpfRep || '').replace(/\D/g,'').replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, '$1.$2.$3-$4');
+        html +=
+          '<div class="section-divider">Representante Legal</div>' +
+          '<div class="dado-item"><label>Nome</label>' + val(d.nomeRep) + '</div>' +
+          '<div class="dado-item"><label>Cargo</label>' + val(d.cargoRep) + '</div>' +
+          '<div class="dado-item"><label>E-mail</label>' + val(d.emailRep) + '</div>' +
+          '<div class="dado-item"><label>CPF</label>' + val(cpfFmt) + '</div>';
+      }
+
+      document.getElementById('dados-content').innerHTML = html;
       mostrarPainel('painel-dados');
     }
 
     // ── Edição ─────────────────────────────────────────────────────────────────
     function iniciarEdicao() {
       if (!dadosCache) return;
-      var d = dadosCache;
+      var d    = dadosCache;
+      var tipo = d.tipo || tipoSelecionado || 'Pessoa Jurídica';
 
-      document.getElementById('edit-razao-social').value   = d.razaoSocial   || '';
-      document.getElementById('edit-nome-fantasia').value  = d.nomeFantasia  || '';
-      document.getElementById('edit-cnpj-display').value   = d.cnpj          || '';
-      document.getElementById('edit-ramo').value           = d.ramo          || '';
-      document.getElementById('edit-endereco').value       = d.endereco      || '';
-      document.getElementById('edit-municipio').value      = d.municipio     || '';
-      document.getElementById('edit-uf').value             = d.uf            || '';
-      document.getElementById('edit-cep').value            = d.cep           || '';
-      document.getElementById('edit-tel-empresa').value    = d.telEmpresa    || '';
-      document.getElementById('edit-email-empresa').value  = d.emailEmpresa  || '';
-      document.getElementById('edit-site').value           = d.site          || '';
-      document.getElementById('edit-nome-rep').value       = d.nomeRep       || '';
-      document.getElementById('edit-cargo-rep').value      = d.cargoRep      || '';
-      document.getElementById('edit-email-rep').value      = d.emailRep      || '';
-      document.getElementById('edit-cpf-rep-display').value= d.cpfRep        || '';
+      adaptarFormulario(tipo, 'edit-');
+
+      document.getElementById('edit-razao-social').value    = d.razaoSocial   || '';
+      document.getElementById('edit-nome-fantasia').value   = d.nomeFantasia  || '';
+      document.getElementById('edit-cnpj-display').value    = d.cnpj          || '';
+      document.getElementById('edit-ramo').value            = d.ramo          || '';
+      document.getElementById('edit-registro-prof').value   = d.registroProf  || '';
+      document.getElementById('edit-bloco-produtor').value  = d.blocoProdutor || '';
+      document.getElementById('edit-endereco').value        = d.endereco      || '';
+      document.getElementById('edit-municipio').value       = d.municipio     || '';
+      document.getElementById('edit-uf').value              = d.uf            || '';
+      document.getElementById('edit-cep').value             = d.cep           || '';
+      document.getElementById('edit-tel-empresa').value     = d.telEmpresa    || '';
+      document.getElementById('edit-email-empresa').value   = d.emailEmpresa  || '';
+      document.getElementById('edit-site').value            = d.site          || '';
+      document.getElementById('edit-nome-rep').value        = d.nomeRep       || '';
+      document.getElementById('edit-cargo-rep').value       = d.cargoRep      || '';
+      document.getElementById('edit-email-rep').value       = d.emailRep      || '';
+      document.getElementById('edit-cpf-rep-display').value = d.cpfRep        || '';
 
       hideFormFeedback('feedback-edicao');
       mostrarPainel('painel-edicao');
@@ -690,13 +919,18 @@
       e.preventDefault();
       hideFormFeedback('feedback-edicao');
 
-      if (!validateEdicao()) return;
+      var tipo = (dadosCache && dadosCache.tipo) ? dadosCache.tipo : tipoSelecionado;
+      if (!validateEdicao(tipo)) return;
 
+      var isPJ = tipo === 'Pessoa Jurídica';
       var dados = {
+        tipo:          tipo,
         cnpj:          dadosCache.cnpj,
         razaoSocial:   document.getElementById('edit-razao-social').value.trim(),
         nomeFantasia:  document.getElementById('edit-nome-fantasia').value.trim(),
         ramo:          document.getElementById('edit-ramo').value.trim(),
+        registroProf:  document.getElementById('edit-registro-prof').value.trim(),
+        blocoProdutor: document.getElementById('edit-bloco-produtor').value.trim(),
         endereco:      document.getElementById('edit-endereco').value.trim(),
         municipio:     document.getElementById('edit-municipio').value.trim(),
         uf:            document.getElementById('edit-uf').value,
@@ -704,9 +938,9 @@
         telEmpresa:    document.getElementById('edit-tel-empresa').value.trim(),
         emailEmpresa:  document.getElementById('edit-email-empresa').value.trim(),
         site:          document.getElementById('edit-site').value.trim(),
-        nomeRep:       document.getElementById('edit-nome-rep').value.trim(),
-        cargoRep:      document.getElementById('edit-cargo-rep').value.trim(),
-        emailRep:      document.getElementById('edit-email-rep').value.trim(),
+        nomeRep:       isPJ ? document.getElementById('edit-nome-rep').value.trim()  : '',
+        cargoRep:      isPJ ? document.getElementById('edit-cargo-rep').value.trim() : '',
+        emailRep:      isPJ ? document.getElementById('edit-email-rep').value.trim() : '',
         cpfRep:        dadosCache.cpfRep,
       };
 
@@ -718,7 +952,6 @@
         'Dados atualizados!',
         'Suas alterações foram recebidas. O cadastro voltará para análise do setor.',
         function() {
-          // Atualiza cache e volta para visualização
           Object.assign(dadosCache, dados);
           exibirDados(dadosCache);
         }
@@ -730,24 +963,29 @@
       e.preventDefault();
       hideFormFeedback('feedback-novo');
 
-      if (!validateNovo()) return;
+      var tipo = document.getElementById('novo-tipo').value || tipoSelecionado;
+      if (!validateNovo(tipo)) return;
 
+      var isPJ = tipo === 'Pessoa Jurídica';
       var dados = {
-        razaoSocial:  document.getElementById('razao-social').value.trim(),
-        nomeFantasia: document.getElementById('nome-fantasia').value.trim(),
-        cnpj:         document.getElementById('cnpj').value.trim(),
-        ramo:         document.getElementById('ramo').value.trim(),
-        endereco:     document.getElementById('endereco').value.trim(),
-        municipio:    document.getElementById('municipio').value.trim(),
-        uf:           document.getElementById('uf').value,
-        cep:          document.getElementById('cep').value.trim(),
-        telEmpresa:   document.getElementById('tel-empresa').value.trim(),
-        emailEmpresa: document.getElementById('email-empresa').value.trim(),
-        site:         document.getElementById('site').value.trim(),
-        nomeRep:      document.getElementById('nome-rep').value.trim(),
-        cargoRep:     document.getElementById('cargo-rep').value.trim(),
-        emailRep:     document.getElementById('email-rep').value.trim(),
-        cpfRep:       document.getElementById('cpf-rep').value.trim(),
+        tipo:          tipo,
+        cnpj:          docSelecionado,
+        razaoSocial:   document.getElementById('razao-social').value.trim(),
+        nomeFantasia:  document.getElementById('nome-fantasia').value.trim(),
+        ramo:          document.getElementById('ramo').value.trim(),
+        registroProf:  document.getElementById('registro-prof').value.trim(),
+        blocoProdutor: document.getElementById('bloco-produtor').value.trim(),
+        endereco:      document.getElementById('endereco').value.trim(),
+        municipio:     document.getElementById('municipio').value.trim(),
+        uf:            document.getElementById('uf').value,
+        cep:           document.getElementById('cep').value.trim(),
+        telEmpresa:    document.getElementById('tel-empresa').value.trim(),
+        emailEmpresa:  document.getElementById('email-empresa').value.trim(),
+        site:          document.getElementById('site').value.trim(),
+        nomeRep:       isPJ ? document.getElementById('nome-rep').value.trim()  : '',
+        cargoRep:      isPJ ? document.getElementById('cargo-rep').value.trim() : '',
+        emailRep:      isPJ ? document.getElementById('email-rep').value.trim() : '',
+        cpfRep:        isPJ ? document.getElementById('cpf-rep').value.trim()   : '',
       };
 
       var btn = document.getElementById('btn-enviar-novo');
@@ -764,47 +1002,62 @@
     }
 
     // ── Validações ─────────────────────────────────────────────────────────────
-    function validateNovo() {
+    function validateNovo(tipo) {
       var valid = true, first = null;
+      var isPJ = tipo === 'Pessoa Jurídica';
+      var isPL = tipo === 'Profissional Liberal';
+      var isPR = tipo === 'Produtor Rural';
+
       function fail(id, msg) { showFieldError(id, msg); if (!first) first = id; valid = false; }
 
-      var razaoSocial = document.getElementById('razao-social').value.trim();
-      if (!razaoSocial || razaoSocial.length < 3) fail('razao-social', 'Informe a razão social (mín. 3 caracteres).');
-      if (!validateCNPJ(document.getElementById('cnpj').value)) fail('cnpj', 'CNPJ inválido.');
-      if (!document.getElementById('ramo').value.trim()) fail('ramo', 'Informe o ramo de atividade.');
+      var nome = document.getElementById('razao-social').value.trim();
+      if (!nome || nome.length < 3) fail('razao-social', (isPJ ? 'Informe a razão social' : 'Informe o nome completo') + ' (mín. 3 caracteres).');
+      if (!document.getElementById('ramo').value.trim()) fail('ramo', isPJ ? 'Informe o ramo de atividade.' : (isPL ? 'Informe a profissão.' : 'Informe a atividade rural.'));
+      if (isPL && !document.getElementById('registro-prof').value.trim()) fail('registro-prof', 'Informe o número do registro profissional.');
+      if (isPR && !document.getElementById('bloco-produtor').value.trim()) fail('bloco-produtor', 'Informe o número do bloco de produtor.');
       if (!document.getElementById('endereco').value.trim()) fail('endereco', 'Informe o endereço.');
       if (!document.getElementById('municipio').value.trim()) fail('municipio', 'Informe o município.');
       if (!document.getElementById('uf').value) fail('uf', 'Selecione a UF.');
       var tel = document.getElementById('tel-empresa').value.replace(/\D/g,'');
       if (!tel || tel.length < 10) fail('tel-empresa', 'Telefone inválido (DDD + número).');
-      if (!validateEmail(document.getElementById('email-empresa').value)) fail('email-empresa', 'E-mail inválido.');
-      if (!document.getElementById('nome-rep').value.trim()) fail('nome-rep', 'Informe o nome do representante.');
-      if (!document.getElementById('cargo-rep').value.trim()) fail('cargo-rep', 'Informe o cargo do representante.');
-      if (!validateEmail(document.getElementById('email-rep').value)) fail('email-rep', 'E-mail do representante inválido.');
-      if (!validateCPF(document.getElementById('cpf-rep').value)) fail('cpf-rep', 'CPF inválido.');
+      if (!validateEmail(document.getElementById('email-empresa').value)) fail('email-empresa', 'E-mail de contato inválido.');
+      if (isPJ) {
+        if (!document.getElementById('nome-rep').value.trim()) fail('nome-rep', 'Informe o nome do representante.');
+        if (!document.getElementById('cargo-rep').value.trim()) fail('cargo-rep', 'Informe o cargo do representante.');
+        if (!validateEmail(document.getElementById('email-rep').value)) fail('email-rep', 'E-mail do representante inválido.');
+        if (!validateCPF(document.getElementById('cpf-rep').value)) fail('cpf-rep', 'CPF do representante inválido.');
+      }
       if (!document.getElementById('declaracao').checked) fail('declaracao', 'É necessário aceitar a declaração.');
 
-      if (first) { var el = document.getElementById(first); el?.focus(); el?.scrollIntoView({ behavior:'smooth', block:'center' }); }
+      if (first) { var el = document.getElementById(first); el && el.focus(); el && el.scrollIntoView({ behavior:'smooth', block:'center' }); }
       return valid;
     }
 
-    function validateEdicao() {
+    function validateEdicao(tipo) {
       var valid = true, first = null;
+      var isPJ = tipo === 'Pessoa Jurídica';
+      var isPL = tipo === 'Profissional Liberal';
+      var isPR = tipo === 'Produtor Rural';
+
       function fail(id, msg) { showFieldError(id, msg); if (!first) first = id; valid = false; }
 
-      if (!document.getElementById('edit-razao-social').value.trim()) fail('edit-razao-social', 'Informe a razão social.');
-      if (!document.getElementById('edit-ramo').value.trim()) fail('edit-ramo', 'Informe o ramo de atividade.');
+      if (!document.getElementById('edit-razao-social').value.trim()) fail('edit-razao-social', isPJ ? 'Informe a razão social.' : 'Informe o nome.');
+      if (!document.getElementById('edit-ramo').value.trim()) fail('edit-ramo', 'Informe o ramo/profissão/atividade.');
+      if (isPL && !document.getElementById('edit-registro-prof').value.trim())  fail('edit-registro-prof', 'Informe o registro profissional.');
+      if (isPR && !document.getElementById('edit-bloco-produtor').value.trim()) fail('edit-bloco-produtor', 'Informe o bloco de produtor.');
       if (!document.getElementById('edit-endereco').value.trim()) fail('edit-endereco', 'Informe o endereço.');
       if (!document.getElementById('edit-municipio').value.trim()) fail('edit-municipio', 'Informe o município.');
       if (!document.getElementById('edit-uf').value) fail('edit-uf', 'Selecione a UF.');
       var tel = document.getElementById('edit-tel-empresa').value.replace(/\D/g,'');
       if (!tel || tel.length < 10) fail('edit-tel-empresa', 'Telefone inválido.');
       if (!validateEmail(document.getElementById('edit-email-empresa').value)) fail('edit-email-empresa', 'E-mail inválido.');
-      if (!document.getElementById('edit-nome-rep').value.trim()) fail('edit-nome-rep', 'Informe o nome do representante.');
-      if (!document.getElementById('edit-cargo-rep').value.trim()) fail('edit-cargo-rep', 'Informe o cargo.');
-      if (!validateEmail(document.getElementById('edit-email-rep').value)) fail('edit-email-rep', 'E-mail do representante inválido.');
+      if (isPJ) {
+        if (!document.getElementById('edit-nome-rep').value.trim()) fail('edit-nome-rep', 'Informe o nome do representante.');
+        if (!document.getElementById('edit-cargo-rep').value.trim()) fail('edit-cargo-rep', 'Informe o cargo.');
+        if (!validateEmail(document.getElementById('edit-email-rep').value)) fail('edit-email-rep', 'E-mail do representante inválido.');
+      }
 
-      if (first) { var el = document.getElementById(first); el?.focus(); el?.scrollIntoView({ behavior:'smooth', block:'center' }); }
+      if (first) { var el = document.getElementById(first); el && el.focus(); el && el.scrollIntoView({ behavior:'smooth', block:'center' }); }
       return valid;
     }
   </script>

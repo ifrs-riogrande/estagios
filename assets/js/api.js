@@ -206,24 +206,24 @@ async function apiCadastrarOportunidade(dados) {
   return API.post('cadastrarOportunidade', dados);
 }
 
-/** Obtém os dados de cadastro da empresa logada (por token). */
-async function apiObterMeuCadastroEmpresa() {
-  return API.get('obterMeuCadastroEmpresa', { authToken: getAccessToken() });
+/** Obtém cadastro de empresa/concedente por CNPJ (PJ) ou CPF (PL/Produtor Rural). */
+async function apiObterCadastroEmpresa(cnpjCpf) {
+  return API.get('obterCadastroEmpresa', { cnpjCpf });
 }
 
-/** Salva (cria ou atualiza) cadastro de empresa da conta logada. */
+/** Salva (cria ou atualiza) cadastro de empresa/concedente. Sem autenticação. */
 async function apiSalvarMeuCadastroEmpresa(dados) {
-  return API.post('salvarMeuCadastroEmpresa', { ...dados, authToken: getAccessToken() });
+  return API.post('salvarMeuCadastroEmpresa', dados);
 }
 
-/** Obtém os dados de cadastro do supervisor logado (por token). */
-async function apiObterMeuCadastroSupervisor() {
-  return API.get('obterMeuCadastroSupervisor', { authToken: getAccessToken() });
+/** Obtém cadastro de supervisor por CPF. */
+async function apiObterCadastroSupervisor(cpf) {
+  return API.get('obterCadastroSupervisor', { cpf });
 }
 
-/** Salva (cria ou atualiza) cadastro de supervisor da conta logada. */
+/** Salva (cria ou atualiza) cadastro de supervisor. Sem autenticação. */
 async function apiSalvarMeuCadastroSupervisor(dados) {
-  return API.post('salvarMeuCadastroSupervisor', { ...dados, authToken: getAccessToken() });
+  return API.post('salvarMeuCadastroSupervisor', dados);
 }
 
 /** Envia formulário de cadastro de estudante. */

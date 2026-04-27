@@ -12,11 +12,15 @@
   <link rel="stylesheet" href="../assets/css/layout.css">
   <style>
     /* ── Painéis ── */
+    #painel-busca,
     #painel-carregando,
     #painel-erro-inicial,
     #painel-novo,
     #painel-dados,
     #painel-edicao { display: none; }
+
+    /* ── Painel busca ── */
+    .busca-card { max-width: 460px; margin: 0 auto; }
 
     /* ── Grade de visualização ── */
     .dados-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-5) var(--space-8); }
@@ -50,13 +54,10 @@
             <span class="header-brand-sub">IFRS Campus Rio Grande</span>
           </div>
         </a>
-        <div style="display:flex;align-items:center;gap:var(--space-3);">
-          <div id="header-user-area"></div>
-          <a href="index.html" class="back-link">
-            <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd"/></svg>
-            Empresas
-          </a>
-        </div>
+        <a href="index.html" class="back-link">
+          <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd"/></svg>
+          Empresas
+        </a>
       </div>
     </div>
   </header>
@@ -67,15 +68,48 @@
 
         <div class="form-page-header">
           <h1>Perfil do Supervisor</h1>
-          <p id="subtitulo-pagina">Verificando seu cadastro...</p>
+          <p id="subtitulo-pagina">Informe seu CPF para acessar ou criar seu cadastro.</p>
         </div>
+
+        <!-- ══════════════════════════════════════════════
+             PAINEL: Busca (ponto de entrada)
+        ══════════════════════════════════════════════ -->
+        <div id="painel-busca">
+          <div class="busca-card">
+            <div class="form-section">
+              <h2 class="form-section-title">
+                <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"/>
+                </svg>
+                Identificação
+              </h2>
+              <div class="form-group">
+                <label class="form-label required" for="busca-cpf">CPF do Supervisor</label>
+                <input type="text" id="busca-cpf" class="form-control" placeholder="000.000.000-00"
+                  data-mask="cpf" inputmode="numeric"
+                  aria-describedby="busca-cpf-hint busca-cpf-error" autocomplete="off">
+                <span id="busca-cpf-hint" class="form-hint">Será usado para localizar ou criar seu cadastro de supervisor.</span>
+                <span id="busca-cpf-error" class="form-error hidden" role="alert"></span>
+              </div>
+              <div id="feedback-busca" class="form-feedback" role="status" aria-live="polite"></div>
+              <div class="form-actions">
+                <button type="button" id="btn-buscar" class="btn btn-primary btn-lg" onclick="buscarCadastro()">
+                  <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                    <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/>
+                  </svg>
+                  Buscar cadastro
+                </button>
+              </div>
+            </div>
+          </div>
+        </div><!-- /painel-busca -->
 
         <!-- ══════════════════════════════════════════════
              PAINEL: Carregando
         ══════════════════════════════════════════════ -->
         <div id="painel-carregando" style="text-align:center;padding:var(--space-12) 0;">
           <div class="spinner" style="margin:0 auto var(--space-4);"></div>
-          <p style="color:var(--color-text-muted);">Verificando seu cadastro...</p>
+          <p style="color:var(--color-text-muted);">Buscando cadastro...</p>
         </div>
 
         <!-- ══════════════════════════════════════════════
@@ -83,10 +117,14 @@
         ══════════════════════════════════════════════ -->
         <div id="painel-erro-inicial">
           <div class="alert alert-danger" id="msg-erro-inicial">
-            <div class="alert-content">Erro ao verificar cadastro. Tente novamente.</div>
+            <div class="alert-content">Erro ao buscar cadastro. Tente novamente.</div>
           </div>
-          <div style="margin-top:var(--space-5);">
-            <button class="btn btn-primary" onclick="carregarDados()">Tentar novamente</button>
+          <div style="margin-top:var(--space-5);display:flex;gap:var(--space-3);">
+            <button class="btn btn-ghost" onclick="voltarBusca()">
+              <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd"/></svg>
+              Voltar
+            </button>
+            <button class="btn btn-primary" onclick="buscarCadastro()">Tentar novamente</button>
           </div>
         </div>
 
@@ -147,7 +185,7 @@
                 <div class="form-group">
                   <label class="form-label" for="tel-setor">Telefone do Setor</label>
                   <input type="tel" id="tel-setor" class="form-control"
-                    placeholder="(53)999999999" data-mask="phone" inputmode="tel">
+                    placeholder="(53) 99999-9999" data-mask="phone" inputmode="tel">
                 </div>
               </div>
               <div class="form-row">
@@ -182,11 +220,10 @@
                 </div>
                 <div class="form-group">
                   <label class="form-label required" for="cpf">CPF</label>
-                  <input type="text" id="cpf" class="form-control" placeholder="000.000.000-00"
-                    required aria-required="true" data-mask="cpf" inputmode="numeric"
-                    aria-describedby="cpf-hint cpf-error">
-                  <span id="cpf-hint" class="form-hint">Será usado como identificador único.</span>
-                  <span id="cpf-error" class="form-error hidden" role="alert"></span>
+                  <input type="text" id="cpf" class="form-control"
+                    readonly style="background:var(--color-surface-secondary,#f8f9fa);cursor:default;"
+                    aria-describedby="cpf-hint">
+                  <span id="cpf-hint" class="form-hint">CPF informado na busca. Será usado como identificador único.</span>
                 </div>
               </div>
               <div class="form-row">
@@ -200,7 +237,7 @@
                 <div class="form-group">
                   <label class="form-label" for="tel-supervisor">Telefone</label>
                   <input type="tel" id="tel-supervisor" class="form-control"
-                    placeholder="(53)999999999" data-mask="phone" inputmode="tel" autocomplete="tel">
+                    placeholder="(53) 99999-9999" data-mask="phone" inputmode="tel" autocomplete="tel">
                 </div>
               </div>
               <div class="form-group">
@@ -227,13 +264,9 @@
                   <select id="nivel-formacao" class="form-control" required aria-required="true"
                     aria-describedby="nivel-formacao-error">
                     <option value="">Selecione...</option>
-                    <option value="Ensino Médio">Ensino Médio</option>
-                    <option value="Técnico">Técnico</option>
-                    <option value="Graduação">Graduação</option>
-                    <option value="Especialização">Especialização</option>
-                    <option value="Mestrado">Mestrado</option>
-                    <option value="Doutorado">Doutorado</option>
-                    <option value="Outro">Outro</option>
+                    <option>Ensino Médio</option><option>Técnico</option><option>Graduação</option>
+                    <option>Especialização</option><option>Mestrado</option><option>Doutorado</option>
+                    <option>Outro</option>
                   </select>
                   <span id="nivel-formacao-error" class="form-error hidden" role="alert"></span>
                 </div>
@@ -257,11 +290,9 @@
                   <select id="tempo-experiencia" class="form-control" required aria-required="true"
                     aria-describedby="tempo-experiencia-hint tempo-experiencia-error">
                     <option value="">Selecione...</option>
-                    <option value="Menos de 1 ano">Menos de 1 ano</option>
-                    <option value="1 a 2 anos">1 a 2 anos</option>
-                    <option value="3 a 5 anos">3 a 5 anos</option>
-                    <option value="6 a 10 anos">6 a 10 anos</option>
-                    <option value="Mais de 10 anos">Mais de 10 anos</option>
+                    <option>Menos de 1 ano</option><option>1 a 2 anos</option>
+                    <option>3 a 5 anos</option><option>6 a 10 anos</option>
+                    <option>Mais de 10 anos</option>
                   </select>
                   <span id="tempo-experiencia-hint" class="form-hint">Considere a experiência prática, independente da formação formal.</span>
                   <span id="tempo-experiencia-error" class="form-error hidden" role="alert"></span>
@@ -272,7 +303,7 @@
                 <textarea id="desc-experiencia" class="form-control" rows="4" required aria-required="true"
                   placeholder="Descreva brevemente as principais atividades que exerce ou exerceu na área."
                   aria-describedby="desc-experiencia-hint desc-experiencia-error"
-                  minlength="100"></textarea>
+                  minlength="80"></textarea>
                 <span id="desc-experiencia-hint" class="form-hint">Mínimo 3 linhas. Seja específico sobre as atividades técnicas que realiza.</span>
                 <span id="desc-experiencia-error" class="form-error hidden" role="alert"></span>
               </div>
@@ -305,7 +336,10 @@
             <div id="feedback-novo" class="form-feedback" role="status" aria-live="polite"></div>
 
             <div class="form-actions form-actions--between">
-              <button type="button" id="btn-limpar-novo" class="btn btn-ghost">Limpar formulário</button>
+              <button type="button" class="btn btn-ghost" onclick="voltarBusca()">
+                <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd"/></svg>
+                Voltar
+              </button>
               <button type="submit" id="btn-enviar-novo" class="btn btn-primary btn-lg">
                 <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                   <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z"/>
@@ -320,7 +354,7 @@
              PAINEL: Dados (visualização)
         ══════════════════════════════════════════════ -->
         <div id="painel-dados">
-          <div class="alert alert-success" id="alerta-dados" style="margin-bottom:var(--space-6);">
+          <div class="alert alert-success" style="margin-bottom:var(--space-6);">
             <div class="alert-content" id="alerta-texto">Cadastro encontrado.</div>
           </div>
 
@@ -329,6 +363,10 @@
           </div>
 
           <div style="margin-top:var(--space-6);display:flex;gap:var(--space-3);flex-wrap:wrap;">
+            <button class="btn btn-ghost" onclick="voltarBusca()">
+              <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd"/></svg>
+              Nova busca
+            </button>
             <button class="btn btn-primary" onclick="iniciarEdicao()">
               <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                 <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/>
@@ -373,8 +411,7 @@
                 </div>
                 <div class="form-group">
                   <label class="form-label" for="edit-tel-setor">Telefone do Setor</label>
-                  <input type="tel" id="edit-tel-setor" class="form-control"
-                    data-mask="phone" inputmode="tel">
+                  <input type="tel" id="edit-tel-setor" class="form-control" data-mask="phone" inputmode="tel">
                 </div>
               </div>
               <div class="form-row">
@@ -447,13 +484,9 @@
                   <select id="edit-nivel-formacao" class="form-control" required aria-required="true"
                     aria-describedby="edit-nivel-formacao-error">
                     <option value="">Selecione...</option>
-                    <option value="Ensino Médio">Ensino Médio</option>
-                    <option value="Técnico">Técnico</option>
-                    <option value="Graduação">Graduação</option>
-                    <option value="Especialização">Especialização</option>
-                    <option value="Mestrado">Mestrado</option>
-                    <option value="Doutorado">Doutorado</option>
-                    <option value="Outro">Outro</option>
+                    <option>Ensino Médio</option><option>Técnico</option><option>Graduação</option>
+                    <option>Especialização</option><option>Mestrado</option><option>Doutorado</option>
+                    <option>Outro</option>
                   </select>
                   <span id="edit-nivel-formacao-error" class="form-error hidden" role="alert"></span>
                 </div>
@@ -474,11 +507,9 @@
                   <select id="edit-tempo-experiencia" class="form-control" required aria-required="true"
                     aria-describedby="edit-tempo-experiencia-error">
                     <option value="">Selecione...</option>
-                    <option value="Menos de 1 ano">Menos de 1 ano</option>
-                    <option value="1 a 2 anos">1 a 2 anos</option>
-                    <option value="3 a 5 anos">3 a 5 anos</option>
-                    <option value="6 a 10 anos">6 a 10 anos</option>
-                    <option value="Mais de 10 anos">Mais de 10 anos</option>
+                    <option>Menos de 1 ano</option><option>1 a 2 anos</option>
+                    <option>3 a 5 anos</option><option>6 a 10 anos</option>
+                    <option>Mais de 10 anos</option>
                   </select>
                   <span id="edit-tempo-experiencia-error" class="form-error hidden" role="alert"></span>
                 </div>
@@ -487,7 +518,7 @@
                 <label class="form-label required" for="edit-desc-experiencia">Descrição da experiência</label>
                 <textarea id="edit-desc-experiencia" class="form-control" rows="4"
                   required aria-required="true" aria-describedby="edit-desc-experiencia-error"
-                  minlength="100"></textarea>
+                  minlength="80"></textarea>
                 <span id="edit-desc-experiencia-error" class="form-error hidden" role="alert"></span>
               </div>
             </div>
@@ -521,19 +552,18 @@
     </div>
   </footer>
 
-  <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script src="../assets/js/utils.js"></script>
-  <script src="../assets/js/auth.js"></script>
   <script src="../assets/js/api.js"></script>
   <script>
     'use strict';
 
     // ── Estado global ──────────────────────────────────────────────────────────
-    var dadosCache     = null;
-    var empresasCache  = [];  // lista de { cnpj, razaoSocial } para os selects
+    var dadosCache    = null;
+    var cpfSelecionado = '';
+    var empresasCache = [];
 
     // ── Painéis ────────────────────────────────────────────────────────────────
-    var PAINEIS = ['painel-carregando','painel-erro-inicial','painel-novo','painel-dados','painel-edicao'];
+    var PAINEIS = ['painel-busca','painel-carregando','painel-erro-inicial','painel-novo','painel-dados','painel-edicao'];
     function mostrarPainel(id) {
       PAINEIS.forEach(function(p) {
         document.getElementById(p).style.display = (p === id) ? 'block' : 'none';
@@ -542,24 +572,30 @@
 
     // ── Inicialização ──────────────────────────────────────────────────────────
     document.addEventListener('DOMContentLoaded', function () {
-      if (!requireExternalAuth()) return;
       applyMasks();
-      carregarDados();
+      mostrarPainel('painel-busca');
 
       document.getElementById('btn-recarregar')?.addEventListener('click', carregarEmpresas);
 
-      // Validações inline — novo
-      document.getElementById('cpf').addEventListener('blur', function () {
-        var v = this.value.replace(/\D/g, '');
-        if (v && !validateCPF(this.value)) showFieldError('cpf', 'CPF inválido.');
-        else if (v) clearFieldError('cpf');
+      // Submit via Enter no campo busca
+      document.getElementById('busca-cpf').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') { e.preventDefault(); buscarCadastro(); }
       });
+
+      // Validação inline busca
+      document.getElementById('busca-cpf').addEventListener('blur', function () {
+        if (this.value && !validateCPF(this.value)) showFieldError('busca-cpf', 'CPF inválido.');
+        else clearFieldError('busca-cpf');
+      });
+
+      // Validações inline — novo
       document.getElementById('email-supervisor').addEventListener('blur', function () {
         if (this.value && !validateEmail(this.value)) showFieldError('email-supervisor', 'E-mail inválido.');
         else clearFieldError('email-supervisor');
       });
       ['nome','cargo','area-formacao','desc-experiencia','setor'].forEach(function(id) {
-        document.getElementById(id)?.addEventListener('input', function () { if (this.value.trim()) clearFieldError(id); });
+        var el = document.getElementById(id);
+        if (el) el.addEventListener('input', function () { if (this.value.trim()) clearFieldError(id); });
       });
 
       // Validações inline — edição
@@ -568,32 +604,30 @@
         else clearFieldError('edit-email-supervisor');
       });
       ['edit-nome','edit-cargo','edit-area-formacao','edit-desc-experiencia','edit-setor'].forEach(function(id) {
-        document.getElementById(id)?.addEventListener('input', function () { if (this.value.trim()) clearFieldError(id); });
+        var el = document.getElementById(id);
+        if (el) el.addEventListener('input', function () { if (this.value.trim()) clearFieldError(id); });
       });
 
-      // Submit
+      // Submit forms
       document.getElementById('form-novo').addEventListener('submit', enviarNovoCadastro);
-      document.getElementById('btn-limpar-novo').addEventListener('click', function () {
-        document.getElementById('form-novo').reset();
-        document.getElementById('form-novo').querySelectorAll('.form-control').forEach(function(el) {
-          el.classList.remove('is-invalid','is-valid'); el.removeAttribute('aria-invalid');
-        });
-        document.getElementById('form-novo').querySelectorAll('.form-error').forEach(function(el) {
-          el.textContent = ''; el.classList.add('hidden');
-        });
-        hideFormFeedback('feedback-novo');
-      });
       document.getElementById('form-edicao').addEventListener('submit', salvarEdicao);
     });
 
-    // ── Carregamento inicial ───────────────────────────────────────────────────
-    async function carregarDados() {
+    // ── Busca ──────────────────────────────────────────────────────────────────
+    async function buscarCadastro() {
+      var campo = document.getElementById('busca-cpf');
+      var cpf   = campo.value.trim();
+      if (!cpf) { showFieldError('busca-cpf', 'Informe o CPF.'); campo.focus(); return; }
+      if (!validateCPF(cpf)) { showFieldError('busca-cpf', 'CPF inválido.'); campo.focus(); return; }
+      clearFieldError('busca-cpf');
+
+      cpfSelecionado = cpf.replace(/\D/g, '');
       mostrarPainel('painel-carregando');
-      document.getElementById('subtitulo-pagina').textContent = 'Verificando seu cadastro...';
+
       try {
-        var dados = await apiObterMeuCadastroSupervisor();
+        var dados = await apiObterCadastroSupervisor(cpfSelecionado);
         dadosCache = dados;
-        await carregarEmpresas();   // carrega empresas para o select de edição
+        await carregarEmpresas();
         exibirDados(dados);
       } catch (err) {
         var msg = (err.message || '').toLowerCase();
@@ -602,14 +636,25 @@
           mostrarPainelNovo();
         } else {
           document.getElementById('msg-erro-inicial').querySelector('.alert-content').textContent =
-            'Erro ao verificar cadastro: ' + (err.message || 'tente novamente.');
+            'Erro ao buscar cadastro: ' + (err.message || 'tente novamente.');
           mostrarPainel('painel-erro-inicial');
         }
       }
     }
 
+    function voltarBusca() {
+      dadosCache     = null;
+      cpfSelecionado = '';
+      mostrarPainel('painel-busca');
+    }
+
+    // ── Painel Novo ────────────────────────────────────────────────────────────
     function mostrarPainelNovo() {
-      document.getElementById('subtitulo-pagina').textContent = 'Preencha os dados para se cadastrar como supervisor.';
+      document.getElementById('subtitulo-pagina').textContent =
+        'Nenhum cadastro encontrado. Preencha os dados abaixo.';
+      // Pré-preenche o campo CPF (readonly) com o documento buscado
+      var cpfFmt = cpfSelecionado.replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, '$1.$2.$3-$4');
+      document.getElementById('cpf').value = cpfFmt || cpfSelecionado;
       mostrarPainel('painel-novo');
     }
 
@@ -657,7 +702,7 @@
       var statusHtml = '<p><span class="tag-status ' + stCls + '">' + escapeHtml(d.status || 'Desconhecido') + '</span></p>'
         + (st === 'pendente' ? '<p style="font-size:var(--font-size-sm);color:#92400e;margin-top:4px;">Aguardando análise do setor.</p>' : '');
 
-      var cpfFmt = d.cpf ? d.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4') : d.cpf;
+      var cpfFmt = (d.cpf || '').replace(/\D/g,'').replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, '$1.$2.$3-$4');
 
       document.getElementById('dados-content').innerHTML =
         '<div class="section-divider">Vínculo com a Empresa</div>' +
@@ -688,10 +733,9 @@
       if (!dadosCache) return;
       var d = dadosCache;
 
-      // Seleciona empresa no select de edição
+      // Seleciona empresa no select
       var editEmp = document.getElementById('edit-empresa');
       editEmp.value = d.empresa || '';
-      // Se não achou (empresa desativada), adiciona como opção temporária
       if (editEmp.value !== d.empresa && d.empresa) {
         var opt = document.createElement('option');
         opt.value = d.empresa; opt.textContent = d.empresaNome || d.empresa;
@@ -776,7 +820,7 @@
         emailSetor:      document.getElementById('email-setor').value.trim(),
         enderecoSetor:   document.getElementById('endereco-setor').value.trim(),
         nome:            document.getElementById('nome').value.trim(),
-        cpf:             document.getElementById('cpf').value.trim(),
+        cpf:             cpfSelecionado,
         cargo:           document.getElementById('cargo').value.trim(),
         telSupervisor:   document.getElementById('tel-supervisor').value.trim(),
         emailSupervisor: document.getElementById('email-supervisor').value.trim(),
@@ -808,7 +852,6 @@
       if (!document.getElementById('empresa').value) fail('empresa', 'Selecione a empresa concedente.');
       if (!document.getElementById('setor').value.trim()) fail('setor', 'Informe o setor.');
       if (!document.getElementById('nome').value.trim()) fail('nome', 'Informe o nome completo.');
-      if (!validateCPF(document.getElementById('cpf').value)) fail('cpf', 'CPF inválido.');
       if (!document.getElementById('cargo').value.trim()) fail('cargo', 'Informe o cargo.');
       if (!validateEmail(document.getElementById('email-supervisor').value)) fail('email-supervisor', 'E-mail inválido.');
       if (!document.getElementById('nivel-formacao').value) fail('nivel-formacao', 'Selecione o nível de formação.');
@@ -819,7 +862,7 @@
       else if (desc.length < 80) fail('desc-experiencia', 'Descrição muito curta (mínimo ~3 linhas).');
       if (!document.getElementById('declaracao').checked) fail('declaracao', 'É necessário aceitar a declaração.');
 
-      if (first) { var el = document.getElementById(first); el?.focus(); el?.scrollIntoView({ behavior:'smooth', block:'center' }); }
+      if (first) { var el = document.getElementById(first); el && el.focus(); el && el.scrollIntoView({ behavior:'smooth', block:'center' }); }
       return valid;
     }
 
@@ -838,7 +881,7 @@
       var desc = document.getElementById('edit-desc-experiencia').value.trim();
       if (!desc || desc.length < 80) fail('edit-desc-experiencia', 'Descrição muito curta (mínimo ~3 linhas).');
 
-      if (first) { var el = document.getElementById(first); el?.focus(); el?.scrollIntoView({ behavior:'smooth', block:'center' }); }
+      if (first) { var el = document.getElementById(first); el && el.focus(); el && el.scrollIntoView({ behavior:'smooth', block:'center' }); }
       return valid;
     }
   </script>

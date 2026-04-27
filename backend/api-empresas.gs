@@ -52,6 +52,8 @@ var COL_EMP = {
   // Controle interno
   STATUS: 19, VALIDADO_POR: 20, DATA_VALIDACAO: 21,
   OBSERVACOES: 22, DATA_ULT_ATZ: 23,
+  // Tipos especiais de concedente (Profissional Liberal / Produtor Rural)
+  REGISTRO_PROF: 24, BLOCO_PRODUTOR: 25,
 };
 
 // Colunas da planilha de supervisores (base 0)
@@ -81,11 +83,11 @@ function doGet(e) {
       case 'listarSupervisores':
         result = listarSupervisores_(e.parameter.empresa || '');
         break;
-      case 'obterMeuCadastroEmpresa':
-        result = obterMeuCadastroEmpresa_(e.parameter.authToken || '');
+      case 'obterCadastroEmpresa':
+        result = obterCadastroEmpresa_(e.parameter.cnpjCpf || '');
         break;
-      case 'obterMeuCadastroSupervisor':
-        result = obterMeuCadastroSupervisor_(e.parameter.authToken || '');
+      case 'obterCadastroSupervisor':
+        result = obterCadastroSupervisor_(e.parameter.cpf || '');
         break;
       default:
         return jsonError_('Ação GET não reconhecida: ' + action, 400);
@@ -585,168 +587,210 @@ function cadastrarOportunidade_(dados) {
 }
 
 // ─────────────────────────────────────────
-//  GET: obterMeuCadastroEmpresa
-//  Busca empresa pelo e-mail do token Google
+//  GET: obterCadastroEmpresa
+//  Busca empresa por CNPJ (PJ) ou CPF (PL / Produtor Rural)
+//  Sem autenticação — segurança via validação humana (status Pendente)
 // ─────────────────────────────────────────
-function obterMeuCadastroEmpresa_(token) {
-  var email = verificarTokenGoogle_(token);
+function obterCadastroEmpresa_(cnpjCpf) {
+  var doc = String(cnpjCpf || '').replace(/\D/g, '');
+  if (!doc) throw new Error('Documento inválido.');
+
   var ss  = SpreadsheetApp.openById(CFG.ID_EMPRESAS);
   var aba = ss.getSheetByName(CFG.ABA_EMPRESAS);
   if (!aba) throw new Error('Planilha não configurada.');
 
   var dados = aba.getDataRange().getValues();
   for (var i = 1; i < dados.length; i++) {
-    var emailForm = String(dados[i][COL_EMP.EMAIL_FORM] || '').toLowerCase().trim();
-    var emailRep  = String(dados[i][COL_EMP.EMAIL_REP]  || '').toLowerCase().trim();
-    var status    = String(dados[i][COL_EMP.STATUS]     || '').trim();
+    var status  = String(dados[i][COL_EMP.STATUS] || '').trim();
     if (status.indexOf('Processada') > -1) continue;
-    if (emailForm !== email && emailRep !== email) continue;
+    var docLinha = String(dados[i][COL_EMP.CNPJ] || '').replace(/\D/g, '').trim();
+    if (docLinha !== doc) continue;
+
+    // Backward compat: registros antigos tinham TIPO = "Novo cadastro"
+    var tipo = String(dados[i][COL_EMP.TIPO] || '').trim();
+    if (tipo !== 'Pessoa Jurídica' && tipo !== 'Profissional Liberal' && tipo !== 'Produtor Rural') {
+      tipo = 'Pessoa Jurídica';
+    }
 
     return {
-      razaoSocial:  String(dados[i][COL_EMP.RAZAO_SOCIAL]  || '').trim(),
-      nomeFantasia: String(dados[i][COL_EMP.NOME_FANTASIA]  || '').trim(),
-      cnpj:         String(dados[i][COL_EMP.CNPJ]           || '').trim(),
-      ramo:         String(dados[i][COL_EMP.RAMO]           || '').trim(),
-      endereco:     String(dados[i][COL_EMP.ENDERECO]       || '').trim(),
-      municipio:    String(dados[i][COL_EMP.MUNICIPIO]      || '').trim(),
-      uf:           String(dados[i][COL_EMP.UF]             || '').trim(),
-      cep:          String(dados[i][COL_EMP.CEP]            || '').trim(),
-      telEmpresa:   String(dados[i][COL_EMP.TEL_EMPRESA]    || '').trim(),
-      emailEmpresa: String(dados[i][COL_EMP.EMAIL_EMPRESA]  || '').trim(),
-      site:         String(dados[i][COL_EMP.SITE]           || '').trim(),
-      nomeRep:      String(dados[i][COL_EMP.NOME_REP]       || '').trim(),
-      cargoRep:     String(dados[i][COL_EMP.CARGO_REP]      || '').trim(),
-      emailRep:     String(dados[i][COL_EMP.EMAIL_REP]      || '').trim(),
-      cpfRep:       String(dados[i][COL_EMP.CPF_REP]        || '').trim(),
-      status:       status,
+      tipo:           tipo,
+      razaoSocial:    String(dados[i][COL_EMP.RAZAO_SOCIAL]  || '').trim(),
+      nomeFantasia:   String(dados[i][COL_EMP.NOME_FANTASIA]  || '').trim(),
+      cnpj:           String(dados[i][COL_EMP.CNPJ]           || '').trim(),
+      ramo:           String(dados[i][COL_EMP.RAMO]           || '').trim(),
+      endereco:       String(dados[i][COL_EMP.ENDERECO]       || '').trim(),
+      municipio:      String(dados[i][COL_EMP.MUNICIPIO]      || '').trim(),
+      uf:             String(dados[i][COL_EMP.UF]             || '').trim(),
+      cep:            String(dados[i][COL_EMP.CEP]            || '').trim(),
+      telEmpresa:     String(dados[i][COL_EMP.TEL_EMPRESA]    || '').trim(),
+      emailEmpresa:   String(dados[i][COL_EMP.EMAIL_EMPRESA]  || '').trim(),
+      site:           String(dados[i][COL_EMP.SITE]           || '').trim(),
+      nomeRep:        String(dados[i][COL_EMP.NOME_REP]       || '').trim(),
+      cargoRep:       String(dados[i][COL_EMP.CARGO_REP]      || '').trim(),
+      emailRep:       String(dados[i][COL_EMP.EMAIL_REP]      || '').trim(),
+      cpfRep:         String(dados[i][COL_EMP.CPF_REP]        || '').trim(),
+      registroProf:   String(dados[i][COL_EMP.REGISTRO_PROF]  || '').trim(),
+      blocoProdutor:  String(dados[i][COL_EMP.BLOCO_PRODUTOR] || '').trim(),
+      status:         status,
     };
   }
-  throw new Error('Empresa não encontrada para este e-mail.');
+  throw new Error('Cadastro não encontrado para este documento.');
 }
 
 // ─────────────────────────────────────────
 //  POST: salvarMeuCadastroEmpresa
-//  Cria novo ou atualiza empresa existente (CNPJ como identificador)
+//  Cria novo ou atualiza concedente (CNPJ ou CPF como identificador)
+//  Sem autenticação — segurança via status Pendente + validação humana
 // ─────────────────────────────────────────
 function salvarMeuCadastroEmpresa_(body) {
-  var email = verificarTokenGoogle_(body.authToken || '');
+  var tipo          = sanitizar_(body.tipo);
+  var cnpjCpf       = sanitizar_(body.cnpj).replace(/\D/g, '');
+  var razaoSocial   = sanitizar_(body.razaoSocial);
+  var nomeFantasia  = sanitizar_(body.nomeFantasia);
+  var ramo          = sanitizar_(body.ramo);
+  var endereco      = sanitizar_(body.endereco);
+  var municipio     = sanitizar_(body.municipio);
+  var uf            = sanitizar_(body.uf);
+  var cep           = sanitizar_(body.cep);
+  var telEmpresa    = sanitizar_(body.telEmpresa);
+  var emailEmp      = sanitizar_(body.emailEmpresa).toLowerCase();
+  var site          = sanitizar_(body.site);
+  var registroProf  = sanitizar_(body.registroProf);
+  var blocoProdutor = sanitizar_(body.blocoProdutor);
 
-  var razaoSocial  = sanitizar_(body.razaoSocial);
-  var nomeFantasia = sanitizar_(body.nomeFantasia);
-  var cnpj         = sanitizar_(body.cnpj);
-  var ramo         = sanitizar_(body.ramo);
-  var endereco     = sanitizar_(body.endereco);
-  var municipio    = sanitizar_(body.municipio);
-  var uf           = sanitizar_(body.uf);
-  var cep          = sanitizar_(body.cep);
-  var telEmpresa   = sanitizar_(body.telEmpresa);
-  var emailEmp     = sanitizar_(body.emailEmpresa).toLowerCase();
-  var site         = sanitizar_(body.site);
-  var nomeRep      = sanitizar_(body.nomeRep);
-  var cargoRep     = sanitizar_(body.cargoRep);
-  var emailRep     = sanitizar_(body.emailRep).toLowerCase();
-  var cpfRep       = sanitizar_(body.cpfRep);
+  // Validação do tipo de concedente
+  var tiposValidos = ['Pessoa Jurídica', 'Profissional Liberal', 'Produtor Rural'];
+  if (tiposValidos.indexOf(tipo) === -1) throw new Error('Tipo de concedente inválido.');
 
-  if (!razaoSocial)         throw new Error('Razão social é obrigatória.');
-  if (!validarCNPJ_(cnpj))  throw new Error('CNPJ inválido.');
-  if (!validarEmail_(emailEmp)) throw new Error('E-mail da empresa inválido.');
-  if (!validarEmail_(emailRep)) throw new Error('E-mail do representante inválido.');
-  if (!validarCPF_(cpfRep)) throw new Error('CPF do representante inválido.');
+  var isPJ = tipo === 'Pessoa Jurídica';
+  var isPL = tipo === 'Profissional Liberal';
+
+  if (!razaoSocial) throw new Error((isPJ ? 'Razão social' : 'Nome') + ' é obrigatório.');
+  if (!ramo)        throw new Error((isPL ? 'Profissão' : (isPJ ? 'Ramo de atividade' : 'Atividade rural')) + ' é obrigatório.');
+  if (!validarEmail_(emailEmp)) throw new Error('E-mail de contato inválido.');
+
+  if (isPJ) {
+    if (!validarCNPJ_(cnpjCpf)) throw new Error('CNPJ inválido.');
+    if (cnpjCpf === '10581068000153') throw new Error('Estágios no IFRS têm um processo específico. Entre em contato com o setor.');
+  } else {
+    if (!validarCPF_(cnpjCpf)) throw new Error('CPF inválido.');
+  }
+
+  // Representante legal
+  var nomeRep, cargoRep, emailRep, cpfRep;
+  if (isPJ) {
+    nomeRep  = sanitizar_(body.nomeRep);
+    cargoRep = sanitizar_(body.cargoRep);
+    emailRep = sanitizar_(body.emailRep).toLowerCase();
+    cpfRep   = sanitizar_(body.cpfRep).replace(/\D/g, '');
+    if (!nomeRep)                    throw new Error('Nome do representante é obrigatório.');
+    if (!cargoRep)                   throw new Error('Cargo do representante é obrigatório.');
+    if (!validarEmail_(emailRep))    throw new Error('E-mail do representante inválido.');
+    if (!validarCPF_(cpfRep))        throw new Error('CPF do representante inválido.');
+  } else {
+    // Para PL e Produtor Rural, o próprio é o representante
+    nomeRep  = razaoSocial;
+    cargoRep = tipo;
+    emailRep = emailEmp;
+    cpfRep   = cnpjCpf;
+  }
 
   var ss  = SpreadsheetApp.openById(CFG.ID_EMPRESAS);
   var aba = ss.getSheetByName(CFG.ABA_EMPRESAS);
   if (!aba) throw new Error('Planilha não configurada.');
 
-  var cnpjNorm       = normalizarCNPJ_(cnpj);
-  var linhaExistente = buscarEmpresaPorCNPJ_(aba, cnpjNorm, -1);
+  var linhaExistente = buscarEmpresaPorCNPJ_(aba, cnpjCpf, -1);
   var timestamp      = new Date();
 
   if (linhaExistente > 0) {
-    // Atualiza linha existente
     var campos = [
-      { col: COL_EMP.RAZAO_SOCIAL,  val: razaoSocial  },
-      { col: COL_EMP.NOME_FANTASIA, val: nomeFantasia  },
-      { col: COL_EMP.RAMO,          val: ramo          },
-      { col: COL_EMP.ENDERECO,      val: endereco      },
-      { col: COL_EMP.MUNICIPIO,     val: municipio     },
-      { col: COL_EMP.UF,            val: uf            },
-      { col: COL_EMP.CEP,           val: cep           },
-      { col: COL_EMP.TEL_EMPRESA,   val: telEmpresa    },
-      { col: COL_EMP.EMAIL_EMPRESA, val: emailEmp      },
-      { col: COL_EMP.SITE,          val: site          },
-      { col: COL_EMP.NOME_REP,      val: nomeRep       },
-      { col: COL_EMP.CARGO_REP,     val: cargoRep      },
-      { col: COL_EMP.EMAIL_REP,     val: emailRep      },
-      { col: COL_EMP.DATA_ULT_ATZ,  val: timestamp     },
+      { col: COL_EMP.TIPO,           val: tipo          },
+      { col: COL_EMP.RAZAO_SOCIAL,   val: razaoSocial   },
+      { col: COL_EMP.NOME_FANTASIA,  val: nomeFantasia  },
+      { col: COL_EMP.RAMO,           val: ramo          },
+      { col: COL_EMP.ENDERECO,       val: endereco      },
+      { col: COL_EMP.MUNICIPIO,      val: municipio     },
+      { col: COL_EMP.UF,             val: uf            },
+      { col: COL_EMP.CEP,            val: cep           },
+      { col: COL_EMP.TEL_EMPRESA,    val: telEmpresa    },
+      { col: COL_EMP.EMAIL_EMPRESA,  val: emailEmp      },
+      { col: COL_EMP.SITE,           val: site          },
+      { col: COL_EMP.NOME_REP,       val: nomeRep       },
+      { col: COL_EMP.CARGO_REP,      val: cargoRep      },
+      { col: COL_EMP.EMAIL_REP,      val: emailRep      },
+      { col: COL_EMP.REGISTRO_PROF,  val: registroProf  },
+      { col: COL_EMP.BLOCO_PRODUTOR, val: blocoProdutor },
+      { col: COL_EMP.DATA_ULT_ATZ,   val: timestamp     },
     ];
     campos.forEach(function(c) {
       aba.getRange(linhaExistente, c.col + 1).setValue(c.val);
     });
     aba.getRange(linhaExistente, COL_EMP.STATUS + 1).setValue('Pendente');
-    registrarLog_(ss, cnpj, razaoSocial, 'Atualização via portal web', 'Dados atualizados', email);
-    notificarSetor_(razaoSocial, cnpj, emailRep, 'Atualização de cadastro');
+    registrarLog_(ss, cnpjCpf, razaoSocial, 'Atualização via portal web', 'Dados atualizados', emailRep);
+    notificarSetor_(razaoSocial, cnpjCpf, emailRep, 'Atualização de cadastro');
     return { mensagem: 'Dados atualizados. Aguarde validação do setor (prazo: 1 dia útil).', acao: 'atualizado' };
   }
 
   // Novo cadastro
-  var novaLinha = new Array(24).fill('');
-  novaLinha[COL_EMP.TIMESTAMP]    = timestamp;
-  novaLinha[COL_EMP.EMAIL_FORM]   = email;
-  novaLinha[COL_EMP.TIPO]         = 'Novo cadastro';
-  novaLinha[COL_EMP.RAZAO_SOCIAL] = razaoSocial;
-  novaLinha[COL_EMP.NOME_FANTASIA]= nomeFantasia;
-  novaLinha[COL_EMP.CNPJ]         = cnpj;
-  novaLinha[COL_EMP.RAMO]         = ramo;
-  novaLinha[COL_EMP.ENDERECO]     = endereco;
-  novaLinha[COL_EMP.MUNICIPIO]    = municipio;
-  novaLinha[COL_EMP.UF]           = uf;
-  novaLinha[COL_EMP.CEP]          = cep;
-  novaLinha[COL_EMP.TEL_EMPRESA]  = telEmpresa;
-  novaLinha[COL_EMP.EMAIL_EMPRESA]= emailEmp;
-  novaLinha[COL_EMP.SITE]         = site;
-  novaLinha[COL_EMP.NOME_REP]     = nomeRep;
-  novaLinha[COL_EMP.CARGO_REP]    = cargoRep;
-  novaLinha[COL_EMP.EMAIL_REP]    = emailRep;
-  novaLinha[COL_EMP.CPF_REP]      = cpfRep;
-  novaLinha[COL_EMP.DECLARACAO]   = 'Sim — via portal web';
-  novaLinha[COL_EMP.STATUS]       = 'Pendente';
-  novaLinha[COL_EMP.DATA_ULT_ATZ] = timestamp;
+  var novaLinha = new Array(26).fill('');
+  novaLinha[COL_EMP.TIMESTAMP]      = timestamp;
+  novaLinha[COL_EMP.EMAIL_FORM]     = emailRep;
+  novaLinha[COL_EMP.TIPO]           = tipo;
+  novaLinha[COL_EMP.RAZAO_SOCIAL]   = razaoSocial;
+  novaLinha[COL_EMP.NOME_FANTASIA]  = nomeFantasia;
+  novaLinha[COL_EMP.CNPJ]           = cnpjCpf;
+  novaLinha[COL_EMP.RAMO]           = ramo;
+  novaLinha[COL_EMP.ENDERECO]       = endereco;
+  novaLinha[COL_EMP.MUNICIPIO]      = municipio;
+  novaLinha[COL_EMP.UF]             = uf;
+  novaLinha[COL_EMP.CEP]            = cep;
+  novaLinha[COL_EMP.TEL_EMPRESA]    = telEmpresa;
+  novaLinha[COL_EMP.EMAIL_EMPRESA]  = emailEmp;
+  novaLinha[COL_EMP.SITE]           = site;
+  novaLinha[COL_EMP.NOME_REP]       = nomeRep;
+  novaLinha[COL_EMP.CARGO_REP]      = cargoRep;
+  novaLinha[COL_EMP.EMAIL_REP]      = emailRep;
+  novaLinha[COL_EMP.CPF_REP]        = cpfRep;
+  novaLinha[COL_EMP.DECLARACAO]     = 'Sim — via portal web';
+  novaLinha[COL_EMP.STATUS]         = 'Pendente';
+  novaLinha[COL_EMP.DATA_ULT_ATZ]   = timestamp;
+  novaLinha[COL_EMP.REGISTRO_PROF]  = registroProf;
+  novaLinha[COL_EMP.BLOCO_PRODUTOR] = blocoProdutor;
 
   aba.appendRow(novaLinha);
   aba.getRange(aba.getLastRow(), 1, 1, aba.getLastColumn()).setBackground('#FFF9C4');
 
-  notificarSetor_(razaoSocial, cnpj, emailRep, 'Novo cadastro');
+  notificarSetor_(razaoSocial, cnpjCpf, emailRep, 'Novo cadastro');
   enviarConfirmacao_(emailEmp, emailRep, nomeRep, razaoSocial, 'novo');
 
   return { mensagem: 'Cadastro enviado! Você receberá confirmação por e-mail em até 1 dia útil.', acao: 'cadastrado' };
 }
 
 // ─────────────────────────────────────────
-//  GET: obterMeuCadastroSupervisor
-//  Busca supervisor pelo e-mail do token Google
+//  GET: obterCadastroSupervisor
+//  Busca supervisor pelo CPF (sem autenticação)
 // ─────────────────────────────────────────
-function obterMeuCadastroSupervisor_(token) {
-  var email = verificarTokenGoogle_(token);
+function obterCadastroSupervisor_(cpf) {
+  var doc = String(cpf || '').replace(/\D/g, '');
+  if (!doc) throw new Error('CPF inválido.');
+
   var ss  = SpreadsheetApp.openById(CFG.ID_SUPERVISORES);
   var aba = ss.getSheetByName(CFG.ABA_SUP_RESPOSTAS);
   if (!aba) throw new Error('Planilha não configurada.');
 
   var dados = aba.getDataRange().getValues();
   for (var i = 1; i < dados.length; i++) {
-    var emailForm = String(dados[i][COL_SUP.EMAIL_FORM] || '').toLowerCase().trim();
-    var emailSup  = String(dados[i][COL_SUP.EMAIL_SUP]  || '').toLowerCase().trim();
-    var status    = String(dados[i][COL_SUP.STATUS]     || '').trim();
+    var status = String(dados[i][COL_SUP.STATUS] || '').trim();
     if (status.indexOf('Processada') > -1) continue;
-    if (emailForm !== email && emailSup !== email) continue;
+    var cpfLinha = String(dados[i][COL_SUP.CPF] || '').replace(/\D/g, '').trim();
+    if (cpfLinha !== doc) continue;
 
-    var empStr  = String(dados[i][COL_SUP.EMPRESA] || '');
-    var partes  = empStr.split('—');
-    var cnpjEmp = partes[0] ? partes[0].trim() : '';
-    var nomeEmp = partes[1] ? partes[1].trim() : empStr.trim();
+    var empStr = String(dados[i][COL_SUP.EMPRESA] || '');
+    var partes = empStr.split('—');
 
     return {
-      empresa:          cnpjEmp,
-      empresaNome:      nomeEmp,
+      empresa:          partes[0] ? partes[0].trim() : '',
+      empresaNome:      partes[1] ? partes[1].trim() : empStr.trim(),
       setor:            String(dados[i][COL_SUP.SETOR]          || '').trim(),
       enderecoSetor:    String(dados[i][COL_SUP.ENDERECO_SETOR] || '').trim(),
       emailSetor:       String(dados[i][COL_SUP.EMAIL_SETOR_SUP]|| '').trim(),
@@ -764,15 +808,15 @@ function obterMeuCadastroSupervisor_(token) {
       status:           status,
     };
   }
-  throw new Error('Supervisor não encontrado para este e-mail.');
+  throw new Error('Supervisor não encontrado para este CPF.');
 }
 
 // ─────────────────────────────────────────
 //  POST: salvarMeuCadastroSupervisor
 //  Cria novo ou atualiza supervisor existente (CPF como identificador)
+//  Sem autenticação — segurança via status Pendente + validação humana
 // ─────────────────────────────────────────
 function salvarMeuCadastroSupervisor_(body) {
-  var email = verificarTokenGoogle_(body.authToken || '');
 
   var empresa       = sanitizar_(body.empresa);
   var empresaNome   = sanitizar_(body.empresaNome);
@@ -841,7 +885,7 @@ function salvarMeuCadastroSupervisor_(body) {
   // Novo cadastro
   var novaLinha = new Array(24).fill('');
   novaLinha[COL_SUP.TIMESTAMP]      = timestamp;
-  novaLinha[COL_SUP.EMAIL_FORM]     = email;
+  novaLinha[COL_SUP.EMAIL_FORM]     = emailSup;
   novaLinha[COL_SUP.TIPO]           = 'Novo cadastro';
   novaLinha[COL_SUP.EMPRESA]        = empresa + ' — ' + empresaNome;
   novaLinha[COL_SUP.SETOR]          = setor;

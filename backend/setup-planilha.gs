@@ -54,10 +54,12 @@ function configurarPlanilha() {
       nome: 'Empresas',
       cabecalho: [
         'Timestamp', 'E-mail Form.', 'Tipo', 'Razão Social', 'Nome Fantasia',
-        'CNPJ', 'Ramo', 'Endereço', 'Município', 'UF', 'CEP',
+        'CNPJ/CPF', 'Ramo', 'Endereço', 'Município', 'UF', 'CEP',
         'Telefone', 'E-mail', 'Site',
         'Nome Representante', 'Cargo Representante', 'E-mail Representante',
-        'CPF Representante', 'Status',
+        'CPF Representante', 'Declaração',
+        'Status', 'Validado Por', 'Data Validação', 'Observações', 'Data Últ. Atualização',
+        'Registro Profissional', 'Bloco de Produtor',
       ],
     },
 
@@ -307,4 +309,41 @@ function _formatarCelulaCabecalho_(sheet, col) {
   cell.setFontWeight('bold');
   cell.setBackground('#1a73e8');
   cell.setFontColor('#ffffff');
+}
+
+/**
+ * Adiciona as colunas novas à aba Empresas SEM apagar dados existentes.
+ * - col 25 = Registro Profissional (se ausente)
+ * - col 26 = Bloco de Produtor    (se ausente)
+ *
+ * Renomeia também a coluna CNPJ → CNPJ/CPF para refletir suporte a CPF.
+ *
+ * Execute manualmente no editor GAS: Executar → adicionarColunasEmpresa
+ */
+function adicionarColunasEmpresa() {
+  var ss = SpreadsheetApp.openById('1zVyseifVC6xeMpNjqwYd6jCq9HTJ2NS8BlN1dtM4s7Y');
+  var sh = ss.getSheetByName('Empresas');
+  if (!sh) { Logger.log('❌ Aba Empresas não encontrada.'); return; }
+
+  var cab = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0];
+
+  // Renomeia col 6 (CNPJ → CNPJ/CPF) se ainda for 'CNPJ'
+  if (cab[5] === 'CNPJ') {
+    sh.getRange(1, 6).setValue('CNPJ/CPF');
+    _formatarCelulaCabecalho_(sh, 6);
+  }
+
+  // col 25 = índice 24 = Registro Profissional
+  if (cab[24] !== 'Registro Profissional') {
+    sh.getRange(1, 25).setValue('Registro Profissional');
+    _formatarCelulaCabecalho_(sh, 25);
+  }
+
+  // col 26 = índice 25 = Bloco de Produtor
+  if (cab[25] !== 'Bloco de Produtor') {
+    sh.getRange(1, 26).setValue('Bloco de Produtor');
+    _formatarCelulaCabecalho_(sh, 26);
+  }
+
+  Logger.log('✅ Colunas Empresas atualizadas! • CNPJ→CNPJ/CPF (col 6) • Registro Profissional (col 25) • Bloco de Produtor (col 26)');
 }
