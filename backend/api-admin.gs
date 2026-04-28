@@ -1355,12 +1355,31 @@ function inicializarCursos() {
  * Obtém (ou inicializa) a lista de cursos do PropertiesService.
  * @returns {Array} Array de {id, nome, grupo, status}
  */
+/**
+ * Ordena um array de cursos: por grupo (A-Z) e, dentro do grupo, por nome (A-Z).
+ * Retorna o mesmo array (ordenado in-place) para encadeamento.
+ */
+function ordenarCursos_(cursos) {
+  cursos.sort(function(a, b) {
+    var gA = (a.grupo || '').toLowerCase();
+    var gB = (b.grupo || '').toLowerCase();
+    if (gA < gB) return -1;
+    if (gA > gB) return  1;
+    var nA = (a.nome || '').toLowerCase();
+    var nB = (b.nome || '').toLowerCase();
+    if (nA < nB) return -1;
+    if (nA > nB) return  1;
+    return 0;
+  });
+  return cursos;
+}
+
 function obterListaCursos_() {
   var raw = PropertiesService.getScriptProperties().getProperty('cursos_lista');
   if (raw) {
     try {
       var parsed = JSON.parse(raw);
-      if (Array.isArray(parsed.cursos)) return parsed.cursos;
+      if (Array.isArray(parsed.cursos)) return ordenarCursos_(parsed.cursos);
     } catch (e) { /* fall through to seed */ }
   }
   // Seed automático a partir da lista original
@@ -1372,6 +1391,7 @@ function obterListaCursos_() {
       status: 'Ativo',
     };
   });
+  ordenarCursos_(cursos);
   PropertiesService.getScriptProperties().setProperty('cursos_lista', JSON.stringify({ cursos: cursos }));
   return cursos;
 }
@@ -1441,6 +1461,7 @@ function salvarCurso_(body) {
     cursos[idx].status = (body.status === 'Inativo') ? 'Inativo' : 'Ativo';
   }
 
+  ordenarCursos_(cursos);
   PropertiesService.getScriptProperties().setProperty('cursos_lista', JSON.stringify({ cursos: cursos }));
   return jsonOk_({ mensagem: 'Curso salvo com sucesso!', cursos: cursos });
 }
@@ -1463,6 +1484,7 @@ function deletarCurso_(body) {
   if (idx === -1) return jsonError_('Curso não encontrado.', 'NOT_FOUND');
 
   cursos.splice(idx, 1);
+  ordenarCursos_(cursos);
   PropertiesService.getScriptProperties().setProperty('cursos_lista', JSON.stringify({ cursos: cursos }));
   return jsonOk_({ mensagem: 'Curso excluído com sucesso!', cursos: cursos });
 }
