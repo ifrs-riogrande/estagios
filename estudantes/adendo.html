@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Adendo ao TCE — Central de Estágios IFRS</title>
+  <title>Adendo ao TCE â€” Central de EstÃ¡gios IFRS</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
@@ -18,15 +18,15 @@
         <a href="../index.html" class="header-brand">
           <div class="header-logo-fallback" aria-hidden="true">IFRS</div>
           <div class="header-brand-text">
-            <span class="header-brand-name">Central de Estágios</span>
+            <span class="header-brand-name">Central de EstÃ¡gios</span>
             <span class="header-brand-sub">IFRS Campus Rio Grande</span>
           </div>
         </a>
         <div style="display:flex;align-items:center;gap:var(--space-3);">
           <div id="header-user-area"></div>
-          <a href="index.html" class="back-link">
+          <a href="estagio.html" class="back-link">
             <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd"/></svg>
-            Estudantes
+            Estágio
           </a>
         </div>
       </div>
@@ -37,12 +37,12 @@
     <div class="container">
       <div class="form-wrapper">
         <div class="form-page-header">
-          <h1>Adendo ao Termo de Compromisso de Estágio</h1>
-          <p>Use este formulário para solicitar alterações em um estágio já aprovado: prorrogação de prazo, mudança de carga horária, troca de supervisor, etc.</p>
+          <h1>Adendo ao Termo de Compromisso de EstÃ¡gio</h1>
+          <p>Use este formulÃ¡rio para solicitar alteraÃ§Ãµes em um estÃ¡gio jÃ¡ aprovado: prorrogaÃ§Ã£o de prazo, mudanÃ§a de carga horÃ¡ria, troca de supervisor, etc.</p>
         </div>
 
         <div class="info-banner" role="note">
-          <strong>Atenção:</strong> O adendo só é válido após aprovação do setor de estágios e novas assinaturas de todos os envolvidos. As alterações não têm efeito retroativo.
+          <strong>AtenÃ§Ã£o:</strong> O adendo sÃ³ Ã© vÃ¡lido apÃ³s aprovaÃ§Ã£o do setor de estÃ¡gios e novas assinaturas de todos os envolvidos. As alteraÃ§Ãµes nÃ£o tÃªm efeito retroativo.
         </div>
 
         <form id="form-adendo" novalidate>
@@ -50,14 +50,14 @@
           <div class="form-section">
             <h2 class="form-section-title">
               <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"/></svg>
-              Identificação
+              IdentificaÃ§Ã£o
             </h2>
             <div class="form-group">
-              <label class="form-label required" for="id-estagio">ID do estágio</label>
+              <label class="form-label required" for="id-estagio">ID do estÃ¡gio</label>
               <input type="text" id="id-estagio" name="idEstagio" class="form-control"
                 placeholder="RG25-XXXX-XXXX" required aria-required="true"
                 style="text-transform:uppercase" aria-describedby="id-estagio-hint id-estagio-error">
-              <span id="id-estagio-hint" class="form-hint">Recebido no e-mail de aprovação da solicitação.</span>
+              <span id="id-estagio-hint" class="form-hint">Recebido no e-mail de aprovaÃ§Ã£o da solicitaÃ§Ã£o.</span>
               <span id="id-estagio-error" class="form-error hidden" role="alert"></span>
             </div>
           </div>
@@ -65,21 +65,21 @@
           <div class="form-section">
             <h2 class="form-section-title">
               <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" clip-rule="evenodd"/></svg>
-              Alterações Solicitadas
+              AlteraÃ§Ãµes Solicitadas
             </h2>
 
             <div class="form-group">
-              <label class="form-label required" for="tipo-adendo">Tipo de alteração</label>
+              <label class="form-label required" for="tipo-adendo">Tipo de alteraÃ§Ã£o</label>
               <select id="tipo-adendo" name="tipoAdendo" class="form-control" required aria-required="true" aria-describedby="tipo-adendo-error">
                 <option value="">Selecione...</option>
-                <option value="Prorrogação de prazo">Prorrogação de prazo (nova data de término)</option>
-                <option value="Redução de prazo">Redução de prazo (término antecipado)</option>
-                <option value="Alteração de carga horária">Alteração de carga horária</option>
-                <option value="Alteração de horário">Alteração de horário/turno</option>
+                <option value="ProrrogaÃ§Ã£o de prazo">ProrrogaÃ§Ã£o de prazo (nova data de tÃ©rmino)</option>
+                <option value="ReduÃ§Ã£o de prazo">ReduÃ§Ã£o de prazo (tÃ©rmino antecipado)</option>
+                <option value="AlteraÃ§Ã£o de carga horÃ¡ria">AlteraÃ§Ã£o de carga horÃ¡ria</option>
+                <option value="AlteraÃ§Ã£o de horÃ¡rio">AlteraÃ§Ã£o de horÃ¡rio/turno</option>
                 <option value="Troca de supervisor">Troca de supervisor</option>
                 <option value="Troca de orientador">Troca de orientador</option>
-                <option value="Alteração de remuneração">Alteração de remuneração</option>
-                <option value="Alteração de setor/área">Alteração de setor ou área de atuação</option>
+                <option value="AlteraÃ§Ã£o de remuneraÃ§Ã£o">AlteraÃ§Ã£o de remuneraÃ§Ã£o</option>
+                <option value="AlteraÃ§Ã£o de setor/Ã¡rea">AlteraÃ§Ã£o de setor ou Ã¡rea de atuaÃ§Ã£o</option>
                 <option value="Outro">Outro</option>
               </select>
               <span id="tipo-adendo-error" class="form-error hidden" role="alert"></span>
@@ -87,27 +87,27 @@
 
             <!-- Campos condicionais por tipo -->
             <div id="secao-nova-data" class="form-group hidden">
-              <label class="form-label required" for="nova-data-termino">Nova data de término</label>
+              <label class="form-label required" for="nova-data-termino">Nova data de tÃ©rmino</label>
               <input type="date" id="nova-data-termino" name="novaDataTermino" class="form-control" aria-describedby="nova-data-termino-error">
               <span id="nova-data-termino-error" class="form-error hidden" role="alert"></span>
             </div>
 
             <div id="secao-nova-carga" class="form-group hidden">
-              <label class="form-label required" for="nova-carga-horaria">Nova carga horária semanal</label>
+              <label class="form-label required" for="nova-carga-horaria">Nova carga horÃ¡ria semanal</label>
               <select id="nova-carga-horaria" name="novaCargaHoraria" class="form-control" aria-describedby="nova-carga-horaria-error">
                 <option value="">Selecione...</option>
                 <option value="20h">20h semanais</option>
                 <option value="25h">25h semanais</option>
                 <option value="30h">30h semanais</option>
-                <option value="40h">40h semanais (alternância)</option>
+                <option value="40h">40h semanais (alternÃ¢ncia)</option>
               </select>
               <span id="nova-carga-horaria-error" class="form-error hidden" role="alert"></span>
             </div>
 
             <div id="secao-novo-horario" class="form-group hidden">
-              <label class="form-label required" for="novo-horario">Novo horário/turno</label>
+              <label class="form-label required" for="novo-horario">Novo horÃ¡rio/turno</label>
               <input type="text" id="novo-horario" name="novoHorario" class="form-control"
-                placeholder="Ex.: Segunda a Sexta, das 13h às 17h" aria-describedby="novo-horario-error">
+                placeholder="Ex.: Segunda a Sexta, das 13h Ã s 17h" aria-describedby="novo-horario-error">
               <span id="novo-horario-error" class="form-error hidden" role="alert"></span>
             </div>
 
@@ -115,29 +115,29 @@
               <label class="form-label required" for="justificativa">Justificativa</label>
               <textarea id="justificativa" name="justificativa" class="form-control" rows="4"
                 required aria-required="true" minlength="50"
-                placeholder="Explique o motivo da alteração solicitada de forma clara e objetiva."
+                placeholder="Explique o motivo da alteraÃ§Ã£o solicitada de forma clara e objetiva."
                 aria-describedby="justificativa-hint justificativa-error"></textarea>
-              <span id="justificativa-hint" class="form-hint">Mínimo 3 linhas. A justificativa será avaliada pelo setor antes da aprovação.</span>
+              <span id="justificativa-hint" class="form-hint">MÃ­nimo 3 linhas. A justificativa serÃ¡ avaliada pelo setor antes da aprovaÃ§Ã£o.</span>
               <span id="justificativa-error" class="form-error hidden" role="alert"></span>
             </div>
 
             <div class="form-group">
-              <label class="form-label" for="obs-adicionais">Observações adicionais</label>
+              <label class="form-label" for="obs-adicionais">ObservaÃ§Ãµes adicionais</label>
               <textarea id="obs-adicionais" name="obsAdicionais" class="form-control" rows="2"
-                placeholder="Informações complementares relevantes para análise do adendo (opcional)."></textarea>
+                placeholder="InformaÃ§Ãµes complementares relevantes para anÃ¡lise do adendo (opcional)."></textarea>
             </div>
           </div>
 
           <div class="form-section">
             <h2 class="form-section-title">
               <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
-              Declaração
+              DeclaraÃ§Ã£o
             </h2>
             <div class="declaration-box">
-              <p>Declaro que as informações prestadas são verdadeiras e estou ciente de que o adendo somente terá validade após aprovação do setor de estágios e assinatura de todos os envolvidos no TCE.</p>
+              <p>Declaro que as informaÃ§Ãµes prestadas sÃ£o verdadeiras e estou ciente de que o adendo somente terÃ¡ validade apÃ³s aprovaÃ§Ã£o do setor de estÃ¡gios e assinatura de todos os envolvidos no TCE.</p>
               <div class="form-check">
                 <input type="checkbox" id="declaracao" name="declaracao" required aria-required="true" aria-describedby="declaracao-error">
-                <label class="form-check-label required" for="declaracao">Declaro a veracidade das informações e estou ciente das condições acima.</label>
+                <label class="form-check-label required" for="declaracao">Declaro a veracidade das informaÃ§Ãµes e estou ciente das condiÃ§Ãµes acima.</label>
               </div>
               <span id="declaracao-error" class="form-error hidden" role="alert" style="margin-top:var(--space-2);display:block;"></span>
             </div>
@@ -160,7 +160,7 @@
   <footer id="app-footer">
     <div class="container">
       <div class="footer-inner">
-        <span class="footer-copy">&copy; <script>document.write(new Date().getFullYear())</script> Central de Estágios — IFRS Campus Rio Grande</span>
+        <span class="footer-copy">&copy; <script>document.write(new Date().getFullYear())</script> Central de EstÃ¡gios â€” IFRS Campus Rio Grande</span>
         <nav class="footer-links"><a href="mailto:estagios@riogrande.ifrs.edu.br">estagios@riogrande.ifrs.edu.br</a></nav>
       </div>
     </div>
@@ -180,13 +180,13 @@
     // Exibe campos condicionais por tipo de adendo
     document.getElementById('tipo-adendo').addEventListener('change', function () {
       const tipo = this.value;
-      toggleSection('secao-nova-data',   tipo === 'Prorrogação de prazo' || tipo === 'Redução de prazo');
-      toggleSection('secao-nova-carga',  tipo === 'Alteração de carga horária');
-      toggleSection('secao-novo-horario',tipo === 'Alteração de horário');
+      toggleSection('secao-nova-data',   tipo === 'ProrrogaÃ§Ã£o de prazo' || tipo === 'ReduÃ§Ã£o de prazo');
+      toggleSection('secao-nova-carga',  tipo === 'AlteraÃ§Ã£o de carga horÃ¡ria');
+      toggleSection('secao-novo-horario',tipo === 'AlteraÃ§Ã£o de horÃ¡rio');
 
-      document.getElementById('nova-data-termino').required  = (tipo === 'Prorrogação de prazo' || tipo === 'Redução de prazo');
-      document.getElementById('nova-carga-horaria').required = (tipo === 'Alteração de carga horária');
-      document.getElementById('novo-horario').required       = (tipo === 'Alteração de horário');
+      document.getElementById('nova-data-termino').required  = (tipo === 'ProrrogaÃ§Ã£o de prazo' || tipo === 'ReduÃ§Ã£o de prazo');
+      document.getElementById('nova-carga-horaria').required = (tipo === 'AlteraÃ§Ã£o de carga horÃ¡ria');
+      document.getElementById('novo-horario').required       = (tipo === 'AlteraÃ§Ã£o de horÃ¡rio');
     });
 
     function validateForm() {
@@ -194,22 +194,22 @@
       function fail(id, msg) { showFieldError(id, msg); if (!firstInvalid) firstInvalid = id; valid = false; }
 
       const id = document.getElementById('id-estagio').value.trim().toUpperCase();
-      if (!id || !id.match(/^RG\d{2}-[A-Z0-9]{4}-[A-Z0-9]{4}$/)) fail('id-estagio', 'ID inválido. Formato: RG25-XXXX-XXXX.');
-      if (!document.getElementById('tipo-adendo').value) fail('tipo-adendo', 'Selecione o tipo de alteração.');
+      if (!id || !id.match(/^RG\d{2}-[A-Z0-9]{4}-[A-Z0-9]{4}$/)) fail('id-estagio', 'ID invÃ¡lido. Formato: RG25-XXXX-XXXX.');
+      if (!document.getElementById('tipo-adendo').value) fail('tipo-adendo', 'Selecione o tipo de alteraÃ§Ã£o.');
 
       const tipo = document.getElementById('tipo-adendo').value;
-      if ((tipo === 'Prorrogação de prazo' || tipo === 'Redução de prazo') && !document.getElementById('nova-data-termino').value)
-        fail('nova-data-termino', 'Informe a nova data de término.');
-      if (tipo === 'Alteração de carga horária' && !document.getElementById('nova-carga-horaria').value)
-        fail('nova-carga-horaria', 'Selecione a nova carga horária.');
-      if (tipo === 'Alteração de horário' && !document.getElementById('novo-horario').value.trim())
-        fail('novo-horario', 'Informe o novo horário.');
+      if ((tipo === 'ProrrogaÃ§Ã£o de prazo' || tipo === 'ReduÃ§Ã£o de prazo') && !document.getElementById('nova-data-termino').value)
+        fail('nova-data-termino', 'Informe a nova data de tÃ©rmino.');
+      if (tipo === 'AlteraÃ§Ã£o de carga horÃ¡ria' && !document.getElementById('nova-carga-horaria').value)
+        fail('nova-carga-horaria', 'Selecione a nova carga horÃ¡ria.');
+      if (tipo === 'AlteraÃ§Ã£o de horÃ¡rio' && !document.getElementById('novo-horario').value.trim())
+        fail('novo-horario', 'Informe o novo horÃ¡rio.');
 
       const just = document.getElementById('justificativa').value.trim();
-      if (!just) fail('justificativa', 'A justificativa é obrigatória.');
+      if (!just) fail('justificativa', 'A justificativa Ã© obrigatÃ³ria.');
       else if (just.length < 40) fail('justificativa', 'Justificativa muito curta. Explique melhor o motivo.');
 
-      if (!document.getElementById('declaracao').checked) fail('declaracao', 'Aceite a declaração para enviar.');
+      if (!document.getElementById('declaracao').checked) fail('declaracao', 'Aceite a declaraÃ§Ã£o para enviar.');
 
       if (firstInvalid) { document.getElementById(firstInvalid)?.focus(); document.getElementById(firstInvalid)?.scrollIntoView({ behavior:'smooth', block:'center' }); }
       return valid;
@@ -235,7 +235,7 @@
         () => apiEnviarAdendo(dados),
         btnEnviar, 'form-feedback',
         'Adendo enviado com sucesso!',
-        'Sua solicitação de adendo foi recebida. O setor de estágios analisará e entrará em contato para os próximos passos.',
+        'Sua solicitaÃ§Ã£o de adendo foi recebida. O setor de estÃ¡gios analisarÃ¡ e entrarÃ¡ em contato para os prÃ³ximos passos.',
         () => { form.querySelectorAll('input,select,textarea,button').forEach(el => el.disabled = true); }
       );
     });
@@ -250,3 +250,5 @@
   </script>
 </body>
 </html>
+
+
