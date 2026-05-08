@@ -23,40 +23,44 @@
       border-bottom: 1px solid var(--color-border);
     }
 
+    /* Seção de cadastros não estica os cards */
+    .hub-grid--align-start { align-items: start; }
+
     /* Card de cadastros agrupado */
     .hub-card--group {
       cursor: default;
       display: block;
     }
     .hub-card--group:hover { box-shadow: var(--shadow-sm); }
-    .hub-card--group .hub-card-body h2 { margin-bottom: var(--space-4); }
+    .hub-card--group .hub-card-body h2 { margin-bottom: var(--space-3); }
 
     .cadastro-links {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
+      display: flex;
+      flex-wrap: wrap;
       gap: var(--space-2);
       margin-top: var(--space-1);
     }
     .cadastro-link {
-      display: flex;
+      display: inline-flex;
       align-items: center;
-      gap: var(--space-2);
-      padding: var(--space-2) var(--space-3);
+      gap: 6px;
+      padding: 4px 10px;
       border-radius: var(--radius-sm);
       border: 1px solid var(--color-border);
       background: var(--color-bg);
       color: var(--color-text);
-      font-size: var(--font-size-sm);
+      font-size: var(--font-size-xs);
       font-weight: 500;
       text-decoration: none;
-      transition: background .15s, border-color .15s;
+      transition: background .15s, border-color .15s, color .15s;
+      white-space: nowrap;
     }
     .cadastro-link:hover {
       background: var(--color-primary-light, #eff6ff);
       border-color: var(--color-primary);
       color: var(--color-primary);
     }
-    .cadastro-link svg { flex-shrink: 0; opacity: .6; }
+    .cadastro-link svg { flex-shrink: 0; opacity: .55; }
     .cadastro-link:hover svg { opacity: 1; }
   </style>
 </head>
@@ -163,7 +167,7 @@
       <!-- ── Cadastros + Sistema (lado a lado) ──────────────── -->
       <div class="admin-section">
         <div class="admin-section-label">Cadastros e Sistema</div>
-        <div class="hub-grid hub-grid--3col">
+        <div class="hub-grid hub-grid--3col hub-grid--align-start">
 
           <!-- Card agrupador: Cadastros -->
           <div class="hub-card hub-card--group" style="grid-column: span 2;">
@@ -191,7 +195,7 @@
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.26 10.147a60.438 60.438 0 00-.491 6.347A48.627 48.627 0 0112 20.904a48.627 48.627 0 018.232-4.41 60.46 60.46 0 00-.491-6.347m-15.482 0a50.57 50.57 0 00-2.658-.813A59.906 59.906 0 0112 3.493a59.902 59.902 0 0110.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.697 50.697 0 0112 13.489a50.702 50.702 0 017.74-3.342M6.75 15a.75.75 0 100-1.5.75.75 0 000 1.5zm0 0v-3.675A55.378 55.378 0 0112 8.443m-7.007 11.55A5.981 5.981 0 006.75 15.75v-1.5"/></svg>
                   Coordenadores
                 </a>
-                <a href="agentes.html" class="cadastro-link" style="grid-column: span 2;">
+                <a href="agentes.html" class="cadastro-link">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13.5 16.875h3.375m0 0h3.375m-3.375 0V13.5m0 3.375v3.375M6 10.5h2.25a2.25 2.25 0 002.25-2.25V6a2.25 2.25 0 00-2.25-2.25H6A2.25 2.25 0 003.75 6v2.25A2.25 2.25 0 006 10.5zm0 9.75h2.25A2.25 2.25 0 0010.5 18v-2.25a2.25 2.25 0 00-2.25-2.25H6a2.25 2.25 0 00-2.25 2.25V18A2.25 2.25 0 006 20.25zm9.75-9.75H18a2.25 2.25 0 002.25-2.25V6A2.25 2.25 0 0018 3.75h-2.25A2.25 2.25 0 0013.5 6v2.25a2.25 2.25 0 002.25 2.25z"/></svg>
                   Agentes de Integração
                 </a>
