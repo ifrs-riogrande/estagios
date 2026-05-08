@@ -29,9 +29,11 @@
     /* Card de cadastros agrupado */
     .hub-card--group {
       cursor: default;
-      display: block;
+      align-items: flex-start;   /* herda display:flex do .hub-card */
     }
-    .hub-card--group:hover { box-shadow: var(--shadow-sm); }
+    .hub-card--group:hover { box-shadow: var(--shadow-sm); transform: none; }
+    .hub-card--group .hub-card-icon svg { width: 40px; height: 40px; }
+    .hub-card--group .hub-card-body { width: 100%; text-align: left; }
     .hub-card--group .hub-card-body h2 { margin-bottom: var(--space-3); }
 
     .cadastro-links {
@@ -172,7 +174,7 @@
           <!-- Card agrupador: Cadastros -->
           <div class="hub-card hub-card--group" style="grid-column: span 2;">
             <div class="hub-card-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z"/>
               </svg>
             </div>
