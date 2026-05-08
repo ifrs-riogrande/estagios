@@ -68,6 +68,13 @@ var GET_ROUTES = {
   // Cursos â€" admin
   'listarTodosCursos':       doGetAdmin,
 
+  // Checklist
+  'obterChecklist':          doGetChecklist,
+  'obterPrazos':             doGetChecklist,
+
+  // Assinaturas
+  'obterFluxoAssinaturas':   doGetAssinaturas,
+
 };
 
 // â”€â”€ Mapeamento action â†’ mÃ³dulo (POST) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -125,6 +132,15 @@ var POST_ROUTES = {
   'reprovarAdendo':            doPostAdmin,
   'inativarAgente':            doPostAdmin,
   'reativarAgente':            doPostAdmin,
+
+  // Checklist
+  'salvarRespostaAdmin':       doPostChecklist,
+  'salvarRespostaAtor':        doPostChecklist,
+  'salvarPrazos':              doPostChecklist,
+
+  // Assinaturas
+  'concluirEtapa':             doPostAssinaturas,
+  'rejeitarEtapa':             doPostAssinaturas,
 };
 
 // â”€â”€ Ponto de entrada GET â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€

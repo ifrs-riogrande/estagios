@@ -139,6 +139,39 @@ function configurarPlanilha() {
       ],
     },
 
+    // ── Fluxo de Checklist ─────────────────────────────────────────────────
+    {
+      nome: 'Checklists',
+      cabecalho: [
+        'ID Estágio', 'Status Geral', 'Etapa Ativa',
+        'Admin Status', 'Admin Data', 'Admin Obs',
+        'Orientador Status', 'Orientador Data', 'Orientador Obs',
+        'Coordenador Status', 'Coordenador Data', 'Coordenador Obs',
+        'Empresa Status', 'Empresa Data', 'Empresa Obs',
+        'Supervisor Status', 'Supervisor Data', 'Supervisor Obs',
+        'Prazo Admin', 'Prazo Orientador', 'Prazo Coordenador',
+        'Prazo Empresa', 'Prazo Supervisor',
+        'Ts Criação', 'Ts Conclusão',
+      ],
+    },
+
+    // ── Fluxo de Assinaturas ───────────────────────────────────────────────
+    {
+      nome: 'Fluxo TCE',
+      cabecalho: [
+        'ID Estágio', 'Status Geral', 'Etapa Atual', 'Drive Pasta ID',
+        'E1 Estudante Status',      'E1 Data', 'E1 Drive URL',
+        'E2 Empresa Status',        'E2 Data', 'E2 Drive URL',
+        'E3 Supervisor Status',     'E3 Data', 'E3 Drive URL',
+        'E4 Orientador Status',     'E4 Data', 'E4 Drive URL',
+        'E5 Coordenador Status',    'E5 Data', 'E5 Drive URL',
+        'E6 Central Revisão Status','E6 Data', 'E6 Drive URL',
+        'E7 Direção Status',        'E7 Data', 'E7 Drive URL',
+        'E8 Central Final Status',  'E8 Data', 'E8 Drive URL',
+        'Ts Criação', 'Ts Conclusão',
+      ],
+    },
+
   ];
 
   // ── 2. Usa a primeira aba como âncora (renomeia com timestamp único) ─
@@ -346,4 +379,62 @@ function adicionarColunasEmpresa() {
   }
 
   Logger.log('✅ Colunas Empresas atualizadas! • CNPJ→CNPJ/CPF (col 6) • Registro Profissional (col 25) • Bloco de Produtor (col 26)');
+}
+
+/**
+ * Adiciona as abas "Checklists" e "Fluxo TCE" à planilha existente SEM apagar dados.
+ * Execute manualmente no editor GAS: Executar → adicionarAbasFluxo
+ */
+function adicionarAbasFluxo() {
+  var ss = SpreadsheetApp.openById('1zVyseifVC6xeMpNjqwYd6jCq9HTJ2NS8BlN1dtM4s7Y');
+
+  var novasAbas = [
+    {
+      nome: 'Checklists',
+      cabecalho: [
+        'ID Estágio', 'Status Geral', 'Etapa Ativa',
+        'Admin Status', 'Admin Data', 'Admin Obs',
+        'Orientador Status', 'Orientador Data', 'Orientador Obs',
+        'Coordenador Status', 'Coordenador Data', 'Coordenador Obs',
+        'Empresa Status', 'Empresa Data', 'Empresa Obs',
+        'Supervisor Status', 'Supervisor Data', 'Supervisor Obs',
+        'Prazo Admin', 'Prazo Orientador', 'Prazo Coordenador',
+        'Prazo Empresa', 'Prazo Supervisor',
+        'Ts Criação', 'Ts Conclusão',
+      ],
+    },
+    {
+      nome: 'Fluxo TCE',
+      cabecalho: [
+        'ID Estágio', 'Status Geral', 'Etapa Atual', 'Drive Pasta ID',
+        'E1 Estudante Status',       'E1 Data', 'E1 Drive URL',
+        'E2 Empresa Status',         'E2 Data', 'E2 Drive URL',
+        'E3 Supervisor Status',      'E3 Data', 'E3 Drive URL',
+        'E4 Orientador Status',      'E4 Data', 'E4 Drive URL',
+        'E5 Coordenador Status',     'E5 Data', 'E5 Drive URL',
+        'E6 Central Revisão Status', 'E6 Data', 'E6 Drive URL',
+        'E7 Direção Status',         'E7 Data', 'E7 Drive URL',
+        'E8 Central Final Status',   'E8 Data', 'E8 Drive URL',
+        'Ts Criação', 'Ts Conclusão',
+      ],
+    },
+  ];
+
+  novasAbas.forEach(function (aba) {
+    if (ss.getSheetByName(aba.nome)) {
+      Logger.log('⚠️ Aba "' + aba.nome + '" já existe — ignorada.');
+      return;
+    }
+    var sheet = ss.insertSheet(aba.nome);
+    var range = sheet.getRange(1, 1, 1, aba.cabecalho.length);
+    range.setValues([aba.cabecalho]);
+    range.setFontWeight('bold');
+    range.setBackground('#1a73e8');
+    range.setFontColor('#ffffff');
+    sheet.setFrozenRows(1);
+    sheet.setColumnWidth(1, 160);
+    Logger.log('✅ Aba "' + aba.nome + '" criada com ' + aba.cabecalho.length + ' colunas.');
+  });
+
+  Logger.log('Concluído. Execute adicionarAbasFluxo apenas uma vez.');
 }
