@@ -408,24 +408,75 @@ function updateHeaderUser(session) {
   const area = document.getElementById('header-user-area');
   if (!area || !session) return;
 
-  // Exibe apenas o primeiro nome para brevidade
+  // Primeiro nome para o pill, nome completo no dropdown
   const firstName = session.name ? session.name.split(' ')[0] : session.email;
 
-  const avatarHtml = session.picture
+  const pillAvatar = session.picture
     ? `<img src="${escapeHtml(session.picture)}" alt="" class="header-user-avatar" referrerpolicy="no-referrer">`
-    : `<svg viewBox="0 0 20 20" fill="currentColor" class="header-user-avatar-icon">
+    : `<svg viewBox="0 0 20 20" fill="currentColor" class="header-user-avatar-icon" aria-hidden="true">
         <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-6-3a2 2 0 11-4 0 2 2 0 014 0zm-2 4a5 5 0 00-4.546 2.916A5.986 5.986 0 0010 16a5.986 5.986 0 004.546-2.084A5 5 0 0010 11z" clip-rule="evenodd"/>
       </svg>`;
 
+  const dropdownAvatar = session.picture
+    ? `<img src="${escapeHtml(session.picture)}" alt="" class="header-user-dropdown-avatar" referrerpolicy="no-referrer">`
+    : `<div class="header-user-dropdown-avatar-fallback" aria-hidden="true">
+        <svg viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-6-3a2 2 0 11-4 0 2 2 0 014 0zm-2 4a5 5 0 00-4.546 2.916A5.986 5.986 0 0010 16a5.986 5.986 0 004.546-2.084A5 5 0 0010 11z" clip-rule="evenodd"/>
+        </svg>
+      </div>`;
+
   area.innerHTML = `
-    <span class="header-user">
-      ${avatarHtml}
-      ${escapeHtml(firstName)}
-    </span>
-    <button onclick="logout('../')" class="btn btn-ghost btn-sm" title="Sair">
-      <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
-        <path fill-rule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z" clip-rule="evenodd"/>
-      </svg>
-    </button>
+    <div class="header-user-wrap">
+      <button class="header-user" id="header-user-btn"
+              aria-expanded="false" aria-haspopup="true"
+              title="${escapeHtml(session.email)}">
+        ${pillAvatar}
+        <span>${escapeHtml(firstName)}</span>
+        <svg class="header-user-chevron" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+          <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/>
+        </svg>
+      </button>
+
+      <div class="header-user-dropdown" id="header-user-dropdown" hidden>
+        <div class="header-user-dropdown-profile">
+          ${dropdownAvatar}
+          <div class="header-user-dropdown-info">
+            <span class="header-user-dropdown-name">${escapeHtml(session.name || firstName)}</span>
+            <span class="header-user-dropdown-email">${escapeHtml(session.email)}</span>
+          </div>
+        </div>
+        <div class="header-user-dropdown-divider"></div>
+        <button class="header-user-dropdown-item" id="header-user-logout">
+          <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+            <path fill-rule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z" clip-rule="evenodd"/>
+          </svg>
+          Sair
+        </button>
+      </div>
+    </div>
   `;
+
+  const btn      = document.getElementById('header-user-btn');
+  const dropdown = document.getElementById('header-user-dropdown');
+
+  // Abre / fecha o dropdown
+  btn.addEventListener('click', function (e) {
+    e.stopPropagation();
+    const isOpen = !dropdown.hidden;
+    dropdown.hidden = isOpen;
+    btn.setAttribute('aria-expanded', String(!isOpen));
+  });
+
+  // Sair
+  document.getElementById('header-user-logout').addEventListener('click', function () {
+    logout('../');
+  });
+
+  // Fecha ao clicar fora
+  document.addEventListener('click', function (e) {
+    if (!area.contains(e.target)) {
+      dropdown.hidden = true;
+      btn.setAttribute('aria-expanded', 'false');
+    }
+  });
 }
