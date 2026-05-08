@@ -116,6 +116,7 @@
       <div class="stats-grid" id="stats-grid">
         <div class="stat-card stat-card--primary"><div class="stat-card__label">Estágios Ativos</div><div class="stat-card__value" id="stat-ativos">—</div><div class="stat-card__sub">Em execução</div></div>
         <div class="stat-card stat-card--warning"><div class="stat-card__label">Pendentes</div><div class="stat-card__value" id="stat-pendentes">—</div><div class="stat-card__sub">Aguardando análise</div></div>
+        <div class="stat-card stat-card--info">   <div class="stat-card__label">Em checklist/assinaturas</div><div class="stat-card__value" id="stat-fluxo-novo">—</div><div class="stat-card__sub">Fluxo digital em andamento</div></div>
         <div class="stat-card stat-card--info">   <div class="stat-card__label">Encerrados</div><div class="stat-card__value" id="stat-encerrados">—</div><div class="stat-card__sub">Este ano</div></div>
         <div class="stat-card stat-card--success"><div class="stat-card__label">Empresas Parceiras</div><div class="stat-card__value" id="stat-empresas">—</div><div class="stat-card__sub">Com estágios ativos</div></div>
       </div>
@@ -206,10 +207,11 @@
     }
 
     function renderStats(s) {
-      document.getElementById('stat-ativos').textContent     = s.ativos     ?? '—';
-      document.getElementById('stat-pendentes').textContent  = s.pendentes  ?? '—';
-      document.getElementById('stat-encerrados').textContent = s.encerrados ?? '—';
-      document.getElementById('stat-empresas').textContent   = s.empresas   ?? '—';
+      document.getElementById('stat-ativos').textContent      = s.ativos      ?? '—';
+      document.getElementById('stat-pendentes').textContent   = s.pendentes   ?? '—';
+      document.getElementById('stat-fluxo-novo').textContent  = s.emFluxoNovo ?? '—';
+      document.getElementById('stat-encerrados').textContent  = s.encerrados  ?? '—';
+      document.getElementById('stat-empresas').textContent    = s.empresas    ?? '—';
     }
 
     function renderAlertas(lista) {
@@ -259,9 +261,18 @@
       const recent = lista.slice(0, 10);
       if (!recent.length) { tb.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:var(--space-8);color:var(--color-text-muted)">Nenhuma solicitação.</td></tr>'; return; }
       const statusMap = {
-        'Pendente':'badge-pending','Em análise':'badge-analysis','Aguardando Documentos':'badge-approved',
-        'Docs Enviados':'badge-docs','Aguardando DG':'badge-dg','Aguardando Validação Final':'badge-dg',
-        'Em execução':'badge-running','Encerrado':'badge-closed','Reprovado':'badge-rejected',
+        'Pendente':                  'badge-pending',
+        'Em análise':                'badge-analysis',
+        'Aguardando Documentos':     'badge-approved',
+        'Docs Enviados':             'badge-docs',
+        'Aguardando DG':             'badge-dg',
+        'Aguardando Validação Final':'badge-dg',
+        'Em Checklist':              'badge-analysis',
+        'Em Assinaturas':            'badge-docs',
+        'Ativo':                     'badge-running',
+        'Em execução':               'badge-running',
+        'Encerrado':                 'badge-closed',
+        'Reprovado':                 'badge-rejected',
       };
       tb.innerHTML = recent.map(s => `
         <tr>
