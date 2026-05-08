@@ -1,0 +1,1063 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Assinaturas do TCE — IFRS Campus Rio Grande</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/base.css">
+  <link rel="stylesheet" href="../assets/css/components.css">
+  <link rel="stylesheet" href="../assets/css/layout.css">
+  <style>
+    /* ── Timeline ──────────────────────────────────────────────── */
+    .tl-wrap {
+      position: relative;
+      padding-left: 36px;
+      margin-bottom: var(--space-8);
+    }
+    .tl-wrap::before {
+      content: '';
+      position: absolute;
+      left: 11px;
+      top: 12px;
+      bottom: 12px;
+      width: 2px;
+      background: var(--color-border);
+    }
+    .tl-item {
+      position: relative;
+      margin-bottom: var(--space-3);
+    }
+    .tl-dot {
+      position: absolute;
+      left: -28px;
+      top: 12px;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      border: 2px solid var(--color-border);
+      background: var(--color-surface);
+      z-index: 1;
+    }
+    .tl-item--concluido .tl-dot {
+      background: var(--color-success);
+      border-color: var(--color-success);
+    }
+    .tl-item--aguardando .tl-dot {
+      background: var(--color-secondary);
+      border-color: var(--color-secondary);
+      box-shadow: 0 0 0 4px rgba(46,95,163,0.15);
+    }
+    .tl-item--rejeitado .tl-dot {
+      background: var(--color-error);
+      border-color: var(--color-error);
+    }
+
+    .tl-card {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      padding: var(--space-4) var(--space-5);
+      transition: border-color 0.15s;
+    }
+    .tl-item--concluido .tl-card {
+      border-color: var(--color-success-border);
+      background: var(--color-success-light);
+    }
+    .tl-item--aguardando .tl-card {
+      border-color: var(--color-secondary);
+      box-shadow: 0 0 0 2px rgba(46,95,163,0.08);
+    }
+    .tl-item--rejeitado .tl-card {
+      border-color: var(--color-error-border);
+      background: var(--color-error-light);
+    }
+    .tl-item--pendente .tl-card {
+      opacity: 0.55;
+    }
+
+    .tl-card-header {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      flex-wrap: wrap;
+    }
+    .tl-num {
+      font-size: var(--font-size-xs);
+      font-weight: var(--font-weight-semibold);
+      color: var(--color-text-muted);
+      min-width: 20px;
+    }
+    .tl-label {
+      font-size: var(--font-size-sm);
+      font-weight: var(--font-weight-semibold);
+      color: var(--color-text);
+      flex: 1;
+    }
+    .tl-status-badge {
+      font-size: var(--font-size-xs);
+      font-weight: var(--font-weight-medium);
+      padding: 2px var(--space-2);
+      border-radius: var(--radius-sm);
+    }
+    .tl-status-badge--concluido {
+      background: var(--color-success-light);
+      color: var(--color-success);
+      border: 1px solid var(--color-success-border);
+    }
+    .tl-status-badge--aguardando {
+      background: var(--color-info-light);
+      color: var(--color-info);
+      border: 1px solid var(--color-info-border);
+    }
+    .tl-status-badge--pendente {
+      background: var(--color-bg);
+      color: var(--color-text-muted);
+      border: 1px solid var(--color-border);
+    }
+    .tl-status-badge--rejeitado {
+      background: var(--color-error-light);
+      color: var(--color-error);
+      border: 1px solid var(--color-error-border);
+    }
+    .tl-card-meta {
+      margin-top: var(--space-2);
+      font-size: var(--font-size-xs);
+      color: var(--color-text-muted);
+      display: flex;
+      gap: var(--space-3);
+      flex-wrap: wrap;
+    }
+    .tl-pdf-link {
+      font-size: var(--font-size-xs);
+      color: var(--color-secondary);
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .tl-pdf-link:hover { text-decoration: underline; }
+
+    /* ── Painel de ação ────────────────────────────────────────── */
+    .action-panel {
+      background: var(--color-surface);
+      border: 2px solid var(--color-secondary);
+      border-radius: var(--radius-lg);
+      padding: var(--space-6);
+      margin-bottom: var(--space-6);
+    }
+    .action-panel h3 {
+      font-size: var(--font-size-md);
+      font-weight: var(--font-weight-semibold);
+      color: var(--color-primary);
+      margin-bottom: var(--space-2);
+    }
+    .action-panel p {
+      font-size: var(--font-size-sm);
+      color: var(--color-text-muted);
+      margin-bottom: var(--space-5);
+    }
+
+    /* ── Steps gov.br ──────────────────────────────────────────── */
+    .govbr-steps {
+      display: flex;
+      gap: var(--space-3);
+      flex-wrap: wrap;
+      margin-bottom: var(--space-5);
+      counter-reset: govbr-step;
+    }
+    .govbr-step {
+      flex: 1;
+      min-width: 160px;
+      background: var(--color-bg);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      padding: var(--space-4);
+      position: relative;
+    }
+    .govbr-step::before {
+      counter-increment: govbr-step;
+      content: counter(govbr-step);
+      position: absolute;
+      top: -10px;
+      left: var(--space-4);
+      background: var(--color-secondary);
+      color: #fff;
+      font-size: var(--font-size-xs);
+      font-weight: var(--font-weight-semibold);
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .govbr-step-title {
+      font-size: var(--font-size-sm);
+      font-weight: var(--font-weight-semibold);
+      color: var(--color-text);
+      margin-bottom: var(--space-1);
+    }
+    .govbr-step-desc {
+      font-size: var(--font-size-xs);
+      color: var(--color-text-muted);
+    }
+
+    /* ── Upload zone ───────────────────────────────────────────── */
+    .upload-zone {
+      border: 2px dashed var(--color-border);
+      border-radius: var(--radius-md);
+      padding: var(--space-8) var(--space-6);
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+      margin-bottom: var(--space-4);
+      position: relative;
+    }
+    .upload-zone:hover,
+    .upload-zone.drag-over {
+      border-color: var(--color-secondary);
+      background: var(--color-info-light);
+    }
+    .upload-zone.has-file {
+      border-color: var(--color-success);
+      background: var(--color-success-light);
+    }
+    .upload-zone input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+      width: 100%;
+      height: 100%;
+    }
+    .upload-zone-icon {
+      width: 32px;
+      height: 32px;
+      color: var(--color-text-muted);
+      margin: 0 auto var(--space-2);
+    }
+    .upload-zone-text {
+      font-size: var(--font-size-sm);
+      color: var(--color-text-muted);
+    }
+    .upload-zone-text strong {
+      color: var(--color-secondary);
+    }
+    .upload-zone-filename {
+      font-size: var(--font-size-sm);
+      font-weight: var(--font-weight-medium);
+      color: var(--color-success);
+    }
+
+    /* ── Rejeição ──────────────────────────────────────────────── */
+    .rejeitar-panel {
+      border: 1px solid var(--color-error-border);
+      border-radius: var(--radius-md);
+      padding: var(--space-4) var(--space-5);
+      background: var(--color-error-light);
+      margin-top: var(--space-4);
+    }
+    .rejeitar-panel h4 {
+      font-size: var(--font-size-sm);
+      font-weight: var(--font-weight-semibold);
+      color: var(--color-error);
+      margin-bottom: var(--space-3);
+    }
+    .rejeitar-panel label {
+      display: block;
+      font-size: var(--font-size-sm);
+      font-weight: var(--font-weight-medium);
+      color: var(--color-text);
+      margin-bottom: var(--space-2);
+    }
+    .rejeitar-panel select,
+    .rejeitar-panel textarea {
+      width: 100%;
+      font-size: var(--font-size-sm);
+      font-family: var(--font-family);
+      padding: var(--space-2) var(--space-3);
+      border: 1px solid var(--color-error-border);
+      border-radius: var(--radius-sm);
+      background: var(--color-surface);
+      box-sizing: border-box;
+      margin-bottom: var(--space-3);
+    }
+    .rejeitar-panel select:focus,
+    .rejeitar-panel textarea:focus {
+      outline: none;
+      border-color: var(--color-error);
+    }
+
+    /* ── Concluído ─────────────────────────────────────────────── */
+    .ass-concluido {
+      background: var(--color-success-light);
+      border: 1px solid var(--color-success-border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-8) var(--space-6);
+      text-align: center;
+    }
+    .ass-concluido svg {
+      width: 48px;
+      height: 48px;
+      color: var(--color-success);
+      margin: 0 auto var(--space-4);
+      display: block;
+    }
+    .ass-concluido h2 {
+      font-size: var(--font-size-lg);
+      color: var(--color-success);
+      margin-bottom: var(--space-2);
+    }
+    .ass-concluido p { color: var(--color-text-muted); font-size: var(--font-size-sm); }
+
+    /* ── Info card ─────────────────────────────────────────────── */
+    .ass-info-card {
+      background: var(--color-info-light);
+      border: 1px solid var(--color-info-border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-4) var(--space-6);
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-4) var(--space-8);
+      margin-bottom: var(--space-6);
+    }
+    .ass-info-item { display: flex; flex-direction: column; gap: 2px; }
+    .ass-info-label {
+      font-size: var(--font-size-xs);
+      font-weight: var(--font-weight-semibold);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--color-text-muted);
+    }
+    .ass-info-value {
+      font-size: var(--font-size-sm);
+      font-weight: var(--font-weight-medium);
+      color: var(--color-text);
+    }
+
+    /* ── Skeleton ──────────────────────────────────────────────── */
+    .ass-skeleton-row {
+      height: 68px;
+      background: linear-gradient(90deg, var(--color-border) 25%, #e9edf3 50%, var(--color-border) 75%);
+      background-size: 200% 100%;
+      border-radius: var(--radius-md);
+      animation: shimmer 1.4s infinite;
+      margin-bottom: var(--space-3);
+    }
+    @keyframes shimmer {
+      0%   { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+  </style>
+</head>
+<body>
+  <header id="app-header">
+    <div class="container">
+      <div class="header-inner">
+        <a href="../index.html" class="header-brand">
+          <div class="header-logo-fallback" aria-hidden="true">IFRS</div>
+          <div class="header-brand-text">
+            <span class="header-brand-name">Central de Estágios</span>
+            <span class="header-brand-sub">IFRS Campus Rio Grande</span>
+          </div>
+        </a>
+        <div style="display:flex;align-items:center;gap:var(--space-3);">
+          <div id="header-user-area"></div>
+          <a href="../index.html" class="back-link">
+            <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd"/>
+            </svg>
+            Início
+          </a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main id="main-content">
+    <section class="page-hero" id="ass-hero" hidden>
+      <div class="container">
+        <div style="display:flex;align-items:center;gap:var(--space-3);flex-wrap:wrap;margin-bottom:var(--space-2);">
+          <span id="ass-role-badge" class="badge"></span>
+          <span id="ass-status-badge" class="badge"></span>
+        </div>
+        <h1>Assinaturas do TCE</h1>
+        <p id="ass-hero-desc">Carregando…</p>
+      </div>
+    </section>
+
+    <div class="container" style="padding-top:var(--space-8);padding-bottom:var(--space-12);">
+      <div style="max-width:720px;margin:0 auto;">
+
+        <!-- Loading -->
+        <div id="ass-loading">
+          <div class="ass-skeleton-row"></div>
+          <div class="ass-skeleton-row"></div>
+          <div class="ass-skeleton-row"></div>
+          <div class="ass-skeleton-row" style="height:40px;"></div>
+        </div>
+
+        <!-- Conteúdo -->
+        <div id="ass-content" hidden>
+          <!-- Info card -->
+          <div class="ass-info-card" id="ass-info-card"></div>
+
+          <!-- Painel de ação (preenchido via JS para a etapa ativa do usuário) -->
+          <div id="ass-action-panel"></div>
+
+          <!-- Timeline -->
+          <div class="tl-wrap" id="ass-timeline" role="list" aria-label="Etapas de assinatura"></div>
+        </div>
+
+        <!-- Erro / acesso negado -->
+        <div id="ass-error" hidden></div>
+
+      </div>
+    </div>
+  </main>
+
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script src="../assets/js/utils.js"></script>
+  <script src="../assets/js/auth.js"></script>
+  <script src="../assets/js/api.js"></script>
+  <script>
+  'use strict';
+
+  // ── Estado ────────────────────────────────────────────────────
+  let fluxo    = null;
+  let meuAtor  = null;   // identificador da etapa onde o usuário age
+  let meuEmail = null;
+  let pdfFile  = null;   // arquivo selecionado para upload
+
+  const TIPO_BADGE = {
+    govbr:    { text: 'gov.br', bg: '#1351b4', color: '#fff' },
+    interno:  { text: 'Interno',  bg: 'var(--color-accent)', color: '#fff' },
+  };
+
+  // ── Init ─────────────────────────────────────────────────────
+  document.addEventListener('DOMContentLoaded', () => {
+    const ok = requireExternalAuth(window.location.href);
+    if (!ok) return;
+
+    meuEmail = getCurrentUserEmail();
+
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get('id');
+    if (!id) {
+      mostrarErro('Parâmetro <code>id</code> não encontrado na URL.');
+      return;
+    }
+
+    carregarFluxo(id);
+  });
+
+  // ── Carregar dados ────────────────────────────────────────────
+  async function carregarFluxo(id) {
+    try {
+      const data = await API.get('obterFluxoAssinaturas', { id });
+      fluxo = data;
+      meuAtor = detectarAtor(meuEmail, fluxo);
+      renderizar();
+    } catch (err) {
+      mostrarErro(err.message || 'Não foi possível carregar o fluxo.');
+    }
+  }
+
+  // ── Detectar papel ────────────────────────────────────────────
+  function detectarAtor(email, fl) {
+    if (!email || !fl || !fl.etapas) return null;
+    const em = email.toLowerCase();
+
+    // Verifica se é admin (pode agir nas etapas internas)
+    const ehAdmin = AUTH_CONFIG.ADMIN_EMAILS.includes(em);
+
+    // Procura a etapa aguardando onde o email bate
+    for (const et of fl.etapas) {
+      if (et.status !== 'aguardando') continue;
+      if (et.tipo === 'interno' && ehAdmin) return et.ator;
+      if (et.email && et.email.toLowerCase() === em) return et.ator;
+    }
+    // Sem etapa ativa: verifica se tem alguma etapa concluída/pendente do usuário
+    for (const et of fl.etapas) {
+      if (et.tipo === 'interno' && ehAdmin) return et.ator;
+      if (et.email && et.email.toLowerCase() === em) return et.ator;
+    }
+    return null;
+  }
+
+  // ── Renderizar página ─────────────────────────────────────────
+  function renderizar() {
+    document.getElementById('ass-loading').hidden = true;
+    document.getElementById('ass-content').hidden = false;
+
+    const info = fluxo._infoSolicitacao || {};
+    renderizarHero(info);
+    renderizarInfoCard(info);
+    renderizarPainelAcao();
+    renderizarTimeline();
+  }
+
+  // ── Hero ──────────────────────────────────────────────────────
+  function renderizarHero(info) {
+    const hero = document.getElementById('ass-hero');
+    hero.hidden = false;
+
+    // Badge de papel
+    if (meuAtor) {
+      const et = fluxo.etapas.find(e => e.ator === meuAtor);
+      if (et) {
+        const rb = document.getElementById('ass-role-badge');
+        rb.textContent = et.label;
+        rb.style.cssText = 'background:var(--color-primary);color:#fff;padding:2px 10px;border-radius:var(--radius-sm);font-size:var(--font-size-xs);font-weight:600;text-transform:uppercase;letter-spacing:.05em;';
+      }
+    }
+
+    // Badge de status
+    const sb = document.getElementById('ass-status-badge');
+    const statusTexts = {
+      em_andamento: { text: 'Em andamento', bg: 'var(--color-info-light)', color: 'var(--color-info)', border: 'var(--color-info-border)' },
+      concluido:    { text: 'Concluído',    bg: 'var(--color-success-light)', color: 'var(--color-success)', border: 'var(--color-success-border)' },
+    };
+    const st = statusTexts[fluxo.statusGeral] || { text: fluxo.statusGeral, bg: 'var(--color-bg)', color: 'var(--color-text-muted)', border: 'var(--color-border)' };
+    sb.textContent = st.text;
+    sb.style.cssText = `background:${st.bg};color:${st.color};border:1px solid ${st.border};padding:2px 10px;border-radius:var(--radius-sm);font-size:var(--font-size-xs);font-weight:600;`;
+
+    const partes = [];
+    if (info.nomeEstudante) partes.push(escapeHtml(info.nomeEstudante));
+    if (info.curso)         partes.push(escapeHtml(info.curso));
+    if (info.nomeEmpresa)   partes.push(escapeHtml(info.nomeEmpresa));
+    document.getElementById('ass-hero-desc').textContent =
+      partes.length ? partes.join(' · ') : 'Fluxo de assinaturas do TCE.';
+  }
+
+  // ── Info card ─────────────────────────────────────────────────
+  function renderizarInfoCard(info) {
+    const card = document.getElementById('ass-info-card');
+    let html = '';
+    const items = [
+      ['Estudante', info.nomeEstudante],
+      ['Empresa',   info.nomeEmpresa],
+      ['Curso',     info.curso],
+      ['Início',    info.dataInicio  ? formatarData(info.dataInicio)  : null],
+      ['Término',   info.dataTermino ? formatarData(info.dataTermino) : null],
+    ];
+    items.forEach(([label, val]) => {
+      if (!val) return;
+      html += `<div class="ass-info-item">
+        <span class="ass-info-label">${label}</span>
+        <span class="ass-info-value">${escapeHtml(val)}</span>
+      </div>`;
+    });
+    if (fluxo.pdfOriginalUrl) {
+      html += `<div class="ass-info-item">
+        <span class="ass-info-label">TCE original</span>
+        <a href="${escapeHtml(fluxo.pdfOriginalUrl)}" target="_blank" rel="noopener" class="tl-pdf-link">
+          <svg width="12" height="12" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7.414A2 2 0 0015.414 6L12 2.586A2 2 0 0010.586 2H6zm5 6a1 1 0 10-2 0v3.586l-1.293-1.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V8z" clip-rule="evenodd"/></svg>
+          Baixar PDF
+        </a>
+      </div>`;
+    }
+    card.innerHTML = html || '<span style="color:var(--color-text-muted);font-size:var(--font-size-sm)">Informações do estágio não disponíveis.</span>';
+  }
+
+  // ── Painel de ação ────────────────────────────────────────────
+  function renderizarPainelAcao() {
+    const panel = document.getElementById('ass-action-panel');
+    panel.innerHTML = '';
+
+    if (fluxo.statusGeral === 'concluido') {
+      panel.innerHTML = `
+        <div class="ass-concluido" style="margin-bottom:var(--space-6);">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          <h2>Fluxo concluído</h2>
+          <p>Todas as etapas foram concluídas. O TCE foi enviado a todos os participantes por e-mail.</p>
+        </div>`;
+      return;
+    }
+
+    if (!meuAtor) {
+      panel.innerHTML = `
+        <div class="alert alert-info" style="margin-bottom:var(--space-6);">
+          O e-mail <strong>${escapeHtml(meuEmail || '')}</strong> não está associado a nenhuma etapa ativa deste fluxo.
+          Você pode acompanhar o andamento na linha do tempo abaixo.
+        </div>`;
+      return;
+    }
+
+    // Etapa ativa do usuário
+    const etapa = fluxo.etapas.find(e => e.ator === meuAtor && e.status === 'aguardando');
+    if (!etapa) {
+      // Usuário já concluiu / está pendente
+      const etapaDoUser = fluxo.etapas.find(e => e.ator === meuAtor);
+      if (etapaDoUser && etapaDoUser.status === 'concluido') {
+        panel.innerHTML = `
+          <div class="alert alert-success" style="margin-bottom:var(--space-6);">
+            ✓ Você concluiu a etapa <strong>${escapeHtml(etapaDoUser.label)}</strong> em ${formatarDataHora(etapaDoUser.data)}.
+            Aguardando as demais etapas.
+          </div>`;
+      } else {
+        panel.innerHTML = `
+          <div class="alert alert-warning" style="margin-bottom:var(--space-6);">
+            Sua etapa ainda não foi liberada. Você será notificado por e-mail quando chegar sua vez.
+          </div>`;
+      }
+      return;
+    }
+
+    // Renderiza UI de acordo com o tipo
+    if (etapa.tipo === 'govbr') {
+      renderizarPainelGovBr(panel, etapa);
+    } else {
+      renderizarPainelInterno(panel, etapa);
+    }
+  }
+
+  // ── Painel gov.br ─────────────────────────────────────────────
+  function renderizarPainelGovBr(panel, etapa) {
+    // URL do PDF atual (último PDF assinado ou o original)
+    const pdfAtual = pdfMaisRecente(etapa.numero);
+
+    panel.innerHTML = `
+      <div class="action-panel">
+        <h3>Sua vez — Etapa ${etapa.numero}: ${escapeHtml(etapa.label)}</h3>
+        <p>Baixe o PDF atual, assine com o <strong>gov.br</strong> e envie a versão assinada abaixo.</p>
+
+        <div class="govbr-steps">
+          <div class="govbr-step">
+            <div class="govbr-step-title">Baixar PDF</div>
+            <div class="govbr-step-desc">Faça o download do documento para assinar</div>
+          </div>
+          <div class="govbr-step">
+            <div class="govbr-step-title">Assinar no gov.br</div>
+            <div class="govbr-step-desc">Acesse <strong>assinador.iti.br</strong> e assine o PDF com seu certificado gov.br</div>
+          </div>
+          <div class="govbr-step">
+            <div class="govbr-step-title">Enviar PDF assinado</div>
+            <div class="govbr-step-desc">Faça o upload do arquivo assinado aqui</div>
+          </div>
+        </div>
+
+        ${pdfAtual ? `
+          <div style="margin-bottom:var(--space-4);">
+            <a href="${escapeHtml(pdfAtual)}" target="_blank" rel="noopener" class="btn btn-secondary">
+              <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7.414A2 2 0 0015.414 6L12 2.586A2 2 0 0010.586 2H6zm5 6a1 1 0 10-2 0v3.586l-1.293-1.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V8z" clip-rule="evenodd"/>
+              </svg>
+              Baixar PDF para assinar
+            </a>
+            <a href="https://assinador.iti.br" target="_blank" rel="noopener"
+               class="btn btn-ghost" style="margin-left:var(--space-2);">
+              Abrir assinador.iti.br ↗
+            </a>
+          </div>` : ''}
+
+        <div class="upload-zone" id="upload-zone">
+          <input type="file" id="pdf-input" accept="application/pdf" aria-label="Selecionar PDF assinado">
+          <svg class="upload-zone-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/>
+          </svg>
+          <div class="upload-zone-text" id="upload-zone-text">
+            <strong>Clique para selecionar</strong> ou arraste o PDF assinado aqui
+          </div>
+        </div>
+
+        <div style="display:flex;gap:var(--space-3);flex-wrap:wrap;">
+          <button class="btn btn-success" id="btn-confirmar" disabled>
+            <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+            </svg>
+            Confirmar Assinatura
+          </button>
+        </div>
+      </div>`;
+
+    // Drag-and-drop + input
+    const zone  = document.getElementById('upload-zone');
+    const input = document.getElementById('pdf-input');
+    const btn   = document.getElementById('btn-confirmar');
+
+    input.addEventListener('change', () => tratarArquivo(input.files[0]));
+    zone.addEventListener('dragover',  e => { e.preventDefault(); zone.classList.add('drag-over'); });
+    zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+    zone.addEventListener('drop', e => {
+      e.preventDefault();
+      zone.classList.remove('drag-over');
+      tratarArquivo(e.dataTransfer.files[0]);
+    });
+
+    btn.addEventListener('click', () => enviarPdfGovBr(etapa));
+
+    function tratarArquivo(file) {
+      if (!file || file.type !== 'application/pdf') {
+        mostrarToast('Selecione um arquivo PDF válido.', 'warning');
+        return;
+      }
+      if (file.size > 10 * 1024 * 1024) {
+        mostrarToast('O arquivo não pode ter mais de 10 MB.', 'warning');
+        return;
+      }
+      pdfFile = file;
+      zone.classList.add('has-file');
+      document.getElementById('upload-zone-text').innerHTML =
+        `<span class="upload-zone-filename">✓ ${escapeHtml(file.name)}</span>`;
+      btn.disabled = false;
+    }
+  }
+
+  // ── Painel interno (admin) ────────────────────────────────────
+  function renderizarPainelInterno(panel, etapa) {
+    const pdfAtual = pdfMaisRecente(etapa.numero);
+    const ehFinal  = etapa.numero === 8;
+
+    // Etapas para rollback: só as anteriores com número menor
+    const etapasAnteriores = fluxo.etapas.filter(e => e.numero < etapa.numero);
+
+    panel.innerHTML = `
+      <div class="action-panel">
+        <h3>Etapa ${etapa.numero}: ${escapeHtml(etapa.label)}</h3>
+        <p>${ehFinal
+          ? 'Verifique o documento final assinado por todas as partes. Upload do PDF compilado é opcional.'
+          : 'Revise o documento e aprove ou rejeite para retornar a uma etapa anterior.'}</p>
+
+        ${pdfAtual ? `
+          <div style="margin-bottom:var(--space-4);">
+            <a href="${escapeHtml(pdfAtual)}" target="_blank" rel="noopener" class="btn btn-secondary">
+              <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7.414A2 2 0 0015.414 6L12 2.586A2 2 0 0010.586 2H6zm5 6a1 1 0 10-2 0v3.586l-1.293-1.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V8z" clip-rule="evenodd"/>
+              </svg>
+              Ver PDF atual
+            </a>
+          </div>` : ''}
+
+        ${ehFinal ? `
+          <div style="margin-bottom:var(--space-4);">
+            <p style="font-size:var(--font-size-sm);color:var(--color-text-muted);margin-bottom:var(--space-2);">
+              Opcional: faça upload do PDF final compilado (recomendado).
+            </p>
+            <div class="upload-zone" id="upload-zone">
+              <input type="file" id="pdf-input" accept="application/pdf" aria-label="PDF final">
+              <svg class="upload-zone-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/>
+              </svg>
+              <div class="upload-zone-text" id="upload-zone-text">
+                <strong>PDF final</strong> (opcional — clique para selecionar)
+              </div>
+            </div>
+          </div>` : ''}
+
+        <div style="display:flex;gap:var(--space-3);flex-wrap:wrap;margin-bottom:var(--space-3);">
+          <button class="btn btn-success" id="btn-aprovar-interno">
+            <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+            </svg>
+            ${ehFinal ? 'Concluir Fluxo' : 'Aprovar'}
+          </button>
+          <button class="btn btn-error" id="btn-rejeitar-toggle">
+            <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
+            </svg>
+            Rejeitar
+          </button>
+        </div>
+
+        <!-- Painel de rejeição (oculto inicialmente) -->
+        <div class="rejeitar-panel" id="rejeitar-panel" hidden>
+          <h4>Detalhes da rejeição</h4>
+          <label for="rejeitar-motivo">Motivo</label>
+          <textarea id="rejeitar-motivo" rows="3" maxlength="500"
+            placeholder="Descreva o motivo da rejeição…"></textarea>
+          <label for="rejeitar-retorno">Retornar para a etapa</label>
+          <select id="rejeitar-retorno">
+            ${etapasAnteriores.map(e =>
+              `<option value="${e.numero}">Etapa ${e.numero} — ${escapeHtml(e.label)}</option>`
+            ).join('')}
+          </select>
+          <button class="btn btn-error" id="btn-confirmar-rejeicao">
+            Confirmar Rejeição
+          </button>
+        </div>
+      </div>`;
+
+    // Bind
+    const btnAprovar = document.getElementById('btn-aprovar-interno');
+    const btnRejTgl  = document.getElementById('btn-rejeitar-toggle');
+    const rejPanel   = document.getElementById('rejeitar-panel');
+    const btnConfRej = document.getElementById('btn-confirmar-rejeicao');
+
+    if (ehFinal) {
+      const input = document.getElementById('pdf-input');
+      const zone  = document.getElementById('upload-zone');
+      input.addEventListener('change', () => tratarArquivoFinal(input.files[0]));
+      zone.addEventListener('drop', e => { e.preventDefault(); tratarArquivoFinal(e.dataTransfer.files[0]); });
+      zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
+      zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+    }
+
+    btnAprovar.addEventListener('click', () => aprovarInterno(etapa));
+    btnRejTgl.addEventListener('click', () => {
+      rejPanel.hidden = !rejPanel.hidden;
+      btnRejTgl.textContent = rejPanel.hidden ? 'Rejeitar' : 'Cancelar Rejeição';
+    });
+    btnConfRej.addEventListener('click', () => confirmarRejeicao(etapa));
+
+    function tratarArquivoFinal(file) {
+      if (!file || file.type !== 'application/pdf') return;
+      pdfFile = file;
+      const zone = document.getElementById('upload-zone');
+      zone.classList.add('has-file');
+      document.getElementById('upload-zone-text').innerHTML =
+        `<span class="upload-zone-filename">✓ ${escapeHtml(file.name)}</span>`;
+    }
+  }
+
+  // ── Enviar PDF gov.br ─────────────────────────────────────────
+  async function enviarPdfGovBr(etapa) {
+    if (!pdfFile) { mostrarToast('Selecione o PDF assinado antes de continuar.', 'warning'); return; }
+
+    const btn = document.getElementById('btn-confirmar');
+    btn.disabled = true;
+    btn.textContent = 'Enviando…';
+
+    try {
+      const base64 = await lerArquivoBase64(pdfFile);
+      const id = new URLSearchParams(window.location.search).get('id');
+
+      await API.post('uploadPdfAssinado', {
+        action:       'uploadPdfAssinado',
+        idEstagio:    id,
+        numeroEtapa:  etapa.numero,
+        pdfBase64:    base64,
+        emailAtor:    meuEmail,
+      });
+
+      mostrarSucesso('PDF enviado com sucesso! A próxima etapa foi notificada.');
+      setTimeout(() => location.reload(), 2500);
+    } catch (err) {
+      btn.disabled = false;
+      btn.textContent = 'Confirmar Assinatura';
+      mostrarToast('Erro ao enviar: ' + (err.message || 'tente novamente.'), 'error');
+    }
+  }
+
+  // ── Aprovar interno ───────────────────────────────────────────
+  async function aprovarInterno(etapa) {
+    const btn = document.getElementById('btn-aprovar-interno');
+    btn.disabled = true;
+    btn.textContent = 'Processando…';
+
+    try {
+      const id = new URLSearchParams(window.location.search).get('id');
+
+      // Se há arquivo selecionado (etapa 8 opcional), envia via upload
+      if (pdfFile) {
+        const base64 = await lerArquivoBase64(pdfFile);
+        await API.post('uploadPdfAssinado', {
+          action:      'uploadPdfAssinado',
+          idEstagio:   id,
+          numeroEtapa: etapa.numero,
+          pdfBase64:   base64,
+          emailAtor:   meuEmail,
+        });
+      } else {
+        await API.post('concluirEtapa', {
+          action:      'concluirEtapa',
+          idEstagio:   id,
+          numeroEtapa: etapa.numero,
+          driveUrl:    null,
+          emailAtor:   meuEmail,
+        });
+      }
+
+      mostrarSucesso(etapa.numero === 8
+        ? 'Fluxo concluído! PDF final enviado a todos os participantes.'
+        : 'Etapa aprovada! A próxima etapa foi notificada.');
+      setTimeout(() => location.reload(), 2500);
+    } catch (err) {
+      btn.disabled = false;
+      btn.textContent = etapa.numero === 8 ? 'Concluir Fluxo' : 'Aprovar';
+      mostrarToast('Erro: ' + (err.message || 'tente novamente.'), 'error');
+    }
+  }
+
+  // ── Confirmar rejeição ────────────────────────────────────────
+  async function confirmarRejeicao(etapa) {
+    const motivo   = document.getElementById('rejeitar-motivo').value.trim();
+    const retornoEl = document.getElementById('rejeitar-retorno');
+    const retorno  = retornoEl ? parseInt(retornoEl.value, 10) : 1;
+
+    if (!motivo) { mostrarToast('Informe o motivo da rejeição.', 'warning'); return; }
+
+    const btn = document.getElementById('btn-confirmar-rejeicao');
+    btn.disabled = true;
+    btn.textContent = 'Enviando…';
+
+    try {
+      const id = new URLSearchParams(window.location.search).get('id');
+      await API.post('rejeitarEtapa', {
+        action:          'rejeitarEtapa',
+        idEstagio:       id,
+        numeroEtapa:     etapa.numero,
+        motivo:          motivo,
+        retornoParaEtapa: retorno,
+        emailAdmin:      meuEmail,
+      });
+
+      mostrarToast('Rejeição registrada. O ator da etapa ' + retorno + ' foi notificado.', 'success');
+      setTimeout(() => location.reload(), 2500);
+    } catch (err) {
+      btn.disabled = false;
+      btn.textContent = 'Confirmar Rejeição';
+      mostrarToast('Erro: ' + (err.message || 'tente novamente.'), 'error');
+    }
+  }
+
+  // ── Timeline ──────────────────────────────────────────────────
+  function renderizarTimeline() {
+    const tl = document.getElementById('ass-timeline');
+    tl.innerHTML = '';
+
+    (fluxo.etapas || []).forEach(etapa => {
+      const cls = 'tl-item tl-item--' + etapa.status;
+      const item = document.createElement('div');
+      item.className = cls;
+      item.setAttribute('role', 'listitem');
+
+      const badges = {
+        concluido:  ['concluido',  '✓ Concluído'],
+        aguardando: ['aguardando', '⏳ Aguardando'],
+        pendente:   ['pendente',   '— Pendente'],
+        rejeitado:  ['rejeitado',  '✕ Rejeitado'],
+      };
+      const [badgeCls, badgeText] = badges[etapa.status] || ['pendente', etapa.status];
+
+      const tipoBadge = TIPO_BADGE[etapa.tipo] || TIPO_BADGE.interno;
+      const pdfUrl    = etapa.driveUrl;
+      const dataStr   = etapa.data ? formatarDataHora(etapa.data) : null;
+      const prazoStr  = etapa.prazoVencimento && etapa.status === 'aguardando'
+                        ? 'Prazo: ' + formatarData(etapa.prazoVencimento) : null;
+
+      item.innerHTML = `
+        <div class="tl-dot"></div>
+        <div class="tl-card">
+          <div class="tl-card-header">
+            <span class="tl-num">${etapa.numero}</span>
+            <span class="tl-label">${escapeHtml(etapa.label)}</span>
+            <span class="tl-status-badge tl-status-badge--${badgeCls}">${badgeText}</span>
+            <span style="font-size:var(--font-size-xs);font-weight:600;padding:2px 6px;border-radius:3px;background:${tipoBadge.bg};color:${tipoBadge.color};">${tipoBadge.text}</span>
+          </div>
+          ${(dataStr || prazoStr || pdfUrl) ? `
+          <div class="tl-card-meta">
+            ${dataStr  ? `<span>📅 ${dataStr}</span>` : ''}
+            ${prazoStr ? `<span>⏰ ${prazoStr}</span>` : ''}
+            ${pdfUrl   ? `<a href="${escapeHtml(pdfUrl)}" target="_blank" rel="noopener" class="tl-pdf-link">
+              <svg width="12" height="12" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7.414A2 2 0 0015.414 6L12 2.586A2 2 0 0010.586 2H6zm5 6a1 1 0 10-2 0v3.586l-1.293-1.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V8z" clip-rule="evenodd"/></svg>
+              Ver PDF
+            </a>` : ''}
+            ${etapa.obs ? `<span title="${escapeHtml(etapa.obs)}">📝 Obs: ${escapeHtml(etapa.obs.substring(0,50))}${etapa.obs.length>50?'…':''}</span>` : ''}
+          </div>` : ''}
+        </div>`;
+      tl.appendChild(item);
+    });
+
+    // Histórico de rejeições
+    if (fluxo.historicoRejeicoes && fluxo.historicoRejeicoes.length > 0) {
+      const divHist = document.createElement('div');
+      divHist.style.cssText = 'margin-top:var(--space-6);';
+      divHist.innerHTML = `<h3 style="font-size:var(--font-size-sm);font-weight:600;color:var(--color-text-muted);margin-bottom:var(--space-3);">Histórico de rejeições</h3>`;
+      fluxo.historicoRejeicoes.forEach(rej => {
+        const d = document.createElement('div');
+        d.style.cssText = 'background:var(--color-error-light);border:1px solid var(--color-error-border);border-radius:var(--radius-sm);padding:var(--space-3) var(--space-4);margin-bottom:var(--space-2);font-size:var(--font-size-xs);color:var(--color-text-muted);';
+        d.innerHTML = `<strong>Etapa ${rej.etapa} — ${escapeHtml(rej.label)}</strong> → retorno para etapa ${rej.retornoParaEtapa} · ${formatarDataHora(rej.data)}<br>${escapeHtml(rej.motivo)}`;
+        divHist.appendChild(d);
+      });
+      tl.appendChild(divHist);
+    }
+  }
+
+  // ── Helpers ───────────────────────────────────────────────────
+  function pdfMaisRecente(numeroEtapa) {
+    // Último PDF enviado antes desta etapa
+    for (let i = numeroEtapa - 2; i >= 0; i--) {
+      if (fluxo.etapas[i] && fluxo.etapas[i].driveUrl) return fluxo.etapas[i].driveUrl;
+    }
+    return fluxo.pdfOriginalUrl || null;
+  }
+
+  function lerArquivoBase64(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        // resultado: "data:application/pdf;base64,XXXXX"
+        const base64 = reader.result.split(',')[1];
+        resolve(base64);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function mostrarSucesso(msg) {
+    const panel = document.getElementById('ass-action-panel');
+    panel.innerHTML = `
+      <div class="ass-concluido" style="margin-bottom:var(--space-6);">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        <h2>Enviado com sucesso</h2>
+        <p>${escapeHtml(msg)}</p>
+        <p style="margin-top:var(--space-3);font-size:var(--font-size-xs);">A página será recarregada em instantes…</p>
+      </div>`;
+  }
+
+  function mostrarErro(msg) {
+    document.getElementById('ass-loading').hidden = true;
+    const el = document.getElementById('ass-error');
+    el.hidden = false;
+    el.innerHTML = `<div class="alert alert-error" role="alert"><strong>Erro:</strong> ${msg}</div>`;
+  }
+
+  function mostrarToast(msg, tipo) {
+    let toast = document.getElementById('ass-toast');
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.id = 'ass-toast';
+      toast.style.cssText = 'position:fixed;bottom:var(--space-6);left:50%;transform:translateX(-50%);padding:var(--space-3) var(--space-5);border-radius:var(--radius-md);font-size:var(--font-size-sm);font-weight:500;box-shadow:var(--shadow-md);z-index:1000;max-width:90vw;text-align:center;transition:opacity 0.3s;';
+      document.body.appendChild(toast);
+    }
+    const c = {
+      warning: ['var(--color-warning-light)', 'var(--color-warning)', 'var(--color-warning-border)'],
+      error:   ['var(--color-error-light)',   'var(--color-error)',   'var(--color-error-border)'],
+      success: ['var(--color-success-light)', 'var(--color-success)', 'var(--color-success-border)'],
+    }[tipo] || ['var(--color-info-light)', 'var(--color-info)', 'var(--color-info-border)'];
+    toast.style.background = c[0]; toast.style.color = c[1]; toast.style.border = `1px solid ${c[2]}`;
+    toast.textContent = msg; toast.style.opacity = '1';
+    clearTimeout(toast._t); toast._t = setTimeout(() => { toast.style.opacity = '0'; }, 3500);
+  }
+
+  function formatarData(iso) {
+    if (!iso) return '—';
+    try {
+      const d = new Date(iso);
+      return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    } catch (e) { return iso; }
+  }
+
+  function formatarDataHora(iso) {
+    if (!iso) return '—';
+    try {
+      const d = new Date(iso);
+      return d.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    } catch (e) { return iso; }
+  }
+  </script>
+</body>
+</html>

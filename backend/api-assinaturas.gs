@@ -280,24 +280,220 @@ function _criarPastaAssinaturas_(idEstagio) {
 
 /**
  * Gera o PDF inicial do TCE com os dados da solicitação.
- * TODO Fase 4: substituir por geração real com template.
+ * Cria um Google Doc estruturado e exporta como PDF.
+ *
+ * @param {string} idEstagio
+ * @param {Object} sol   Dados completos da solicitação (de _obterDadosSolicitacaoCompleto_)
+ * @param {string} pastaId  ID da pasta no Drive onde salvar o arquivo
+ * @returns {DriveFile|null}
  */
 function _gerarPdfTCEInicial_(idEstagio, sol, pastaId) {
+  var docId = null;
   try {
-    var conteudo = 'TERMO DE COMPROMISSO DE ESTÁGIO\n'
-      + 'ID: ' + idEstagio + '\n'
-      + 'Estudante: ' + (sol.nomeEstudante || '') + '\n'
-      + 'Empresa: '   + (sol.nomeEmpresa   || '') + '\n'
-      + 'Gerado em: ' + new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }) + '\n'
-      + '\n[Documento gerado automaticamente pelo SGE — IFRS Campus Rio Grande]';
-    var arquivo = DriveApp.getFolderById(pastaId)
-      .createFile('TCE_' + idEstagio + '_v0_original.pdf', conteudo, MimeType.PLAIN_TEXT);
+    var doc  = DocumentApp.create('TCE_' + idEstagio + '_rascunho_temp');
+    docId    = doc.getId();
+    var body = doc.getBody();
+    body.clear();
+    body.setMarginTop(50).setMarginBottom(50)
+        .setMarginLeft(60).setMarginRight(60);
+
+    // ── Cabeçalho ────────────────────────────────────────────────────────────
+    var hdr = doc.addHeader();
+    hdr.appendParagraph('MINISTÉRIO DA EDUCAÇÃO')
+       .setAlignment(DocumentApp.HorizontalAlignment.CENTER)
+       .editAsText().setFontSize(8);
+    hdr.appendParagraph('INSTITUTO FEDERAL DE EDUCAÇÃO, CIÊNCIA E TECNOLOGIA DO RIO GRANDE DO SUL')
+       .setAlignment(DocumentApp.HorizontalAlignment.CENTER)
+       .editAsText().setFontSize(9).setBold(true);
+    hdr.appendParagraph('Campus Rio Grande — Coordenadoria de Estágios')
+       .setAlignment(DocumentApp.HorizontalAlignment.CENTER)
+       .editAsText().setFontSize(8);
+
+    // ── Título ────────────────────────────────────────────────────────────────
+    body.appendParagraph('TERMO DE COMPROMISSO DE ESTÁGIO')
+        .setAlignment(DocumentApp.HorizontalAlignment.CENTER)
+        .setSpacingBefore(8).setSpacingAfter(4)
+        .editAsText().setFontSize(14).setBold(true);
+
+    body.appendParagraph('Estágio ' + (sol.tipoEstagio || '') + ' — ' + (sol.curso || ''))
+        .setAlignment(DocumentApp.HorizontalAlignment.CENTER)
+        .setSpacingAfter(10)
+        .editAsText().setFontSize(11).setItalic(true);
+
+    body.appendParagraph('Identificação: ' + idEstagio
+        + '   ·   Emitido em: ' + _formatarDataBr_(new Date()))
+        .setSpacingAfter(6)
+        .editAsText().setFontSize(9);
+
+    body.appendHorizontalRule();
+
+    // ── Helpers internos ──────────────────────────────────────────────────────
+    function sec(titulo) {
+      var p = body.appendParagraph(titulo);
+      p.setSpacingBefore(14).setSpacingAfter(4);
+      p.editAsText().setFontSize(11).setBold(true);
+    }
+    function kv(label, valor) {
+      var p = body.appendParagraph(label + ': ' + (valor || '—'));
+      p.setSpacingBefore(1).setSpacingAfter(1);
+      p.editAsText().setFontSize(10);
+    }
+    function assinatura(nome, papel) {
+      body.appendParagraph('')
+          .setSpacingBefore(20);
+      body.appendParagraph('___________________________________')
+          .setSpacingAfter(0)
+          .editAsText().setFontSize(10);
+      var pNome = body.appendParagraph(nome || '—');
+      pNome.setSpacingAfter(0);
+      pNome.editAsText().setFontSize(10).setBold(true);
+      body.appendParagraph(papel)
+          .setSpacingAfter(0)
+          .editAsText().setFontSize(9).setItalic(true);
+      body.appendParagraph('Data: _____ / _____ / _________')
+          .setSpacingAfter(2)
+          .editAsText().setFontSize(9);
+    }
+
+    // ── 1. Dados do Estudante ─────────────────────────────────────────────────
+    sec('1. DADOS DO ESTUDANTE');
+    kv('Nome completo',     sol.nomeEstudante);
+    kv('Matrícula',         sol.matricula);
+    kv('Curso',             sol.curso);
+    kv('Turno / Semestre',  (sol.turno || '—') + ' / ' + (sol.semestre || '—'));
+    kv('CPF',               _formatarCpf_(sol.cpf));
+    kv('Data de nascimento',_formatarDataBr_(sol.dataNasc));
+    kv('Telefone',          sol.telefone);
+    kv('E-mail',            sol.emailEstudante);
+    if (sol.nomeResp) {
+      kv('Responsável legal',
+         sol.nomeResp
+         + (sol.cpfResp ? ' — CPF: ' + _formatarCpf_(sol.cpfResp) : '')
+         + (sol.telResp ? ' — Fone: ' + sol.telResp : ''));
+    }
+
+    // ── 2. Empresa Concedente ────────────────────────────────────────────────
+    sec('2. EMPRESA CONCEDENTE');
+    kv('Razão social',         sol.nomeEmpresa);
+    kv('CNPJ',                 _formatarCnpj_(sol.cnpjEmpresa));
+    kv('Supervisor(a)',        sol.nomeSupervisor);
+    kv('E-mail do supervisor', sol.emailSupervisor);
+    if (sol.nomeAgente) {
+      kv('Agente de integração', sol.nomeAgente);
+    }
+
+    // ── 3. Dados do Estágio ──────────────────────────────────────────────────
+    sec('3. DADOS DO ESTÁGIO');
+    kv('Tipo de estágio',  sol.tipoEstagio);
+    kv('Data de início',   _formatarDataBr_(sol.dataInicio));
+    kv('Data de término',  _formatarDataBr_(sol.dataTermino));
+    kv('Carga horária',    sol.cargaHoraria);
+    kv('Horários / dias',  sol.horario);
+    kv('Remunerado',       sol.remuneracao === 'Sim' ? 'Sim' : 'Não');
+    if (sol.remuneracao === 'Sim' && sol.valorBolsa) {
+      kv('Valor da bolsa',       'R$ ' + sol.valorBolsa);
+    }
+    if (sol.valorTransporte) {
+      kv('Auxílio-transporte',   'R$ ' + sol.valorTransporte);
+    }
+
+    // ── 4. Plano de Atividades ────────────────────────────────────────────────
+    sec('4. PLANO DE ATIVIDADES / OBJETIVOS');
+    body.appendParagraph(sol.planoAtividades || sol.objetivos || '—')
+        .setSpacingBefore(2).setSpacingAfter(4)
+        .editAsText().setFontSize(10);
+
+    // ── 5. Orientação Acadêmica ──────────────────────────────────────────────
+    sec('5. ORIENTAÇÃO ACADÊMICA');
+    kv('Orientador(a)', sol.nomeOrientador);
+    kv('E-mail',        sol.emailOrientador);
+
+    // ── 6. Disposições Legais ────────────────────────────────────────────────
+    sec('6. DISPOSIÇÕES LEGAIS');
+    [
+      'O estágio é regido pela Lei nº 11.788/2008 e pelas normas internas do IFRS Campus Rio Grande.',
+      'O estágio não cria vínculo empregatício de qualquer natureza, conforme art. 3º da Lei nº 11.788/2008.',
+      'O estudante deverá cumprir as atividades descritas no plano de atividades e zelar pelo bom nome da instituição.',
+      'Qualquer alteração das condições previstas neste Termo deverá ser formalizada mediante adendo assinado pelas partes.',
+      'O descumprimento das obrigações aqui estabelecidas poderá ensejar o encerramento imediato do estágio.',
+    ].forEach(function (cl, i) {
+      var p = body.appendParagraph((i + 1) + '. ' + cl);
+      p.setSpacingBefore(2).setSpacingAfter(2);
+      p.editAsText().setFontSize(10);
+    });
+
+    // ── 7. Assinaturas ────────────────────────────────────────────────────────
+    sec('7. ASSINATURAS');
+    body.appendParagraph(
+        'As partes declaram ter lido e concordado com os termos acima, '
+        + 'firmando o presente instrumento na data de suas respectivas assinaturas.')
+        .setSpacingAfter(8)
+        .editAsText().setFontSize(10);
+
+    assinatura(sol.nomeEstudante,  'Estudante');
+    assinatura(sol.nomeEmpresa,    'Empresa Concedente');
+    assinatura(sol.nomeSupervisor, 'Supervisor(a) na Empresa');
+    assinatura(sol.nomeOrientador, 'Orientador(a) de Estágio');
+    assinatura('Coordenador(a) de Curso', sol.curso || '');
+    assinatura('Central de Estágios', 'IFRS Campus Rio Grande');
+    assinatura('Direção-Geral',       'IFRS Campus Rio Grande');
+
+    // ── Rodapé ────────────────────────────────────────────────────────────────
+    var ftr = doc.addFooter();
+    ftr.appendParagraph(
+        'SGE · IFRS Campus Rio Grande · Emitido automaticamente em '
+        + _formatarDataBr_(new Date()) + ' · ID: ' + idEstagio)
+       .setAlignment(DocumentApp.HorizontalAlignment.CENTER)
+       .editAsText().setFontSize(7).setItalic(true);
+
+    doc.saveAndClose();
+
+    // ── Exportar como PDF ─────────────────────────────────────────────────────
+    var pdfBlob = DriveApp.getFileById(docId)
+        .getAs(MimeType.PDF)
+        .setName('TCE_' + idEstagio + '_v0_original.pdf');
+    var arquivo = DriveApp.getFolderById(pastaId).createFile(pdfBlob);
     arquivo.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+
+    // Apaga o Google Doc temporário
+    DriveApp.getFileById(docId).setTrashed(true);
+
     return arquivo;
+
   } catch (e) {
     logErro_('_gerarPdfTCEInicial_', e);
+    if (docId) {
+      try { DriveApp.getFileById(docId).setTrashed(true); } catch (_) {}
+    }
     return null;
   }
+}
+
+// ── Formatadores usados na geração do PDF ─────────────────────────────────────
+
+function _formatarDataBr_(val) {
+  if (!val) return '—';
+  try {
+    var d = (val instanceof Date) ? val
+          : new Date(String(val).indexOf('T') === -1 ? val + 'T12:00:00' : val);
+    if (isNaN(d.getTime())) return String(val);
+    return d.toLocaleDateString('pt-BR',
+      { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'America/Sao_Paulo' });
+  } catch (e) { return String(val); }
+}
+
+function _formatarCpf_(cpf) {
+  if (!cpf) return '—';
+  var c = String(cpf).replace(/\D/g, '');
+  if (c.length !== 11) return String(cpf);
+  return c.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+}
+
+function _formatarCnpj_(cnpj) {
+  if (!cnpj) return '—';
+  var c = String(cnpj).replace(/\D/g, '');
+  if (c.length !== 14) return String(cnpj);
+  return c.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5');
 }
 
 // ── Planilha: aba "Fluxo TCE" ─────────────────────────────────────────────────
@@ -369,37 +565,66 @@ function _ativarEstagio_(idEstagio) {
 }
 
 /**
- * Busca os dados necessários de uma solicitação na aba Solicitações.
- * Retorna objeto com os campos usados no fluxo de assinaturas.
+ * Busca todos os dados de uma solicitação na aba Solicitações.
+ * Usa os índices de COL_SOL (definidos em api-solicitacao.gs) para acesso
+ * direto e retorna o conjunto completo de campos — inclusive os necessários
+ * para geração do PDF do TCE.
+ *
+ * @param  {string} idEstagio
+ * @returns {Object}
  */
 function _obterDadosSolicitacaoCompleto_(idEstagio) {
   try {
     var sheet = SpreadsheetApp.openById(SS_ID).getSheetByName('Solicitações');
     if (!sheet) return {};
     var dados = sheet.getDataRange().getValues();
-    var cab   = dados[0];
-
-    function idx(nome) { return cab.indexOf(nome); }
 
     for (var i = 1; i < dados.length; i++) {
-      if (String(dados[i][idx('ID Estágio')]) === String(idEstagio)) {
+      if (String(dados[i][COL_SOL.ID_ESTAGIO]) === String(idEstagio)) {
         var r = dados[i];
+        var curso = String(r[COL_SOL.CURSO] || '');
         return {
-          idEstagio:       r[idx('ID Estágio')]        || '',
-          nomeEstudante:   r[idx('Nome Estudante')]     || '',
-          emailEstudante:  r[idx('E-mail Estudante')]   || '',
-          dataNasc:        r[idx('Data Nasc.')]         || '',
-          dataInicio:      r[idx('Data Início')]        || '',
-          nomeEmpresa:     r[idx('Nome Empresa')]       || '',
-          emailEmpresa:    r[idx('E-mail Inst. Estágio')] || '',
-          nomeSupervisor:  r[idx('Nome Supervisor')]    || '',
-          emailSupervisor: r[idx('E-mail Supervisor')]  || '',
-          nomeOrientador:  r[idx('Nome Orientador')]    || '',
-          emailOrientador: r[idx('E-mail Orientador')]  || '',
-          nomeAgente:      r[idx('Nome Agente')]        || '',
-          curso:           r[idx('Curso')]              || '',
-          // E-mail do coordenador: obtido via aba Coordenadores pelo curso
-          emailCoordenador: _obterEmailCoordenadorPorCurso_(r[idx('Curso')] || ''),
+          // ── Identificação ─────────────────────────────────────────────────
+          idEstagio:       r[COL_SOL.ID_ESTAGIO]          || '',
+          // ── Estudante ─────────────────────────────────────────────────────
+          nomeEstudante:   r[COL_SOL.NOME_ESTUDANTE]       || '',
+          emailEstudante:  r[COL_SOL.EMAIL_ESTUDANTE]      || '',
+          matricula:       r[COL_SOL.MATRICULA]            || '',
+          curso:           curso,
+          cpf:             r[COL_SOL.CPF]                  || '',
+          dataNasc:        r[COL_SOL.DATA_NASC]            || '',
+          telefone:        r[COL_SOL.TELEFONE]             || '',
+          turno:           r[COL_SOL.TURNO]                || '',
+          semestre:        r[COL_SOL.SEMESTRE_SOL]         || '',
+          formando:        r[COL_SOL.FORMANDO]             || '',
+          nee:             r[COL_SOL.NEE]                  || '',
+          nomeResp:        r[COL_SOL.NOME_RESP]            || '',
+          cpfResp:         r[COL_SOL.CPF_RESP]             || '',
+          telResp:         r[COL_SOL.TEL_RESP]             || '',
+          // ── Empresa ───────────────────────────────────────────────────────
+          nomeEmpresa:     r[COL_SOL.NOME_EMPRESA]         || '',
+          cnpjEmpresa:     r[COL_SOL.CNPJ_EMPRESA]         || '',
+          nomeSupervisor:  r[COL_SOL.NOME_SUPERVISOR]      || '',
+          emailSupervisor: r[COL_SOL.EMAIL_SUPERVISOR]     || '',
+          nomeAgente:      r[COL_SOL.NOME_AGENTE]          || '',
+          // emailEmpresa: usada em notificações para o ator "empresa" no checklist/assinaturas
+          emailEmpresa:    r[COL_SOL.EMAIL_INST_ESTAGIO]   || '',
+          // ── Orientador ────────────────────────────────────────────────────
+          nomeOrientador:  r[COL_SOL.NOME_ORIENTADOR]      || '',
+          emailOrientador: r[COL_SOL.EMAIL_ORIENTADOR]     || '',
+          // ── Estágio ───────────────────────────────────────────────────────
+          tipoEstagio:     r[COL_SOL.TIPO_ESTAGIO]         || '',
+          dataInicio:      r[COL_SOL.DATA_INICIO]          || '',
+          dataTermino:     r[COL_SOL.DATA_TERMINO]         || '',
+          cargaHoraria:    r[COL_SOL.CARGA_HOR]            || '',
+          horario:         r[COL_SOL.HORARIO]              || '',
+          remuneracao:     r[COL_SOL.REMUNERACAO]          || '',
+          valorBolsa:      r[COL_SOL.VALOR_BOLSA]          || '',
+          valorTransporte: r[COL_SOL.VALOR_TRANSPORTE]     || '',
+          planoAtividades: r[COL_SOL.PLANO_ATIVIDADES]     || '',
+          objetivos:       r[COL_SOL.OBJETIVOS]            || '',
+          // ── Coordenador (calculado por curso) ─────────────────────────────
+          emailCoordenador: _obterEmailCoordenadorPorCurso_(curso),
         };
       }
     }
@@ -508,6 +733,53 @@ function enviarPdfFinalParaTodos_(idEstagio, fluxo, driveUrl) {
   });
 }
 
+// ── Upload de PDF assinado ────────────────────────────────────────────────────
+
+/**
+ * Recebe um PDF assinado em base64, salva no Drive e avança a etapa.
+ * Usado pelos atores das etapas govbr (e opcionalmente pela centralFinal).
+ *
+ * @param {string} idEstagio
+ * @param {number} numeroEtapa
+ * @param {string} pdfBase64    Conteúdo do PDF em base64
+ * @param {string} emailAtor    E-mail do ator que está enviando (auditoria + validação)
+ * @returns {Object} jsonOk_ / jsonError_
+ */
+function uploadPdfAssinado_(idEstagio, numeroEtapa, pdfBase64, emailAtor) {
+  if (!idEstagio || !numeroEtapa || !pdfBase64) {
+    return jsonError_('Parâmetros obrigatórios: idEstagio, numeroEtapa, pdfBase64.', 'MISSING_PARAM');
+  }
+
+  var fluxo = obterFluxoAssinaturas_(idEstagio);
+  if (!fluxo) return jsonError_('Fluxo de assinaturas não encontrado.', 'NOT_FOUND');
+
+  var etapa = fluxo.etapas[numeroEtapa - 1];
+  if (!etapa)                                 return jsonError_('Etapa inválida: ' + numeroEtapa, 'INVALID');
+  if (etapa.status !== ASS_STATUS.AGUARDANDO) return jsonError_('Etapa não está aguardando ação.', 'INVALID_STATE');
+
+  // Valida e-mail do ator (etapas internas aceitam apenas o Admin)
+  if (etapa.email && emailAtor
+      && String(etapa.email).toLowerCase() !== String(emailAtor).toLowerCase()) {
+    return jsonError_('E-mail não autorizado para esta etapa.', 'AUTH_ERROR');
+  }
+
+  // Decodifica e salva o PDF no Drive
+  try {
+    var pdfBytes = Utilities.base64Decode(pdfBase64);
+    var nomePdf  = 'TCE_' + idEstagio + '_v' + numeroEtapa + '_' + etapa.ator + '.pdf';
+    var blob     = Utilities.newBlob(pdfBytes, MimeType.PDF, nomePdf);
+    var pasta    = DriveApp.getFolderById(fluxo.drivePastaId);
+    var arquivo  = pasta.createFile(blob);
+    arquivo.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    var driveUrl = arquivo.getUrl();
+
+    return concluirEtapaAssinatura_(idEstagio, numeroEtapa, driveUrl, emailAtor);
+  } catch (e) {
+    logErro_('uploadPdfAssinado_', e);
+    return jsonError_('Falha ao salvar PDF no Drive: ' + e.message, 'DRIVE_ERROR');
+  }
+}
+
 // ── Handlers GET / POST ───────────────────────────────────────────────────────
 
 function doGetAssinaturas(e) {
@@ -518,7 +790,18 @@ function doGetAssinaturas(e) {
     case 'obterFluxoAssinaturas':
       if (!id) return jsonError_('Parâmetro id obrigatório.', 'MISSING_PARAM');
       var fluxo = obterFluxoAssinaturas_(id);
-      return fluxo ? jsonOk_(fluxo) : jsonError_('Fluxo não encontrado.', 'NOT_FOUND');
+      if (!fluxo) return jsonError_('Fluxo não encontrado.', 'NOT_FOUND');
+      try {
+        var solInfo = _obterDadosSolicitacaoCompleto_(id);
+        fluxo._infoSolicitacao = {
+          nomeEstudante: solInfo.nomeEstudante || '',
+          nomeEmpresa:   solInfo.nomeEmpresa   || '',
+          curso:         solInfo.curso         || '',
+          dataInicio:    solInfo.dataInicio    || '',
+          dataTermino:   solInfo.dataTermino   || '',
+        };
+      } catch (e) { /* não bloqueia */ }
+      return jsonOk_(fluxo);
 
     default:
       return jsonError_('Ação GET desconhecida: ' + action, 'UNKNOWN_ACTION');
@@ -530,8 +813,11 @@ function doPostAssinaturas(e) {
   var action = body.action || '';
 
   switch (action) {
+    case 'uploadPdfAssinado':
+      return uploadPdfAssinado_(body.idEstagio, body.numeroEtapa, body.pdfBase64, body.emailAtor);
+
     case 'concluirEtapa':
-      return concluirEtapaAssinatura_(body.idEstagio, body.numeroEtapa, body.driveUrl, body.emailAtor);
+      return concluirEtapaAssinatura_(body.idEstagio, body.numeroEtapa, body.driveUrl || null, body.emailAtor);
 
     case 'rejeitarEtapa':
       return rejeitarEtapaAssinatura_(body.idEstagio, body.numeroEtapa, body.motivo, body.retornoParaEtapa, body.emailAdmin);
