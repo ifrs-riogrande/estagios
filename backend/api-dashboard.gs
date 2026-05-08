@@ -97,10 +97,11 @@ function gerarDashboard_() {
   var dados = sheet.getDataRange().getValues();
 
   // ── Stats ────────────────────────────────────────────────────────────────
-  var ativos     = 0;
-  var pendentes  = 0;
-  var encerrados = 0;
-  var empresasSet= {};
+  var ativos      = 0;
+  var pendentes   = 0;
+  var encerrados  = 0;
+  var emFluxoNovo = 0;
+  var empresasSet = {};
 
   // ── Por curso ────────────────────────────────────────────────────────────
   var porCursoMap = {};
@@ -137,6 +138,7 @@ function gerarDashboard_() {
     if (status === 'Ativo')     { ativos++;    empresasSet[empresa] = true; }
     if (status === 'Pendente' || status === 'Em análise') pendentes++;
     if (status === 'Encerrado') encerrados++;
+    if (status === 'Em Checklist' || status === 'Em Assinaturas') emFluxoNovo++;
 
     // Por curso (apenas ativos)
     if (status === 'Ativo' && curso) {
@@ -262,10 +264,11 @@ function gerarDashboard_() {
 
   return jsonOk_({
     stats: {
-      ativos:     ativos,
-      pendentes:  pendentes,
-      encerrados: encerrados,
-      empresas:   Object.keys(empresasSet).length,
+      ativos:      ativos,
+      pendentes:   pendentes,
+      emFluxoNovo: emFluxoNovo,
+      encerrados:  encerrados,
+      empresas:    Object.keys(empresasSet).length,
     },
     alertas:       alertas,
     solicitacoes:  solicitacoesRetorno,
