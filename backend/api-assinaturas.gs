@@ -119,7 +119,7 @@ function iniciarFluxoAssinaturas_(idEstagio) {
   _atualizarFluxoNaPlanilha_(idEstagio, fluxo);
 
   // Notifica o estudante (etapa 1)
-  // TODO Fase 2: enviarNotificacaoAssinatura_(idEstagio, etapas[0], sol);
+  try { notificarAtorAssinatura_(idEstagio, etapas[0], sol, fluxo); } catch (e) { logErro_('iniciarFluxoAssinaturas_.notificar', e); }
 
   return fluxo;
 }
@@ -155,7 +155,8 @@ function concluirEtapaAssinatura_(idEstagio, numeroEtapa, driveUrl, emailAtor) {
     fluxo.statusGeral        = 'concluido';
     fluxo.timestampConclusao = new Date().toISOString();
     _ativarEstagio_(idEstagio);
-    // TODO Fase 2: enviarPdfFinalParaTodos_(idEstagio, fluxo, driveUrl);
+    // Envia PDF final a todos os atores
+    try { enviarPdfFinalParaTodos_(idEstagio, fluxo, driveUrl); } catch (e) { logErro_('enviarPdfFinalParaTodos_', e); }
   } else {
     // ── Ativa a próxima etapa ────────────────────────────────────────────
     var prazos    = obterPrazos_();
@@ -164,9 +165,11 @@ function concluirEtapaAssinatura_(idEstagio, numeroEtapa, driveUrl, emailAtor) {
     proxEtapa.prazoVencimento = calcularPrazoVencimento_(prazos.assinaturas[proxEtapa.ator] || 5);
     fluxo.etapaAtual          = numeroEtapa + 1;
 
-    // TODO Fase 2: notificar próximo ator
-    // var sol = _obterDadosSolicitacaoCompleto_(idEstagio);
-    // enviarNotificacaoAssinatura_(idEstagio, proxEtapa, sol);
+    // Notifica o próximo ator
+    try {
+      var solProx = _obterDadosSolicitacaoCompleto_(idEstagio);
+      notificarAtorAssinatura_(idEstagio, proxEtapa, solProx, fluxo);
+    } catch (e) { logErro_('concluirEtapaAssinatura_.notificarProx', e); }
   }
 
   salvarFluxoAssinaturas_(idEstagio, fluxo);
@@ -225,9 +228,11 @@ function rejeitarEtapaAssinatura_(idEstagio, numeroEtapa, motivo, retornoParaEta
 
   fluxo.etapaAtual = retornoParaEtapa;
 
-  // TODO Fase 2: notificar ator que precisa reassinar
-  // var sol = _obterDadosSolicitacaoCompleto_(idEstagio);
-  // enviarNotificacaoAssinatura_(idEstagio, fluxo.etapas[retornoParaEtapa - 1], sol);
+  // Notifica o ator que precisa reassinar a partir da etapa de retorno
+  try {
+    var solRej = _obterDadosSolicitacaoCompleto_(idEstagio);
+    notificarAtorAssinatura_(idEstagio, fluxo.etapas[retornoParaEtapa - 1], solRej, fluxo);
+  } catch (e) { logErro_('rejeitarEtapaAssinatura_.notificar', e); }
 
   salvarFluxoAssinaturas_(idEstagio, fluxo);
   _atualizarFluxoNaPlanilha_(idEstagio, fluxo);
@@ -423,6 +428,84 @@ function _obterEmailCoordenadorPorCurso_(curso) {
   } catch (e) {
     return '';
   }
+}
+
+// ── Notificações de E-mail ────────────────────────────────────────────────────
+
+/**
+ * Notifica o ator da etapa atual que é a vez dele agir.
+ *
+ * @param {string} idEstagio
+ * @param {Object} etapa   Objeto de etapa do fluxo (com .tipo, .email, .label, .numero, .prazoVencimento)
+ * @param {Object} sol     Dados completos da solicitação
+ * @param {Object} fluxo   Estado atual do fluxo (para pegar URL do PDF mais recente)
+ */
+function notificarAtorAssinatura_(idEstagio, etapa, sol, fluxo) {
+  if (!etapa || !etapa.email) return;
+
+  // Obtém URL do PDF mais recente: última etapa concluída ou PDF original
+  var pdfUrl = (fluxo && fluxo.pdfOriginalUrl) ? fluxo.pdfOriginalUrl : '';
+  if (fluxo && fluxo.etapas) {
+    for (var i = etapa.numero - 2; i >= 0; i--) {
+      var et = fluxo.etapas[i];
+      if (et && et.driveUrl) { pdfUrl = et.driveUrl; break; }
+    }
+  }
+
+  if (etapa.tipo === 'govbr') {
+    MAIL.enviarEmailAssinaturaGovBr({
+      idEstagio:       idEstagio,
+      nomeEstudante:   sol.nomeEstudante || '',
+      labelAtor:       etapa.label,
+      prazoVencimento: etapa.prazoVencimento || '',
+      email:           etapa.email,
+      driveUrl:        pdfUrl,
+      numeroEtapa:     etapa.numero,
+    });
+  } else {
+    MAIL.enviarEmailAssinaturaInterno({
+      idEstagio:       idEstagio,
+      nomeEstudante:   sol.nomeEstudante || '',
+      labelAtor:       etapa.label,
+      prazoVencimento: etapa.prazoVencimento || '',
+      email:           etapa.email,
+      numeroEtapa:     etapa.numero,
+    });
+  }
+}
+
+/**
+ * Envia o PDF final assinado para todos os envolvidos ao concluir o fluxo.
+ *
+ * @param {string} idEstagio
+ * @param {Object} fluxo
+ * @param {string} driveUrl  URL do arquivo final enviado pela Central (etapa 8)
+ */
+function enviarPdfFinalParaTodos_(idEstagio, fluxo, driveUrl) {
+  var sol = _obterDadosSolicitacaoCompleto_(idEstagio);
+  var destinatarios = [
+    { email: sol.emailEstudante,               nome: sol.nomeEstudante  || 'Estudante'       },
+    { email: sol.emailEmpresa,                 nome: sol.nomeEmpresa    || 'Empresa'          },
+    { email: sol.emailSupervisor,              nome: sol.nomeSupervisor || 'Supervisor'       },
+    { email: sol.emailOrientador,              nome: sol.nomeOrientador || 'Orientador'       },
+    { email: sol.emailCoordenador,             nome: 'Coordenador'                            },
+    { email: 'estagios@riogrande.ifrs.edu.br', nome: 'Setor de Estágios'                     },
+  ].filter(function (d) { return !!(d.email && String(d.email).indexOf('@') > 0); });
+
+  // URL final: preferência para arquivo enviado pela Central; fallback para último PDF do fluxo
+  var urlFinal = driveUrl || '';
+  if (!urlFinal && fluxo && fluxo.etapas) {
+    for (var i = fluxo.etapas.length - 1; i >= 0; i--) {
+      if (fluxo.etapas[i].driveUrl) { urlFinal = fluxo.etapas[i].driveUrl; break; }
+    }
+  }
+
+  MAIL.enviarEmailPdfFinalAssinaturas({
+    idEstagio:     idEstagio,
+    nomeEstudante: sol.nomeEstudante || '',
+    driveUrl:      urlFinal,
+    destinatarios: destinatarios,
+  });
 }
 
 // ── Handlers GET / POST ───────────────────────────────────────────────────────

@@ -1,0 +1,1046 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Checklist de Estágio — IFRS Campus Rio Grande</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/base.css">
+  <link rel="stylesheet" href="../assets/css/components.css">
+  <link rel="stylesheet" href="../assets/css/layout.css">
+  <style>
+    /* ── Progresso ─────────────────────────── */
+    .ck-progress-bar {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: var(--color-surface);
+      border-bottom: 1px solid var(--color-border);
+      padding: var(--space-3) 0;
+      box-shadow: var(--shadow-sm);
+    }
+    .ck-progress-inner {
+      display: flex;
+      align-items: center;
+      gap: var(--space-4);
+    }
+    .ck-progress-track {
+      flex: 1;
+      height: 8px;
+      background: var(--color-border);
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+    }
+    .ck-progress-fill {
+      height: 100%;
+      background: var(--color-secondary);
+      border-radius: var(--radius-sm);
+      transition: width 0.3s ease;
+    }
+    .ck-progress-label {
+      font-size: var(--font-size-sm);
+      font-weight: var(--font-weight-medium);
+      color: var(--color-text-muted);
+      white-space: nowrap;
+    }
+
+    /* ── Seção de info do estágio ──────────── */
+    .ck-info-card {
+      background: var(--color-info-light);
+      border: 1px solid var(--color-info-border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-5) var(--space-6);
+      margin-bottom: var(--space-6);
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-4) var(--space-8);
+    }
+    .ck-info-item {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .ck-info-item-label {
+      font-size: var(--font-size-xs);
+      font-weight: var(--font-weight-semibold);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--color-text-muted);
+    }
+    .ck-info-item-value {
+      font-size: var(--font-size-sm);
+      font-weight: var(--font-weight-medium);
+      color: var(--color-text);
+    }
+    .ck-prazo-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-1);
+      font-size: var(--font-size-xs);
+      font-weight: var(--font-weight-medium);
+      padding: 2px var(--space-2);
+      border-radius: var(--radius-sm);
+    }
+    .ck-prazo-badge--ok {
+      background: var(--color-success-light);
+      color: var(--color-success);
+      border: 1px solid var(--color-success-border);
+    }
+    .ck-prazo-badge--urgente {
+      background: var(--color-warning-light);
+      color: var(--color-warning);
+      border: 1px solid var(--color-warning-border);
+    }
+    .ck-prazo-badge--vencido {
+      background: var(--color-error-light);
+      color: var(--color-error);
+      border: 1px solid var(--color-error-border);
+    }
+
+    /* ── Lista de itens ────────────────────── */
+    .ck-items-list {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-3);
+      margin-bottom: var(--space-6);
+    }
+    .ck-item {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      padding: var(--space-4) var(--space-5);
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .ck-item:has(.ck-item-checkbox:checked) {
+      border-color: var(--color-success-border);
+      background: var(--color-success-light);
+    }
+    .ck-item--auto {
+      background: var(--color-info-light);
+      border-color: var(--color-info-border);
+    }
+    .ck-item--flag {
+      background: var(--color-warning-light);
+      border-color: var(--color-warning-border);
+    }
+    .ck-item--inactive {
+      background: var(--color-bg);
+      border-color: var(--color-border);
+      opacity: 0.6;
+    }
+    .ck-item-header {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--space-3);
+    }
+    .ck-item-checkbox {
+      width: 18px;
+      height: 18px;
+      margin-top: 2px;
+      flex-shrink: 0;
+      accent-color: var(--color-secondary);
+      cursor: pointer;
+    }
+    .ck-item-label {
+      flex: 1;
+      font-size: var(--font-size-sm);
+      font-weight: var(--font-weight-medium);
+      color: var(--color-text);
+      line-height: var(--line-height-normal);
+    }
+    .ck-item-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-1);
+      font-size: var(--font-size-xs);
+      font-weight: var(--font-weight-semibold);
+      padding: 3px var(--space-2);
+      border-radius: var(--radius-sm);
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+    .ck-item-badge--info {
+      background: var(--color-info-light);
+      color: var(--color-info);
+      border: 1px solid var(--color-info-border);
+    }
+    .ck-item-badge--ok {
+      background: var(--color-success-light);
+      color: var(--color-success);
+      border: 1px solid var(--color-success-border);
+    }
+    .ck-item-badge--alerta {
+      background: var(--color-warning-light);
+      color: var(--color-warning);
+      border: 1px solid var(--color-warning-border);
+    }
+    .ck-item-badge--na {
+      background: var(--color-bg);
+      color: var(--color-text-muted);
+      border: 1px solid var(--color-border);
+    }
+    .ck-item-valor {
+      font-size: var(--font-size-sm);
+      color: var(--color-text-muted);
+      margin-top: var(--space-2);
+      margin-left: 27px;
+      font-style: italic;
+    }
+    .ck-item-obs {
+      margin-top: var(--space-3);
+      margin-left: 27px;
+    }
+    .ck-item-obs textarea {
+      width: 100%;
+      font-size: var(--font-size-sm);
+      font-family: var(--font-family);
+      color: var(--color-text);
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm);
+      padding: var(--space-2) var(--space-3);
+      resize: vertical;
+      min-height: 56px;
+      line-height: var(--line-height-normal);
+      box-sizing: border-box;
+    }
+    .ck-item-obs textarea:focus {
+      outline: none;
+      border-color: var(--color-secondary);
+      box-shadow: 0 0 0 3px rgba(46,95,163,0.1);
+    }
+    .ck-item-obs-label {
+      font-size: var(--font-size-xs);
+      color: var(--color-text-muted);
+      margin-bottom: var(--space-1);
+    }
+
+    /* ── Obs geral ─────────────────────────── */
+    .ck-obs-geral {
+      margin-bottom: var(--space-6);
+    }
+    .ck-obs-geral label {
+      display: block;
+      font-size: var(--font-size-sm);
+      font-weight: var(--font-weight-medium);
+      color: var(--color-text);
+      margin-bottom: var(--space-2);
+    }
+    .ck-obs-geral textarea {
+      width: 100%;
+      font-size: var(--font-size-sm);
+      font-family: var(--font-family);
+      color: var(--color-text);
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      padding: var(--space-3) var(--space-4);
+      resize: vertical;
+      min-height: 80px;
+      line-height: var(--line-height-normal);
+      box-sizing: border-box;
+    }
+    .ck-obs-geral textarea:focus {
+      outline: none;
+      border-color: var(--color-secondary);
+      box-shadow: 0 0 0 3px rgba(46,95,163,0.1);
+    }
+
+    /* ── Ações ─────────────────────────────── */
+    .ck-actions {
+      display: flex;
+      gap: var(--space-3);
+      flex-wrap: wrap;
+      padding-top: var(--space-4);
+      border-top: 1px solid var(--color-border);
+    }
+    .ck-actions .btn {
+      flex: 1;
+      min-width: 140px;
+      justify-content: center;
+    }
+
+    /* ── Respondido ────────────────────────── */
+    .ck-respondido {
+      background: var(--color-success-light);
+      border: 1px solid var(--color-success-border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-8) var(--space-6);
+      text-align: center;
+    }
+    .ck-respondido svg {
+      width: 48px;
+      height: 48px;
+      color: var(--color-success);
+      margin: 0 auto var(--space-4);
+      display: block;
+    }
+    .ck-respondido h2 {
+      font-size: var(--font-size-lg);
+      color: var(--color-success);
+      margin-bottom: var(--space-2);
+    }
+    .ck-respondido p {
+      color: var(--color-text-muted);
+      font-size: var(--font-size-sm);
+    }
+    .ck-respondido--ajuste {
+      background: var(--color-warning-light);
+      border-color: var(--color-warning-border);
+    }
+    .ck-respondido--ajuste svg,
+    .ck-respondido--ajuste h2 {
+      color: var(--color-warning);
+    }
+
+    /* ── Acesso negado ─────────────────────── */
+    .ck-acesso-negado {
+      background: var(--color-error-light);
+      border: 1px solid var(--color-error-border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-8) var(--space-6);
+      text-align: center;
+    }
+    .ck-acesso-negado svg {
+      width: 48px;
+      height: 48px;
+      color: var(--color-error);
+      margin: 0 auto var(--space-4);
+      display: block;
+    }
+    .ck-acesso-negado h2 {
+      font-size: var(--font-size-lg);
+      color: var(--color-error);
+      margin-bottom: var(--space-2);
+    }
+    .ck-acesso-negado p {
+      color: var(--color-text-muted);
+      font-size: var(--font-size-sm);
+      margin-bottom: var(--space-4);
+    }
+
+    /* ── Loading skeleton ──────────────────── */
+    .ck-skeleton {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-3);
+    }
+    .ck-skeleton-row {
+      height: 72px;
+      background: linear-gradient(90deg, var(--color-border) 25%, #e9edf3 50%, var(--color-border) 75%);
+      background-size: 200% 100%;
+      border-radius: var(--radius-md);
+      animation: ck-shimmer 1.4s infinite;
+    }
+    @keyframes ck-shimmer {
+      0%   { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    /* ── Aviso não-liberado ─────────────────── */
+    .ck-nao-liberado {
+      background: var(--color-warning-light);
+      border: 1px solid var(--color-warning-border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-8) var(--space-6);
+      text-align: center;
+    }
+    .ck-nao-liberado svg {
+      width: 40px;
+      height: 40px;
+      color: var(--color-warning);
+      margin: 0 auto var(--space-4);
+      display: block;
+    }
+    .ck-nao-liberado h2 {
+      font-size: var(--font-size-lg);
+      color: var(--color-warning);
+      margin-bottom: var(--space-2);
+    }
+    .ck-nao-liberado p {
+      color: var(--color-text-muted);
+      font-size: var(--font-size-sm);
+    }
+
+    /* ── Utilitários ───────────────────────── */
+    .visually-hidden { clip: rect(0 0 0 0); clip-path: inset(50%); height: 1px; overflow: hidden; position: absolute; white-space: nowrap; width: 1px; }
+    .text-center { text-align: center; }
+  </style>
+</head>
+<body>
+  <header id="app-header">
+    <div class="container">
+      <div class="header-inner">
+        <a href="../index.html" class="header-brand">
+          <div class="header-logo-fallback" aria-hidden="true">IFRS</div>
+          <div class="header-brand-text">
+            <span class="header-brand-name">Central de Estágios</span>
+            <span class="header-brand-sub">IFRS Campus Rio Grande</span>
+          </div>
+        </a>
+        <div style="display:flex;align-items:center;gap:var(--space-3);">
+          <div id="header-user-area"></div>
+          <a href="../index.html" class="back-link">
+            <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd"/>
+            </svg>
+            Início
+          </a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Barra de progresso (sticky) — preenchida via JS -->
+  <div class="ck-progress-bar" id="ck-progress-bar" hidden>
+    <div class="container">
+      <div class="ck-progress-inner">
+        <div class="ck-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="ck-progress-track">
+          <div class="ck-progress-fill" id="ck-progress-fill" style="width:0%"></div>
+        </div>
+        <span class="ck-progress-label" id="ck-progress-label">0 / 0 itens</span>
+      </div>
+    </div>
+  </div>
+
+  <main id="main-content">
+    <!-- Hero preenchido via JS -->
+    <section class="page-hero" id="ck-hero" hidden>
+      <div class="container">
+        <div style="display:flex;align-items:center;gap:var(--space-3);flex-wrap:wrap;">
+          <span class="badge" id="ck-role-badge">—</span>
+        </div>
+        <h1 id="ck-hero-title">Checklist de Estágio</h1>
+        <p id="ck-hero-desc">Carregando…</p>
+      </div>
+    </section>
+
+    <!-- Conteúdo principal -->
+    <div class="container" style="padding-top:var(--space-8);padding-bottom:var(--space-12);">
+      <div style="max-width:720px;margin:0 auto;">
+
+        <!-- Loading -->
+        <div id="ck-loading">
+          <div class="ck-skeleton">
+            <div class="ck-skeleton-row"></div>
+            <div class="ck-skeleton-row"></div>
+            <div class="ck-skeleton-row"></div>
+            <div class="ck-skeleton-row" style="height:40px;"></div>
+          </div>
+        </div>
+
+        <!-- Conteúdo real (oculto até carregar) -->
+        <div id="ck-content" hidden>
+          <!-- Info card -->
+          <div class="ck-info-card" id="ck-info-card"></div>
+
+          <!-- Lista de itens -->
+          <div class="ck-items-list" id="ck-items-list" role="list" aria-label="Itens do checklist"></div>
+
+          <!-- Observação geral -->
+          <div class="ck-obs-geral">
+            <label for="ck-obs-geral">
+              Observação geral <span style="color:var(--color-text-muted);font-weight:400;">(opcional)</span>
+            </label>
+            <textarea id="ck-obs-geral" rows="3" maxlength="500"
+              placeholder="Informe observações gerais sobre a verificação…"></textarea>
+          </div>
+
+          <!-- Ações -->
+          <div class="ck-actions">
+            <button class="btn btn-warning" id="btn-ajuste" type="button">
+              <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+              </svg>
+              Solicitar Ajuste
+            </button>
+            <button class="btn btn-success" id="btn-aprovar" type="button">
+              <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+              </svg>
+              Aprovar
+            </button>
+          </div>
+        </div>
+
+        <!-- Erro -->
+        <div id="ck-error" hidden></div>
+
+      </div>
+    </div>
+  </main>
+
+  <!-- Scripts -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script src="../assets/js/utils.js"></script>
+  <script src="../assets/js/auth.js"></script>
+  <script src="../assets/js/api.js"></script>
+  <script>
+  /* ============================================================
+     checklist/index.html — Lógica principal
+     ============================================================ */
+  'use strict';
+
+  // ── Constantes ────────────────────────────────────────────────
+  const LABELS_ATORES = {
+    admin:       'Setor de Estágios',
+    orientador:  'Orientador(a)',
+    coordenador: 'Coordenador(a) de Curso',
+    empresa:     'Empresa Concedente',
+    supervisor:  'Supervisor(a) na Empresa',
+  };
+
+  const BADGE_COLORS = {
+    admin:       'var(--color-primary)',
+    orientador:  'var(--color-secondary)',
+    coordenador: 'var(--color-secondary)',
+    empresa:     'var(--color-accent)',
+    supervisor:  'var(--color-accent)',
+  };
+
+  // ── Estado ────────────────────────────────────────────────────
+  let checklist = null;
+  let meuAtor   = null;  // 'admin' | 'orientador' | 'coordenador' | 'empresa' | 'supervisor'
+  let meuEmail  = null;
+
+  // ── Inicialização ─────────────────────────────────────────────
+  document.addEventListener('DOMContentLoaded', () => {
+    // 1. Autenticação — qualquer conta Google
+    const ok = requireExternalAuth(window.location.href);
+    if (!ok) return;
+
+    meuEmail = getCurrentUserEmail();
+
+    // 2. Parâmetro id na URL
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get('id');
+    if (!id) {
+      mostrarErro('Parâmetro <code>id</code> não encontrado na URL. Verifique o link recebido por e-mail.');
+      return;
+    }
+
+    // 3. Carregar checklist
+    carregarChecklist(id);
+  });
+
+  // ── Carregar dados do backend ─────────────────────────────────
+  async function carregarChecklist(id) {
+    try {
+      const data = await API.get('obterChecklist', { id });
+      checklist = data;
+      meuAtor = detectarAtor(meuEmail, checklist);
+      renderizarChecklist();
+    } catch (err) {
+      mostrarErro(err.message || 'Não foi possível carregar o checklist. Tente novamente.');
+    }
+  }
+
+  // ── Detectar qual ator é o usuário logado ──────────────────────
+  function detectarAtor(email, ck) {
+    if (!email) return null;
+    const emailLower = email.toLowerCase();
+
+    // Admin tem prioridade
+    if (AUTH_CONFIG.ADMIN_EMAILS.includes(emailLower)) return 'admin';
+
+    // Compara com e-mails dos atores
+    if (ck._emailAtores) {
+      const atores = ['orientador', 'coordenador', 'empresa', 'supervisor'];
+      for (const ator of atores) {
+        const e = (ck._emailAtores[ator] || '').toLowerCase();
+        if (e && e === emailLower) return ator;
+      }
+    }
+    return null;
+  }
+
+  // ── Renderizar página ─────────────────────────────────────────
+  function renderizarChecklist() {
+    document.getElementById('ck-loading').hidden = true;
+
+    const info = checklist._infoSolicitacao || {};
+    const ator = meuAtor;
+
+    // Acesso negado — e-mail não pertence a nenhum ator
+    if (!ator) {
+      mostrarAcessoNegado(meuEmail);
+      return;
+    }
+
+    // Dados da seção do ator
+    const secao = checklist[ator]; // pode ser null (não liberado ainda)
+
+    // Hero
+    renderizarHero(ator, info, secao);
+
+    // Se não liberado ainda (atores paralelos aguardando Admin)
+    if (ator !== 'admin' && !secao) {
+      mostrarNaoLiberado(ator);
+      return;
+    }
+
+    // Se já respondido
+    if (secao && (secao.status === 'aprovado' || secao.status === 'ajuste')) {
+      mostrarRespondido(secao);
+      return;
+    }
+
+    // Renderizar formulário
+    renderizarFormulario(ator, secao);
+  }
+
+  // ── Hero ──────────────────────────────────────────────────────
+  function renderizarHero(ator, info, secao) {
+    const hero = document.getElementById('ck-hero');
+    hero.hidden = false;
+
+    const badge = document.getElementById('ck-role-badge');
+    badge.textContent = LABELS_ATORES[ator] || ator;
+    badge.style.background = BADGE_COLORS[ator] || 'var(--color-primary)';
+    badge.style.color = '#fff';
+    badge.style.padding = '2px 10px';
+    badge.style.borderRadius = 'var(--radius-sm)';
+    badge.style.fontSize = 'var(--font-size-xs)';
+    badge.style.fontWeight = 'var(--font-weight-semibold)';
+    badge.style.textTransform = 'uppercase';
+    badge.style.letterSpacing = '0.05em';
+
+    document.getElementById('ck-hero-title').textContent = 'Checklist de Estágio';
+
+    const partes = [];
+    if (info.nomeEstudante) partes.push(escapeHtml(info.nomeEstudante));
+    if (info.curso)         partes.push(escapeHtml(info.curso));
+    if (info.nomeEmpresa)   partes.push(escapeHtml(info.nomeEmpresa));
+    document.getElementById('ck-hero-desc').textContent =
+      partes.length ? partes.join(' · ') : 'Verifique os itens abaixo e registre sua resposta.';
+  }
+
+  // ── Formulário de itens ───────────────────────────────────────
+  function renderizarFormulario(ator, secao) {
+    const content = document.getElementById('ck-content');
+    content.hidden = false;
+
+    // Info card com prazo
+    renderizarInfoCard(ator, secao);
+
+    // Itens
+    const itens = secao ? secao.itens : [];
+    renderizarItens(itens);
+
+    // Progressbar
+    atualizarProgressBar(itens);
+
+    // Botões
+    document.getElementById('btn-aprovar').addEventListener('click', () => enviarResposta('aprovado'));
+    document.getElementById('btn-ajuste').addEventListener('click',  () => enviarResposta('ajuste'));
+  }
+
+  // ── Info card ─────────────────────────────────────────────────
+  function renderizarInfoCard(ator, secao) {
+    const card = document.getElementById('ck-info-card');
+    const info = checklist._infoSolicitacao || {};
+    const prazo = secao ? secao.prazoVencimento : null;
+
+    let html = '';
+
+    if (info.nomeEstudante) {
+      html += `<div class="ck-info-item">
+        <span class="ck-info-item-label">Estudante</span>
+        <span class="ck-info-item-value">${escapeHtml(info.nomeEstudante)}</span>
+      </div>`;
+    }
+    if (info.nomeEmpresa) {
+      html += `<div class="ck-info-item">
+        <span class="ck-info-item-label">Empresa</span>
+        <span class="ck-info-item-value">${escapeHtml(info.nomeEmpresa)}</span>
+      </div>`;
+    }
+    if (info.curso) {
+      html += `<div class="ck-info-item">
+        <span class="ck-info-item-label">Curso</span>
+        <span class="ck-info-item-value">${escapeHtml(info.curso)}</span>
+      </div>`;
+    }
+    if (prazo) {
+      const cls = prazoClass(prazo);
+      html += `<div class="ck-info-item">
+        <span class="ck-info-item-label">Prazo</span>
+        <span class="ck-prazo-badge ck-prazo-badge--${cls}">
+          ${prazoIcon(cls)} ${formatarData(prazo)}
+        </span>
+      </div>`;
+    }
+
+    card.innerHTML = html || '<span class="ck-info-item-value" style="color:var(--color-text-muted)">Informações do estágio não disponíveis.</span>';
+  }
+
+  // ── Itens ─────────────────────────────────────────────────────
+  function renderizarItens(itens) {
+    const lista = document.getElementById('ck-items-list');
+    lista.innerHTML = '';
+
+    if (!itens || itens.length === 0) {
+      lista.innerHTML = '<p style="color:var(--color-text-muted);text-align:center;padding:var(--space-6) 0;">Nenhum item encontrado neste checklist.</p>';
+      return;
+    }
+
+    itens.forEach((item, idx) => {
+      lista.appendChild(criarItemEl(item, idx));
+    });
+  }
+
+  function criarItemEl(item, idx) {
+    const wrapper = document.createElement('div');
+    wrapper.setAttribute('role', 'listitem');
+    wrapper.dataset.idx = idx;
+
+    // Classificar item
+    const isAuto       = item.auto === true;
+    const isFlag       = item.flag === true && isAuto;
+    const isInativo    = item.condicional === true && item.ativo === false;
+
+    if (isInativo) {
+      wrapper.className = 'ck-item ck-item--inactive';
+      wrapper.innerHTML = `
+        <div class="ck-item-header">
+          <span class="ck-item-label">${escapeHtml(item.label)}</span>
+          <span class="ck-item-badge ck-item-badge--na">N/A</span>
+        </div>
+        ${item.obs ? `<div class="ck-item-valor">${escapeHtml(item.obs)}</div>` : ''}
+      `;
+      return wrapper;
+    }
+
+    if (isFlag) {
+      const cls = item.checked ? 'info' : 'alerta';
+      wrapper.className = `ck-item ck-item--flag`;
+      wrapper.innerHTML = `
+        <div class="ck-item-header">
+          <span class="ck-item-label">${escapeHtml(item.label)}</span>
+          <span class="ck-item-badge ck-item-badge--${cls}">
+            ${item.checked ? '✓ Não se aplica' : '⚠ Atenção'}
+          </span>
+        </div>
+        ${item.valor ? `<div class="ck-item-valor">${escapeHtml(item.valor)}</div>` : ''}
+      `;
+      return wrapper;
+    }
+
+    if (isAuto) {
+      const cls = item.checked ? 'ok' : 'alerta';
+      wrapper.className = `ck-item ck-item--auto`;
+      wrapper.innerHTML = `
+        <div class="ck-item-header">
+          <span class="ck-item-label">${escapeHtml(item.label)}</span>
+          <span class="ck-item-badge ck-item-badge--${cls}">
+            ${item.checked ? '✓ OK' : '⚠ Verificar'}
+          </span>
+        </div>
+        ${item.valor ? `<div class="ck-item-valor">${escapeHtml(item.valor)}</div>` : ''}
+      `;
+      return wrapper;
+    }
+
+    // Regular — checkbox + obs
+    wrapper.className = 'ck-item';
+    const obsId = `ck-obs-${idx}`;
+    const cbId  = `ck-cb-${idx}`;
+    wrapper.innerHTML = `
+      <div class="ck-item-header">
+        <input type="checkbox" class="ck-item-checkbox" id="${cbId}"
+          data-idx="${idx}" ${item.checked ? 'checked' : ''}>
+        <label for="${cbId}" class="ck-item-label">${escapeHtml(item.label)}</label>
+      </div>
+      <div class="ck-item-obs">
+        <div class="ck-item-obs-label">Observação (opcional)</div>
+        <textarea id="${obsId}" data-idx="${idx}" rows="2" maxlength="300"
+          placeholder="Registre observações específicas sobre este item…">${escapeHtml(item.obs || '')}</textarea>
+      </div>
+    `;
+
+    // Evento checkbox → atualiza progresso
+    const cb = wrapper.querySelector('.ck-item-checkbox');
+    cb.addEventListener('change', () => {
+      const allItens = coletarItens();
+      atualizarProgressBar(allItens);
+    });
+
+    return wrapper;
+  }
+
+  // ── Progresso ─────────────────────────────────────────────────
+  function atualizarProgressBar(itens) {
+    if (!itens || itens.length === 0) return;
+
+    // Conta apenas itens "respondíveis" (não-auto, não-inativos)
+    const respondiveis = itens.filter(it => !it.auto && !(it.condicional && !it.ativo));
+    if (respondiveis.length === 0) {
+      document.getElementById('ck-progress-bar').hidden = true;
+      return;
+    }
+
+    // Lê estado atual do DOM para itens regulares
+    const lista = document.getElementById('ck-items-list');
+    let marcados = 0;
+    lista.querySelectorAll('.ck-item-checkbox').forEach(cb => {
+      if (cb.checked) marcados++;
+    });
+    // Soma itens condicionais já pré-checked (sem checkbox no DOM)
+    const preChecked = itens.filter(it =>
+      (it.condicional && !it.ativo) === false && it.auto === false && it.checked === true
+    ).length;
+    // Na verdade vamos contar apenas pelo que está no DOM
+    const total = lista.querySelectorAll('.ck-item-checkbox').length;
+    const pct   = total > 0 ? Math.round((marcados / total) * 100) : 0;
+
+    document.getElementById('ck-progress-bar').hidden = false;
+    document.getElementById('ck-progress-fill').style.width = pct + '%';
+    document.getElementById('ck-progress-track').setAttribute('aria-valuenow', pct);
+    document.getElementById('ck-progress-label').textContent = `${marcados} / ${total} itens`;
+  }
+
+  // ── Coletar itens do DOM ──────────────────────────────────────
+  function coletarItens() {
+    const ator   = meuAtor;
+    const secao  = checklist[ator];
+    if (!secao) return [];
+
+    const lista = document.getElementById('ck-items-list');
+
+    return secao.itens.map((item, idx) => {
+      const isAuto    = item.auto === true;
+      const isInativo = item.condicional === true && item.ativo === false;
+
+      if (isAuto || isInativo) {
+        // Retorna como estava — não editável
+        return { ...item };
+      }
+
+      const cb  = lista.querySelector(`[data-idx="${idx}"].ck-item-checkbox`);
+      const obs = lista.querySelector(`textarea[data-idx="${idx}"]`);
+
+      return {
+        ...item,
+        checked: cb  ? cb.checked       : item.checked,
+        obs:     obs ? obs.value.trim()  : (item.obs || ''),
+      };
+    });
+  }
+
+  // ── Enviar resposta ───────────────────────────────────────────
+  async function enviarResposta(decisao) {
+    const ator = meuAtor;
+    if (!ator) return;
+
+    const id = new URLSearchParams(window.location.search).get('id');
+    const itens     = coletarItens();
+    const obsGeral  = document.getElementById('ck-obs-geral').value.trim();
+
+    // Validação: todos os checkboxes marcados quando "aprovar"
+    if (decisao === 'aprovado') {
+      const lista  = document.getElementById('ck-items-list');
+      const unchecked = lista.querySelectorAll('.ck-item-checkbox:not(:checked)');
+      if (unchecked.length > 0) {
+        mostrarToast('Marque todos os itens antes de Aprovar.', 'warning');
+        unchecked[0].closest('.ck-item').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        unchecked[0].focus();
+        return;
+      }
+    }
+
+    // Desabilita botões durante envio
+    const btnAprovar = document.getElementById('btn-aprovar');
+    const btnAjuste  = document.getElementById('btn-ajuste');
+    btnAprovar.disabled = true;
+    btnAjuste.disabled  = true;
+    btnAprovar.textContent = 'Enviando…';
+
+    try {
+      let body;
+      if (ator === 'admin') {
+        body = {
+          action:    'salvarRespostaAdmin',
+          idEstagio: id,
+          itens:     itens,
+          decisao:   decisao,
+          obs:       obsGeral,
+          sol:       {},
+        };
+      } else {
+        body = {
+          action:    'salvarRespostaAtor',
+          idEstagio: id,
+          ator:      ator,
+          itens:     itens,
+          decisao:   decisao,
+          obs:       obsGeral,
+          emailAtor: meuEmail,
+        };
+      }
+
+      await API.post(ator === 'admin' ? 'salvarRespostaAdmin' : 'salvarRespostaAtor', body);
+
+      // Esconde formulário e mostra confirmação
+      document.getElementById('ck-content').hidden = true;
+      document.getElementById('ck-progress-bar').hidden = true;
+      mostrarRespondido({ status: decisao, data: new Date().toISOString(), obs: obsGeral });
+
+    } catch (err) {
+      btnAprovar.disabled = false;
+      btnAjuste.disabled  = false;
+      btnAprovar.innerHTML = `
+        <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+        </svg> Aprovar`;
+      mostrarToast('Erro ao enviar: ' + (err.message || 'tente novamente.'), 'error');
+    }
+  }
+
+  // ── Tela "já respondido" ──────────────────────────────────────
+  function mostrarRespondido(secao) {
+    document.getElementById('ck-loading').hidden  = true;
+    document.getElementById('ck-content').hidden  = true;
+
+    const isAjuste = secao.status === 'ajuste';
+    const dataStr  = secao.data ? ` em ${formatarDataHora(secao.data)}` : '';
+
+    const el = document.createElement('div');
+    el.className = `ck-respondido${isAjuste ? ' ck-respondido--ajuste' : ''}`;
+    el.innerHTML = isAjuste
+      ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+           <path stroke-linecap="round" stroke-linejoin="round"
+             d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/>
+         </svg>
+         <h2>Ajuste solicitado${dataStr}</h2>
+         <p>Sua solicitação de ajuste foi registrada. O setor de estágios será notificado.</p>
+         ${secao.obs ? `<p style="margin-top:var(--space-3);font-style:italic;">"${escapeHtml(secao.obs)}"</p>` : ''}`
+      : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+           <path stroke-linecap="round" stroke-linejoin="round"
+             d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+         </svg>
+         <h2>Checklist aprovado${dataStr}</h2>
+         <p>Sua resposta foi registrada com sucesso. Obrigado pela colaboração!</p>`;
+
+    const container = document.querySelector('#main-content .container > div');
+    container.innerHTML = '';
+    container.appendChild(el);
+
+    // Esconde hero para não confundir
+    document.getElementById('ck-hero').hidden = true;
+    document.getElementById('ck-progress-bar').hidden = true;
+  }
+
+  // ── Tela "não liberado" ───────────────────────────────────────
+  function mostrarNaoLiberado(ator) {
+    document.getElementById('ck-loading').hidden = true;
+    const container = document.querySelector('#main-content .container > div');
+    container.innerHTML = `
+      <div class="ck-nao-liberado">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        <h2>Aguardando liberação</h2>
+        <p>Seu checklist será liberado após o Setor de Estágios concluir a verificação inicial.
+           Você receberá um e-mail quando estiver disponível.</p>
+      </div>`;
+  }
+
+  // ── Acesso negado ─────────────────────────────────────────────
+  function mostrarAcessoNegado(email) {
+    document.getElementById('ck-loading').hidden = true;
+    const container = document.querySelector('#main-content .container > div');
+    container.innerHTML = `
+      <div class="ck-acesso-negado">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/>
+        </svg>
+        <h2>Acesso não autorizado</h2>
+        <p>O e-mail <strong>${escapeHtml(email || '')}</strong> não está associado a nenhum ator deste checklist.</p>
+        <p>Se você acredita que isso é um erro, verifique se acessou com a conta correta.</p>
+        <button onclick="logout('../')" class="btn btn-ghost" style="margin-top:var(--space-4);">
+          Sair e usar outra conta
+        </button>
+      </div>`;
+  }
+
+  // ── Erro genérico ─────────────────────────────────────────────
+  function mostrarErro(msg) {
+    document.getElementById('ck-loading').hidden = true;
+    const errEl = document.getElementById('ck-error');
+    errEl.hidden = false;
+    errEl.innerHTML = `
+      <div class="alert alert-error" role="alert">
+        <strong>Erro:</strong> ${msg}
+      </div>`;
+  }
+
+  // ── Toast ─────────────────────────────────────────────────────
+  function mostrarToast(msg, tipo) {
+    let toast = document.getElementById('ck-toast');
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.id = 'ck-toast';
+      toast.style.cssText = `
+        position:fixed;bottom:var(--space-6);left:50%;transform:translateX(-50%);
+        padding:var(--space-3) var(--space-5);border-radius:var(--radius-md);
+        font-size:var(--font-size-sm);font-weight:var(--font-weight-medium);
+        box-shadow:var(--shadow-md);z-index:1000;max-width:90vw;text-align:center;
+        transition:opacity 0.3s;`;
+      document.body.appendChild(toast);
+    }
+    const colors = {
+      warning: ['var(--color-warning-light)', 'var(--color-warning)', 'var(--color-warning-border)'],
+      error:   ['var(--color-error-light)',   'var(--color-error)',   'var(--color-error-border)'],
+      success: ['var(--color-success-light)', 'var(--color-success)', 'var(--color-success-border)'],
+    };
+    const [bg, color, border] = colors[tipo] || colors.warning;
+    toast.style.background = bg;
+    toast.style.color      = color;
+    toast.style.border     = `1px solid ${border}`;
+    toast.textContent      = msg;
+    toast.style.opacity    = '1';
+    clearTimeout(toast._timer);
+    toast._timer = setTimeout(() => { toast.style.opacity = '0'; }, 3500);
+  }
+
+  // ── Helpers de data ───────────────────────────────────────────
+  function formatarData(iso) {
+    if (!iso) return '—';
+    try {
+      const d = new Date(iso);
+      return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    } catch (e) { return iso; }
+  }
+
+  function formatarDataHora(iso) {
+    if (!iso) return '—';
+    try {
+      const d = new Date(iso);
+      return d.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    } catch (e) { return iso; }
+  }
+
+  function prazoClass(iso) {
+    if (!iso) return 'ok';
+    try {
+      const hoje = new Date();
+      const prazo = new Date(iso);
+      const diff = Math.floor((prazo - hoje) / (1000 * 60 * 60 * 24));
+      if (diff < 0)  return 'vencido';
+      if (diff <= 2) return 'urgente';
+      return 'ok';
+    } catch (e) { return 'ok'; }
+  }
+
+  function prazoIcon(cls) {
+    if (cls === 'vencido')  return '⚠';
+    if (cls === 'urgente')  return '⏰';
+    return '📅';
+  }
+  </script>
+</body>
+</html>

@@ -225,6 +225,8 @@ function iniciarChecklist_(idEstagio, sol) {
 
   salvarChecklist_(idEstagio, checklist);
   _registrarChecklistNaPlanilha_(idEstagio, checklist);
+  // Notifica o Admin que há um novo checklist para revisar
+  try { _notificarAdminNovoChecklist_(idEstagio, sol, checklist); } catch (e) { logErro_('iniciarChecklist_.notificarAdmin', e); }
   return checklist;
 }
 
@@ -276,8 +278,8 @@ function salvarRespostaAdmin_(idEstagio, itens, decisao, obs, sol) {
     };
     checklist.etapaAtiva = 'paralelo';
 
-    // TODO Fase 2: enviar e-mails de notificação para os 4 atores
-    // enviarNotificacoesChecklistParalelo_(idEstagio, sol, checklist);
+    // Notifica os 4 atores em paralelo
+    try { enviarNotificacoesChecklistParalelo_(idEstagio, checklist); } catch (e) { logErro_('enviarNotificacoesChecklistParalelo_', e); }
   }
 
   salvarChecklist_(idEstagio, checklist);
@@ -310,8 +312,8 @@ function salvarRespostaAtor_(idEstagio, ator, itens, decisao, obs, emailAtor) {
   checklist[ator].emailAtor = emailAtor;
 
   if (decisao === CK_STATUS.AJUSTE) {
-    // TODO Fase 2: notificar Admin que ator solicitou ajuste
-    // notificarAdminAjusteChecklist_(idEstagio, ator, obs);
+    // Notifica o Admin que este ator sinalizou necessidade de ajuste
+    try { _notificarAdminAjusteChecklist_(idEstagio, ator, obs); } catch (e) { logErro_('_notificarAdminAjusteChecklist_', e); }
   }
 
   // Verifica se todos os 5 atores aprovaram
@@ -472,6 +474,192 @@ function calcularIdade_(dataNasc, dataRef) {
   return anos;
 }
 
+// ── Notificações de E-mail ────────────────────────────────────────────────────
+
+var LABELS_ATORES_CK_ = {
+  admin:       'Setor de Estágios (Admin)',
+  orientador:  'Orientador de Estágio',
+  coordenador: 'Coordenador de Curso',
+  empresa:     'Empresa Concedente',
+  supervisor:  'Supervisor',
+};
+
+/** Notifica o Admin (setor) que há um novo checklist aguardando revisão. */
+function _notificarAdminNovoChecklist_(idEstagio, sol, checklist) {
+  // sol aqui pode ter apenas { dataNasc, dataInicio, nomeAgente }
+  // Enriquece com dados da planilha se necessário
+  var dados = _obterDadosSolicitacaoCompleto_(idEstagio);
+  MAIL.enviarEmailChecklistNovoAdmin({
+    idEstagio:      idEstagio,
+    nomeEstudante:  dados.nomeEstudante  || '',
+    emailEstudante: dados.emailEstudante || '',
+    curso:          dados.curso          || '',
+    nomeEmpresa:    dados.nomeEmpresa    || '',
+    prazoAdmin:     checklist && checklist.admin ? checklist.admin.prazoVencimento : '',
+  });
+}
+
+/** Notifica os 4 atores em paralelo (após Admin aprovar checklist). */
+function enviarNotificacoesChecklistParalelo_(idEstagio, checklist) {
+  var sol = _obterDadosSolicitacaoCompleto_(idEstagio);
+  var atores = [
+    { ator: 'orientador',  email: sol.emailOrientador  || '' },
+    { ator: 'coordenador', email: sol.emailCoordenador || '' },
+    { ator: 'empresa',     email: sol.emailEmpresa     || '' },
+    { ator: 'supervisor',  email: sol.emailSupervisor  || '' },
+  ];
+  atores.forEach(function (a) {
+    if (!a.email) return;
+    var ck = checklist[a.ator];
+    MAIL.enviarEmailChecklistAtor({
+      idEstagio:       idEstagio,
+      nomeEstudante:   sol.nomeEstudante || '',
+      curso:           sol.curso         || '',
+      nomeEmpresa:     sol.nomeEmpresa   || '',
+      labelAtor:       LABELS_ATORES_CK_[a.ator],
+      prazoVencimento: ck ? ck.prazoVencimento : '',
+      email:           a.email,
+    });
+  });
+}
+
+/** Notifica o Admin que um ator sinalizou necessidade de ajuste. */
+function _notificarAdminAjusteChecklist_(idEstagio, ator, obs) {
+  var sol = _obterDadosSolicitacaoCompleto_(idEstagio);
+  MAIL.enviarEmailChecklistAjuste({
+    idEstagio:     idEstagio,
+    nomeEstudante: sol.nomeEstudante || '',
+    labelAtor:     LABELS_ATORES_CK_[ator] || ator,
+    obs:           obs || '',
+  });
+}
+
+// ── Trigger diário: verificar prazos D-2 ─────────────────────────────────────
+
+/**
+ * Função chamada por trigger diário do Google Apps Script.
+ * Verifica prazos de checklist e assinaturas e envia lembretes quando restam 2 dias úteis.
+ *
+ * Como configurar o trigger:
+ *   GAS Editor → Relógio (Triggers) → + Adicionar trigger
+ *   Função: verificarPrazos | Implantação: Cabeçalho | Origem: Por tempo | Período: Diário
+ */
+function verificarPrazos() {
+  _verificarPrazosChecklist_();
+  _verificarPrazosAssinaturas_();
+}
+
+/** Conta dias úteis entre hoje (exclusive) e uma data alvo (inclusive). */
+function _diasUteisAte_(dataISO) {
+  if (!dataISO) return 999;
+  try {
+    var hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
+    var alvo = new Date(dataISO);
+    alvo.setHours(0, 0, 0, 0);
+    var dias = 0;
+    var d = new Date(hoje);
+    d.setDate(d.getDate() + 1); // começa no dia seguinte
+    while (d <= alvo) {
+      var dow = d.getDay();
+      if (dow !== 0 && dow !== 6) dias++;
+      d.setDate(d.getDate() + 1);
+    }
+    return dias;
+  } catch (e) {
+    return 999;
+  }
+}
+
+function _verificarPrazosChecklist_() {
+  try {
+    var sheet = SpreadsheetApp.openById(SS_ID).getSheetByName(CHECKLIST_SHEET);
+    if (!sheet) return;
+    var dados = sheet.getDataRange().getValues();
+    for (var i = 1; i < dados.length; i++) {
+      var id     = String(dados[i][0]);
+      var status = String(dados[i][1]);
+      if (!id || status === CK_STATUS.APROVADO) continue;
+
+      var checklist = obterChecklist_(id);
+      if (!checklist) continue;
+
+      var sol = _obterDadosSolicitacaoCompleto_(id);
+      var emailsAtores = {
+        admin:       'estagios@riogrande.ifrs.edu.br',
+        orientador:  sol.emailOrientador  || '',
+        coordenador: sol.emailCoordenador || '',
+        empresa:     sol.emailEmpresa     || '',
+        supervisor:  sol.emailSupervisor  || '',
+      };
+
+      var modificado = false;
+      ['admin', 'orientador', 'coordenador', 'empresa', 'supervisor'].forEach(function (ator) {
+        var ck = checklist[ator];
+        if (!ck || ck.status !== CK_STATUS.PENDENTE || !ck.prazoVencimento) return;
+        if (_diasUteisAte_(ck.prazoVencimento) !== 2) return;
+        if ((ck.lembretesEnviados || 0) >= 1) return;
+        var email = emailsAtores[ator];
+        if (!email) return;
+        MAIL.enviarEmailLembreteChecklist({
+          idEstagio:       id,
+          nomeEstudante:   sol.nomeEstudante || '',
+          labelAtor:       LABELS_ATORES_CK_[ator],
+          prazoVencimento: ck.prazoVencimento,
+          email:           email,
+        });
+        ck.lembretesEnviados = (ck.lembretesEnviados || 0) + 1;
+        modificado = true;
+      });
+
+      if (modificado) salvarChecklist_(id, checklist);
+    }
+  } catch (e) {
+    logErro_('_verificarPrazosChecklist_', e);
+  }
+}
+
+function _verificarPrazosAssinaturas_() {
+  try {
+    var sheet = SpreadsheetApp.openById(SS_ID).getSheetByName(ASSINATURAS_SHEET);
+    if (!sheet) return;
+    var dados = sheet.getDataRange().getValues();
+    for (var i = 1; i < dados.length; i++) {
+      var id     = String(dados[i][0]);
+      var status = String(dados[i][1]);
+      if (!id || status === 'concluido') continue;
+
+      var fluxo = obterFluxoAssinaturas_(id);
+      if (!fluxo) continue;
+
+      var sol = _obterDadosSolicitacaoCompleto_(id);
+      var modificado = false;
+
+      fluxo.etapas.forEach(function (et) {
+        if (et.status !== ASS_STATUS.AGUARDANDO || !et.prazoVencimento) return;
+        if (_diasUteisAte_(et.prazoVencimento) !== 2) return;
+        if ((et.lembretesEnviados || 0) >= 1) return;
+        if (!et.email) return;
+        MAIL.enviarEmailLembreteAssinatura({
+          idEstagio:       id,
+          nomeEstudante:   sol.nomeEstudante || '',
+          labelAtor:       et.label,
+          prazoVencimento: et.prazoVencimento,
+          email:           et.email,
+          numeroEtapa:     et.numero,
+          tipo:            et.tipo,
+        });
+        et.lembretesEnviados = (et.lembretesEnviados || 0) + 1;
+        modificado = true;
+      });
+
+      if (modificado) salvarFluxoAssinaturas_(id, fluxo);
+    }
+  } catch (e) {
+    logErro_('_verificarPrazosAssinaturas_', e);
+  }
+}
+
 // ── Handlers GET / POST ───────────────────────────────────────────────────────
 
 function doGetChecklist(e) {
@@ -482,7 +670,22 @@ function doGetChecklist(e) {
     case 'obterChecklist':
       if (!id) return jsonError_('Parâmetro id obrigatório.', 'MISSING_PARAM');
       var ck = obterChecklist_(id);
-      return ck ? jsonOk_(ck) : jsonError_('Checklist não encontrado.', 'NOT_FOUND');
+      if (!ck) return jsonError_('Checklist não encontrado.', 'NOT_FOUND');
+      try {
+        var solDados = _obterDadosSolicitacaoCompleto_(id);
+        ck._emailAtores = {
+          orientador:  solDados.emailOrientador  || '',
+          coordenador: solDados.emailCoordenador || '',
+          empresa:     solDados.emailEmpresa     || '',
+          supervisor:  solDados.emailSupervisor  || '',
+        };
+        ck._infoSolicitacao = {
+          nomeEstudante: solDados.nomeEstudante || '',
+          nomeEmpresa:   solDados.nomeEmpresa   || '',
+          curso:         solDados.curso         || '',
+        };
+      } catch (e) { /* não bloqueia se solicitação não encontrada */ }
+      return jsonOk_(ck);
 
     case 'obterPrazos':
       return jsonOk_(obterPrazos_());
