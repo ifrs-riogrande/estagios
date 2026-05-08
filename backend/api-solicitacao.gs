@@ -311,6 +311,15 @@ function solicitarEstagio_(dados) {
 
   sheet.appendRow(linha);
 
+  // ── Inicia o fluxo de checklist ──────────────────────────────────────────
+  try {
+    iniciarChecklist_(idEstagio, {
+      dataNasc:   estudante.dataNasc,
+      dataInicio: dataInicio,
+      nomeAgente: nomeAgente,
+    });
+  } catch (e) { logErro_('solicitarEstagio_.checklist', e); }
+
   // Notificações por e-mail
   try {
     enviarEmailSolicitacaoRecebida_({
@@ -653,16 +662,18 @@ function listarMeusEstagios_(e) {
       if (String(r[COL_SOL.EMAIL_ESTUDANTE] || '').trim().toLowerCase() !== email) continue;
 
       lista.push({
-        id:               String(r[COL_SOL.ID_ESTAGIO]        || ''),
-        status:           String(r[COL_SOL.STATUS]             || 'Pendente'),
-        tipoEstagio:      String(r[COL_SOL.TIPO_ESTAGIO]       || ''),
-        empresa:          String(r[COL_SOL.NOME_EMPRESA]       || ''),
-        curso:            String(r[COL_SOL.CURSO]              || ''),
-        dataInicio:       formatarData_(r[COL_SOL.DATA_INICIO]),
-        dataTermino:      formatarData_(r[COL_SOL.DATA_TERMINO]),
-        driveUrl:         String(r[COL_SOL.DRIVE_URL]          || ''),
-        motivoReprovacao: String(r[COL_SOL.MOTIVO_REPROVACAO]  || ''),
-        obsSetor:         String(r[COL_SOL.OBS_SETOR]          || ''),
+        id:                String(r[COL_SOL.ID_ESTAGIO]        || ''),
+        status:            String(r[COL_SOL.STATUS]             || 'Pendente'),
+        tipoEstagio:       String(r[COL_SOL.TIPO_ESTAGIO]       || ''),
+        empresa:           String(r[COL_SOL.NOME_EMPRESA]       || ''),
+        curso:             String(r[COL_SOL.CURSO]              || ''),
+        nomeOrientador:    String(r[COL_SOL.NOME_ORIENTADOR]    || ''),
+        dataInicio:        formatarData_(r[COL_SOL.DATA_INICIO]),
+        dataTermino:       formatarData_(r[COL_SOL.DATA_TERMINO]),
+        cargaHorariaSemanal: String(r[COL_SOL.CARGA_HOR]       || ''),
+        driveUrl:          String(r[COL_SOL.DRIVE_URL]          || ''),
+        motivoReprovacao:  String(r[COL_SOL.MOTIVO_REPROVACAO]  || ''),
+        observacaoSetor:   String(r[COL_SOL.OBS_SETOR]          || ''),
       });
     }
 

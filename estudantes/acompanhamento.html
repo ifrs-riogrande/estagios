@@ -260,18 +260,17 @@
     }
 
     /* ════════════════════════════════════════
-       TIMELINE
+       TIMELINE — FLUXO ANTIGO
     ════════════════════════════════════════ */
-    const PASSOS = [
-      { key: 'solicitacao',   label: 'Solicitação enviada',             desc: 'Documentos e dados do estágio submetidos.' },
-      { key: 'analise',       label: 'Em análise pelo setor',           desc: 'O setor de estágios está revisando a solicitação.' },
-      { key: 'aprovado',      label: 'Aprovado — documentos gerados',   desc: 'TCE e Solicitação de Ingresso foram gerados.' },
-      { key: 'docs_enviados', label: 'Documentos assinados enviados',   desc: 'Você enviou os documentos com todas as assinaturas (exceto Diretor Geral).' },
-      { key: 'aguardando_dg', label: 'Aguardando Diretor Geral',        desc: 'O Diretor Geral está assinando os documentos.' },
-      { key: 'em_execucao',   label: 'Estágio em execução',             desc: 'Todas as assinaturas foram confirmadas.' },
+    const PASSOS_ANTIGO = [
+      { label: 'Solicitação enviada',           desc: 'Documentos e dados do estágio submetidos.' },
+      { label: 'Em análise pelo setor',         desc: 'O setor de estágios está revisando a solicitação.' },
+      { label: 'Aprovado — documentos gerados', desc: 'TCE e Solicitação de Ingresso foram gerados.' },
+      { label: 'Documentos assinados enviados', desc: 'Você enviou os documentos com todas as assinaturas (exceto Diretor Geral).' },
+      { label: 'Aguardando Diretor Geral',      desc: 'O Diretor Geral está assinando os documentos.' },
+      { label: 'Estágio em execução',           desc: 'Todas as assinaturas foram confirmadas.' },
     ];
-
-    const STATUS_PASSO = {
+    const STATUS_PASSO_ANTIGO = {
       'Pendente':                  1,
       'Em análise':                2,
       'Aguardando Documentos':     3,
@@ -283,10 +282,49 @@
       'Reprovado':                 -1,
     };
 
+    /* ── FLUXO NOVO ── */
+    const PASSOS_NOVO = [
+      { label: 'Solicitação enviada',  desc: 'Dados do estágio submetidos ao sistema.' },
+      { label: 'Checklist',            desc: 'Validação interna pelos atores do processo (orientador, coordenador, empresa e supervisor).' },
+      { label: 'Você assina o TCE',    desc: 'Você é o 1º a assinar o Termo de Compromisso pelo gov.br.' },
+      { label: 'Empresa assina',       desc: 'Empresa concedente assina o TCE.' },
+      { label: 'Supervisor assina',    desc: 'Supervisor do estágio assina o TCE.' },
+      { label: 'Orientador assina',    desc: 'Orientador acadêmico assina o TCE.' },
+      { label: 'Coordenador assina',   desc: 'Coordenador de curso assina o TCE.' },
+      { label: 'Central revisa',       desc: 'Setor de estágios confere o documento.' },
+      { label: 'Direção assina',       desc: 'Diretor(a) Geral assina pelo gov.br.' },
+      { label: 'Estágio ativo',        desc: 'Processo concluído. Estágio em andamento.' },
+    ];
+    const STATUS_PASSO_NOVO = {
+      'Em Checklist':  2,
+      'Em Assinaturas':3,
+      'Ativo':         10,
+      'Encerrado':     10,
+    };
+
+    const STATUSES_NOVO = new Set(['Em Checklist','Em Assinaturas','Ativo']);
+
     function buildTimeline(status) {
-      const etapaAtual = STATUS_PASSO[status] || 1;
+      if (STATUSES_NOVO.has(status)) {
+        const etapa = STATUS_PASSO_NOVO[status] || 1;
+        return PASSOS_NOVO.map((p, i) => {
+          const num = i + 1;
+          let cls = 'timeline-dot--pending';
+          if (num < etapa) cls = 'timeline-dot--done';
+          else if (num === etapa) cls = 'timeline-dot--active';
+          return `
+            <div class="timeline-item">
+              <div class="timeline-dot ${cls}">${num < etapa ? '✓' : num}</div>
+              <div class="timeline-label">${escapeHtml(p.label)}</div>
+              <div class="timeline-desc">${escapeHtml(p.desc)}</div>
+            </div>`;
+        }).join('');
+      }
+
+      // Fluxo antigo
+      const etapaAtual = STATUS_PASSO_ANTIGO[status] || 1;
       const reprovado  = status === 'Reprovado';
-      return PASSOS.map((p, i) => {
+      return PASSOS_ANTIGO.map((p, i) => {
         const num = i + 1;
         let cls = 'timeline-dot--pending';
         let label = p.label;
@@ -306,6 +344,46 @@
        CARD DE AÇÃO POR STATUS
     ════════════════════════════════════════ */
     function buildCardAcao(s) {
+
+      // ── Fluxo novo: Em Checklist ────────────────────────────────────────────
+      if (s.status === 'Em Checklist') {
+        return `
+          <div class="action-card" style="border-color:var(--color-info);background:var(--color-info-light)">
+            <h2>📋 Checklist em andamento</h2>
+            <p>Seu processo está sendo validado internamente. Orientador, coordenador, empresa e supervisor estão sendo notificados para confirmar os dados do estágio. Você receberá um e-mail quando essa etapa for concluída.</p>
+            <div style="display:flex;gap:var(--space-3);flex-wrap:wrap;margin-top:var(--space-4)">
+              <a href="../checklist/?id=${encodeURIComponent(s.id)}" class="btn btn-secondary btn-sm">Ver Checklist ↗</a>
+            </div>
+          </div>`;
+      }
+
+      // ── Fluxo novo: Em Assinaturas ─────────────────────────────────────────
+      if (s.status === 'Em Assinaturas') {
+        return `
+          <div class="action-card action-card--highlight">
+            <h2>✍️ Assinatura do TCE em andamento</h2>
+            <p>O Termo de Compromisso de Estágio está passando pelo fluxo de assinaturas digitais (gov.br). <strong>Você é a primeira pessoa a assinar</strong> — acesse a página de assinaturas, baixe o PDF, assine pelo <a href="https://assinador.iti.br" target="_blank" rel="noopener" class="link">assinador.iti.br ↗</a> e faça o upload do arquivo assinado.</p>
+            <div style="display:flex;gap:var(--space-3);flex-wrap:wrap;margin-top:var(--space-4)">
+              <a href="../assinaturas/?id=${encodeURIComponent(s.id)}" class="btn btn-primary btn-sm">Ir para Assinaturas ↗</a>
+            </div>
+          </div>`;
+      }
+
+      // ── Fluxo novo: Ativo ──────────────────────────────────────────────────
+      if (s.status === 'Ativo') {
+        return `
+          <div class="action-card" style="border-color:var(--color-success);background:var(--color-success-light)">
+            <h2 style="color:var(--color-success)">✅ Estágio Ativo</h2>
+            <p>Processo concluído com sucesso. Seu estágio está em andamento. Lembre-se de enviar os relatórios nos prazos estabelecidos.</p>
+            <div style="display:flex;gap:var(--space-3);flex-wrap:wrap;margin-top:var(--space-4)">
+              <a href="relatorio-parcial.html" class="btn btn-secondary btn-sm">Relatório Parcial</a>
+              <a href="relatorio-final.html"   class="btn btn-secondary btn-sm">Relatório Final</a>
+              <a href="adendo.html"             class="btn btn-ghost btn-sm">Solicitar Adendo ao TCE</a>
+            </div>
+          </div>`;
+      }
+
+      // ── Fluxo antigo: Aguardando Documentos ────────────────────────────────
       if (s.status === 'Aguardando Documentos') {
         const tipoTce = s.tipoEstagio === 'Obrigatório'
           ? `<!-- TCE Obrigatório -->
@@ -389,6 +467,7 @@
         'Docs Enviados':             '📨 Seus documentos foram recebidos. O setor está revisando antes de encaminhar ao Diretor Geral.',
         'Aguardando DG':             '✍️ O Diretor Geral está assinando os documentos. Aguarde a conclusão do processo.',
         'Aguardando Validação Final':'🔎 O setor está verificando a assinatura do Diretor Geral. O processo será concluído em breve.',
+        'Aprovado':                  '✅ Solicitação aprovada. Em breve o fluxo de assinaturas será iniciado.',
       };
       const msg = mensagens[s.status] || 'Aguardando próxima etapa do processo.';
       return `
@@ -490,9 +569,18 @@
     ════════════════════════════════════════ */
     function badgeStatus(status) {
       const m = {
-        'Pendente':'badge-pending','Em análise':'badge-analysis','Aguardando Documentos':'badge-approved',
-        'Docs Enviados':'badge-docs','Aguardando DG':'badge-dg','Aguardando Validação Final':'badge-dg',
-        'Em execução':'badge-running','Encerrado':'badge-closed','Reprovado':'badge-rejected',
+        'Pendente':                  'badge-pending',
+        'Em análise':                'badge-analysis',
+        'Aguardando Documentos':     'badge-approved',
+        'Docs Enviados':             'badge-docs',
+        'Aguardando DG':             'badge-dg',
+        'Aguardando Validação Final':'badge-dg',
+        'Em execução':               'badge-running',
+        'Em Checklist':              'badge-analysis',
+        'Em Assinaturas':            'badge-docs',
+        'Ativo':                     'badge-running',
+        'Encerrado':                 'badge-closed',
+        'Reprovado':                 'badge-rejected',
       };
       return `<span class="badge ${m[status]||'badge-closed'}">${escapeHtml(status||'—')}</span>`;
     }
