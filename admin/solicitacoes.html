@@ -169,11 +169,18 @@
             <option value="">Todos</option>
             <option value="Pendente" selected>Pendente</option>
             <option value="Em análise">Em análise</option>
-            <option value="Aguardando Documentos">Aguardando Documentos</option>
-            <option value="Docs Enviados">Docs Enviados</option>
-            <option value="Aguardando DG">Aguardando DG</option>
-            <option value="Aguardando Validação Final">Aguardando Validação Final</option>
-            <option value="Em execução">Em execução</option>
+            <optgroup label="Fluxo novo">
+              <option value="Em Checklist">Em Checklist</option>
+              <option value="Em Assinaturas">Em Assinaturas</option>
+              <option value="Ativo">Ativo</option>
+            </optgroup>
+            <optgroup label="Fluxo legado">
+              <option value="Aguardando Documentos">Aguardando Documentos</option>
+              <option value="Docs Enviados">Docs Enviados</option>
+              <option value="Aguardando DG">Aguardando DG</option>
+              <option value="Aguardando Validação Final">Aguardando Validação Final</option>
+              <option value="Em execução">Em execução</option>
+            </optgroup>
             <option value="Encerrado">Encerrado</option>
             <option value="Reprovado">Reprovado</option>
           </select>
@@ -472,6 +479,20 @@
             <label>Pasta no Drive</label>
             <p><a href="${escapeHtml(s.driveUrl)}" target="_blank" rel="noopener" class="link">Abrir pasta do estágio ↗</a></p>
           </div>` : ''}
+
+          <div class="detail-item detail-full">
+            <label>Fluxos SGE</label>
+            <div style="display:flex;gap:var(--space-2);flex-wrap:wrap;margin-top:var(--space-1);">
+              <a href="../checklist/?id=${escapeHtml(s.id)}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">
+                <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                Checklist
+              </a>
+              <a href="../assinaturas/?id=${escapeHtml(s.id)}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">
+                <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"/></svg>
+                Assinaturas
+              </a>
+            </div>
+          </div>
         </div>
 
         <div class="reject-area" id="reject-area">
@@ -568,6 +589,11 @@
       const map = {
         'Pendente':                 'badge-pending',
         'Em análise':               'badge-analysis',
+        // Novo fluxo
+        'Em Checklist':             'badge-analysis',
+        'Em Assinaturas':           'badge-docs',
+        'Ativo':                    'badge-running',
+        // Legado
         'Aguardando Documentos':    'badge-approved',
         'Docs Enviados':            'badge-docs',
         'Aguardando DG':            'badge-dg',

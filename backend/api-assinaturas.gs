@@ -782,11 +782,75 @@ function uploadPdfAssinado_(idEstagio, numeroEtapa, pdfBase64, emailAtor) {
 
 // ── Handlers GET / POST ───────────────────────────────────────────────────────
 
+/**
+ * Lista todos os fluxos de assinaturas onde a etapa `numEtapa` está com
+ * status "aguardando". Lê a aba "Fluxo TCE" para eficiência; carrega
+ * PropertiesService apenas para os itens relevantes.
+ *
+ * Layout da aba "Fluxo TCE" (0-based):
+ *   0=ID, 1=statusGeral, 2=etapaAtual, 3=pastaId
+ *   4+(n-1)*3 = status da etapa n, +1 = data, +2 = driveUrl
+ *
+ * @param  {number} numEtapa  1–8
+ * @returns {Array<Object>}
+ */
+function listarFluxosPendentesEtapa_(numEtapa) {
+  try {
+    var sheet = SpreadsheetApp.openById(SS_ID).getSheetByName(ASSINATURAS_SHEET);
+    if (!sheet) return [];
+    var dados   = sheet.getDataRange().getValues();
+    var statusCol = 4 + (numEtapa - 1) * 3; // 0-based
+
+    var resultado = [];
+    for (var i = 1; i < dados.length; i++) {
+      var row = dados[i];
+      if (!row[0]) continue;
+      if (String(row[1]).toLowerCase() !== 'em_andamento') continue;
+      if (String(row[statusCol]).toLowerCase() !== ASS_STATUS.AGUARDANDO) continue;
+
+      var id    = String(row[0]);
+      var fluxo = obterFluxoAssinaturas_(id);
+      if (!fluxo) continue;
+
+      var sol = {};
+      try { sol = _obterDadosSolicitacaoCompleto_(id); } catch (_) {}
+
+      var etapa   = fluxo.etapas && fluxo.etapas[numEtapa - 1];
+      var prevEt  = fluxo.etapas && numEtapa > 1 ? fluxo.etapas[numEtapa - 2] : null;
+      var pdfUrl  = (prevEt && prevEt.driveUrl) || fluxo.pdfOriginalUrl || '';
+
+      resultado.push({
+        idEstagio:      id,
+        nomeEstudante:  sol.nomeEstudante  || '',
+        nomeEmpresa:    sol.nomeEmpresa    || '',
+        curso:          sol.curso          || '',
+        tipoEstagio:    sol.tipoEstagio    || '',
+        pdfUrl:         pdfUrl,
+        prazoVencimento: etapa ? (etapa.prazoVencimento || '') : '',
+        tsFluxo:        fluxo.timestampCriacao || '',
+      });
+    }
+    return resultado;
+  } catch (e) {
+    logErro_('listarFluxosPendentesEtapa_', e);
+    return [];
+  }
+}
+
+// ── Handlers GET / POST ───────────────────────────────────────────────────────
+
 function doGetAssinaturas(e) {
   var action = (e.parameter && e.parameter.action) || '';
   var id     = (e.parameter && e.parameter.id)     || '';
 
   switch (action) {
+    case 'listarFluxosPendentesEtapa': {
+      var numEt = parseInt(e.parameter.etapa, 10);
+      if (!numEt || numEt < 1 || numEt > 8)
+        return jsonError_('Parâmetro etapa deve ser 1–8.', 'MISSING_PARAM');
+      return jsonOk_(listarFluxosPendentesEtapa_(numEt));
+    }
+
     case 'obterFluxoAssinaturas':
       if (!id) return jsonError_('Parâmetro id obrigatório.', 'MISSING_PARAM');
       var fluxo = obterFluxoAssinaturas_(id);
