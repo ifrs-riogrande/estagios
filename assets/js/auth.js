@@ -408,12 +408,19 @@ function updateHeaderUser(session) {
   const area = document.getElementById('header-user-area');
   if (!area || !session) return;
 
+  // Exibe apenas o primeiro nome para brevidade
+  const firstName = session.name ? session.name.split(' ')[0] : session.email;
+
+  const avatarHtml = session.picture
+    ? `<img src="${escapeHtml(session.picture)}" alt="" class="header-user-avatar" referrerpolicy="no-referrer">`
+    : `<svg viewBox="0 0 20 20" fill="currentColor" class="header-user-avatar-icon">
+        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-6-3a2 2 0 11-4 0 2 2 0 014 0zm-2 4a5 5 0 00-4.546 2.916A5.986 5.986 0 0010 16a5.986 5.986 0 004.546-2.084A5 5 0 0010 11z" clip-rule="evenodd"/>
+      </svg>`;
+
   area.innerHTML = `
     <span class="header-user">
-      <svg viewBox="0 0 20 20" fill="currentColor">
-        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-6-3a2 2 0 11-4 0 2 2 0 014 0zm-2 4a5 5 0 00-4.546 2.916A5.986 5.986 0 0010 16a5.986 5.986 0 004.546-2.084A5 5 0 0010 11z" clip-rule="evenodd"/>
-      </svg>
-      ${escapeHtml(session.name || session.email)}
+      ${avatarHtml}
+      ${escapeHtml(firstName)}
     </span>
     <button onclick="logout('../')" class="btn btn-ghost btn-sm" title="Sair">
       <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
