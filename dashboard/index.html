@@ -19,8 +19,8 @@
       margin-bottom: var(--space-8);
     }
     .stat-card {
-      background: var(--white);
-      border: 1px solid var(--gray-200);
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
       border-radius: var(--radius-lg);
       padding: var(--space-5);
       display: flex;
@@ -29,28 +29,28 @@
       box-shadow: var(--shadow-sm);
     }
     .stat-card__label {
-      font-size: var(--text-sm);
-      color: var(--gray-500);
+      font-size: var(--font-size-sm);
+      color: var(--color-text-muted);
       font-weight: 500;
     }
     .stat-card__value {
-      font-size: var(--text-3xl);
+      font-size: var(--font-size-2xl);
       font-weight: 600;
-      color: var(--gray-900);
+      color: var(--color-text);
       line-height: 1;
     }
     .stat-card__sub {
-      font-size: var(--text-xs);
-      color: var(--gray-400);
+      font-size: var(--font-size-xs);
+      color: var(--color-text-light);
     }
-    .stat-card--primary { border-left: 4px solid var(--primary); }
-    .stat-card--success { border-left: 4px solid var(--success); }
-    .stat-card--warning { border-left: 4px solid var(--warning); }
-    .stat-card--info    { border-left: 4px solid var(--info); }
+    .stat-card--primary { border-left: 4px solid var(--color-primary); }
+    .stat-card--success { border-left: 4px solid var(--color-success); }
+    .stat-card--warning { border-left: 4px solid var(--color-warning); }
+    .stat-card--info    { border-left: 4px solid var(--color-info); }
 
     .dash-section {
-      background: var(--white);
-      border: 1px solid var(--gray-200);
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
       border-radius: var(--radius-lg);
       box-shadow: var(--shadow-sm);
       margin-bottom: var(--space-6);
@@ -60,13 +60,13 @@
       align-items: center;
       justify-content: space-between;
       padding: var(--space-4) var(--space-5);
-      border-bottom: 1px solid var(--gray-100);
+      border-bottom: 1px solid var(--color-border);
       gap: var(--space-3);
     }
     .dash-section__title {
-      font-size: var(--text-base);
+      font-size: var(--font-size-md);
       font-weight: 600;
-      color: var(--gray-800);
+      color: var(--color-text);
       display: flex;
       align-items: center;
       gap: var(--space-2);
@@ -75,7 +75,7 @@
     .dash-section__title svg {
       width: 18px;
       height: 18px;
-      color: var(--primary);
+      color: var(--color-primary);
       flex-shrink: 0;
     }
     .dash-section__body {
@@ -89,50 +89,50 @@
     .dash-table {
       width: 100%;
       border-collapse: collapse;
-      font-size: var(--text-sm);
+      font-size: var(--font-size-sm);
     }
     .dash-table th {
       text-align: left;
       padding: var(--space-2) var(--space-3);
       font-weight: 600;
-      color: var(--gray-500);
-      font-size: var(--text-xs);
+      color: var(--color-text-muted);
+      font-size: var(--font-size-xs);
       text-transform: uppercase;
       letter-spacing: 0.04em;
-      border-bottom: 1px solid var(--gray-200);
+      border-bottom: 1px solid var(--color-border);
       white-space: nowrap;
     }
     .dash-table td {
       padding: var(--space-3);
-      border-bottom: 1px solid var(--gray-100);
-      color: var(--gray-700);
+      border-bottom: 1px solid var(--color-border);
+      color: var(--color-text);
       vertical-align: middle;
     }
     .dash-table tr:last-child td { border-bottom: none; }
-    .dash-table tr:hover td { background: var(--gray-50); }
+    .dash-table tr:hover td { background: var(--color-bg); }
 
     .alert-row {
       display: flex;
       align-items: flex-start;
       gap: var(--space-3);
       padding: var(--space-3) 0;
-      border-bottom: 1px solid var(--gray-100);
+      border-bottom: 1px solid var(--color-border);
     }
     .alert-row:last-child { border-bottom: none; }
     .alert-row__icon {
       flex-shrink: 0;
       width: 36px;
       height: 36px;
-      border-radius: var(--radius-full);
+      border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
     }
-    .alert-row__icon--warning { background: var(--warning-bg, #fffbeb); color: var(--warning); }
-    .alert-row__icon--error   { background: var(--error-bg, #fef2f2);   color: var(--error); }
+    .alert-row__icon--warning { background: var(--color-warning-light); color: var(--color-warning); }
+    .alert-row__icon--error   { background: var(--color-error-light);   color: var(--color-error); }
     .alert-row__body { flex: 1; min-width: 0; }
-    .alert-row__title { font-weight: 600; font-size: var(--text-sm); color: var(--gray-800); }
-    .alert-row__desc  { font-size: var(--text-xs); color: var(--gray-500); margin-top: 2px; }
+    .alert-row__title { font-weight: 600; font-size: var(--font-size-sm); color: var(--color-text); }
+    .alert-row__desc  { font-size: var(--font-size-xs); color: var(--color-text-muted); margin-top: 2px; }
 
     .breakdown-grid {
       display: grid;
@@ -147,23 +147,23 @@
       align-items: center;
       gap: var(--space-3);
       padding: var(--space-2) 0;
-      font-size: var(--text-sm);
+      font-size: var(--font-size-sm);
     }
     .breakdown-item__bar-wrap {
       flex: 1;
       height: 6px;
-      background: var(--gray-100);
+      background: var(--color-border);
       border-radius: 99px;
       overflow: hidden;
     }
     .breakdown-item__bar {
       height: 100%;
-      background: var(--primary);
+      background: var(--color-primary);
       border-radius: 99px;
       transition: width 0.6s ease;
     }
-    .breakdown-item__label { flex: 0 0 auto; max-width: 140px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--gray-600); }
-    .breakdown-item__count { flex: 0 0 auto; font-weight: 600; color: var(--gray-800); min-width: 24px; text-align: right; }
+    .breakdown-item__label { flex: 0 0 auto; max-width: 140px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--color-text-muted); }
+    .breakdown-item__count { flex: 0 0 auto; font-weight: 600; color: var(--color-text); min-width: 24px; text-align: right; }
 
     .filters--dash {
       display: flex;
@@ -173,7 +173,7 @@
       align-items: flex-end;
     }
     .filters--dash .form-group { margin-bottom: 0; }
-    .filters--dash label { font-size: var(--text-xs); color: var(--gray-500); display: block; margin-bottom: var(--space-1); font-weight: 500; }
+    .filters--dash label { font-size: var(--font-size-xs); color: var(--color-text-muted); display: block; margin-bottom: var(--space-1); font-weight: 500; }
     .filters--dash select,
     .filters--dash input { min-width: 140px; }
   </style>
@@ -216,7 +216,7 @@
       </div>
     </section>
 
-    <div class="container" style="padding-top:var(--space-7);padding-bottom:var(--space-12);" id="dash-content">
+    <div class="container" style="padding-top:28px;padding-bottom:var(--space-12);" id="dash-content">
 
       <!-- Estado de carregamento -->
       <div id="loading-state" class="empty-state" aria-live="polite">
@@ -280,12 +280,23 @@
                 <label for="filtro-status">Status</label>
                 <select id="filtro-status" class="form-control">
                   <option value="">Todos</option>
-                  <option value="Pendente">Pendente</option>
-                  <option value="Em análise">Em análise</option>
-                  <option value="Aprovado">Aprovado</option>
-                  <option value="Ativo">Ativo</option>
-                  <option value="Encerrado">Encerrado</option>
-                  <option value="Cancelado">Cancelado</option>
+                  <optgroup label="Fluxo clássico">
+                    <option value="Pendente">Pendente</option>
+                    <option value="Em análise">Em análise</option>
+                    <option value="Aprovado">Aprovado</option>
+                    <option value="Aguardando Documentos">Aguardando Documentos</option>
+                    <option value="Em Assinatura">Em Assinatura</option>
+                    <option value="Aguardando DG">Aguardando DG</option>
+                  </optgroup>
+                  <optgroup label="Fluxo novo">
+                    <option value="Em Checklist">Em Checklist</option>
+                    <option value="Em Assinaturas">Em Assinaturas</option>
+                    <option value="Ativo">Ativo</option>
+                  </optgroup>
+                  <optgroup label="Finalizados">
+                    <option value="Encerrado">Encerrado</option>
+                    <option value="Cancelado">Cancelado</option>
+                  </optgroup>
                 </select>
               </div>
               <div class="form-group">
@@ -309,7 +320,7 @@
                   </tr>
                 </thead>
                 <tbody id="tabela-solicitacoes">
-                  <tr><td colspan="8" style="text-align:center;color:var(--gray-400);padding:var(--space-8);">Carregando…</td></tr>
+                  <tr><td colspan="8" style="text-align:center;color:var(--color-text-light);padding:var(--space-8);">Carregando…</td></tr>
                 </tbody>
               </table>
             </div>
@@ -405,10 +416,11 @@
     function renderizarStats(stats) {
       const el = document.getElementById('stats-cards');
       const cards = [
-        { label: 'Estágios ativos',       value: stats.ativos     ?? '—', sub: 'em andamento atualmente',  mod: 'primary' },
-        { label: 'Solicitações pendentes', value: stats.pendentes  ?? '—', sub: 'aguardando análise',        mod: 'warning' },
-        { label: 'Encerrados este semestre',value: stats.encerrados ?? '—', sub: 'concluídos no período',    mod: 'success' },
-        { label: 'Empresas concedentes',   value: stats.empresas   ?? '—', sub: 'com estágio ativo',         mod: 'info'    },
+        { label: 'Estágios ativos',        value: stats.ativos        ?? '—', sub: 'em andamento atualmente',    mod: 'primary' },
+        { label: 'Solicitações pendentes',  value: stats.pendentes     ?? '—', sub: 'aguardando análise',          mod: 'warning' },
+        { label: 'Em checklist/assinaturas',value: stats.emFluxoNovo   ?? '—', sub: 'no fluxo de aprovação novo',  mod: 'info'    },
+        { label: 'Encerrados este semestre', value: stats.encerrados   ?? '—', sub: 'concluídos no período',       mod: 'success' },
+        { label: 'Empresas concedentes',    value: stats.empresas      ?? '—', sub: 'com estágio ativo',           mod: 'info'    },
       ];
       el.innerHTML = cards.map(function (c) {
         return '<div class="stat-card stat-card--' + c.mod + '" role="figure" aria-label="' + c.label + ': ' + c.value + '">'
@@ -445,12 +457,17 @@
 
     // ── Tabela de solicitações ────────────────────────────────────────
     const STATUS_BADGE = {
-      'Pendente':   'badge-warning',
-      'Em análise': 'badge-info',
-      'Aprovado':   'badge-success',
-      'Ativo':      'badge-success',
-      'Encerrado':  'badge-neutral',
-      'Cancelado':  'badge-error',
+      'Pendente':              'badge-warning',
+      'Em análise':            'badge-info',
+      'Aprovado':              'badge-success',
+      'Aguardando Documentos': 'badge-warning',
+      'Em Assinatura':         'badge-info',
+      'Aguardando DG':         'badge-warning',
+      'Em Checklist':          'badge-info',
+      'Em Assinaturas':        'badge-info',
+      'Ativo':                 'badge-success',
+      'Encerrado':             'badge-neutral',
+      'Cancelado':             'badge-error',
     };
 
     function renderizarTabela(solicitacoes) {
@@ -475,7 +492,7 @@
       const info  = document.getElementById('tabela-info');
 
       if (filtrados.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--gray-400);padding:var(--space-8);">Nenhuma solicitação encontrada com os filtros selecionados.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--color-text-light);padding:var(--space-8);">Nenhuma solicitação encontrada com os filtros selecionados.</td></tr>';
         info.textContent = '';
         return;
       }
@@ -484,7 +501,7 @@
       tbody.innerHTML = exibidos.map(function (s) {
         const badgeClass = STATUS_BADGE[s.status] || 'badge-neutral';
         return '<tr>'
-          + '<td><code style="font-size:var(--text-xs);color:var(--gray-500);">' + escapeHtml(s.id || '—') + '</code></td>'
+          + '<td><code style="font-size:var(--font-size-xs);color:var(--color-text-muted);">' + escapeHtml(s.id || '—') + '</code></td>'
           + '<td style="white-space:nowrap;">' + escapeHtml(s.nomeEstudante || '—') + '</td>'
           + '<td>' + escapeHtml(abreviarCurso(s.curso || '—')) + '</td>'
           + '<td>' + escapeHtml(s.empresa || '—') + '</td>'
@@ -492,7 +509,7 @@
           + '<td><span class="badge ' + badgeClass + '">' + escapeHtml(s.status || '—') + '</span></td>'
           + '<td style="white-space:nowrap;">' + escapeHtml(formatDate(s.dataSolicitacao) || '—') + '</td>'
           + '<td>'
-          + (s.id ? '<a href="#" class="btn btn-ghost btn-sm" style="font-size:var(--text-xs);" title="Ver detalhes" data-id="' + escapeHtml(s.id) + '">Ver</a>' : '')
+          + (s.id ? '<a href="#" class="btn btn-ghost btn-sm" style="font-size:var(--font-size-xs);" title="Ver detalhes" data-id="' + escapeHtml(s.id) + '">Ver</a>' : '')
           + '</td>'
           + '</tr>';
       }).join('');
@@ -539,7 +556,7 @@
         const nome = item.nomeFantasia || item.razaoSocial || '—';
         return '<li class="breakdown-item">'
           + '<span class="breakdown-item__label" title="' + escapeHtml(nome) + '">' + escapeHtml(nome) + '</span>'
-          + '<div class="breakdown-item__bar-wrap" aria-hidden="true"><div class="breakdown-item__bar" style="width:' + pct + '%;background:var(--success)"></div></div>'
+          + '<div class="breakdown-item__bar-wrap" aria-hidden="true"><div class="breakdown-item__bar" style="width:' + pct + '%;background:var(--color-success)"></div></div>'
           + '<span class="breakdown-item__count">' + item.total + '</span>'
           + '</li>';
       }).join('');
