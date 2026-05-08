@@ -117,6 +117,16 @@
     .detail-item p { font-size: var(--font-size-sm); color: var(--color-text); word-break: break-word; }
     .detail-full { grid-column: 1 / -1; }
 
+    /* ── Dados sensíveis ── */
+    .dado-oculto { font-family: monospace; color: var(--color-text-muted); letter-spacing: 2px; user-select: none; }
+    .dado-visivel { font-family: monospace; }
+    .sensivel-badge {
+      display: inline-block; font-size: 9px; font-weight: 600; letter-spacing: .04em;
+      background: var(--color-warning-light); color: var(--color-warning);
+      border: 1px solid var(--color-warning-border, #fbbf24); border-radius: 3px;
+      padding: 0 4px; margin-left: 4px; vertical-align: middle; text-transform: uppercase;
+    }
+
     /* ── Rejeição ── */
     .reject-area { display: none; margin-top: var(--space-4); }
     .reject-area.show { display: block; }
@@ -416,14 +426,31 @@
       document.getElementById('modal-title').textContent = 'Solicitação ' + s.id;
 
       document.getElementById('modal-body').innerHTML = `
+        <div style="display:flex;justify-content:flex-end;margin-bottom:var(--space-3);">
+          <button type="button" id="btn-toggle-sensivel" onclick="toggleDadosSensiveis()"
+            style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border:1px solid var(--color-border);border-radius:var(--radius-sm);background:var(--color-surface);cursor:pointer;font-size:var(--font-size-xs);color:var(--color-text-muted);">
+            <svg id="icon-olho-aberto" width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/><path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"/></svg>
+            <svg id="icon-olho-fechado" width="14" height="14" viewBox="0 0 20 20" fill="currentColor" hidden><path fill-rule="evenodd" d="M3.707 2.293a1 1 0 00-1.414 1.414l14 14a1 1 0 001.414-1.414l-1.473-1.473A10.014 10.014 0 0019.542 10C18.268 5.943 14.478 3 10 3a9.958 9.958 0 00-4.512 1.074l-1.78-1.781zm4.261 4.26l1.514 1.515a2.003 2.003 0 012.45 2.45l1.514 1.514a4 4 0 00-5.478-5.478z" clip-rule="evenodd"/><path d="M12.454 16.697L9.75 13.992a4 4 0 01-3.742-3.741L2.335 6.578A9.98 9.98 0 00.458 10c1.274 4.057 5.064 7 9.542 7 .847 0 1.669-.105 2.454-.303z"/></svg>
+            <span id="label-sensivel">Mostrar dados sensíveis</span>
+          </button>
+        </div>
+
         <div class="detail-grid">
           <div class="detail-item">
             <label>Estudante</label>
             <p>${escapeHtml(s.nomeEstudante || '—')}</p>
           </div>
           <div class="detail-item">
-            <label>Matrícula</label>
-            <p>${escapeHtml(s.matricula || '—')}</p>
+            <label>Matrícula <span class="sensivel-badge">sensível</span></label>
+            <p>
+              <span class="dado-sensivel dado-oculto" data-valor="${escapeHtml(s.matricula || '—')}">••••••</span>
+            </p>
+          </div>
+          <div class="detail-item">
+            <label>CPF do Estudante <span class="sensivel-badge">sensível</span></label>
+            <p>
+              <span class="dado-sensivel dado-oculto" data-valor="${escapeHtml(formatarCPF(s.cpfEstudante || '') || '—')}">••••••••••••</span>
+            </p>
           </div>
           <div class="detail-item">
             <label>Curso</label>
@@ -436,6 +463,12 @@
           <div class="detail-item">
             <label>Empresa</label>
             <p>${escapeHtml(s.empresa || '—')}</p>
+          </div>
+          <div class="detail-item">
+            <label>CNPJ da Empresa <span class="sensivel-badge">sensível</span></label>
+            <p>
+              <span class="dado-sensivel dado-oculto" data-valor="${escapeHtml(formatarCNPJ(s.cnpjEmpresa || '') || '—')}">••••••••••••••</span>
+            </p>
           </div>
           <div class="detail-item">
             <label>Supervisor</label>
@@ -629,6 +662,49 @@
       el.textContent = msg;
       document.body.appendChild(el);
       setTimeout(() => el.remove(), 4000);
+    }
+
+    /* ── Dados sensíveis: show/hide ───────────────────────────── */
+    let _sensivelVisivel = false;
+
+    function toggleDadosSensiveis() {
+      _sensivelVisivel = !_sensivelVisivel;
+      const spans = document.querySelectorAll('.dado-sensivel');
+      spans.forEach(span => {
+        if (_sensivelVisivel) {
+          span.textContent = span.dataset.valor || '—';
+          span.classList.remove('dado-oculto');
+          span.classList.add('dado-visivel');
+        } else {
+          span.textContent = '••••••••••••';
+          span.classList.remove('dado-visivel');
+          span.classList.add('dado-oculto');
+        }
+      });
+      const olhoAberto  = document.getElementById('icon-olho-aberto');
+      const olhoFechado = document.getElementById('icon-olho-fechado');
+      const label       = document.getElementById('label-sensivel');
+      if (_sensivelVisivel) {
+        if (olhoAberto)  olhoAberto.hidden  = true;
+        if (olhoFechado) olhoFechado.hidden = false;
+        if (label)       label.textContent  = 'Ocultar dados sensíveis';
+      } else {
+        if (olhoAberto)  olhoAberto.hidden  = false;
+        if (olhoFechado) olhoFechado.hidden = true;
+        if (label)       label.textContent  = 'Mostrar dados sensíveis';
+      }
+    }
+
+    function formatarCPF(cpf) {
+      const d = String(cpf).replace(/\D/g, '');
+      if (d.length !== 11) return cpf;
+      return d.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+    }
+
+    function formatarCNPJ(cnpj) {
+      const d = String(cnpj).replace(/\D/g, '');
+      if (d.length !== 14) return cnpj;
+      return d.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5');
     }
   </script>
 </body>

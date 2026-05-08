@@ -426,6 +426,24 @@
   <script>
   'use strict';
 
+  // ── Auth flexível para assinaturas ───────────────────────────
+  // Aceita qualquer conta Google (estudantes @aluno, servidores,
+  // externos — empresa/supervisor). Exibe mensagem genérica.
+  function requireAssinaturasAuth(redirectAfter) {
+    const session = getSession();
+    if (session && session.email) {
+      updateHeaderUser(session);
+      return true;
+    }
+    renderAuthGate(
+      'Acesso ao Fluxo de Assinaturas',
+      'Entre com sua conta Google para assinar o TCE.<br><span style="font-size:var(--font-size-xs);color:var(--color-text-muted)">Estudantes: use o e-mail institucional <strong>@aluno.riogrande.ifrs.edu.br</strong>.<br>Servidores: use o e-mail <strong>@riogrande.ifrs.edu.br</strong>.<br>Empresa/supervisor: use o e-mail cadastrado no sistema.</span>',
+      redirectAfter || window.location.href,
+      'external'
+    );
+    return false;
+  }
+
   // ── Estado ────────────────────────────────────────────────────
   let fluxo    = null;
   let meuAtor  = null;   // identificador da etapa onde o usuário age
@@ -439,7 +457,7 @@
 
   // ── Init ─────────────────────────────────────────────────────
   document.addEventListener('DOMContentLoaded', () => {
-    const ok = requireExternalAuth(window.location.href);
+    const ok = requireAssinaturasAuth(window.location.href);
     if (!ok) return;
 
     meuEmail = getCurrentUserEmail();
@@ -582,10 +600,25 @@
     }
 
     if (!meuAtor) {
+      // Dica contextual por tipo de e-mail
+      let dica = '';
+      if (meuEmail && meuEmail.includes('@aluno.')) {
+        dica = `<p style="margin-top:var(--space-2);font-size:var(--font-size-sm)">Se você é o <strong>estudante</strong> deste estágio, verifique se o e-mail acima corresponde ao cadastrado na solicitação.</p>`;
+      } else if (meuEmail && (meuEmail.includes('@riogrande.ifrs') || meuEmail.includes('@ifrs.edu'))) {
+        dica = `<p style="margin-top:var(--space-2);font-size:var(--font-size-sm)">Se você é <strong>orientador, coordenador ou diretor</strong>, aguarde o e-mail de notificação com o link correto para a sua etapa.</p>`;
+      } else {
+        dica = `<p style="margin-top:var(--space-2);font-size:var(--font-size-sm)">Se você é <strong>supervisor ou representante da empresa</strong>, verifique se o e-mail acima é o mesmo cadastrado pelo setor de estágios.</p>`;
+      }
       panel.innerHTML = `
         <div class="alert alert-info" style="margin-bottom:var(--space-6);">
-          O e-mail <strong>${escapeHtml(meuEmail || '')}</strong> não está associado a nenhuma etapa ativa deste fluxo.
-          Você pode acompanhar o andamento na linha do tempo abaixo.
+          <strong>E-mail não reconhecido neste fluxo</strong><br>
+          O e-mail <strong>${escapeHtml(meuEmail || '')}</strong> não está associado a nenhuma etapa deste processo.
+          ${dica}
+          <p style="margin-top:var(--space-2);font-size:var(--font-size-sm)">
+            Se acredita que isso é um erro, entre em contato com o setor de estágios
+            (<a href="mailto:estagios@riogrande.ifrs.edu.br">estagios@riogrande.ifrs.edu.br</a>) ou
+            <button onclick="logout(window.location.href)" class="btn btn-ghost btn-sm" style="padding:2px 8px;height:auto;font-size:inherit;">entre com outra conta</button>.
+          </p>
         </div>`;
       return;
     }
