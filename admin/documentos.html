@@ -122,6 +122,10 @@
           Validação Final
           <span class="tab-count" id="cnt-validacao-final">…</span>
         </button>
+        <button class="step-tab" role="tab" data-tab="fluxo-digital" onclick="mudarAba(this, 'fluxo-digital')">
+          Revisão Digital
+          <span class="tab-count" id="cnt-fluxo-digital">…</span>
+        </button>
       </div>
 
       <!-- Conteúdo de cada aba -->
@@ -153,6 +157,16 @@
         </div>
       </div>
 
+      <div id="tab-fluxo-digital" style="display:none">
+        <p style="font-size:var(--font-size-sm);color:var(--color-text-muted);margin-bottom:var(--space-4)">
+          Fluxo digital de assinaturas (gov.br): TCE aguardando revisão da Central de Estágios <strong>(etapa 6 de 8)</strong>.
+          Acesse cada processo para aprovar ou devolver.
+        </p>
+        <div class="cards-grid" id="cards-fluxo-digital">
+          <div class="table-loading">Carregando…</div>
+        </div>
+      </div>
+
     </div>
   </main>
 
@@ -173,7 +187,7 @@
     'use strict';
 
     let _abaAtual = 'docs-enviados';
-    let _dadosAbas = { 'docs-enviados': null, 'aguardando-dg': null, 'validacao-final': null };
+    let _dadosAbas = { 'docs-enviados': null, 'aguardando-dg': null, 'validacao-final': null, 'fluxo-digital': null };
 
     document.addEventListener('DOMContentLoaded', function () {
       if (!requireAdminAuth()) return;
@@ -183,18 +197,25 @@
     async function carregarTodas() {
       try {
         const token = getAccessToken();
-        const data = await API.get('listarDocumentosAdmin', { authToken: token });
+        // Fluxo antigo
+        const [data, digital] = await Promise.all([
+          API.get('listarDocumentosAdmin', { authToken: token }),
+          API.get('listarFluxosPendentesEtapa', { etapa: 6 }),
+        ]);
         _dadosAbas['docs-enviados']   = data.docsEnviados   || [];
         _dadosAbas['aguardando-dg']   = data.aguardandoDG   || [];
         _dadosAbas['validacao-final'] = data.validacaoFinal || [];
+        _dadosAbas['fluxo-digital']   = Array.isArray(digital) ? digital : [];
 
         document.getElementById('cnt-docs-enviados').textContent   = _dadosAbas['docs-enviados'].length;
         document.getElementById('cnt-aguardando-dg').textContent   = _dadosAbas['aguardando-dg'].length;
         document.getElementById('cnt-validacao-final').textContent = _dadosAbas['validacao-final'].length;
+        document.getElementById('cnt-fluxo-digital').textContent   = _dadosAbas['fluxo-digital'].length;
 
         renderAba('docs-enviados');
         renderAba('aguardando-dg');
         renderAba('validacao-final');
+        renderAbaDigital();
       } catch (err) {
         document.getElementById('cards-docs-enviados').innerHTML =
           `<p style="color:var(--color-error);font-size:var(--font-size-sm)">Erro ao carregar: ${escapeHtml(err.message)}</p>`;
@@ -204,7 +225,7 @@
     function mudarAba(btn, aba) {
       document.querySelectorAll('.step-tab').forEach(t => t.classList.remove('active'));
       btn.classList.add('active');
-      ['docs-enviados','aguardando-dg','validacao-final'].forEach(id => {
+      ['docs-enviados','aguardando-dg','validacao-final','fluxo-digital'].forEach(id => {
         document.getElementById('tab-' + id).style.display = id === aba ? '' : 'none';
       });
       _abaAtual = aba;
@@ -337,6 +358,45 @@
     function mostrarReprovacaoDoc(id, idx, aba) {
       const panel = document.getElementById('reject-' + idx);
       if (panel) panel.classList.add('show');
+    }
+
+    /* ── Aba fluxo digital ── */
+    function renderAbaDigital() {
+      const lista = _dadosAbas['fluxo-digital'] || [];
+      const c = document.getElementById('cards-fluxo-digital');
+      if (!lista.length) {
+        c.innerHTML = `
+          <div class="empty-state">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg>
+            <p>Nenhum processo aguardando revisão digital no momento.</p>
+          </div>`;
+        return;
+      }
+      c.innerHTML = lista.map(item => {
+        const assUrl = `../assinaturas/?id=${encodeURIComponent(item.idEstagio)}`;
+        return `
+          <div class="doc-card">
+            <div class="doc-card-header">
+              <div>
+                <div class="doc-card-title">${escapeHtml(item.nomeEstudante || '—')}</div>
+                <code style="font-size:12px;color:var(--color-secondary)">${escapeHtml(item.idEstagio)}</code>
+              </div>
+              <span class="badge badge-docs">Revisão Central</span>
+            </div>
+            <div class="doc-card-meta">
+              ${item.curso      ? `<span>📚 ${escapeHtml(item.curso)}</span>` : ''}
+              ${item.nomeEmpresa? `<span>🏢 ${escapeHtml(item.nomeEmpresa)}</span>` : ''}
+              ${item.tipoEstagio? `<span>📋 ${escapeHtml(item.tipoEstagio)}</span>` : ''}
+            </div>
+            <div class="doc-actions">
+              <div class="doc-actions-left">Etapa 6 de 8 — aguardando aprovação ou ajuste da Central.</div>
+              <div class="doc-actions-right">
+                ${item.pdfUrl ? `<a href="${escapeHtml(item.pdfUrl)}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">Baixar PDF atual</a>` : ''}
+                <a href="${escapeHtml(assUrl)}" class="btn btn-primary btn-sm">Abrir Processo ↗</a>
+              </div>
+            </div>
+          </div>`;
+      }).join('');
     }
 
     /* ── Helpers ── */
