@@ -121,7 +121,7 @@
         <div class="info-banner" role="note">
           <strong>Pré-requisitos:</strong>
           <ul>
-            <li>Ter cadastro ativo no sistema (você recebeu um e-mail com seu <strong>código de acesso</strong>)</li>
+            <li>Ter cadastro ativo no sistema (seu acesso foi validado pelo setor de estágios)</li>
             <li>A empresa concedente estar cadastrada e <strong>validada</strong> pelo setor</li>
             <li>O supervisor estar cadastrado e <strong>validado</strong> pelo setor</li>
             <li>O professor orientador estar cadastrado e <strong>validado</strong> pelo setor</li>
@@ -137,14 +137,7 @@
               <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"/></svg>
               Seção 1 — Identificação do Estudante
             </h2>
-            <div class="form-group">
-              <label class="form-label required" for="codigo-acesso">Código de acesso</label>
-              <input type="text" id="codigo-acesso" name="codigoAcesso" class="form-control"
-                placeholder="SGE-XXXX-XXXX-XXXX" required aria-required="true" style="text-transform:uppercase;letter-spacing:.05em;"
-                maxlength="19" aria-describedby="codigo-acesso-hint codigo-acesso-error">
-              <span id="codigo-acesso-hint" class="form-hint">Código recebido por e-mail quando seu cadastro foi validado pelo setor. Formato: SGE-XXXX-XXXX-XXXX. Em caso de dúvidas, contate o setor.</span>
-              <span id="codigo-acesso-error" class="form-error hidden" role="alert"></span>
-            </div>
+            <!-- Código de acesso removido — autenticação via OAuth -->
 
             <div class="form-group" id="grupo-vinculo" style="display:none;">
               <label class="form-label required" for="vinculo-estagio">Vínculo acadêmico para este estágio</label>
@@ -645,6 +638,7 @@
       });
 
       await Promise.all([carregarEmpresas(), carregarAgentes(), carregarConfigCursos()]);
+      await carregarDadosEstudante();
     });
 
     // ── Tipo de estágio → exibe seção de remuneração correta ──
@@ -763,46 +757,13 @@
       }
     }
 
-    // Formata automaticamente o código ao digitar (SGE-XXXX-XXXX-XXXX)
-    document.getElementById('codigo-acesso').addEventListener('input', function () {
-      let v = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
-      if (v.startsWith('SGE')) v = v.slice(3);
-      const grupos = [];
-      for (let i = 0; i < v.length && grupos.length < 3; i += 4) grupos.push(v.slice(i, i + 4));
-      this.value = grupos.length ? 'SGE-' + grupos.join('-') : (v ? 'SGE-' + v : '');
-    });
-
-    // Enter no campo de código: dispara a busca (não submete o formulário)
-    document.getElementById('codigo-acesso').addEventListener('keydown', function (e) {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        this.blur();
-      }
-    });
-
-    // ── Código preenchido → busca dados do estudante e popula vínculos ────────
-    document.getElementById('codigo-acesso').addEventListener('blur', async function () {
-      const cod   = this.value.trim().toUpperCase();
-      const errEl = document.getElementById('codigo-acesso-error');
-
-      if (!cod.match(/^SGE-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$/)) return;
-
-      // Limpa estado anterior
-      dadosEstudante = null;
-      emailInstEstagio = '';
-      document.getElementById('curso-estagio').value    = '';
-      document.getElementById('matricula-estagio').value = '';
-      document.getElementById('semestre-atual').innerHTML = '<option value="">Selecione o curso primeiro...</option>';
-      document.getElementById('semestre-atual').disabled  = true;
-      document.getElementById('grupo-vinculo').style.display = 'none';
-      errEl.textContent = ''; errEl.classList.add('hidden');
-
+    // ── Carrega dados do estudante autenticado automaticamente ──
+    async function carregarDadosEstudante() {
       try {
-        const dados = await API.get('obterMeuCadastro', { codigoAcesso: cod, authToken: getAccessToken() });
+        const dados = await API.get('obterMeuCadastro', { authToken: getAccessToken() });
         dadosEstudante = dados;
         idadeEstudante = calcularIdadeEstudante(dados.dataNasc);
 
-        // Verificação de idade
         const msgIdade  = document.getElementById('msg-idade-bloqueio');
         const secaoResp = document.getElementById('secao-responsavel-sol');
         if (idadeEstudante < 16) {
@@ -810,8 +771,6 @@
           secaoResp.style.display = 'none';
           document.getElementById('grupo-vinculo').style.display = 'none';
           document.getElementById('btn-enviar').disabled = true;
-          clearFieldError('codigo-acesso');
-          markFieldValid('codigo-acesso');
           return;
         }
         msgIdade.style.display  = 'none';
@@ -832,24 +791,20 @@
             'Selecione o vínculo para este estágio...'
           );
           selVinculo.disabled = false;
-          // Se só há um vínculo, seleciona automaticamente
           if (cursos.length === 1) {
             selVinculo.value = cursos[0].curso;
             selVinculo.dispatchEvent(new Event('change'));
           }
         }
         document.getElementById('grupo-vinculo').style.display = 'block';
-        clearFieldError('codigo-acesso');
-        markFieldValid('codigo-acesso');
       } catch (err) {
         dadosEstudante = null;
-        emailInstEstagio = '';
-        document.getElementById('grupo-vinculo').style.display = 'none';
-        errEl.textContent = err.message || 'Código inválido ou cadastro não encontrado.';
-        errEl.classList.remove('hidden');
-        document.getElementById('codigo-acesso').classList.add('is-invalid');
+        showFormFeedback('form-feedback',
+          'Cadastro não encontrado ou pendente de validação. Verifique se seu cadastro foi aprovado pelo setor.',
+          'error');
+        document.getElementById('btn-enviar').disabled = true;
       }
-    });
+    }
 
     // ── Vínculo selecionado → preenche curso, matrícula e semestre ────────────
     document.getElementById('vinculo-estagio').addEventListener('change', function () {
@@ -991,18 +946,13 @@
       let valid = true, firstInvalid = null;
       function fail(id, msg) { showFieldError(id, msg); if (!firstInvalid) firstInvalid = id; valid = false; }
 
-      const cod = document.getElementById('codigo-acesso').value.trim().toUpperCase();
-      if (!cod || !cod.match(/^SGE-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$/)) {
-        fail('codigo-acesso', 'Código de acesso inválido. Formato esperado: SGE-XXXX-XXXX-XXXX.');
-      } else if (!dadosEstudante) {
-        fail('codigo-acesso', 'Não foi possível validar o código. Clique fora do campo para tentar novamente.');
+      if (!dadosEstudante) {
+        showFormFeedback('form-feedback', 'Dados do estudante não carregados. Recarregue a página.', 'error');
+        valid = false;
       }
       if (!document.getElementById('vinculo-estagio').value)    fail('vinculo-estagio', 'Selecione o vínculo acadêmico na Seção 1.');
 
       // Responsável legal (obrigatório para menores de 16-18 anos)
-      if (idadeEstudante > 0 && idadeEstudante < 16) {
-        fail('codigo-acesso', 'Estudantes com menos de 16 anos não podem solicitar estágio.');
-      }
       if (idadeEstudante >= 16 && idadeEstudante < 18) {
         if (!document.getElementById('nome-responsavel').value.trim()) fail('nome-responsavel', 'Nome do responsável legal é obrigatório para menores de 18 anos.');
         if (!document.getElementById('tel-responsavel').value.trim())  fail('tel-responsavel', 'Telefone do responsável legal é obrigatório para menores de 18 anos.');
@@ -1075,7 +1025,6 @@
       const oriObj  = orientadoresCache.find(o => o.siape === oriSiape) || {};
 
       const dados = {
-        codigoAcesso:       document.getElementById('codigo-acesso').value.trim().toUpperCase(),
         nomeResponsavel:    document.getElementById('nome-responsavel').value.trim(),
         cpfResponsavel:     document.getElementById('cpf-responsavel').value.trim(),
         telResponsavel:     document.getElementById('tel-responsavel').value.trim(),
@@ -1136,7 +1085,7 @@
       orientadoresCache = [];
       document.getElementById('msg-idade-bloqueio').style.display  = 'none';
       document.getElementById('secao-responsavel-sol').style.display = 'none';
-      document.getElementById('btn-enviar').disabled = false;
+      document.getElementById('btn-enviar').disabled = true;
       document.getElementById('grupo-vinculo').style.display = 'none';
       document.getElementById('vinculo-estagio').innerHTML = '<option value="">Selecione o vínculo...</option>';
       document.getElementById('vinculo-estagio').disabled = true;
@@ -1153,6 +1102,7 @@
       const msgModalidade = document.getElementById('msg-modalidade-bloqueio');
       if (msgModalidade) msgModalidade.style.display = 'none';
       _resetDiasWidget();
+      carregarDadosEstudante();
     });
 
     // ── Widget: Dias e Horários de Estágio ─────────────────────────────────

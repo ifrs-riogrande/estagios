@@ -108,7 +108,7 @@
           <div class="alert alert-warning">
             <svg class="alert-icon" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/></svg>
             <div class="alert-content">
-              <strong>Cadastro em análise.</strong> Seu cadastro foi recebido e está aguardando validação pelo setor de estágios. Assim que aprovado, você receberá um e-mail com seu <strong>código de acesso</strong>.
+              <strong>Cadastro em análise.</strong> Seu cadastro foi recebido e está aguardando validação pelo setor de estágios. Assim que aprovado, você receberá um e-mail de confirmação.
             </div>
           </div>
           <p style="margin-top:var(--space-5);font-size:var(--font-size-sm);color:var(--color-text-muted);">
@@ -122,7 +122,7 @@
         <div id="painel-novo">
 
           <div class="info-banner" role="note">
-            <strong>Primeiro acesso.</strong> Preencha seus dados para se cadastrar. Após o envio, o setor de estágios validará seu cadastro e você receberá o <strong>código de acesso</strong> por e-mail.
+            <strong>Primeiro acesso.</strong> Preencha seus dados para se cadastrar. Após o envio, o setor de estágios validará seu cadastro e você receberá um e-mail de confirmação.
             Dúvidas: <a href="mailto:estagios@riogrande.ifrs.edu.br">estagios@riogrande.ifrs.edu.br</a>
           </div>
 
@@ -322,31 +322,11 @@
         </div>
 
         <!-- ══════════════════════════════════════════════
-             PAINEL: Verificação do código de acesso
+             PAINEL: Carregando dados (substituiu verificação de código)
         ══════════════════════════════════════════════ -->
         <div id="painel-verificacao">
-          <div class="info-banner" role="note">
-            <strong>Código de acesso necessário.</strong>
-            Digite o código que você recebeu por e-mail quando seu cadastro foi validado pelo setor de estágios.
-          </div>
-          <div class="form-section" style="margin-top:var(--space-5);">
-            <div class="codigo-input-wrapper">
-              <div class="form-group">
-                <label class="form-label required" for="codigo-acesso">Código de acesso</label>
-                <input type="text" id="codigo-acesso" class="form-control"
-                  placeholder="SGE-XXXX-XXXX-XXXX" maxlength="19"
-                  style="text-transform:uppercase;letter-spacing:.05em;font-size:1.1em;"
-                  aria-describedby="codigo-hint codigo-error">
-                <span id="codigo-hint" class="form-hint">Formato: SGE-XXXX-XXXX-XXXX</span>
-                <span id="codigo-error" class="form-error hidden" role="alert"></span>
-              </div>
-              <div style="padding-top:28px;">
-                <button id="btn-consultar" class="btn btn-primary">
-                  <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" style="margin-right:4px"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/></svg>
-                  Consultar
-                </button>
-              </div>
-            </div>
+          <div class="alert alert-info" style="margin-bottom:var(--space-4);">
+            <div class="alert-content">Carregando seus dados...</div>
           </div>
         </div>
 
@@ -366,7 +346,7 @@
               <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor" style="margin-right:4px"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/></svg>
               Editar dados
             </button>
-            <button class="btn btn-ghost btn-sm" onclick="voltarParaVerificacao()">Usar outro código</button>
+            <button class="btn btn-ghost btn-sm" onclick="recarregarDados()">Atualizar dados</button>
           </div>
 
           <p style="margin-top:var(--space-4);font-size:var(--font-size-sm);color:var(--color-text-muted);">
@@ -491,7 +471,6 @@
 
     // ── Estado global ─────────────────────────────────────────────────────────
     let dadosCache     = null;
-    let codigoAtivo    = '';
     let cursosEditando = [];
     let cadCursos      = [];   // cursos adicionados no formulário de cadastro
 
@@ -511,20 +490,6 @@
       iniciar();
       // Preenche select de cursos dinamicamente
       preencherSelectCursos('cad-curso-add', 'Selecione o curso...');
-
-      // Formata código de acesso em tempo real
-      var inputCod = document.getElementById('codigo-acesso');
-      inputCod.addEventListener('input', function () {
-        var v = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
-        if (v.startsWith('SGE')) v = v.slice(3);
-        var grupos = [];
-        for (var i = 0; i < v.length && grupos.length < 3; i += 4) grupos.push(v.slice(i, i + 4));
-        this.value = grupos.length ? 'SGE-' + grupos.join('-') : (v ? 'SGE-' + v : '');
-      });
-      inputCod.addEventListener('keydown', function (e) {
-        if (e.key === 'Enter') consultar();
-      });
-      document.getElementById('btn-consultar').addEventListener('click', consultar);
 
       // Enter nos campos de adição de cursos (cadastro)
       ['cad-email-inst-add','cad-matricula-add'].forEach(function(id) {
@@ -578,10 +543,10 @@
           document.getElementById('subtitulo-pagina').textContent = 'Cadastro em análise.';
           mostrarPainel('painel-aguardando');
         } else {
-          // Ativo → pede código de acesso
-          document.getElementById('subtitulo-pagina').textContent = 'Insira seu código de acesso para visualizar seus dados.';
+          // Ativo → carrega dados diretamente via OAuth
+          document.getElementById('subtitulo-pagina').textContent = 'Seus dados cadastrais.';
           mostrarPainel('painel-verificacao');
-          document.getElementById('codigo-acesso').focus();
+          await carregarDadosEstudante();
         }
       } catch (err) {
         document.getElementById('msg-erro-inicial').querySelector('.alert-content').textContent =
@@ -590,54 +555,24 @@
       }
     }
 
-    // ── Consultar dados com código de acesso ──────────────────────────────────
-    async function consultar() {
-      var input = document.getElementById('codigo-acesso');
-      var errEl = document.getElementById('codigo-error');
-      var cod   = input.value.trim().toUpperCase();
-
-      errEl.textContent = '';
-      errEl.classList.add('hidden');
-      input.classList.remove('is-invalid');
-
-      if (!cod.match(/^SGE-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$/)) {
-        errEl.textContent = 'Código inválido. Formato: SGE-XXXX-XXXX-XXXX';
-        errEl.classList.remove('hidden');
-        input.classList.add('is-invalid');
-        input.focus();
-        return;
-      }
-
-      var btn = document.getElementById('btn-consultar');
-      btn.disabled = true;
-      btn.classList.add('is-loading');
-
+    // ── Carrega dados do estudante autenticado ────────────────────────────────
+    async function carregarDadosEstudante() {
       try {
-        var dados = await API.get('obterMeuCadastro', { codigoAcesso: cod, authToken: getAccessToken() });
-        dadosCache  = dados;
-        codigoAtivo = cod;
+        var dados = await API.get('obterMeuCadastro', { authToken: getAccessToken() });
+        dadosCache = dados;
         exibirDados(dados);
       } catch (err) {
-        errEl.textContent = err.message || 'Código inválido ou cadastro não encontrado.';
-        errEl.classList.remove('hidden');
-        input.classList.add('is-invalid');
-      } finally {
-        btn.disabled = false;
-        btn.classList.remove('is-loading');
+        document.getElementById('msg-erro-inicial').querySelector('.alert-content').textContent =
+          'Erro ao carregar dados: ' + (err.message || 'tente novamente.');
+        mostrarPainel('painel-erro-inicial');
       }
     }
 
-    function voltarParaVerificacao() {
-      dadosCache  = null;
-      codigoAtivo = '';
-      var input = document.getElementById('codigo-acesso');
-      input.value = '';
-      input.classList.remove('is-invalid');
-      document.getElementById('codigo-error').textContent = '';
-      document.getElementById('codigo-error').classList.add('hidden');
-      document.getElementById('subtitulo-pagina').textContent = 'Insira seu código de acesso para visualizar seus dados.';
-      mostrarPainel('painel-verificacao');
-      input.focus();
+    function recarregarDados() {
+      dadosCache = null;
+      cursosEditando = [];
+      document.getElementById('subtitulo-pagina').textContent = 'Seus dados cadastrais.';
+      carregarDadosEstudante();
     }
 
     // ── Exibir dados (painel de visualização) ─────────────────────────────────
@@ -803,7 +738,6 @@
       try {
         await apiAtualizarMeuCadastro({
           authToken:    getAccessToken(),
-          codigoAcesso: codigoAtivo,
           emailPessoal: document.getElementById('edit-emailPessoal').value.trim(),
           telefone:     document.getElementById('edit-telefone').value.trim(),
           endereco:     document.getElementById('edit-endereco').value.trim(),
@@ -813,7 +747,7 @@
           cursos:       cursosEditando,
         });
 
-        var dadosNovos = await API.get('obterMeuCadastro', { codigoAcesso: codigoAtivo, authToken: getAccessToken() });
+        var dadosNovos = await API.get('obterMeuCadastro', { authToken: getAccessToken() });
         dadosCache = dadosNovos;
         exibirDados(dadosNovos);
 
@@ -959,7 +893,7 @@
         btnEnviar,
         'cad-feedback',
         'Cadastro enviado com sucesso!',
-        'Seu cadastro foi recebido. O setor de estágios irá validá-lo e você receberá seu código de acesso por e-mail.',
+        'Seu cadastro foi recebido. O setor de estágios irá validá-lo e você receberá um e-mail quando seu acesso for liberado.',
         function() {
           // Após envio bem-sucedido, desabilita o formulário e transita para aguardando
           document.getElementById('form-cadastro').querySelectorAll('input,select,textarea,button').forEach(function(el) { el.disabled = true; });

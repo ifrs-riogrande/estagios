@@ -65,31 +65,10 @@
           <p>Consulte e atualize suas informações de contato, endereço e vínculos acadêmicos.</p>
         </div>
 
-        <!-- Painel de verificação de código -->
+        <!-- Painel de carregamento -->
         <div id="painel-verificacao">
-          <div class="info-banner" role="note">
-            <strong>Código de acesso necessário.</strong>
-            Digite o código que você recebeu por e-mail quando seu cadastro foi validado pelo setor de estágios.
-          </div>
-
-          <div class="form-section" style="margin-top:var(--space-5);">
-            <div class="codigo-input-wrapper">
-              <div class="form-group">
-                <label class="form-label required" for="codigo-acesso">Código de acesso</label>
-                <input type="text" id="codigo-acesso" class="form-control"
-                  placeholder="SGE-XXXX-XXXX-XXXX" maxlength="19"
-                  style="text-transform:uppercase;letter-spacing:.05em;font-size:1.1em;"
-                  aria-describedby="codigo-hint codigo-error">
-                <span id="codigo-hint" class="form-hint">Formato: SGE-XXXX-XXXX-XXXX</span>
-                <span id="codigo-error" class="form-error hidden" role="alert"></span>
-              </div>
-              <div style="padding-top:28px;">
-                <button id="btn-consultar" class="btn btn-primary">
-                  <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" style="margin-right:4px"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/></svg>
-                  Consultar
-                </button>
-              </div>
-            </div>
+          <div class="alert alert-info" style="margin-bottom:var(--space-4);">
+            <div class="alert-content">Carregando seus dados...</div>
           </div>
         </div>
 
@@ -107,7 +86,7 @@
               <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor" style="margin-right:4px"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/></svg>
               Editar dados
             </button>
-            <button class="btn btn-ghost btn-sm" onclick="limpar()">Consultar outro código</button>
+            <button class="btn btn-ghost btn-sm" onclick="recarregarDados()">Atualizar dados</button>
           </div>
 
           <p style="margin-top:var(--space-4);font-size:var(--font-size-sm);color:var(--color-text-muted);">
@@ -238,61 +217,31 @@
     'use strict';
 
     let dadosCache = null;
-    let codigoAtivo = '';
     let cursosEditando = [];
 
     document.addEventListener('DOMContentLoaded', function () {
       if (!requireStudentAuth()) return;
-
-      document.getElementById('codigo-acesso').addEventListener('input', function () {
-        let v = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
-        if (v.startsWith('SGE')) v = v.slice(3);
-        const grupos = [];
-        for (let i = 0; i < v.length && grupos.length < 3; i += 4) grupos.push(v.slice(i, i + 4));
-        this.value = grupos.length ? 'SGE-' + grupos.join('-') : (v ? 'SGE-' + v : '');
-      });
-
-      document.getElementById('codigo-acesso').addEventListener('keydown', function (e) {
-        if (e.key === 'Enter') consultar();
-      });
-
-      document.getElementById('btn-consultar').addEventListener('click', consultar);
+      carregarDadosEstudante();
     });
 
-    async function consultar() {
-      const input = document.getElementById('codigo-acesso');
-      const errEl = document.getElementById('codigo-error');
-      const cod   = input.value.trim().toUpperCase();
-
-      errEl.textContent = '';
-      errEl.classList.add('hidden');
-      input.classList.remove('is-invalid');
-
-      if (!cod.match(/^SGE-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$/)) {
-        errEl.textContent = 'Código inválido. Formato: SGE-XXXX-XXXX-XXXX';
-        errEl.classList.remove('hidden');
-        input.classList.add('is-invalid');
-        input.focus();
-        return;
-      }
-
-      const btn = document.getElementById('btn-consultar');
-      btn.disabled = true;
-      btn.classList.add('is-loading');
-
+    async function carregarDadosEstudante() {
+      document.getElementById('painel-verificacao').style.display = 'block';
+      document.getElementById('painel-dados').style.display = 'none';
+      document.getElementById('painel-edicao').style.display = 'none';
       try {
-        const dados = await API.get('obterMeuCadastro', { codigoAcesso: cod, authToken: getAccessToken() });
+        const dados = await API.get('obterMeuCadastro', { authToken: getAccessToken() });
         dadosCache = dados;
-        codigoAtivo = cod;
         exibirDados(dados);
       } catch (err) {
-        errEl.textContent = err.message || 'Código inválido ou cadastro não encontrado.';
-        errEl.classList.remove('hidden');
-        input.classList.add('is-invalid');
-      } finally {
-        btn.disabled = false;
-        btn.classList.remove('is-loading');
+        document.getElementById('painel-verificacao').innerHTML =
+          `<div class="alert alert-danger"><div class="alert-content">${escapeHtml(err.message || 'Não foi possível carregar seus dados. Verifique se seu cadastro foi validado pelo setor.')}</div></div>`;
       }
+    }
+
+    async function recarregarDados() {
+      dadosCache = null;
+      cursosEditando = [];
+      await carregarDadosEstudante();
     }
 
     function exibirDados(d) {
@@ -346,35 +295,27 @@
       if (!dadosCache) return;
       const d = dadosCache;
 
-      // Preenche campos de contato
       document.getElementById('edit-emailPessoal').value = d.emailPessoal || '';
       document.getElementById('edit-telefone').value = d.telefone || '';
       document.getElementById('edit-nee').value = d.nee || 'Não';
-
-      // Preenche endereço
       document.getElementById('edit-endereco').value = d.endereco || '';
       document.getElementById('edit-bairro').value = d.bairro || '';
       document.getElementById('edit-cidade').value = d.cidade || '';
       document.getElementById('edit-uf').value = d.uf || '';
       document.getElementById('edit-cep').value = d.cep || '';
 
-      // Preenche responsável
-
-      // Inicializa cursos
       if (d.cursos && d.cursos.length > 0) {
         cursosEditando = d.cursos.map(c => ({ emailInst: c.emailInst || '', curso: c.curso || '', matricula: c.matricula || '' }));
       } else {
         cursosEditando = d.curso ? [{ emailInst: d.emailInst || '', curso: d.curso, matricula: d.matricula || '' }] : [];
       }
 
-      // Limpa campos de adição
       document.getElementById('add-emailInst').value = '';
       document.getElementById('add-curso').value = '';
       document.getElementById('add-matricula').value = '';
       document.getElementById('add-vinculo-error').textContent = '';
       document.getElementById('add-vinculo-error').classList.add('hidden');
 
-      // Limpa feedback
       const fb = document.getElementById('edicao-feedback');
       fb.style.display = 'none';
       fb.innerHTML = '';
@@ -452,7 +393,6 @@
       const fb  = document.getElementById('edicao-feedback');
       const btn = document.getElementById('btn-salvar');
 
-      // Coleta valores atuais dos inputs inline dos vínculos
       const cardsInputs = document.querySelectorAll('#lista-vinculos-edicao .vinculo-edit-card');
       cardsInputs.forEach((card, idx) => {
         const inputs = card.querySelectorAll('input');
@@ -461,7 +401,6 @@
         if (inputs[2]) cursosEditando[idx].matricula   = inputs[2].value.trim();
       });
 
-      // Valida vínculos
       for (let i = 0; i < cursosEditando.length; i++) {
         const c = cursosEditando[i];
         if (!c.emailInst || !/@aluno\.riogrande\.ifrs\.edu\.br$/i.test(c.emailInst)) {
@@ -471,7 +410,6 @@
         if (!c.matricula) { mostrarFeedbackEdicao('error', `Vínculo ${i+1}: informe a matrícula.`); return; }
       }
 
-      // Verifica duplicatas de e-mail
       const emails = cursosEditando.map(c => c.emailInst.toLowerCase());
       if (new Set(emails).size !== emails.length) {
         mostrarFeedbackEdicao('error', 'Há e-mails institucionais duplicados nos vínculos.'); return;
@@ -483,7 +421,6 @@
       try {
         await apiAtualizarMeuCadastro({
           authToken:    getAccessToken(),
-          codigoAcesso: codigoAtivo,
           emailPessoal: document.getElementById('edit-emailPessoal').value.trim(),
           telefone:     document.getElementById('edit-telefone').value.trim(),
           nee:          document.getElementById('edit-nee').value,
@@ -494,11 +431,9 @@
           cursos:       cursosEditando,
         });
 
-        // Atualiza cache e volta para visualização
-        const dadosNovos = await API.get('obterMeuCadastro', { codigoAcesso: codigoAtivo, authToken: getAccessToken() });
+        const dadosNovos = await API.get('obterMeuCadastro', { authToken: getAccessToken() });
         dadosCache = dadosNovos;
         exibirDados(dadosNovos);
-        // Mostra breve mensagem de sucesso no painel de dados
         const alertaEl = document.getElementById('alerta-texto');
         const textoOriginal = alertaEl.textContent;
         alertaEl.textContent = 'Dados atualizados com sucesso!';
@@ -517,21 +452,6 @@
       const cls = tipo === 'error' ? 'alert-danger' : 'alert-success';
       fb.innerHTML = `<div class="alert ${cls}"><div class="alert-content">${escapeHtml(msg)}</div></div>`;
       fb.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    }
-
-    function limpar() {
-      dadosCache = null;
-      codigoAtivo = '';
-      cursosEditando = [];
-      document.getElementById('painel-dados').style.display = 'none';
-      document.getElementById('painel-edicao').style.display = 'none';
-      document.getElementById('painel-verificacao').style.display = 'block';
-      const input = document.getElementById('codigo-acesso');
-      input.value = '';
-      input.classList.remove('is-invalid');
-      document.getElementById('codigo-error').textContent = '';
-      document.getElementById('codigo-error').classList.add('hidden');
-      input.focus();
     }
   </script>
 </body>

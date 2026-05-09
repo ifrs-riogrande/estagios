@@ -301,12 +301,12 @@
       if (aguardando) {
         banner = `<div class="modal-action-banner pending">
           <strong>⏳ Cadastro pendente de validação.</strong>
-          Clique em "Validar e Enviar Código" para aprovar e enviar o código de acesso ao aluno.
+          Clique em "Validar Cadastro" para aprovar e liberar o acesso do aluno.
         </div>`;
       } else if (ativo) {
         banner = `<div class="modal-action-banner active">
           <strong>✓ Cadastro ativo.</strong>
-          Se o aluno perder o código de acesso, use "Reenviar Código".
+          Cadastro ativo. O aluno pode acessar o sistema com a conta Google institucional.
         </div>`;
       }
 
@@ -346,12 +346,7 @@
       if (aguardando) {
         footer.innerHTML += `<button class="btn btn-primary" id="btn-validar" onclick="validarCadastro()">
           <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" style="margin-right:4px"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
-          Validar e Enviar Código
-        </button>`;
-      } else if (ativo) {
-        footer.innerHTML += `<button class="btn btn-warning" id="btn-reenviar" onclick="reenviarCodigo()">
-          <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" style="margin-right:4px"><path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"/><path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"/></svg>
-          Reenviar Código
+          Validar Cadastro
         </button>`;
       }
 
@@ -364,7 +359,7 @@
       const btn = document.getElementById('btn-validar');
       if (!btn) return;
       const nomeAluno = _alunoAtual.nome || 'este aluno';
-      if (!confirm(`Confirma a validação do cadastro de ${nomeAluno}?\n\nO código de acesso será gerado e enviado ao e-mail institucional.`)) return;
+      if (!confirm(`Confirma a validação do cadastro de ${nomeAluno}?\n\nO aluno receberá um e-mail de confirmação.`)) return;
 
       btn.disabled = true;
       btn.textContent = 'Processando…';
@@ -376,31 +371,11 @@
         if (idx !== -1) _dados[idx].status = 'Ativo';
         fecharModal();
         await carregar();
-        alert(`Cadastro de ${nomeAluno} validado com sucesso!\nO código de acesso foi enviado para ${_alunoAtual.email}.`);
+        alert(`Cadastro de ${nomeAluno} validado com sucesso!\nNotificação enviada para ${_alunoAtual.email}.`);
       } catch (err) {
         alert('Erro: ' + err.message);
         btn.disabled = false;
-        btn.textContent = 'Validar e Enviar Código';
-      }
-    }
-
-    async function reenviarCodigo() {
-      if (!_alunoAtual) return;
-      const btn = document.getElementById('btn-reenviar');
-      if (!btn) return;
-      const nomeAluno = _alunoAtual.nome || 'este aluno';
-      if (!confirm(`Reenviar o código de acesso para ${nomeAluno} (${_alunoAtual.email})?`)) return;
-
-      btn.disabled = true;
-      btn.textContent = 'Enviando…';
-      try {
-        await API.post('reenviarCodigoAdmin', { emailEstudante: _alunoAtual.email });
-        fecharModal();
-        alert(`Código de acesso reenviado para ${_alunoAtual.email}.`);
-      } catch (err) {
-        alert('Erro: ' + err.message);
-        btn.disabled = false;
-        btn.textContent = 'Reenviar Código';
+        btn.textContent = 'Validar Cadastro';
       }
     }
 
