@@ -242,6 +242,14 @@ async function apiSalvarMeuCadastroEmpresa(dados) {
   return API.post('salvarMeuCadastroEmpresa', dados);
 }
 
+/**
+ * Envia documentos da empresa para uma pasta automática no Drive.
+ * @param {{ cnpj, razaoSocial, documentos: Array<{tipo, nome, conteudo, mimeType}> }} dados
+ */
+async function apiEnviarDocumentosEmpresa(dados) {
+  return API.post('enviarDocumentosEmpresa', dados);
+}
+
 /** Obtém cadastro de supervisor por CPF. */
 async function apiObterCadastroSupervisor(cpf) {
   return API.get('obterCadastroSupervisor', { cpf });

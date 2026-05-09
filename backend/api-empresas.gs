@@ -38,6 +38,9 @@ var CFG = {
   ABA_OPP:          'Oportunidades',
   ABA_LOG:          'Log de Alterações',
 
+  // Pasta raiz no Drive para documentos
+  DRIVE_ROOT: 'SGE — Estágios IFRS',
+
   // Rate limiting: máx requisições por IP por minuto
   RATE_LIMIT: 10,
 };
@@ -55,7 +58,7 @@ var COL_EMP = {
   BAIRRO:       8, MUNICIPIO:   9, UF:        10, CEP:          11,
   TEL_EMPRESA: 12, EMAIL_EMPRESA:13, SITE:    14,
   NOME_REP:    15, CARGO_REP:  16, EMAIL_REP: 17, CPF_REP:      18,
-  STATUS:      19, CODIGO_ACESSO: 20,
+  STATUS:      19, CODIGO_ACESSO: 20, DRIVE_DOCS: 21,
 };
 
 // Colunas da planilha de supervisores (base 0)
@@ -1079,6 +1082,92 @@ function checkRateLimit_(action) {
   } catch (e) {
     return true; // Em caso de erro no rate limit, deixa passar
   }
+}
+
+// ─────────────────────────────────────────
+//  POST: enviarDocumentosEmpresa
+//  Cria pasta no Drive e salva documentos enviados como base64.
+//  Chamado após o cadastro ser submetido.
+// ─────────────────────────────────────────
+
+function enviarDocumentosEmpresa_(body) {
+  var cnpj        = sanitizar_(body.cnpj).replace(/\D/g, '');
+  var razaoSocial = sanitizar_(body.razaoSocial) || 'Empresa';
+  var documentos  = body.documentos;
+
+  if (!cnpj) throw new Error('CNPJ/CPF obrigatório.');
+  if (!Array.isArray(documentos) || documentos.length === 0) {
+    throw new Error('Nenhum documento fornecido.');
+  }
+  if (documentos.length > 10) throw new Error('Máximo de 10 documentos por envio.');
+
+  // Cria / localiza a pasta da empresa no Drive
+  var pasta = obterPastaEmpresa_(cnpj, razaoSocial);
+  var links = [];
+
+  documentos.forEach(function(doc) {
+    var tipo     = sanitizar_(doc.tipo  || 'Documento');
+    var nome     = sanitizar_(doc.nome  || 'arquivo');
+    var conteudo = String(doc.conteudo  || '');
+    var mime     = sanitizar_(doc.mimeType || 'application/octet-stream');
+
+    if (!conteudo) return; // arquivo vazio — ignora
+
+    // Tamanho máx: base64 de 10 MB ≈ 13,4 MB de string
+    if (conteudo.length > 14000000) {
+      throw new Error('Arquivo "' + nome + '" excede o limite de 10 MB.');
+    }
+
+    try {
+      var bytes   = Utilities.base64Decode(conteudo);
+      var nomeArq = tipo + ' — ' + nome;
+      var blob    = Utilities.newBlob(bytes, mime, nomeArq);
+      var file    = pasta.createFile(blob);
+      // Permite visualização via link (sem necessidade de conta Google)
+      file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+      links.push({ tipo: tipo, nome: nome, url: file.getUrl() });
+    } catch (e) {
+      throw new Error('Erro ao salvar "' + nome + '": ' + e.message);
+    }
+  });
+
+  // Registra URL da pasta na planilha (coluna DRIVE_DOCS = índice 21 / col V)
+  try {
+    var ss  = SpreadsheetApp.openById(CFG.ID_EMPRESAS);
+    var aba = ss.getSheetByName(CFG.ABA_EMPRESAS);
+    if (aba) {
+      var dados = aba.getDataRange().getValues();
+      for (var i = 1; i < dados.length; i++) {
+        if (String(dados[i][COL_EMP.CNPJ] || '').replace(/\D/g, '') === cnpj) {
+          aba.getRange(i + 1, COL_EMP.DRIVE_DOCS + 1).setValue(pasta.getUrl());
+          break;
+        }
+      }
+    }
+  } catch (e2) { /* não bloqueia caso a coluna ainda não exista */ }
+
+  return {
+    mensagem:  links.length + ' documento(s) salvo(s) no Drive.',
+    pastaUrl:  pasta.getUrl(),
+    arquivos:  links,
+  };
+}
+
+// Cria ou localiza a pasta da empresa dentro de SGE — Estágios IFRS / Empresas /
+function obterPastaEmpresa_(cnpj, razaoSocial) {
+  // Pasta raiz do sistema
+  var rootIter   = DriveApp.getFoldersByName(CFG.DRIVE_ROOT);
+  var rootFolder = rootIter.hasNext() ? rootIter.next() : DriveApp.createFolder(CFG.DRIVE_ROOT);
+
+  // Subpasta "Empresas"
+  var empIter   = rootFolder.getFoldersByName('Empresas');
+  var empFolder = empIter.hasNext() ? empIter.next() : rootFolder.createFolder('Empresas');
+
+  // Subpasta da empresa: "{CNPJ} — {Razão Social}" (máx 50 chars, sem chars inválidos)
+  var safe      = razaoSocial.substring(0, 45).replace(/[\/\\:*?"<>|]/g, '_');
+  var nomePasta = cnpj + ' — ' + safe;
+  var compIter  = empFolder.getFoldersByName(nomePasta);
+  return compIter.hasNext() ? compIter.next() : empFolder.createFolder(nomePasta);
 }
 
 // ─────────────────────────────────────────

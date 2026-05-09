@@ -57,6 +57,39 @@
     .tag-status.validada  { background: #d1fae5; color: #065f46; }
     .tag-status.pendente  { background: #fef3c7; color: #92400e; }
     .tag-status.reprovada { background: #fee2e2; color: #991b1b; }
+
+    /* ── Documentos ── */
+    .doc-item { display: flex; align-items: center; gap: var(--space-3);
+      padding: var(--space-3) var(--space-4);
+      border: 1px solid var(--color-border); border-radius: var(--radius-md);
+      margin-bottom: var(--space-2); background: var(--color-surface, #fff); }
+    .doc-item .doc-icon { flex-shrink: 0; color: var(--color-primary, #2563eb); }
+    .doc-item .doc-info { flex: 1; min-width: 0; }
+    .doc-item .doc-info strong { display: block; font-size: var(--font-size-sm); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .doc-item .doc-info span { font-size: var(--font-size-xs); color: var(--color-text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
+    .doc-remove { background: none; border: none; cursor: pointer; padding: var(--space-1) var(--space-2);
+      color: var(--color-text-muted); font-size: 1.2rem; line-height: 1; border-radius: var(--radius-sm);
+      flex-shrink: 0; transition: color .15s, background .15s; }
+    .doc-remove:hover { color: #dc2626; background: #fee2e2; }
+
+    .add-doc-row { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap;
+      padding: var(--space-3) var(--space-4);
+      border: 1px dashed var(--color-border); border-radius: var(--radius-md);
+      margin-bottom: var(--space-3); background: var(--color-surface-secondary, #f8f9fa); }
+    .add-doc-row select { flex: 1 1 160px; max-width: 220px; }
+    .add-doc-file-label { display: inline-flex; align-items: center; gap: var(--space-2);
+      flex: 1 1 160px; padding: 6px var(--space-3);
+      border: 1px solid var(--color-border); border-radius: var(--radius-sm);
+      background: var(--color-surface, #fff); cursor: pointer;
+      font-size: var(--font-size-sm); color: var(--color-text);
+      white-space: nowrap; overflow: hidden; position: relative; }
+    .add-doc-file-label:hover { border-color: var(--color-primary, #2563eb); }
+    .add-doc-file-label span { overflow: hidden; text-overflow: ellipsis; }
+
+    .doc-count-badge { display: inline-flex; align-items: center; justify-content: center;
+      background: var(--color-primary, #2563eb); color: #fff;
+      border-radius: 999px; font-size: 10px; font-weight: 700;
+      min-width: 18px; height: 18px; padding: 0 4px; margin-left: 4px; vertical-align: middle; }
   </style>
 </head>
 <body>
@@ -449,6 +482,57 @@
               </div>
             </div>
 
+            <!-- Seção 6 — Documentos (opcional) -->
+            <div class="form-section">
+              <h2 class="form-section-title">
+                <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"/>
+                </svg>
+                Documentos
+                <span style="font-size:var(--font-size-sm);font-weight:400;color:var(--color-text-muted);margin-left:var(--space-2);">(opcional)</span>
+                <span id="doc-count-novo" class="doc-count-badge" style="display:none;" aria-label="documentos adicionados"></span>
+              </h2>
+              <p style="font-size:var(--font-size-sm);color:var(--color-text-muted);margin-bottom:var(--space-4);">
+                Envie cópias de documentos como habilitação jurídica, contrato social ou documentos do responsável.
+                Os arquivos serão salvos em uma pasta privada no Drive do setor.
+                Formatos aceitos: PDF, imagem (JPG/PNG), Word. Máximo 10 arquivos · 10 MB cada.
+              </p>
+
+              <div id="lista-docs-novo"></div>
+
+              <!-- Linha de adição (oculta até clicar em +) -->
+              <div id="add-doc-row-novo" class="add-doc-row" style="display:none;">
+                <select id="add-doc-tipo-novo" class="form-control" aria-label="Tipo do documento">
+                  <option value="Habilitação Jurídica">Habilitação Jurídica</option>
+                  <option value="CNPJ (Cartão)">CNPJ (Cartão)</option>
+                  <option value="Contrato Social / Estatuto">Contrato Social / Estatuto</option>
+                  <option value="Procuração">Procuração</option>
+                  <option value="CPF do Responsável">CPF do Responsável</option>
+                  <option value="RG / CNH do Responsável">RG / CNH do Responsável</option>
+                  <option value="Comprovante de Endereço">Comprovante de Endereço</option>
+                  <option value="Outro">Outro</option>
+                </select>
+                <label class="add-doc-file-label" for="add-doc-file-novo" aria-label="Selecionar arquivo">
+                  <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clip-rule="evenodd"/></svg>
+                  <span id="add-doc-nome-novo">Selecionar arquivo...</span>
+                  <input type="file" id="add-doc-file-novo" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                    style="position:absolute;opacity:0;width:0;height:0;" tabindex="-1" aria-hidden="true">
+                </label>
+                <button type="button" class="btn btn-primary btn-sm" id="btn-confirm-doc-novo"
+                  onclick="confirmarAddDoc('novo')" disabled>Adicionar</button>
+                <button type="button" class="btn btn-ghost btn-sm"
+                  onclick="cancelarAddDoc('novo')">Cancelar</button>
+              </div>
+
+              <button type="button" id="btn-add-doc-novo" class="btn btn-ghost btn-sm"
+                onclick="abrirAddDoc('novo')">
+                <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"/>
+                </svg>
+                Adicionar documento
+              </button>
+            </div>
+
             <div id="feedback-novo" class="form-feedback" role="status" aria-live="polite"></div>
 
             <div class="form-actions form-actions--between">
@@ -675,6 +759,54 @@
               </div>
             </div>
 
+            <!-- Documentos — edição -->
+            <div class="form-section">
+              <h2 class="form-section-title">
+                <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"/>
+                </svg>
+                Adicionar documentos
+                <span style="font-size:var(--font-size-sm);font-weight:400;color:var(--color-text-muted);margin-left:var(--space-2);">(opcional)</span>
+                <span id="doc-count-edit" class="doc-count-badge" style="display:none;"></span>
+              </h2>
+              <p style="font-size:var(--font-size-sm);color:var(--color-text-muted);margin-bottom:var(--space-4);">
+                Adicione novos documentos à pasta da empresa no Drive. Documentos existentes não são removidos.
+              </p>
+
+              <div id="lista-docs-edit"></div>
+
+              <div id="add-doc-row-edit" class="add-doc-row" style="display:none;">
+                <select id="add-doc-tipo-edit" class="form-control" aria-label="Tipo do documento">
+                  <option value="Habilitação Jurídica">Habilitação Jurídica</option>
+                  <option value="CNPJ (Cartão)">CNPJ (Cartão)</option>
+                  <option value="Contrato Social / Estatuto">Contrato Social / Estatuto</option>
+                  <option value="Procuração">Procuração</option>
+                  <option value="CPF do Responsável">CPF do Responsável</option>
+                  <option value="RG / CNH do Responsável">RG / CNH do Responsável</option>
+                  <option value="Comprovante de Endereço">Comprovante de Endereço</option>
+                  <option value="Outro">Outro</option>
+                </select>
+                <label class="add-doc-file-label" for="add-doc-file-edit" aria-label="Selecionar arquivo">
+                  <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clip-rule="evenodd"/></svg>
+                  <span id="add-doc-nome-edit">Selecionar arquivo...</span>
+                  <input type="file" id="add-doc-file-edit" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                    style="position:absolute;opacity:0;width:0;height:0;" tabindex="-1" aria-hidden="true">
+                </label>
+                <button type="button" class="btn btn-primary btn-sm" id="btn-confirm-doc-edit"
+                  onclick="confirmarAddDoc('edit')" disabled>Adicionar</button>
+                <button type="button" class="btn btn-ghost btn-sm"
+                  onclick="cancelarAddDoc('edit')">Cancelar</button>
+              </div>
+
+              <button type="button" id="btn-add-doc-edit" class="btn btn-ghost btn-sm"
+                onclick="abrirAddDoc('edit')">
+                <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"/>
+                </svg>
+                Adicionar documento
+              </button>
+            </div>
+
             <div id="feedback-edicao" class="form-feedback" role="status" aria-live="polite"></div>
 
             <div class="form-actions form-actions--between">
@@ -714,6 +846,10 @@
     var tipoSelecionado = '';
     var docSelecionado  = '';
     var codigoAtual     = '';   // código de acesso confirmado
+
+    // ── Documentos (filas de upload) ───────────────────────────────────────────
+    var documentosNovos = [];   // painel-novo
+    var documentosEdit  = [];   // painel-edicao
 
     // ── Painéis ────────────────────────────────────────────────────────────────
     var PAINEIS = ['painel-busca','painel-carregando','painel-codigo','painel-erro-inicial','painel-novo','painel-dados','painel-edicao'];
@@ -807,6 +943,27 @@
       // Submit forms
       document.getElementById('form-novo').addEventListener('submit', enviarNovoCadastro);
       document.getElementById('form-edicao').addEventListener('submit', salvarEdicao);
+
+      // File inputs — documentos
+      ['novo', 'edit'].forEach(function(prefix) {
+        var inp = document.getElementById('add-doc-file-' + prefix);
+        if (!inp) return;
+        inp.addEventListener('change', function() {
+          var file = this.files && this.files[0];
+          var nomeEl  = document.getElementById('add-doc-nome-' + prefix);
+          var btnConf = document.getElementById('btn-confirm-doc-' + prefix);
+          if (!file) { nomeEl.textContent = 'Selecionar arquivo...'; btnConf.disabled = true; return; }
+          if (file.size > 10 * 1024 * 1024) {
+            alert('O arquivo "' + file.name + '" excede o limite de 10 MB. Escolha um arquivo menor.');
+            this.value = '';
+            nomeEl.textContent = 'Selecionar arquivo...';
+            btnConf.disabled = true;
+            return;
+          }
+          nomeEl.textContent = file.name;
+          btnConf.disabled = false;
+        });
+      });
     });
 
     // ── Adaptação do formulário por tipo ──────────────────────────────────────
@@ -937,9 +1094,13 @@
     }
 
     function voltarBusca() {
-      dadosCache     = null;
-      docSelecionado = '';
-      codigoAtual    = '';
+      dadosCache      = null;
+      docSelecionado  = '';
+      codigoAtual     = '';
+      documentosNovos = [];
+      documentosEdit  = [];
+      renderListaDocs('novo');
+      renderListaDocs('edit');
       hideFormFeedback('feedback-busca');
       mostrarPainel('painel-busca');
     }
@@ -1033,6 +1194,8 @@
     // ── Edição ─────────────────────────────────────────────────────────────────
     function iniciarEdicao() {
       if (!dadosCache) return;
+      documentosEdit = [];
+      renderListaDocs('edit');
       var d    = dadosCache;
       var tipo = d.tipo || tipoSelecionado || 'Pessoa Jurídica';
 
@@ -1062,7 +1225,101 @@
     }
 
     function cancelarEdicao() {
+      documentosEdit = [];
+      renderListaDocs('edit');
       mostrarPainel('painel-dados');
+    }
+
+    // ── Documentos ─────────────────────────────────────────────────────────────
+    function getDocLista(prefix) { return prefix === 'novo' ? documentosNovos : documentosEdit; }
+    function setDocLista(prefix, v) { if (prefix === 'novo') documentosNovos = v; else documentosEdit = v; }
+
+    function abrirAddDoc(prefix) {
+      if (getDocLista(prefix).length >= 10) {
+        alert('Máximo de 10 documentos atingido.');
+        return;
+      }
+      var row  = document.getElementById('add-doc-row-' + prefix);
+      var btn  = document.getElementById('btn-add-doc-' + prefix);
+      var inp  = document.getElementById('add-doc-file-' + prefix);
+      var nome = document.getElementById('add-doc-nome-' + prefix);
+      var conf = document.getElementById('btn-confirm-doc-' + prefix);
+      row.style.display  = 'flex';
+      btn.style.display  = 'none';
+      inp.value          = '';
+      nome.textContent   = 'Selecionar arquivo...';
+      conf.disabled      = true;
+      document.getElementById('add-doc-tipo-' + prefix).selectedIndex = 0;
+    }
+
+    function cancelarAddDoc(prefix) {
+      document.getElementById('add-doc-row-' + prefix).style.display = 'none';
+      document.getElementById('btn-add-doc-' + prefix).style.display = '';
+    }
+
+    function confirmarAddDoc(prefix) {
+      var inp  = document.getElementById('add-doc-file-' + prefix);
+      var tipo = document.getElementById('add-doc-tipo-' + prefix).value;
+      var file = inp.files && inp.files[0];
+      if (!file) return;
+      var lista = getDocLista(prefix);
+      lista.push({ tipo: tipo, nome: file.name, file: file, size: file.size, mimeType: file.type || 'application/octet-stream' });
+      renderListaDocs(prefix);
+      cancelarAddDoc(prefix);
+    }
+
+    function removerDoc(prefix, idx) {
+      var lista = getDocLista(prefix);
+      lista.splice(idx, 1);
+      renderListaDocs(prefix);
+    }
+
+    function renderListaDocs(prefix) {
+      var lista  = getDocLista(prefix);
+      var el     = document.getElementById('lista-docs-' + prefix);
+      var badge  = document.getElementById('doc-count-' + prefix);
+      var btnAdd = document.getElementById('btn-add-doc-' + prefix);
+
+      if (badge) { badge.style.display = lista.length ? 'inline-flex' : 'none'; badge.textContent = lista.length; }
+      if (btnAdd) btnAdd.style.display = lista.length >= 10 ? 'none' : '';
+      if (!el) return;
+      if (!lista.length) { el.innerHTML = ''; return; }
+
+      var html = '';
+      lista.forEach(function(doc, i) {
+        var sz = doc.size >= 1048576
+          ? (doc.size / 1048576).toFixed(1) + ' MB'
+          : Math.round(doc.size / 1024) + ' KB';
+        html += '<div class="doc-item">' +
+          '<svg class="doc-icon" width="20" height="20" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clip-rule="evenodd"/></svg>' +
+          '<div class="doc-info"><strong>' + escapeHtml(doc.tipo) + '</strong>' +
+          '<span>' + escapeHtml(doc.nome) + ' · ' + sz + '</span></div>' +
+          '<button type="button" class="doc-remove" onclick="removerDoc(\'' + prefix + '\',' + i + ')" title="Remover" aria-label="Remover documento">×</button>' +
+          '</div>';
+      });
+      el.innerHTML = html;
+    }
+
+    // Lê File como base64 puro (sem prefixo data:...)
+    function lerBase64(file) {
+      return new Promise(function(resolve, reject) {
+        var r = new FileReader();
+        r.onload  = function(e) { resolve(e.target.result.split(',')[1]); };
+        r.onerror = reject;
+        r.readAsDataURL(file);
+      });
+    }
+
+    // Converte fila e envia ao Drive via GAS
+    async function uploadDocumentosEmpresa(cnpjDoc, razaoSocialDoc, prefix) {
+      var lista = getDocLista(prefix);
+      if (!lista.length) return null;
+      var docs = [];
+      for (var i = 0; i < lista.length; i++) {
+        var d = lista[i];
+        docs.push({ tipo: d.tipo, nome: d.nome, conteudo: await lerBase64(d.file), mimeType: d.mimeType });
+      }
+      return apiEnviarDocumentosEmpresa({ cnpj: cnpjDoc, razaoSocial: razaoSocialDoc, documentos: docs });
     }
 
     async function salvarEdicao(e) {
@@ -1096,17 +1353,43 @@
       };
 
       var btn = document.getElementById('btn-salvar-edicao');
-      await submitWithFeedback(
-        function() { return apiSalvarMeuCadastroEmpresa(dados); },
-        btn,
-        'feedback-edicao',
-        'Dados atualizados!',
-        'Suas alterações foram recebidas. O cadastro voltará para análise do setor.',
-        function() {
-          Object.assign(dadosCache, dados);
-          exibirDados(dadosCache);
+      btn.classList.add('is-loading');
+      btn.disabled = true;
+
+      // Passo 1 — dados cadastrais
+      try {
+        await apiSalvarMeuCadastroEmpresa(dados);
+      } catch (err) {
+        showFormFeedback('feedback-edicao', 'error', 'Erro ao salvar',
+          (err && err.message) ? err.message : 'Ocorreu um erro inesperado.');
+        btn.classList.remove('is-loading');
+        btn.disabled = false;
+        return;
+      }
+
+      // Passo 2 — documentos (opcional, falha não cancela o salvo)
+      var docMsg = '';
+      if (documentosEdit.length > 0) {
+        showFormFeedback('feedback-edicao', 'info', 'Enviando documentos…',
+          'Salvando ' + documentosEdit.length + ' arquivo(s) no Drive…');
+        try {
+          var cnpjDoc = String(dadosCache.cnpj || '').replace(/\D/g, '');
+          var res = await uploadDocumentosEmpresa(cnpjDoc, dados.razaoSocial, 'edit');
+          docMsg = ' ' + (res && res.mensagem ? res.mensagem : documentosEdit.length + ' documento(s) enviado(s).');
+          documentosEdit = [];
+          renderListaDocs('edit');
+        } catch (e2) {
+          docMsg = ' Atenção: os documentos não puderam ser enviados (' +
+            ((e2 && e2.message) ? e2.message : 'erro') + ').';
         }
-      );
+      }
+
+      Object.assign(dadosCache, dados);
+      showFormFeedback('feedback-edicao', 'success', 'Dados atualizados!',
+        'Suas alterações foram recebidas.' + docMsg + ' O cadastro voltará para análise do setor.');
+      btn.classList.remove('is-loading');
+      btn.disabled = false;
+      setTimeout(function() { exibirDados(dadosCache); }, 1800);
     }
 
     // ── Novo cadastro ──────────────────────────────────────────────────────────
@@ -1141,16 +1424,41 @@
       };
 
       var btn = document.getElementById('btn-enviar-novo');
-      await submitWithFeedback(
-        function() { return apiSalvarMeuCadastroEmpresa(dados); },
-        btn,
-        'feedback-novo',
-        'Cadastro enviado com sucesso!',
-        'Seus dados foram recebidos. Após validação (prazo: 1 dia útil), você receberá confirmação por e-mail.',
-        function() {
-          document.getElementById('form-novo').querySelectorAll('input,select,textarea,button').forEach(function(el) { el.disabled = true; });
+      btn.classList.add('is-loading');
+      btn.disabled = true;
+
+      // Passo 1 — dados cadastrais
+      try {
+        await apiSalvarMeuCadastroEmpresa(dados);
+      } catch (err) {
+        showFormFeedback('feedback-novo', 'error', 'Erro ao enviar',
+          (err && err.message) ? err.message : 'Ocorreu um erro inesperado. Tente novamente.');
+        btn.classList.remove('is-loading');
+        btn.disabled = false;
+        return;
+      }
+
+      // Passo 2 — documentos (falha não cancela o cadastro)
+      var docMsg = '';
+      if (documentosNovos.length > 0) {
+        showFormFeedback('feedback-novo', 'info', 'Enviando documentos…',
+          'Salvando ' + documentosNovos.length + ' arquivo(s) no Drive. Aguarde…');
+        try {
+          var res = await uploadDocumentosEmpresa(docSelecionado, dados.razaoSocial, 'novo');
+          docMsg = ' ' + (res && res.mensagem ? res.mensagem : documentosNovos.length + ' documento(s) enviado(s).');
+        } catch (e2) {
+          docMsg = ' Atenção: os documentos não puderam ser enviados (' +
+            ((e2 && e2.message) ? e2.message : 'erro desconhecido') +
+            '). Entre em contato com o setor para reenvio.';
         }
-      );
+      }
+
+      showFormFeedback('feedback-novo', 'success', 'Cadastro enviado com sucesso!',
+        'Seus dados foram recebidos.' + docMsg +
+        ' Após validação (prazo: 1 dia útil), você receberá confirmação por e-mail.');
+      document.getElementById('form-novo').querySelectorAll('input,select,textarea,button')
+        .forEach(function(el) { el.disabled = true; });
+      btn.classList.remove('is-loading');
     }
 
     // ── Validações ─────────────────────────────────────────────────────────────

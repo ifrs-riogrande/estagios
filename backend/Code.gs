@@ -87,6 +87,7 @@ var POST_ROUTES = {
   'cadastrarSupervisor':         doPostEmpresas,
   'salvarMeuCadastroEmpresa':    doPostEmpresas,
   'salvarMeuCadastroSupervisor': doPostEmpresas,
+  'enviarDocumentosEmpresa':     doPostEmpresas,
 
   // Estudantes
   'cadastrarEstudante':        doPostEstudantes,
@@ -301,6 +302,7 @@ function doPostEmpresas(e) {
       case 'cadastrarSupervisor':         result = cadastrarSupervisor_(body);         break;
       case 'salvarMeuCadastroEmpresa':    result = salvarMeuCadastroEmpresa_(body);    break;
       case 'salvarMeuCadastroSupervisor': result = salvarMeuCadastroSupervisor_(body); break;
+      case 'enviarDocumentosEmpresa':     result = enviarDocumentosEmpresa_(body);     break;
       default: return jsonError_('Ação POST não reconhecida em empresas: ' + action, 'NOT_IMPLEMENTED');
     }
     return jsonOk_(result);

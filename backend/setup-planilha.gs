@@ -57,7 +57,7 @@ function configurarPlanilha() {
         'CNPJ/CPF', 'Ramo', 'Endereço', 'Bairro', 'Município', 'UF', 'CEP',
         'Telefone', 'E-mail', 'Site',
         'Nome Representante', 'Cargo Representante', 'E-mail Representante',
-        'CPF Representante', 'Status', 'Código de Acesso',
+        'CPF Representante', 'Status', 'Código de Acesso', 'Drive Documentos',
       ],
     },
 
