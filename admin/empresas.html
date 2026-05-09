@@ -200,6 +200,7 @@
           <td style="text-align:center">${e.estagiosAtivos||0}</td>
           <td>${badgeEmpresa(e.status)}</td>
           <td><div class="td-actions">
+            ${e.driveDocs ? `<span title="Documentos enviados" style="color:var(--color-success);display:inline-flex;align-items:center;" aria-label="Documentos enviados"><svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"/></svg></span>` : ''}
             <button class="btn btn-secondary btn-sm" onclick="abrir(${JSON.stringify(e).replace(/"/g,'&quot;')})">Ver</button>
           </div></td>
         </tr>`).join('');
@@ -221,6 +222,7 @@
           <div class="detail-item"><label>Telefone</label><p>${escapeHtml(e.telefone||'—')}</p></div>
           <div class="detail-item"><label>Status</label><p>${badgeEmpresa(e.status)}</p></div>
           <div class="detail-item"><label>Estágios Ativos</label><p>${e.estagiosAtivos||0}</p></div>
+          ${e.driveDocs ? `<div class="detail-item detail-full"><label>Documentos da Empresa</label><p><a href="${escapeHtml(e.driveDocs)}" target="_blank" rel="noopener" style="color:var(--color-primary);text-decoration:underline;display:inline-flex;align-items:center;gap:6px;"><svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z"/><path d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z"/></svg>Ver pasta no Google Drive</a></p></div>` : ''}
         </div>`;
       const footer = document.getElementById('modal-footer');
       if (e.status === 'Pendente') {
