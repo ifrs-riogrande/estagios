@@ -580,6 +580,8 @@
     let emailInstEstagio = '';   // e-mail institucional do vínculo selecionado
     let idadeEstudante = 0;      // calculado ao validar o código
     let configCursos = null;     // { obrigatorio: [...] | null, naoObrigatorio: [...] | null }
+    let supervisoresCache = [];  // lista retornada por listarSupervisores para a empresa selecionada
+    let orientadoresCache = [];  // lista retornada por listarOrientadores
 
     function calcularIdadeEstudante(dataNasc) {
       if (!dataNasc) return 99;
@@ -660,7 +662,10 @@
       const cnpj = this.value;
       const selectSup = document.getElementById('supervisor');
       selectSup.disabled = true;
+      supervisoresCache = [];
       populateSelect('supervisor', [], 'Carregando supervisores...');
+      // limpa setor ao trocar empresa
+      document.getElementById('area-setor').value = '';
 
       if (!cnpj) {
         populateSelect('supervisor', [], 'Selecione primeiro a empresa...');
@@ -671,6 +676,7 @@
         if (!supervisores || supervisores.length === 0) {
           populateSelect('supervisor', [], 'Nenhum supervisor validado para esta empresa');
         } else {
+          supervisoresCache = supervisores;
           populateSelect('supervisor',
             supervisores.map(s => ({ value: s.cpf, label: s.nome + (s.cargo ? ' — ' + s.cargo : '') })),
             'Selecione o supervisor...'
@@ -680,6 +686,17 @@
       } catch (e) {
         populateSelect('supervisor', [], 'Erro ao carregar supervisores');
         console.error(e);
+      }
+    });
+
+    // ── Supervisor → preenche automaticamente área/setor ──
+    document.getElementById('supervisor').addEventListener('change', function () {
+      const cpf = this.value;
+      if (!cpf) return;
+      const sup = supervisoresCache.find(s => s.cpf === cpf);
+      if (sup && sup.setor) {
+        document.getElementById('area-setor').value = sup.setor;
+        clearFieldError('area-setor');
       }
     });
 
@@ -705,10 +722,12 @@
       const select = document.getElementById('orientador');
       populateSelect('orientador', [], 'Carregando orientadores...');
       select.disabled = true;
+      orientadoresCache = [];
       try {
         const params = curso ? { curso: curso } : {};
         const orientadores = await API.get('listarOrientadores', params);
         if (orientadores && orientadores.length > 0) {
+          orientadoresCache = orientadores;
           populateSelect('orientador', orientadores.map(o => ({ value: o.siape, label: o.nome })), 'Selecione o orientador...');
           select.disabled = false;
         } else {
@@ -1049,6 +1068,12 @@
       hideFormFeedback('form-feedback');
       if (!validateForm()) return;
 
+      // Resolve dados do supervisor e orientador a partir dos caches
+      const supCpf  = document.getElementById('supervisor').value;
+      const supObj  = supervisoresCache.find(s => s.cpf === supCpf) || {};
+      const oriSiape = document.getElementById('orientador').value;
+      const oriObj  = orientadoresCache.find(o => o.siape === oriSiape) || {};
+
       const dados = {
         codigoAcesso:       document.getElementById('codigo-acesso').value.trim().toUpperCase(),
         nomeResponsavel:    document.getElementById('nome-responsavel').value.trim(),
@@ -1067,12 +1092,15 @@
         auxTransporte:      document.getElementById('tipo-estagio').value === 'Obrigatório'
                               ? document.getElementById('transp-obrig').value.trim()
                               : document.getElementById('transp-naobrig').value.trim(),
-        empresa:            document.getElementById('empresa').value,
-        empresaNome:        document.getElementById('empresa').options[document.getElementById('empresa').selectedIndex]?.text,
-        supervisor:         document.getElementById('supervisor').value,
-        supervisorNome:     document.getElementById('supervisor').options[document.getElementById('supervisor').selectedIndex]?.text,
-        orientador:         document.getElementById('orientador').value,
-        orientadorNome:     document.getElementById('orientador').options[document.getElementById('orientador').selectedIndex]?.text,
+        // Empresa — chaves que o backend espera
+        cnpjEmpresa:        document.getElementById('empresa').value,
+        nomeEmpresa:        document.getElementById('empresa').options[document.getElementById('empresa').selectedIndex]?.text || '',
+        // Supervisor — nome limpo (sem cargo) e e-mail vindos do cache
+        nomeSupervisor:     supObj.nome || document.getElementById('supervisor').options[document.getElementById('supervisor').selectedIndex]?.text || '',
+        emailSupervisor:    supObj.email || '',
+        // Orientador — nome e e-mail vindos do cache
+        nomeOrientador:     oriObj.nome || document.getElementById('orientador').options[document.getElementById('orientador').selectedIndex]?.text || '',
+        emailOrientador:    oriObj.email || '',
         dataInicio:         document.getElementById('data-inicio').value,
         dataTermino:        document.getElementById('data-termino').value,
         cargaHoraria:       document.getElementById('carga-horaria').value,
@@ -1080,8 +1108,8 @@
         areaSetor:          document.getElementById('area-setor').value.trim(),
         objetivos:          document.getElementById('objetivos').value.trim(),
         atividadesPrevistas:document.getElementById('atividades-prev').value.trim(),
+        nomeAgente:         document.getElementById('agente').options[document.getElementById('agente').selectedIndex]?.text || '',
         agente:             document.getElementById('agente').value,
-        agentNome:          document.getElementById('agente').options[document.getElementById('agente').selectedIndex]?.text,
         // Arquivos: informamos apenas os nomes — o upload binário é feito via link Drive gerado pelo GAS
         nomeComprovanteMatricula: document.getElementById('comprovante-matricula').files[0]?.name || '',
         nomeDocIdentidade:        document.getElementById('doc-identidade').files[0]?.name || '',
@@ -1104,6 +1132,8 @@
       dadosEstudante   = null;
       emailInstEstagio = '';
       idadeEstudante   = 0;
+      supervisoresCache = [];
+      orientadoresCache = [];
       document.getElementById('msg-idade-bloqueio').style.display  = 'none';
       document.getElementById('secao-responsavel-sol').style.display = 'none';
       document.getElementById('btn-enviar').disabled = false;
