@@ -54,12 +54,10 @@ function configurarPlanilha() {
       nome: 'Empresas',
       cabecalho: [
         'Timestamp', 'E-mail Form.', 'Tipo', 'Razão Social', 'Nome Fantasia',
-        'CNPJ/CPF', 'Ramo', 'Endereço', 'Município', 'UF', 'CEP',
+        'CNPJ/CPF', 'Ramo', 'Endereço', 'Bairro', 'Município', 'UF', 'CEP',
         'Telefone', 'E-mail', 'Site',
         'Nome Representante', 'Cargo Representante', 'E-mail Representante',
-        'CPF Representante', 'Declaração',
-        'Status', 'Validado Por', 'Data Validação', 'Observações', 'Data Últ. Atualização',
-        'Registro Profissional', 'Bloco de Produtor',
+        'CPF Representante', 'Status', 'Código de Acesso',
       ],
     },
 

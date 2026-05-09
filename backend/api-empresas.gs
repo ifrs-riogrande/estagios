@@ -43,17 +43,19 @@ var CFG = {
 };
 
 // Colunas da planilha de empresas (base 0 — mesmo mapeamento do script legado)
+// Mapeamento de colunas da aba "Empresas" (base 0)
+// Estrutura real da planilha (após inserção da coluna Bairro após Endereço):
+//   A=Timestamp, B=E-mail Form., C=Tipo, D=Razão Social, E=Nome Fantasia,
+//   F=CNPJ, G=Ramo, H=Endereço, I=Bairro, J=Município, K=UF, L=CEP,
+//   M=Telefone, N=E-mail, O=Site, P=Nome Representante, Q=Cargo Representante,
+//   R=E-mail Representante, S=CPF Representante, T=Status
 var COL_EMP = {
-  TIMESTAMP: 0, EMAIL_FORM: 1, TIPO: 2, RAZAO_SOCIAL: 3,
-  NOME_FANTASIA: 4, CNPJ: 5, RAMO: 6, ENDERECO: 7,
-  MUNICIPIO: 8, UF: 9, CEP: 10, TEL_EMPRESA: 11,
-  EMAIL_EMPRESA: 12, SITE: 13, NOME_REP: 14, CARGO_REP: 15,
-  EMAIL_REP: 16, CPF_REP: 17, DECLARACAO: 18,
-  // Controle interno
-  STATUS: 19, VALIDADO_POR: 20, DATA_VALIDACAO: 21,
-  OBSERVACOES: 22, DATA_ULT_ATZ: 23,
-  // Tipos especiais de concedente (Profissional Liberal / Produtor Rural)
-  REGISTRO_PROF: 24, BLOCO_PRODUTOR: 25,
+  TIMESTAMP:    0, EMAIL_FORM:  1, TIPO:       2, RAZAO_SOCIAL: 3,
+  NOME_FANTASIA:4, CNPJ:        5, RAMO:       6, ENDERECO:     7,
+  BAIRRO:       8, MUNICIPIO:   9, UF:        10, CEP:          11,
+  TEL_EMPRESA: 12, EMAIL_EMPRESA:13, SITE:    14,
+  NOME_REP:    15, CARGO_REP:  16, EMAIL_REP: 17, CPF_REP:      18,
+  STATUS:      19, CODIGO_ACESSO: 20,
 };
 
 // Colunas da planilha de supervisores (base 0)
@@ -232,6 +234,7 @@ function cadastrarEmpresa_(dados) {
   var cnpj        = sanitizar_(dados.cnpj);
   var ramo        = sanitizar_(dados.ramo);
   var endereco    = sanitizar_(dados.endereco);
+  var bairro      = sanitizar_(dados.bairro);
   var municipio   = sanitizar_(dados.municipio);
   var uf          = sanitizar_(dados.uf);
   var cep         = sanitizar_(dados.cep);
@@ -270,33 +273,28 @@ function cadastrarEmpresa_(dados) {
 
   var timestamp = new Date();
 
-  // Monta a linha no mesmo formato do Google Forms original
-  // para compatibilidade total com os scripts legados
+  // Linha alinhada com COL_EMP (colunas A–T da aba Empresas)
   var novaLinha = [
-    timestamp,                // 0 — Carimbo
-    emailRep,                 // 1 — E-mail (usamos o do rep. como identificador)
-    tipo,                     // 2 — Tipo
-    razaoSocial,              // 3 — Razão Social
-    sanitizar_(dados.nomeFantasia), // 4 — Nome Fantasia
-    cnpj,                     // 5 — CNPJ
-    ramo,                     // 6 — Ramo
-    endereco,                 // 7 — Endereço
-    municipio,                // 8 — Município
-    uf,                       // 9 — UF
-    cep,                      // 10 — CEP
-    telEmpresa,               // 11 — Tel empresa
-    emailEmp,                 // 12 — E-mail empresa
-    site,                     // 13 — Site
-    nomeRep,                  // 14 — Nome Rep.
-    cargoRep,                 // 15 — Cargo Rep.
-    emailRep,                 // 16 — E-mail Rep.
-    cpfRep,                   // 17 — CPF Rep.
-    'Sim — via formulário web', // 18 — Declaração
-    'Pendente',               // 19 — Status
-    '',                       // 20 — Validado por
-    '',                       // 21 — Data validação
-    '',                       // 22 — Observações
-    timestamp,                // 23 — Data últ. atualização
+    timestamp,                      // 0  A — Timestamp
+    emailRep,                       // 1  B — E-mail Form.
+    tipo,                           // 2  C — Tipo
+    razaoSocial,                    // 3  D — Razão Social
+    sanitizar_(dados.nomeFantasia), // 4  E — Nome Fantasia
+    cnpj,                           // 5  F — CNPJ
+    ramo,                           // 6  G — Ramo
+    endereco,                       // 7  H — Endereço
+    bairro,                         // 8  I — Bairro
+    municipio,                      // 9  J — Município
+    uf,                             // 10 K — UF
+    cep,                            // 11 L — CEP
+    telEmpresa,                     // 12 M — Telefone
+    emailEmp,                       // 13 N — E-mail
+    site,                           // 14 O — Site
+    nomeRep,                        // 15 P — Nome Representante
+    cargoRep,                       // 16 Q — Cargo Representante
+    emailRep,                       // 17 R — E-mail Representante
+    cpfRep,                         // 18 S — CPF Representante
+    'Pendente',                     // 19 T — Status
   ];
 
   // Para atualização: verifica se empresa existe e marca linha antiga
@@ -308,37 +306,33 @@ function cadastrarEmpresa_(dados) {
         {col: COL_EMP.RAZAO_SOCIAL, val: razaoSocial},
         {col: COL_EMP.NOME_FANTASIA, val: sanitizar_(dados.nomeFantasia)},
         {col: COL_EMP.RAMO, val: ramo},
-        {col: COL_EMP.ENDERECO, val: endereco},
-        {col: COL_EMP.MUNICIPIO, val: municipio},
-        {col: COL_EMP.UF, val: uf},
-        {col: COL_EMP.CEP, val: cep},
-        {col: COL_EMP.TEL_EMPRESA, val: telEmpresa},
-        {col: COL_EMP.EMAIL_EMPRESA, val: emailEmp},
-        {col: COL_EMP.SITE, val: site},
-        {col: COL_EMP.NOME_REP, val: nomeRep},
-        {col: COL_EMP.CARGO_REP, val: cargoRep},
-        {col: COL_EMP.EMAIL_REP, val: emailRep},
-        {col: COL_EMP.DATA_ULT_ATZ, val: timestamp},
+        {col: COL_EMP.ENDERECO,       val: endereco      },
+        {col: COL_EMP.BAIRRO,         val: bairro        },
+        {col: COL_EMP.MUNICIPIO,      val: municipio     },
+        {col: COL_EMP.UF,             val: uf            },
+        {col: COL_EMP.CEP,            val: cep           },
+        {col: COL_EMP.TEL_EMPRESA,    val: telEmpresa    },
+        {col: COL_EMP.EMAIL_EMPRESA,  val: emailEmp      },
+        {col: COL_EMP.SITE,           val: site          },
+        {col: COL_EMP.NOME_REP,       val: nomeRep       },
+        {col: COL_EMP.CARGO_REP,      val: cargoRep      },
+        {col: COL_EMP.EMAIL_REP,      val: emailRep      },
       ];
       campos.forEach(function(c) {
         aba.getRange(linhaExistente, c.col + 1).setValue(c.val);
       });
       aba.getRange(linhaExistente, COL_EMP.STATUS + 1).setValue('Pendente');
-      registrarLog_(ss, cnpj, razaoSocial, 'Atualização via web', 'Dados atualizados', emailRep);
       notificarSetor_(razaoSocial, cnpj, emailRep, 'Atualização de cadastro');
       enviarConfirmacao_(emailEmp, emailRep, nomeRep, razaoSocial, 'atualizacao');
       return { mensagem: 'Atualização recebida. Seus dados serão verificados em até 1 dia útil.' };
     }
-    // CNPJ não encontrado — registra mesmo assim para análise
-    novaLinha[COL_EMP.OBSERVACOES] = 'ATENÇÃO: solicitação de atualização sem cadastro prévio encontrado.';
   }
 
   // Verifica duplicata para novo cadastro
   if (tipo === 'Novo cadastro') {
     var dupLinha = buscarEmpresaPorCNPJ_(aba, cnpjNorm, -1);
     if (dupLinha > 0) {
-      novaLinha[COL_EMP.STATUS]      = 'Pendente de correção';
-      novaLinha[COL_EMP.OBSERVACOES] = 'POSSÍVEL DUPLICATA — CNPJ já consta na linha ' + dupLinha;
+      novaLinha[COL_EMP.STATUS] = 'Pendente de correção';
     }
   }
 
@@ -591,7 +585,7 @@ function cadastrarOportunidade_(dados) {
 //  Busca empresa por CNPJ (PJ) ou CPF (PL / Produtor Rural)
 //  Sem autenticação — segurança via validação humana (status Pendente)
 // ─────────────────────────────────────────
-function obterCadastroEmpresa_(cnpjCpf) {
+function obterCadastroEmpresa_(cnpjCpf, codigo) {
   var doc = String(cnpjCpf || '').replace(/\D/g, '');
   if (!doc) throw new Error('Documento inválido.');
 
@@ -612,6 +606,25 @@ function obterCadastroEmpresa_(cnpjCpf) {
       tipo = 'Pessoa Jurídica';
     }
 
+    // Empresa encontrada — sem código: retorna apenas dados públicos
+    // (usado pelo formulário de solicitação para confirmar existência)
+    if (!codigo) {
+      return {
+        existe:      true,
+        razaoSocial: String(dados[i][COL_EMP.RAZAO_SOCIAL] || '').trim(),
+        status:      status,
+        tipo:        tipo,
+      };
+    }
+
+    // Com código: valida antes de expor dados sensíveis
+    var codigoSalvo    = String(dados[i][COL_EMP.CODIGO_ACESSO] || '').trim();
+    var codigoInformado = String(codigo).trim().toUpperCase();
+    if (!codigoSalvo || codigoInformado !== codigoSalvo) {
+      throw new Error('Código de acesso inválido. Verifique o e-mail enviado pelo setor.');
+    }
+
+    // Código correto — retorna dados completos
     return {
       tipo:           tipo,
       razaoSocial:    String(dados[i][COL_EMP.RAZAO_SOCIAL]  || '').trim(),
@@ -619,6 +632,7 @@ function obterCadastroEmpresa_(cnpjCpf) {
       cnpj:           String(dados[i][COL_EMP.CNPJ]           || '').trim(),
       ramo:           String(dados[i][COL_EMP.RAMO]           || '').trim(),
       endereco:       String(dados[i][COL_EMP.ENDERECO]       || '').trim(),
+      bairro:         String(dados[i][COL_EMP.BAIRRO]         || '').trim(),
       municipio:      String(dados[i][COL_EMP.MUNICIPIO]      || '').trim(),
       uf:             String(dados[i][COL_EMP.UF]             || '').trim(),
       cep:            String(dados[i][COL_EMP.CEP]            || '').trim(),
@@ -629,8 +643,6 @@ function obterCadastroEmpresa_(cnpjCpf) {
       cargoRep:       String(dados[i][COL_EMP.CARGO_REP]      || '').trim(),
       emailRep:       String(dados[i][COL_EMP.EMAIL_REP]      || '').trim(),
       cpfRep:         String(dados[i][COL_EMP.CPF_REP]        || '').trim(),
-      registroProf:   String(dados[i][COL_EMP.REGISTRO_PROF]  || '').trim(),
-      blocoProdutor:  String(dados[i][COL_EMP.BLOCO_PRODUTOR] || '').trim(),
       status:         status,
     };
   }
@@ -649,6 +661,7 @@ function salvarMeuCadastroEmpresa_(body) {
   var nomeFantasia  = sanitizar_(body.nomeFantasia);
   var ramo          = sanitizar_(body.ramo);
   var endereco      = sanitizar_(body.endereco);
+  var bairro        = sanitizar_(body.bairro);
   var municipio     = sanitizar_(body.municipio);
   var uf            = sanitizar_(body.uf);
   var cep           = sanitizar_(body.cep);
@@ -709,6 +722,7 @@ function salvarMeuCadastroEmpresa_(body) {
       { col: COL_EMP.NOME_FANTASIA,  val: nomeFantasia  },
       { col: COL_EMP.RAMO,           val: ramo          },
       { col: COL_EMP.ENDERECO,       val: endereco      },
+      { col: COL_EMP.BAIRRO,         val: bairro        },
       { col: COL_EMP.MUNICIPIO,      val: municipio     },
       { col: COL_EMP.UF,             val: uf            },
       { col: COL_EMP.CEP,            val: cep           },
@@ -718,21 +732,17 @@ function salvarMeuCadastroEmpresa_(body) {
       { col: COL_EMP.NOME_REP,       val: nomeRep       },
       { col: COL_EMP.CARGO_REP,      val: cargoRep      },
       { col: COL_EMP.EMAIL_REP,      val: emailRep      },
-      { col: COL_EMP.REGISTRO_PROF,  val: registroProf  },
-      { col: COL_EMP.BLOCO_PRODUTOR, val: blocoProdutor },
-      { col: COL_EMP.DATA_ULT_ATZ,   val: timestamp     },
     ];
     campos.forEach(function(c) {
       aba.getRange(linhaExistente, c.col + 1).setValue(c.val);
     });
     aba.getRange(linhaExistente, COL_EMP.STATUS + 1).setValue('Pendente');
-    registrarLog_(ss, cnpjCpf, razaoSocial, 'Atualização via portal web', 'Dados atualizados', emailRep);
     notificarSetor_(razaoSocial, cnpjCpf, emailRep, 'Atualização de cadastro');
     return { mensagem: 'Dados atualizados. Aguarde validação do setor (prazo: 1 dia útil).', acao: 'atualizado' };
   }
 
-  // Novo cadastro
-  var novaLinha = new Array(26).fill('');
+  // Novo cadastro — 21 colunas (A–U, alinhado com COL_EMP; U=CódigoAcesso preenchido pelo admin na validação)
+  var novaLinha = new Array(21).fill('');
   novaLinha[COL_EMP.TIMESTAMP]      = timestamp;
   novaLinha[COL_EMP.EMAIL_FORM]     = emailRep;
   novaLinha[COL_EMP.TIPO]           = tipo;
@@ -741,6 +751,7 @@ function salvarMeuCadastroEmpresa_(body) {
   novaLinha[COL_EMP.CNPJ]           = cnpjCpf;
   novaLinha[COL_EMP.RAMO]           = ramo;
   novaLinha[COL_EMP.ENDERECO]       = endereco;
+  novaLinha[COL_EMP.BAIRRO]         = bairro;
   novaLinha[COL_EMP.MUNICIPIO]      = municipio;
   novaLinha[COL_EMP.UF]             = uf;
   novaLinha[COL_EMP.CEP]            = cep;
@@ -751,11 +762,7 @@ function salvarMeuCadastroEmpresa_(body) {
   novaLinha[COL_EMP.CARGO_REP]      = cargoRep;
   novaLinha[COL_EMP.EMAIL_REP]      = emailRep;
   novaLinha[COL_EMP.CPF_REP]        = cpfRep;
-  novaLinha[COL_EMP.DECLARACAO]     = 'Sim — via portal web';
   novaLinha[COL_EMP.STATUS]         = 'Pendente';
-  novaLinha[COL_EMP.DATA_ULT_ATZ]   = timestamp;
-  novaLinha[COL_EMP.REGISTRO_PROF]  = registroProf;
-  novaLinha[COL_EMP.BLOCO_PRODUTOR] = blocoProdutor;
 
   aba.appendRow(novaLinha);
   aba.getRange(aba.getLastRow(), 1, 1, aba.getLastColumn()).setBackground('#FFF9C4');

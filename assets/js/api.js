@@ -226,9 +226,15 @@ async function apiCadastrarOportunidade(dados) {
   return API.post('cadastrarOportunidade', dados);
 }
 
-/** Obtém cadastro de empresa/concedente por CNPJ (PJ) ou CPF (PL/Produtor Rural). */
-async function apiObterCadastroEmpresa(cnpjCpf) {
-  return API.get('obterCadastroEmpresa', { cnpjCpf });
+/**
+ * Obtém cadastro de empresa/concedente por CNPJ (PJ) ou CPF (PL/Produtor Rural).
+ * Sem código → retorna apenas { existe, razaoSocial, status, tipo } (dados públicos).
+ * Com código → retorna dados completos após validação do código de acesso.
+ */
+async function apiObterCadastroEmpresa(cnpjCpf, codigo) {
+  var params = { cnpjCpf };
+  if (codigo) params.codigo = String(codigo).trim().toUpperCase();
+  return API.get('obterCadastroEmpresa', params);
 }
 
 /** Salva (cria ou atualiza) cadastro de empresa/concedente. Sem autenticação. */

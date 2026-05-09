@@ -25,8 +25,10 @@
 // â”€â”€ Mapeamento action â†’ mÃ³dulo (GET) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 var GET_ROUTES = {
   // Empresas
-  'listarEmpresas':          doGetEmpresas,
-  'listarSupervisores':      doGetEmpresas,
+  'listarEmpresas':           doGetEmpresas,
+  'listarSupervisores':       doGetEmpresas,
+  'obterCadastroEmpresa':     doGetEmpresas,
+  'obterCadastroSupervisor':  doGetEmpresas,
   'listarOportunidades':     doGetOportunidades,
 
   // Estudantes
@@ -73,15 +75,18 @@ var GET_ROUTES = {
   'obterPrazos':             doGetChecklist,
 
   // Assinaturas
-  'obterFluxoAssinaturas':   doGetAssinaturas,
+  'obterFluxoAssinaturas':        doGetAssinaturas,
+  'listarFluxosPendentesEtapa':   doGetAssinaturas,
 
 };
 
 // â”€â”€ Mapeamento action â†’ mÃ³dulo (POST) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 var POST_ROUTES = {
   // Empresas
-  'cadastrarEmpresa':          doPostEmpresas,
-  'cadastrarSupervisor':       doPostEmpresas,
+  'cadastrarEmpresa':            doPostEmpresas,
+  'cadastrarSupervisor':         doPostEmpresas,
+  'salvarMeuCadastroEmpresa':    doPostEmpresas,
+  'salvarMeuCadastroSupervisor': doPostEmpresas,
 
   // Estudantes
   'cadastrarEstudante':        doPostEstudantes,
@@ -132,6 +137,9 @@ var POST_ROUTES = {
   'reprovarAdendo':            doPostAdmin,
   'inativarAgente':            doPostAdmin,
   'reativarAgente':            doPostAdmin,
+  'inativarCoordenador':       doPostAdmin,
+  'reativarCoordenador':       doPostAdmin,
+  'aprovarCadastroServidor':   doPostAdmin,
 
   // Checklist
   'salvarRespostaAdmin':       doPostChecklist,
@@ -141,6 +149,7 @@ var POST_ROUTES = {
   // Assinaturas
   'concluirEtapa':             doPostAssinaturas,
   'rejeitarEtapa':             doPostAssinaturas,
+  'uploadPdfAssinado':         doPostAssinaturas,
 };
 
 // â”€â”€ Ponto de entrada GET â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -259,23 +268,45 @@ function doGetOportunidades(e) {
 }
 
 function doPostOportunidades(e) {
-  var body = JSON.parse(e.postData ? e.postData.contents : '{}');
-  return cadastrarOportunidade_(body);
+  var body = e._body || JSON.parse(e.postData ? e.postData.contents : '{}');
+  try {
+    return jsonOk_(cadastrarOportunidade_(body));
+  } catch (err) {
+    return jsonError_(err.message, 'BAD_REQUEST');
+  }
 }
 
 function doGetEmpresas(e) {
-  var action = e.parameter && e.parameter.action;
-  if (action === 'listarEmpresas')     return listarEmpresasPublicas_(e);
-  if (action === 'listarSupervisores') return listarSupervisores_(e);
-  return jsonError_('AÃ§Ã£o nÃ£o implementada: ' + action, 'NOT_IMPLEMENTED');
+  var action = (e.parameter && e.parameter.action) || '';
+  try {
+    switch (action) {
+      case 'listarEmpresas':          return jsonOk_(listarEmpresas_());
+      case 'listarSupervisores':      return jsonOk_(listarSupervisores_(e.parameter.empresa || ''));
+      case 'obterCadastroEmpresa':    return jsonOk_(obterCadastroEmpresa_(e.parameter.cnpjCpf || '', e.parameter.codigo || ''));
+      case 'obterCadastroSupervisor': return jsonOk_(obterCadastroSupervisor_(e.parameter.cpf || ''));
+      default: return jsonError_('Ação GET não reconhecida em empresas: ' + action, 'NOT_IMPLEMENTED');
+    }
+  } catch (err) {
+    return jsonError_(err.message, 'NOT_FOUND');
+  }
 }
 
 function doPostEmpresas(e) {
-  var body = JSON.parse(e.postData ? e.postData.contents : '{}');
+  var body = e._body || JSON.parse(e.postData ? e.postData.contents : '{}');
   var action = body.action || '';
-  if (action === 'cadastrarEmpresa')    return cadastrarEmpresa_(body);
-  if (action === 'cadastrarSupervisor') return cadastrarSupervisor_(body);
-  return jsonError_('AÃ§Ã£o nÃ£o implementada: ' + action, 'NOT_IMPLEMENTED');
+  try {
+    var result;
+    switch (action) {
+      case 'cadastrarEmpresa':            result = cadastrarEmpresa_(body);            break;
+      case 'cadastrarSupervisor':         result = cadastrarSupervisor_(body);         break;
+      case 'salvarMeuCadastroEmpresa':    result = salvarMeuCadastroEmpresa_(body);    break;
+      case 'salvarMeuCadastroSupervisor': result = salvarMeuCadastroSupervisor_(body); break;
+      default: return jsonError_('Ação POST não reconhecida em empresas: ' + action, 'NOT_IMPLEMENTED');
+    }
+    return jsonOk_(result);
+  } catch (err) {
+    return jsonError_(err.message, 'BAD_REQUEST');
+  }
 }
 
 

@@ -371,24 +371,33 @@ function listarEmpresasAdmin_() {
     }
   }
 
+  // Colunas da aba Empresas — alinhado com COL_EMP em api-empresas.gs
+  // A=0:Timestamp, B=1:EmailForm, C=2:Tipo, D=3:RazaoSocial, E=4:NomeFantasia,
+  // F=5:CNPJ, G=6:Ramo, H=7:Endereco, I=8:Bairro, J=9:Municipio,
+  // K=10:UF, L=11:CEP, M=12:Tel, N=13:Email, O=14:Site,
+  // P=15:NomeRep, Q=16:CargoRep, R=17:EmailRep, S=18:CpfRep, T=19:Status
   var lista = [];
   for (var i = 1; i < dados.length; i++) {
     var r = dados[i];
-    if (!r[0]) continue;
-    var cnpjNorm = String(r[0] || '').replace(/\D/g,'');
+    if (!r[3] && !r[5]) continue; // linha vazia
+    var cnpjNorm = String(r[5] || '').replace(/\D/g,'');
     lista.push({
-      cnpj:               String(r[0] || ''),
-      razaoSocial:        String(r[1] || ''),
-      nomeFantasia:       String(r[2] || ''),
-      tipoEmpresa:        String(r[3] || ''),
-      municipio:          String(r[4] || ''),
-      uf:                 String(r[5] || ''),
-      endereco:           String(r[6] || ''),
-      nomeRepresentante:  String(r[7] || ''),
-      cargoRepresentante: String(r[8] || ''),
-      email:              String(r[9] || ''),
-      telefone:           String(r[10] || ''),
-      status:             String(r[11] || 'Pendente'),
+      cnpj:               String(r[5]  || ''),
+      razaoSocial:        String(r[3]  || ''),
+      nomeFantasia:       String(r[4]  || ''),
+      tipoEmpresa:        String(r[2]  || ''),
+      endereco:           String(r[7]  || ''),
+      bairro:             String(r[8]  || ''),
+      municipio:          String(r[9]  || ''),
+      uf:                 String(r[10] || ''),
+      cep:                String(r[11] || ''),
+      telefone:           String(r[12] || ''),
+      email:              String(r[13] || ''),
+      nomeRepresentante:  String(r[15] || ''),
+      cargoRepresentante: String(r[16] || ''),
+      emailRep:           String(r[17] || ''),
+      cpfRep:             String(r[18] || ''),
+      status:             String(r[19] || 'Pendente'),
       estagiosAtivos:     ativosPorEmpresa[cnpjNorm] || 0,
     });
   }
@@ -694,8 +703,47 @@ function alterarStatusEmpresa_(cnpj, novoStatus) {
   if (!sheet) return jsonError_('Aba de empresas não encontrada.', 'NOT_FOUND');
   var dados = sheet.getDataRange().getValues();
   for (var i = 1; i < dados.length; i++) {
-    if (String(dados[i][0] || '').replace(/\D/g,'') === cnpjLimpo) {
-      sheet.getRange(i + 1, 12).setValue(novoStatus); // col 11 = index 11 (0-based)
+    // CNPJ está na coluna F (índice 5 base-0) — COL_EMP.CNPJ = 5
+    if (String(dados[i][5] || '').replace(/\D/g,'') === cnpjLimpo) {
+      sheet.getRange(i + 1, 20).setValue(novoStatus); // STATUS = col T (índice 19 base-0 = col 20 base-1)
+
+      if (novoStatus === 'Validada') {
+        // Gera código de acesso único (formato EMP-XXXXXX)
+        var codigo = 'EMP-' + Math.random().toString(36).substr(2, 6).toUpperCase();
+        sheet.getRange(i + 1, 21).setValue(codigo); // CODIGO_ACESSO = col U (índice 20 = col 21 base-1)
+
+        // Lê dados da linha para envio de e-mail
+        var razaoSocial = String(dados[i][3]  || '').trim(); // COL_EMP.RAZAO_SOCIAL = 3
+        var nomeRep     = String(dados[i][15] || '').trim(); // COL_EMP.NOME_REP = 15
+        var emailRep    = String(dados[i][17] || '').trim(); // COL_EMP.EMAIL_REP = 17
+        var emailEmp    = String(dados[i][13] || '').trim(); // COL_EMP.EMAIL_EMPRESA = 13
+
+        var assunto = '[IFRS Estágios] Cadastro validado — ' + razaoSocial;
+        var corpo = [
+          'Olá' + (nomeRep ? ', ' + nomeRep : '') + ',',
+          '',
+          'O cadastro de "' + razaoSocial + '" foi validado pelo setor de estágios.',
+          '',
+          'Para acessar ou editar seus dados no portal, utilize:',
+          '  Código de acesso: ' + codigo,
+          '',
+          'Guarde este código em local seguro.',
+          'Ele será solicitado sempre que você acessar seu perfil no portal.',
+          '',
+          'Em caso de perda, entre em contato:',
+          'estagios@riogrande.ifrs.edu.br',
+          '',
+          'Atenciosamente,',
+          'Central de Estágios — IFRS Campus Rio Grande',
+        ].join('\n');
+
+        var opts = { name: 'Central de Estágios IFRS', replyTo: 'estagios@riogrande.ifrs.edu.br' };
+        try { if (emailRep) MailApp.sendEmail({ to: emailRep, subject: assunto, body: corpo }); } catch(e2) {}
+        try { if (emailEmp && emailEmp !== emailRep) MailApp.sendEmail({ to: emailEmp, subject: assunto, body: corpo }); } catch(e2) {}
+
+        return jsonOk_({ status: novoStatus, codigo: codigo });
+      }
+
       return jsonOk_({ status: novoStatus });
     }
   }

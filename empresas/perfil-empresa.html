@@ -14,10 +14,19 @@
     /* ── Painéis ── */
     #painel-busca,
     #painel-carregando,
+    #painel-codigo,
     #painel-erro-inicial,
     #painel-novo,
     #painel-dados,
     #painel-edicao { display: none; }
+
+    /* ── Painel código ── */
+    .codigo-card { max-width: 480px; margin: 0 auto; }
+    .codigo-empresa-box { background: var(--color-surface-secondary, #f8f9fa);
+      border: 1px solid var(--color-border); border-radius: var(--radius-md);
+      padding: var(--space-4); margin-bottom: var(--space-5); }
+    .codigo-empresa-box .empresa-nome { font-weight: 600; font-size: var(--font-size-base); }
+    .codigo-empresa-box .empresa-status { font-size: var(--font-size-sm); color: var(--color-text-muted); margin-top: 2px; }
 
     /* ── Painel busca ── */
     .busca-card { max-width: 520px; margin: 0 auto; }
@@ -149,6 +158,62 @@
         </div>
 
         <!-- ══════════════════════════════════════════════
+             PAINEL: Código de acesso
+        ══════════════════════════════════════════════ -->
+        <div id="painel-codigo">
+          <div class="codigo-card">
+
+            <div class="form-section">
+              <h2 class="form-section-title" style="margin-bottom:var(--space-4);">
+                <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"/>
+                </svg>
+                Código de acesso
+              </h2>
+
+              <div class="codigo-empresa-box" id="codigo-empresa-info">
+                <div class="empresa-nome" id="codigo-empresa-nome"></div>
+                <div class="empresa-status" id="codigo-empresa-status"></div>
+              </div>
+
+              <p style="font-size:var(--font-size-sm);color:var(--color-text-muted);margin-bottom:var(--space-4);">
+                Cadastro encontrado. Para visualizar ou editar seus dados, informe o código de acesso
+                enviado por e-mail pelo setor de estágios ao validar este cadastro.
+              </p>
+
+              <div class="form-group">
+                <label class="form-label required" for="campo-codigo">Código de acesso</label>
+                <input type="text" id="campo-codigo" class="form-control"
+                  placeholder="EMP-XXXXXX" maxlength="10"
+                  style="text-transform:uppercase;letter-spacing:.1em;font-family:monospace;font-size:1.1rem;"
+                  aria-describedby="campo-codigo-hint campo-codigo-error"
+                  autocomplete="off">
+                <span id="campo-codigo-hint" class="form-hint">
+                  Código enviado ao e-mail do representante quando o cadastro foi validado.
+                  Em caso de perda, entre em contato: <a href="mailto:estagios@riogrande.ifrs.edu.br">estagios@riogrande.ifrs.edu.br</a>
+                </span>
+                <span id="campo-codigo-error" class="form-error hidden" role="alert"></span>
+              </div>
+
+              <div id="feedback-codigo" class="form-feedback" role="status" aria-live="polite"></div>
+
+              <div class="form-actions form-actions--between" style="margin-top:var(--space-5);">
+                <button type="button" class="btn btn-ghost" onclick="voltarBusca()">
+                  <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd"/></svg>
+                  Voltar
+                </button>
+                <button type="button" id="btn-verificar-codigo" class="btn btn-primary btn-lg" onclick="verificarCodigo()">
+                  <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                  </svg>
+                  Confirmar código
+                </button>
+              </div>
+            </div>
+          </div>
+        </div><!-- /painel-codigo -->
+
+        <!-- ══════════════════════════════════════════════
              PAINEL: Erro inicial
         ══════════════════════════════════════════════ -->
         <div id="painel-erro-inicial">
@@ -249,7 +314,20 @@
                   required aria-required="true" aria-describedby="endereco-error" autocomplete="street-address">
                 <span id="endereco-error" class="form-error hidden" role="alert"></span>
               </div>
-              <div class="form-row-3">
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label required" for="bairro">Bairro</label>
+                  <input type="text" id="bairro" class="form-control" placeholder="Bairro"
+                    required aria-required="true" aria-describedby="bairro-error" autocomplete="address-level3">
+                  <span id="bairro-error" class="form-error hidden" role="alert"></span>
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="cep">CEP</label>
+                  <input type="text" id="cep" class="form-control" placeholder="00000-000"
+                    data-mask="cep" inputmode="numeric" autocomplete="postal-code">
+                </div>
+              </div>
+              <div class="form-row">
                 <div class="form-group">
                   <label class="form-label required" for="municipio">Município</label>
                   <input type="text" id="municipio" class="form-control" placeholder="Cidade"
@@ -270,11 +348,6 @@
                     <option>SE</option><option>TO</option>
                   </select>
                   <span id="uf-error" class="form-error hidden" role="alert"></span>
-                </div>
-                <div class="form-group">
-                  <label class="form-label" for="cep">CEP</label>
-                  <input type="text" id="cep" class="form-control" placeholder="00000-000"
-                    data-mask="cep" inputmode="numeric" autocomplete="postal-code">
                 </div>
               </div>
             </div>
@@ -496,7 +569,20 @@
                   required aria-required="true" aria-describedby="edit-endereco-error" autocomplete="street-address">
                 <span id="edit-endereco-error" class="form-error hidden" role="alert"></span>
               </div>
-              <div class="form-row-3">
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label required" for="edit-bairro">Bairro</label>
+                  <input type="text" id="edit-bairro" class="form-control"
+                    required aria-required="true" aria-describedby="edit-bairro-error" autocomplete="address-level3">
+                  <span id="edit-bairro-error" class="form-error hidden" role="alert"></span>
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="edit-cep">CEP</label>
+                  <input type="text" id="edit-cep" class="form-control" placeholder="00000-000"
+                    data-mask="cep" inputmode="numeric" autocomplete="postal-code">
+                </div>
+              </div>
+              <div class="form-row">
                 <div class="form-group">
                   <label class="form-label required" for="edit-municipio">Município</label>
                   <input type="text" id="edit-municipio" class="form-control"
@@ -517,11 +603,6 @@
                     <option>SE</option><option>TO</option>
                   </select>
                   <span id="edit-uf-error" class="form-error hidden" role="alert"></span>
-                </div>
-                <div class="form-group">
-                  <label class="form-label" for="edit-cep">CEP</label>
-                  <input type="text" id="edit-cep" class="form-control" placeholder="00000-000"
-                    data-mask="cep" inputmode="numeric" autocomplete="postal-code">
                 </div>
               </div>
             </div>
@@ -632,9 +713,10 @@
     var dadosCache      = null;
     var tipoSelecionado = '';
     var docSelecionado  = '';
+    var codigoAtual     = '';   // código de acesso confirmado
 
     // ── Painéis ────────────────────────────────────────────────────────────────
-    var PAINEIS = ['painel-busca','painel-carregando','painel-erro-inicial','painel-novo','painel-dados','painel-edicao'];
+    var PAINEIS = ['painel-busca','painel-carregando','painel-codigo','painel-erro-inicial','painel-novo','painel-dados','painel-edicao'];
     function mostrarPainel(id) {
       PAINEIS.forEach(function(p) {
         document.getElementById(p).style.display = (p === id) ? 'block' : 'none';
@@ -668,6 +750,18 @@
         if (e.key === 'Enter') { e.preventDefault(); buscarCadastro(); }
       });
 
+      // Submit código via Enter
+      document.getElementById('campo-codigo').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') { e.preventDefault(); verificarCodigo(); }
+      });
+      // Força uppercase em tempo real
+      document.getElementById('campo-codigo').addEventListener('input', function() {
+        var pos = this.selectionStart;
+        this.value = this.value.toUpperCase();
+        this.setSelectionRange(pos, pos);
+        clearFieldError('campo-codigo');
+      });
+
       // Validação inline busca
       document.getElementById('busca-doc').addEventListener('blur', function () {
         if (!this.value.trim()) return;
@@ -691,7 +785,7 @@
         if (v && !validateCPF(this.value)) showFieldError('cpf-rep', 'CPF inválido.');
         else if (v) clearFieldError('cpf-rep');
       });
-      ['razao-social','ramo','endereco','municipio','nome-rep','cargo-rep'].forEach(function(id) {
+      ['razao-social','ramo','endereco','bairro','municipio','nome-rep','cargo-rep'].forEach(function(id) {
         var el = document.getElementById(id);
         if (el) el.addEventListener('input', function () { if (this.value.trim()) clearFieldError(id); });
       });
@@ -705,7 +799,7 @@
         if (this.value && !validateEmail(this.value)) showFieldError('edit-email-rep', 'E-mail do representante inválido.');
         else clearFieldError('edit-email-rep');
       });
-      ['edit-razao-social','edit-ramo','edit-endereco','edit-municipio','edit-nome-rep','edit-cargo-rep'].forEach(function(id) {
+      ['edit-razao-social','edit-ramo','edit-endereco','edit-bairro','edit-municipio','edit-nome-rep','edit-cargo-rep'].forEach(function(id) {
         var el = document.getElementById(id);
         if (el) el.addEventListener('input', function () { if (this.value.trim()) clearFieldError(id); });
       });
@@ -774,9 +868,17 @@
       mostrarPainel('painel-carregando');
 
       try {
-        var dados = await apiObterCadastroEmpresa(docSelecionado);
-        dadosCache = dados;
-        exibirDados(dados);
+        // Primeira chamada sem código — o backend retorna apenas { existe, razaoSocial, status, tipo }
+        var resp = await apiObterCadastroEmpresa(docSelecionado);
+
+        if (resp && resp.existe) {
+          // Cadastro existe — pedir código de acesso antes de mostrar dados sensíveis
+          mostrarPainelCodigo(resp);
+        } else {
+          // Retornou dados completos (compatibilidade futura) — exibe direto
+          dadosCache = resp;
+          exibirDados(resp);
+        }
       } catch (err) {
         var msg = (err.message || '').toLowerCase();
         if (msg.includes('não encontrad') || msg.includes('not found') || msg.includes('sem cadastro')) {
@@ -789,9 +891,55 @@
       }
     }
 
+    // ── Painel Código ─────────────────────────────────────────────────────────
+    function mostrarPainelCodigo(resp) {
+      var nome   = resp.razaoSocial || '';
+      var status = resp.status || '';
+      var st     = status.toLowerCase();
+      var stLabel = st === 'validada' ? 'Validada ✓' : (st === 'pendente' ? 'Aguardando validação' : status);
+
+      document.getElementById('codigo-empresa-nome').textContent   = nome;
+      document.getElementById('codigo-empresa-status').textContent = stLabel;
+      document.getElementById('campo-codigo').value = '';
+      clearFieldError('campo-codigo');
+      hideFormFeedback('feedback-codigo');
+      mostrarPainel('painel-codigo');
+      setTimeout(function() { document.getElementById('campo-codigo').focus(); }, 100);
+    }
+
+    async function verificarCodigo() {
+      var codigo = document.getElementById('campo-codigo').value.trim().toUpperCase();
+      if (!codigo) { showFieldError('campo-codigo', 'Informe o código de acesso.'); return; }
+      clearFieldError('campo-codigo');
+      hideFormFeedback('feedback-codigo');
+
+      var btn = document.getElementById('btn-verificar-codigo');
+      btn.classList.add('is-loading');
+      btn.disabled = true;
+
+      try {
+        var dados = await apiObterCadastroEmpresa(docSelecionado, codigo);
+        codigoAtual = codigo;
+        dadosCache  = dados;
+        exibirDados(dados);
+      } catch (err) {
+        var msg = err.message || 'Código inválido.';
+        if (msg.toLowerCase().includes('código') || msg.toLowerCase().includes('inválido')) {
+          showFieldError('campo-codigo', msg);
+          document.getElementById('campo-codigo').focus();
+        } else {
+          showFormFeedback('feedback-codigo', 'error', 'Erro', msg);
+        }
+      } finally {
+        btn.classList.remove('is-loading');
+        btn.disabled = false;
+      }
+    }
+
     function voltarBusca() {
       dadosCache     = null;
       docSelecionado = '';
+      codigoAtual    = '';
       hideFormFeedback('feedback-busca');
       mostrarPainel('painel-busca');
     }
@@ -859,9 +1007,10 @@
         '<div class="dado-item"><label>Status</label>' + statusHtml + '</div>' +
         '<div class="section-divider">Localização</div>' +
         '<div class="dado-item dado-full"><label>Endereço</label>' + val(d.endereco) + '</div>' +
+        '<div class="dado-item"><label>Bairro</label>' + val(d.bairro) + '</div>' +
+        '<div class="dado-item"><label>CEP</label>' + val(d.cep) + '</div>' +
         '<div class="dado-item"><label>Município</label>' + val(d.municipio) + '</div>' +
         '<div class="dado-item"><label>UF</label>' + val(d.uf) + '</div>' +
-        '<div class="dado-item"><label>CEP</label>' + val(d.cep) + '</div>' +
         '<div class="section-divider">Contato</div>' +
         '<div class="dado-item"><label>Telefone</label>' + val(d.telEmpresa) + '</div>' +
         '<div class="dado-item"><label>E-mail</label>' + val(d.emailEmpresa) + '</div>' +
@@ -896,6 +1045,7 @@
       document.getElementById('edit-registro-prof').value   = d.registroProf  || '';
       document.getElementById('edit-bloco-produtor').value  = d.blocoProdutor || '';
       document.getElementById('edit-endereco').value        = d.endereco      || '';
+      document.getElementById('edit-bairro').value          = d.bairro        || '';
       document.getElementById('edit-municipio').value       = d.municipio     || '';
       document.getElementById('edit-uf').value              = d.uf            || '';
       document.getElementById('edit-cep').value             = d.cep           || '';
@@ -932,6 +1082,7 @@
         registroProf:  document.getElementById('edit-registro-prof').value.trim(),
         blocoProdutor: document.getElementById('edit-bloco-produtor').value.trim(),
         endereco:      document.getElementById('edit-endereco').value.trim(),
+        bairro:        document.getElementById('edit-bairro').value.trim(),
         municipio:     document.getElementById('edit-municipio').value.trim(),
         uf:            document.getElementById('edit-uf').value,
         cep:           document.getElementById('edit-cep').value.trim(),
@@ -976,6 +1127,7 @@
         registroProf:  document.getElementById('registro-prof').value.trim(),
         blocoProdutor: document.getElementById('bloco-produtor').value.trim(),
         endereco:      document.getElementById('endereco').value.trim(),
+        bairro:        document.getElementById('bairro').value.trim(),
         municipio:     document.getElementById('municipio').value.trim(),
         uf:            document.getElementById('uf').value,
         cep:           document.getElementById('cep').value.trim(),
@@ -1016,6 +1168,7 @@
       if (isPL && !document.getElementById('registro-prof').value.trim()) fail('registro-prof', 'Informe o número do registro profissional.');
       if (isPR && !document.getElementById('bloco-produtor').value.trim()) fail('bloco-produtor', 'Informe o número do bloco de produtor.');
       if (!document.getElementById('endereco').value.trim()) fail('endereco', 'Informe o endereço.');
+      if (!document.getElementById('bairro').value.trim()) fail('bairro', 'Informe o bairro.');
       if (!document.getElementById('municipio').value.trim()) fail('municipio', 'Informe o município.');
       if (!document.getElementById('uf').value) fail('uf', 'Selecione a UF.');
       var tel = document.getElementById('tel-empresa').value.replace(/\D/g,'');
@@ -1046,6 +1199,7 @@
       if (isPL && !document.getElementById('edit-registro-prof').value.trim())  fail('edit-registro-prof', 'Informe o registro profissional.');
       if (isPR && !document.getElementById('edit-bloco-produtor').value.trim()) fail('edit-bloco-produtor', 'Informe o bloco de produtor.');
       if (!document.getElementById('edit-endereco').value.trim()) fail('edit-endereco', 'Informe o endereço.');
+      if (!document.getElementById('edit-bairro').value.trim()) fail('edit-bairro', 'Informe o bairro.');
       if (!document.getElementById('edit-municipio').value.trim()) fail('edit-municipio', 'Informe o município.');
       if (!document.getElementById('edit-uf').value) fail('edit-uf', 'Selecione a UF.');
       var tel = document.getElementById('edit-tel-empresa').value.replace(/\D/g,'');
