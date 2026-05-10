@@ -507,8 +507,12 @@
 
   // ── Inicialização ─────────────────────────────────────────────
   document.addEventListener('DOMContentLoaded', () => {
-    // 1. Autenticação — qualquer conta Google
-    const ok = requireExternalAuth(window.location.href);
+    // 1. Autenticação — qualquer conta Google (admin, orientador, coordenador, empresa, supervisor)
+    const ok = requireExternalAuth(
+      window.location.href,
+      'Checklist de Estágio — IFRS Campus Rio Grande',
+      'Entre com a sua conta Google para acessar o checklist de validação do estágio. Pode ser qualquer conta Google associada ao processo.'
+    );
     if (!ok) return;
 
     meuEmail = getCurrentUserEmail();

@@ -246,18 +246,22 @@ function requireStaffAuth(redirectAfter) {
 }
 
 /**
- * Exige que o usuário esteja logado com qualquer conta Google (externos: empresas, supervisores).
- * Não restringe por domínio — qualquer e-mail Google é aceito.
+ * Exige que o usuário esteja logado com qualquer conta Google (externos: empresas, supervisores,
+ * orientadores, coordenadores etc.). Não restringe por domínio — qualquer e-mail Google é aceito.
+ *
+ * @param {string} [redirectAfter]
+ * @param {string} [title]   - Título customizado para a tela de login (opcional)
+ * @param {string} [desc]    - Descrição customizada para a tela de login (opcional)
  */
-function requireExternalAuth(redirectAfter) {
+function requireExternalAuth(redirectAfter, title, desc) {
   const session = getSession();
   if (session && session.email) {
     updateHeaderUser(session);
     return true;
   }
   renderAuthGate(
-    'Acesso à área da Empresa',
-    'Entre com sua conta Google para acessar ou cadastrar os dados da sua empresa.',
+    title || 'Acesso à área da Empresa',
+    desc  || 'Entre com sua conta Google para acessar ou cadastrar os dados da sua empresa.',
     redirectAfter || window.location.href,
     'external'
   );
