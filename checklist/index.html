@@ -548,9 +548,19 @@
     try {
       const data = await API.get('obterChecklist', { id });
       checklist = data;
+      console.log('[CK] Dados recebidos:', {
+        idEstagio:   checklist.idEstagio,
+        statusGeral: checklist.statusGeral,
+        adminStatus: checklist.admin ? checklist.admin.status : null,
+        adminItens:  checklist.admin ? checklist.admin.itens.length : 0,
+        infoSol:     checklist._infoSolicitacao,
+        emailAtores: checklist._emailAtores,
+      });
       meuAtor = detectarAtor(meuEmail, checklist);
+      console.log('[CK] meuEmail:', meuEmail, '| meuAtor:', meuAtor);
       renderizarChecklist();
     } catch (err) {
+      console.error('[CK] Erro:', err);
       mostrarErro(err.message || 'Não foi possível carregar o checklist. Tente novamente.');
     }
   }
@@ -690,7 +700,22 @@
     const ch = v   => v   ? v + ' h/semana'  : '';
     const bR = v   => v   ? 'R$ ' + v        : '';
 
+    // Diagnóstico: verifica se os dados chegaram do backend
+    const infoVazia = !info.nomeEstudante && !info.curso && !info.nomeEmpresa;
+    console.log('[CK] renderizarInfoCard | ator:', ator, '| infoVazia:', infoVazia, '| info:', info);
+
     let html = '';
+
+    /* Aviso quando dados não carregaram */
+    if (infoVazia && ator === 'admin') {
+      html += `<div style="background:var(--color-warning-light);border:1px solid var(--color-warning-border);
+               border-radius:var(--radius-md);padding:var(--space-3) var(--space-4);margin-bottom:var(--space-3);
+               font-size:var(--font-size-sm);color:var(--color-warning);">
+        ⚠ Os dados da solicitação não foram carregados pelo backend (campos retornaram vazios).
+        Verifique o console do navegador (F12) para mais detalhes e confirme que o deploy GAS está ativo.
+        ID: <strong>${escapeHtml(checklist.idEstagio || '')}</strong>
+      </div>`;
+    }
 
     /* prazo */
     if (prazo) {
