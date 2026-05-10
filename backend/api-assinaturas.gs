@@ -623,6 +623,11 @@ function _obterDadosSolicitacaoCompleto_(idEstagio) {
           valorTransporte: r[COL_SOL.VALOR_TRANSPORTE]     || '',
           planoAtividades: r[COL_SOL.PLANO_ATIVIDADES]     || '',
           objetivos:       r[COL_SOL.OBJETIVOS]            || '',
+          // ── Documentos ────────────────────────────────────────────────────
+          linkDocMat:      r[COL_SOL.LINK_DOC_MAT]         || '',
+          linkDocId:       r[COL_SOL.LINK_DOC_ID]          || '',
+          linkDocBol:      r[COL_SOL.LINK_DOC_BOL]         || '',
+          driveUrl:        r[COL_SOL.DRIVE_URL]             || '',
           // ── Coordenador (calculado por curso) ─────────────────────────────
           emailCoordenador: _obterEmailCoordenadorPorCurso_(curso),
         };

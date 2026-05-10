@@ -702,6 +702,11 @@ function doGetChecklist(e) {
         planoAtividades: String(solDados.planoAtividades || ''),
         objetivos:       String(solDados.objetivos       || ''),
         nomeAgente:      String(solDados.nomeAgente      || ''),
+        // ── Documentos ──────────────────────────────────────────────────────
+        linkDocMat:      String(solDados.linkDocMat      || ''),
+        linkDocId:       String(solDados.linkDocId       || ''),
+        linkDocBol:      String(solDados.linkDocBol      || ''),
+        driveUrl:        String(solDados.driveUrl        || ''),
       };
 
       // ── Acesso por token (empresa / supervisor sem conta Google) ─────────

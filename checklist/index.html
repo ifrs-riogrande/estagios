@@ -48,31 +48,7 @@
 
     /* ── Seção de info do estágio ──────────── */
     .ck-info-card {
-      background: var(--color-info-light);
-      border: 1px solid var(--color-info-border);
-      border-radius: var(--radius-lg);
-      padding: var(--space-5) var(--space-6);
       margin-bottom: var(--space-6);
-      display: flex;
-      flex-wrap: wrap;
-      gap: var(--space-4) var(--space-8);
-    }
-    .ck-info-item {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
-    .ck-info-item-label {
-      font-size: var(--font-size-xs);
-      font-weight: var(--font-weight-semibold);
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--color-text-muted);
-    }
-    .ck-info-item-value {
-      font-size: var(--font-size-sm);
-      font-weight: var(--font-weight-medium);
-      color: var(--color-text);
     }
     .ck-prazo-badge {
       display: inline-flex;
@@ -364,6 +340,21 @@
       font-size: var(--font-size-sm);
     }
 
+    /* ── Seções de informação ──────────────────────────── */
+    .ck-section{background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);margin-bottom:var(--space-3);overflow:hidden;}
+    .ck-section-title{font-size:var(--font-size-xs);font-weight:var(--font-weight-semibold);text-transform:uppercase;letter-spacing:.05em;color:var(--color-text-muted);padding:var(--space-3) var(--space-5);background:var(--color-bg);border-bottom:1px solid var(--color-border);}
+    .ck-field-grid{display:flex;flex-wrap:wrap;gap:0;padding:var(--space-3) var(--space-4);}
+    .ck-field{min-width:160px;flex:1;padding:var(--space-2) var(--space-3);}
+    .ck-field-full{flex-basis:100%;}
+    .ck-field-label{font-size:var(--font-size-xs);font-weight:var(--font-weight-semibold);text-transform:uppercase;letter-spacing:.04em;color:var(--color-text-muted);display:block;margin-bottom:2px;}
+    .ck-field-value{font-size:var(--font-size-sm);font-weight:var(--font-weight-medium);color:var(--color-text);white-space:pre-wrap;word-break:break-word;}
+    .ck-locked-section{display:flex;align-items:center;gap:var(--space-2);font-size:var(--font-size-sm);color:var(--color-text-muted);font-style:italic;padding:var(--space-3) var(--space-4);width:100%;}
+    .ck-doc-btn{display:inline-flex;align-items:center;gap:4px;font-size:var(--font-size-xs);font-weight:var(--font-weight-medium);color:var(--color-primary);text-decoration:none;background:var(--color-info-light);border:1px solid var(--color-info-border);border-radius:var(--radius-sm);padding:2px 8px;margin-top:var(--space-1);transition:background .1s;white-space:nowrap;}
+    .ck-doc-btn:hover{background:var(--color-info-border);}
+    .ck-item-label-wrap{flex:1;display:flex;flex-direction:column;gap:3px;}
+    .ck-prazo-inline{display:flex;align-items:center;gap:var(--space-3);padding:var(--space-3) var(--space-5);border-bottom:1px solid var(--color-border);font-size:var(--font-size-sm);color:var(--color-text-muted);margin-bottom:var(--space-3);}
+    .ck-checklist-title{font-size:var(--font-size-sm);font-weight:var(--font-weight-semibold);color:var(--color-text);margin:var(--space-5) 0 var(--space-3);padding-bottom:var(--space-2);border-bottom:2px solid var(--color-border);}
+
     /* ── Utilitários ───────────────────────── */
     .visually-hidden { clip: rect(0 0 0 0); clip-path: inset(50%); height: 1px; overflow: hidden; position: absolute; white-space: nowrap; width: 1px; }
     .text-center { text-align: center; }
@@ -435,6 +426,9 @@
         <div id="ck-content" hidden>
           <!-- Info card -->
           <div class="ck-info-card" id="ck-info-card"></div>
+
+          <!-- Título da lista de itens -->
+          <h3 id="ck-checklist-title" class="ck-checklist-title" hidden>✅ Itens para Verificação</h3>
 
           <!-- Lista de itens -->
           <div class="ck-items-list" id="ck-items-list" role="list" aria-label="Itens do checklist"></div>
@@ -648,6 +642,7 @@
 
     // Info card com prazo
     renderizarInfoCard(ator, secao);
+    document.getElementById('ck-checklist-title').hidden = false;
 
     // Itens
     const itens = secao ? secao.itens : [];
@@ -663,49 +658,139 @@
 
   // ── Info card ─────────────────────────────────────────────────
   function renderizarInfoCard(ator, secao) {
-    const card = document.getElementById('ck-info-card');
+    const card  = document.getElementById('ck-info-card');
     const info  = checklist._infoSolicitacao || {};
     const prazo = secao ? secao.prazoVencimento : null;
 
-    const campo = (label, valor, fullWidth) => valor
-      ? `<div class="ck-info-item"${fullWidth ? ' style="flex-basis:100%"' : ''}>
-           <span class="ck-info-item-label">${label}</span>
-           <span class="ck-info-item-value">${escapeHtml(String(valor))}</span>
-         </div>`
-      : '';
+    /* ── helpers ── */
+    function ckF(label, valor, full) {
+      if (!valor) return '';
+      return `<div class="ck-field${full ? ' ck-field-full' : ''}">
+        <span class="ck-field-label">${label}</span>
+        <span class="ck-field-value">${escapeHtml(String(valor))}</span>
+      </div>`;
+    }
+    function ckDoc(label, url) {
+      if (!url) return '';
+      return `<a href="${escapeHtml(url)}" target="_blank" rel="noopener" class="ck-doc-btn">
+        <svg width="11" height="11" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clip-rule="evenodd"/></svg>
+        ${label} ↗
+      </a>`;
+    }
+    function ckLk(label) {
+      return `<div class="ck-locked-section">
+        <svg width="13" height="13" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"/></svg>
+        ${escapeHtml(label)} — não disponível para este perfil
+      </div>`;
+    }
+    function ckSec(title, body) {
+      return `<div class="ck-section"><div class="ck-section-title">${title}</div><div class="ck-field-grid">${body}</div></div>`;
+    }
+    const dt = iso => iso ? formatarData(iso) : '';
+    const ch = v   => v   ? v + ' h/semana'  : '';
+    const bR = v   => v   ? 'R$ ' + v        : '';
 
-    const prazoHtml = prazo ? (() => {
+    let html = '';
+
+    /* prazo */
+    if (prazo) {
       const cls = prazoClass(prazo);
-      return `<div class="ck-info-item">
-        <span class="ck-info-item-label">Prazo para resposta</span>
+      html += `<div class="ck-prazo-inline"><span>Prazo para resposta:</span>
         <span class="ck-prazo-badge ck-prazo-badge--${cls}">${prazoIcon(cls)} ${formatarData(prazo)}</span>
       </div>`;
-    })() : '';
+    }
 
-    const bolsaStr = info.valorBolsa   ? 'R$ ' + info.valorBolsa   : '';
-    const chStr    = info.cargaHoraria ? info.cargaHoraria + ' h/semana' : '';
+    /* 1 — Estudante */
+    let s1 = '';
+    if (ator === 'admin') {
+      s1 = ckF('Estudante',info.nomeEstudante)+ckF('Matrícula',info.matricula)+ckF('CPF',info.cpf)
+         + ckF('Curso',info.curso)+ckF('Turno',info.turno)+ckF('Semestre',info.semestre)
+         + ckF('Formando',info.formando)+ckF('PNE/NEE',info.nee)+ckF('Telefone',info.telefone);
+    } else if (ator === 'coordenador') {
+      s1 = ckF('Estudante',info.nomeEstudante)+ckF('Matrícula',info.matricula)
+         + ckF('Curso',info.curso)+ckF('Semestre',info.semestre)+ckF('Formando',info.formando);
+    } else if (ator === 'orientador') {
+      s1 = ckF('Estudante',info.nomeEstudante)+ckF('Curso',info.curso)
+         + ckF('Turno',info.turno)+ckF('Semestre',info.semestre);
+    } else {
+      s1 = ckF('Estudante', info.nomeEstudante);
+    }
+    if (s1) html += ckSec('👤 Estudante', s1);
 
-    card.innerHTML = `
-      ${campo('Estudante',       info.nomeEstudante)}
-      ${campo('Matrícula',       info.matricula)}
-      ${campo('Curso',           info.curso)}
-      ${campo('Empresa',         info.nomeEmpresa)}
-      ${campo('CNPJ',            info.cnpjEmpresa)}
-      ${campo('Supervisor',      info.nomeSupervisor)}
-      ${campo('Orientador',      info.nomeOrientador)}
-      ${campo('Agente de Integração', info.nomeAgente)}
-      ${campo('Tipo de Estágio', info.tipoEstagio)}
-      ${campo('Início',          info.dataInicio  ? formatarData(info.dataInicio)  : '')}
-      ${campo('Término',         info.dataTermino ? formatarData(info.dataTermino) : '')}
-      ${campo('Carga Horária',   chStr)}
-      ${campo('Horário',         info.horario)}
-      ${campo('Remuneração',     info.remuneracao)}
-      ${campo('Bolsa',           bolsaStr)}
-      ${prazoHtml}
-      ${campo('Plano de Atividades', info.planoAtividades, true)}
-      ${campo('Objetivos',           info.objetivos,        true)}
-    ` || '<span class="ck-info-item-value" style="color:var(--color-text-muted)">Informações do estágio não disponíveis.</span>';
+    /* 2 — Empresa e Supervisor */
+    let s2 = '';
+    if (ator === 'admin') {
+      s2 = ckF('Empresa',info.nomeEmpresa)+ckF('CNPJ',info.cnpjEmpresa)
+         + ckF('Supervisor',info.nomeSupervisor)+ckF('Agente de Integração',info.nomeAgente);
+    } else if (ator === 'orientador') {
+      s2 = ckF('Empresa',info.nomeEmpresa)+ckF('Supervisor',info.nomeSupervisor);
+    } else if (ator === 'coordenador') {
+      s2 = ckF('Empresa',info.nomeEmpresa);
+    } else if (ator === 'empresa') {
+      s2 = ckF('Empresa',info.nomeEmpresa)+ckF('CNPJ',info.cnpjEmpresa)+ckF('Supervisor responsável',info.nomeSupervisor);
+    } else if (ator === 'supervisor') {
+      s2 = ckF('Empresa',info.nomeEmpresa)+ckF('Supervisor (você)',info.nomeSupervisor);
+    }
+    if (s2) html += ckSec('🏢 Empresa e Supervisor', s2);
+
+    /* 3 — Orientação */
+    let s3 = '';
+    if (ator === 'admin')        s3 = ckF('Orientador', info.nomeOrientador);
+    else if (ator==='orientador') s3 = ckF('Orientador (você)', info.nomeOrientador);
+    else if (ator==='coordenador')s3 = ckF('Coordenador (você)', info.nomeOrientador);
+    else                          s3 = ckLk('Orientador / Coordenador');
+    html += ckSec('🎓 Orientação Acadêmica', s3);
+
+    /* 4 — Detalhes do Estágio */
+    let s4 = '';
+    if (ator === 'admin') {
+      s4 = ckF('Tipo',info.tipoEstagio)+ckF('Início',dt(info.dataInicio))+ckF('Término',dt(info.dataTermino))
+         + ckF('Carga Horária',ch(info.cargaHoraria))+ckF('Horário',info.horario)
+         + ckF('Remuneração',info.remuneracao)+ckF('Bolsa',bR(info.valorBolsa));
+    } else if (ator === 'orientador') {
+      s4 = ckF('Tipo',info.tipoEstagio)+ckF('Início',dt(info.dataInicio))+ckF('Término',dt(info.dataTermino))
+         + ckF('Carga Horária',ch(info.cargaHoraria))+ckF('Horário',info.horario);
+    } else if (ator === 'coordenador') {
+      s4 = ckF('Tipo',info.tipoEstagio)+ckF('Início',dt(info.dataInicio))+ckF('Término',dt(info.dataTermino))
+         + ckF('Carga Horária',ch(info.cargaHoraria));
+    } else {
+      s4 = ckF('Início',dt(info.dataInicio))+ckF('Término',dt(info.dataTermino))
+         + ckF('Carga Horária',ch(info.cargaHoraria))+ckF('Horário',info.horario);
+      if (ator==='empresa') s4 += ckF('Remuneração',info.remuneracao)+ckF('Bolsa',bR(info.valorBolsa));
+    }
+    if (s4) html += ckSec('📋 Detalhes do Estágio', s4);
+
+    /* 5 — Plano de Atividades */
+    if (info.planoAtividades || info.objetivos) {
+      let s5 = ckF('Plano de Atividades', info.planoAtividades, true);
+      if (ator !== 'coordenador') s5 += ckF('Objetivos', info.objetivos, true);
+      if (s5) html += ckSec('📝 Plano de Atividades', s5);
+    }
+
+    /* 6 — Documentos */
+    if (ator === 'admin') {
+      let dH = '';
+      if (info.linkDocMat) dH += `<div class="ck-field">${ckDoc('Comprovante de Matrícula', info.linkDocMat)}</div>`;
+      if (info.linkDocId)  dH += `<div class="ck-field">${ckDoc('Documento de Identidade',  info.linkDocId)}</div>`;
+      if (info.linkDocBol) dH += `<div class="ck-field">${ckDoc('Boletim',                  info.linkDocBol)}</div>`;
+      if (info.driveUrl)   dH += `<div class="ck-field">${ckDoc('Pasta Drive do Estágio',   info.driveUrl)}</div>`;
+      if (!dH) dH = '<div class="ck-locked-section">Documentos ainda não disponíveis (gerados após aprovação).</div>';
+      html += ckSec('📎 Documentos', dH);
+    } else {
+      html += ckSec('📎 Documentos', ckLk('Documentos'));
+    }
+
+    card.innerHTML = html;
   }
+
+  // ── Doc-map: item id → document key ──────────────────────────
+  const CK_DOC_MAP = {
+    'comprovante_matricula': { label: 'Ver comprovante', key: 'linkDocMat' },
+    'matricula_ativa':       { label: 'Ver boletim',     key: 'linkDocBol' },
+    'frequencia_minima':     { label: 'Ver boletim',     key: 'linkDocBol' },
+    'idade_minima_16':       { label: 'Ver identidade',  key: 'linkDocId'  },
+    'menor_18_flag':         { label: 'Ver identidade',  key: 'linkDocId'  },
+  };
 
   // ── Itens ─────────────────────────────────────────────────────
   function renderizarItens(itens) {
@@ -778,11 +863,23 @@
     wrapper.className = 'ck-item';
     const obsId = `ck-obs-${idx}`;
     const cbId  = `ck-cb-${idx}`;
+    const docMeta = (meuAtor === 'admin' && CK_DOC_MAP[item.id]) ? CK_DOC_MAP[item.id] : null;
+    const docUrl  = docMeta ? ((checklist._infoSolicitacao || {})[docMeta.key] || '') : '';
+    const docLink = (docMeta && docUrl)
+      ? `<a href="${escapeHtml(docUrl)}" target="_blank" rel="noopener" class="ck-doc-btn">
+           <svg width="11" height="11" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clip-rule="evenodd"/></svg>
+           ${escapeHtml(docMeta.label)} ↗
+         </a>`
+      : '';
+
     wrapper.innerHTML = `
       <div class="ck-item-header">
         <input type="checkbox" class="ck-item-checkbox" id="${cbId}"
           data-idx="${idx}" ${item.checked ? 'checked' : ''}>
-        <label for="${cbId}" class="ck-item-label">${escapeHtml(item.label)}</label>
+        <div class="ck-item-label-wrap">
+          <label for="${cbId}" class="ck-item-label">${escapeHtml(item.label)}</label>
+          ${docLink}
+        </div>
       </div>
       <div class="ck-item-obs">
         <div class="ck-item-obs-label">Observação (opcional)</div>
