@@ -135,6 +135,7 @@ function doGetAdmin(e) {
       case 'listarAlunosAdmin':        return listarAlunosAdmin_();
       case 'listarEmpresasAdmin':      return listarEmpresasAdmin_();
       case 'listarOrientadoresAdmin':  return listarOrientadoresAdmin_();
+      case 'listarSupervisoresAdmin':  return listarSupervisoresAdmin_();
       case 'listarCoordenadoresAdmin': return listarCoordenadoresAdmin_();
       case 'listarCadastrosPendentes': return listarCadastrosPendentes_();
       case 'listarAdendosAdmin':       return listarAdendosAdmin_();
@@ -168,6 +169,9 @@ function doPostAdmin(e) {
       case 'inativarEmpresa':      return alterarStatusEmpresa_(body.cnpj, 'Inativa');
       case 'inativarOrientador':   return alterarStatusOrientador_(body.email, 'Inativo');
       case 'reativarOrientador':   return alterarStatusOrientador_(body.email, 'Ativo');
+      case 'validarSupervisor':    return alterarStatusSupervisor_(body.cpf, 'Validado');
+      case 'inativarSupervisor':   return alterarStatusSupervisor_(body.cpf, 'Inativo');
+      case 'reativarSupervisor':   return alterarStatusSupervisor_(body.cpf, 'Validado');
       case 'aprovarAdendo':        return processarAdendo_(body, 'Aprovado');
       case 'reprovarAdendo':       return processarAdendo_(body, 'Reprovado');
       case 'inativarAgente':            return alterarStatusAgente_(body.cnpj, 'Inativo');
@@ -399,6 +403,7 @@ function listarEmpresasAdmin_() {
       cpfRep:             String(r[18] || ''),
       status:             String(r[19] || 'Pendente'),
       estagiosAtivos:     ativosPorEmpresa[cnpjNorm] || 0,
+      driveDocs:          String(r[21] || ''),
     });
   }
   return jsonOk_(lista);
@@ -1569,4 +1574,118 @@ function salvarConfigCursos_(body) {
   };
   PropertiesService.getScriptProperties().setProperty('config_cursos', JSON.stringify(config));
   return jsonOk_({ mensagem: 'Configuração salva com sucesso!' });
+}
+
+// ─────────────────────────────────────────────────────────────────
+// GET — Listar supervisores (admin)
+// COL_SUP: TIMESTAMP=0, EMAIL_FORM=1, TIPO=2, EMPRESA=3,
+//          SETOR=4, ENDERECO_SETOR=5, EMAIL_SETOR_SUP=6, TEL_SETOR=7,
+//          NOME=8, CPF=9, CARGO=10, TEL_SUP=11,
+//          EMAIL_SUP=12, NIVEL_FORMACAO=13, AREA_FORMACAO=14,
+//          INSTITUICAO=15, TEMPO_EXP=16, DESC_EXP=17, DECLARACAO=18,
+//          STATUS=19, VALIDADO_POR=20, DATA_VALIDACAO=21,
+//          OBSERVACOES=22, DATA_ULT_ATZ=23
+// ─────────────────────────────────────────────────────────────────
+
+function listarSupervisoresAdmin_() {
+  var ss    = SpreadsheetApp.openById(CFG_ADMIN.SS_ID);
+  var sheet = ss.getSheetByName('Supervisores');
+  if (!sheet) return jsonOk_([]);
+  var dados = sheet.getDataRange().getValues();
+
+  // Conta estágios ativos por supervisor (CPF)
+  var sheetSol = ss.getSheetByName(CFG_ADMIN.ABA_SOL);
+  var ativosPorCpf = {};
+  if (sheetSol) {
+    var dadosSol = sheetSol.getDataRange().getValues();
+    for (var j = 1; j < dadosSol.length; j++) {
+      if (String(dadosSol[j][COL.STATUS] || '') === 'Em execução') {
+        // COL.CNPJ_EMPRESA=11; supervisor não tem coluna própria nas solicitações —
+        // usamos o e-mail do supervisor (COL.EMAIL_SUPERVISOR=13) como chave
+        var emailSup = String(dadosSol[j][13] || '').toLowerCase().trim();
+        if (emailSup) ativosPorCpf[emailSup] = (ativosPorCpf[emailSup] || 0) + 1;
+      }
+    }
+  }
+
+  var lista = [];
+  for (var i = 1; i < dados.length; i++) {
+    var r = dados[i];
+    if (!r[8] && !r[9]) continue; // linha vazia (sem nome nem CPF)
+    var empStr  = String(r[3] || '');
+    var partes  = empStr.split('—');
+    var emailSup = String(r[12] || '').toLowerCase().trim();
+    lista.push({
+      nome:             String(r[8]  || '').trim(),
+      cpf:              String(r[9]  || '').trim(),
+      cargo:            String(r[10] || '').trim(),
+      telefone:         String(r[11] || '').trim(),
+      email:            emailSup,
+      empresa:          partes[1] ? partes[1].trim() : empStr.trim(),
+      empresaCnpj:      partes[0] ? partes[0].trim() : '',
+      setor:            String(r[4]  || '').trim(),
+      enderecoSetor:    String(r[5]  || '').trim(),
+      emailSetor:       String(r[6]  || '').trim(),
+      telSetor:         String(r[7]  || '').trim(),
+      nivelFormacao:    String(r[13] || '').trim(),
+      areaFormacao:     String(r[14] || '').trim(),
+      instituicao:      String(r[15] || '').trim(),
+      tempoExperiencia: String(r[16] || '').trim(),
+      status:           String(r[19] || 'Pendente').trim(),
+      validadoPor:      String(r[20] || '').trim(),
+      dataValidacao:    String(r[21] || '').trim(),
+      observacoes:      String(r[22] || '').trim(),
+      estagiosAtivos:   ativosPorCpf[emailSup] || 0,
+      linhaPlanilha:    i + 1,
+    });
+  }
+  lista.sort(function(a, b) { return a.nome.localeCompare(b.nome, 'pt-BR'); });
+  return jsonOk_(lista);
+}
+
+// ─────────────────────────────────────────────────────────────────
+// POST — Validar / inativar / reativar supervisor (por CPF)
+// ─────────────────────────────────────────────────────────────────
+
+function alterarStatusSupervisor_(cpf, novoStatus) {
+  var cpfNorm = String(cpf || '').replace(/\D/g, '').trim();
+  if (!cpfNorm) return jsonError_('CPF não informado.', 'VALIDATION');
+
+  var ss    = SpreadsheetApp.openById(CFG_ADMIN.SS_ID);
+  var sheet = ss.getSheetByName('Supervisores');
+  if (!sheet) return jsonError_('Aba de supervisores não encontrada.', 'NOT_FOUND');
+
+  var dados = sheet.getDataRange().getValues();
+  var found = false;
+  for (var i = 1; i < dados.length; i++) {
+    var cpfLinha = String(dados[i][9] || '').replace(/\D/g, '').trim(); // COL_SUP.CPF=9
+    if (cpfLinha !== cpfNorm) continue;
+    // Atualiza status (col 20 = índice 19 + 1)
+    sheet.getRange(i + 1, 20).setValue(novoStatus);
+    if (novoStatus === 'Validado') {
+      var admin = Session.getActiveUser().getEmail() || 'admin';
+      sheet.getRange(i + 1, 21).setValue(admin);                         // VALIDADO_POR
+      sheet.getRange(i + 1, 22).setValue(Utilities.formatDate(
+        new Date(), Session.getScriptTimeZone(), 'dd/MM/yyyy'));          // DATA_VALIDACAO
+      // Notifica o supervisor por e-mail
+      var nome     = String(dados[i][8]  || '').trim();
+      var emailSup = String(dados[i][12] || '').trim();
+      if (emailSup) {
+        try {
+          GmailApp.sendEmail(emailSup,
+            '[IFRS Estágios] Cadastro de supervisor validado',
+            'Olá, ' + (nome || 'Supervisor') + ',\n\n' +
+            'Seu cadastro como supervisor de estágio foi validado pelo setor de estágios do IFRS Campus Rio Grande.\n' +
+            'A partir de agora você pode ser selecionado em solicitações de estágio.\n\n' +
+            'Dúvidas: estagios@riogrande.ifrs.edu.br\n\nAtenciosamente,\nSetor de Estágios — IFRS Campus Rio Grande',
+            { name: 'Setor de Estágios IFRS', replyTo: 'estagios@riogrande.ifrs.edu.br' }
+          );
+        } catch(mailErr) { logErro_('alterarStatusSupervisor_.email', mailErr); }
+      }
+    }
+    found = true;
+    break;
+  }
+  if (!found) return jsonError_('Supervisor não encontrado.', 'NOT_FOUND');
+  return jsonOk_({ status: novoStatus });
 }

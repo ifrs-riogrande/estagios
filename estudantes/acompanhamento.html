@@ -73,6 +73,22 @@
     @media(max-width:900px){.main-cols{grid-template-columns:1fr;}}
 
     .loading-page{text-align:center;padding:var(--space-16);color:var(--color-text-muted);}
+
+    /* ── Seções de documentos (relatórios / adendo) ── */
+    .doc-sections-wrap{margin-top:var(--space-2);}
+    .doc-sections-title{font-size:var(--font-size-sm);font-weight:600;color:var(--color-text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:var(--space-3);}
+    .doc-section{background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);margin-bottom:var(--space-3);overflow:hidden;}
+    .doc-section-hdr{display:flex;align-items:center;justify-content:space-between;padding:var(--space-4) var(--space-5);cursor:pointer;user-select:none;transition:background .12s;}
+    .doc-section-hdr:hover{background:var(--color-bg);}
+    .doc-section-hdr h3{font-size:var(--font-size-sm);font-weight:600;margin:0;display:flex;align-items:center;gap:var(--space-2);}
+    .doc-section-hdr .ds-chevron{width:18px;height:18px;color:var(--color-text-muted);transition:transform .2s;flex-shrink:0;}
+    .doc-section-hdr.is-open .ds-chevron{transform:rotate(180deg);}
+    .doc-section-body{display:none;padding:var(--space-5);border-top:1px solid var(--color-border);}
+    .doc-section-body.is-open{display:block;}
+    /* Toggle modo adendo */
+    .mode-toggle{display:flex;gap:var(--space-2);margin-bottom:var(--space-5);}
+    .mode-toggle-btn{padding:5px var(--space-4);border-radius:9999px;border:1px solid var(--color-border);background:var(--color-bg);font-size:var(--font-size-sm);cursor:pointer;font-weight:500;transition:all .12s;}
+    .mode-toggle-btn.active{background:var(--color-primary);color:#fff;border-color:var(--color-primary);}
   </style>
 </head>
 <body>
@@ -257,6 +273,7 @@
       initUpload('upload-solicitacao', 'solicitacao');
       initUpload('upload-tce', 'tce');
       initUpload('upload-tce-nao', 'tce_nao_obrig');
+      initAdendoUpload();
     }
 
     /* ════════════════════════════════════════
@@ -372,15 +389,11 @@
       // ── Fluxo novo: Ativo ──────────────────────────────────────────────────
       if (s.status === 'Ativo') {
         return `
-          <div class="action-card" style="border-color:var(--color-success);background:var(--color-success-light)">
+          <div class="action-card" style="border-color:var(--color-success);background:var(--color-success-light);margin-bottom:var(--space-4)">
             <h2 style="color:var(--color-success)">✅ Estágio Ativo</h2>
-            <p>Processo concluído com sucesso. Seu estágio está em andamento. Lembre-se de enviar os relatórios nos prazos estabelecidos.</p>
-            <div style="display:flex;gap:var(--space-3);flex-wrap:wrap;margin-top:var(--space-4)">
-              <a href="relatorio-parcial.html" class="btn btn-secondary btn-sm">Relatório Parcial</a>
-              <a href="relatorio-final.html"   class="btn btn-secondary btn-sm">Relatório Final</a>
-              <a href="adendo.html"             class="btn btn-ghost btn-sm">Solicitar Adendo ao TCE</a>
-            </div>
-          </div>`;
+            <p>Processo concluído. Seu estágio está em andamento. Envie os relatórios nos prazos estabelecidos e solicite adendos ao TCE se necessário.</p>
+          </div>
+          ${buildSecoesDocs(s)}`;
       }
 
       // ── Fluxo antigo: Aguardando Documentos ────────────────────────────────
@@ -441,15 +454,11 @@
 
       if (s.status === 'Em execução') {
         return `
-          <div class="action-card" style="border-color:var(--color-success);background:var(--color-success-light)">
+          <div class="action-card" style="border-color:var(--color-success);background:var(--color-success-light);margin-bottom:var(--space-4)">
             <h2 style="color:var(--color-success)">✅ Estágio em Execução</h2>
-            <p>Seu estágio foi autorizado e está em andamento. Lembre-se de enviar os relatórios parciais e final nos prazos.</p>
-            <div style="display:flex;gap:var(--space-3);flex-wrap:wrap;margin-top:var(--space-4)">
-              <a href="relatorio-parcial.html" class="btn btn-secondary btn-sm">Enviar Relatório Parcial</a>
-              <a href="relatorio-final.html"   class="btn btn-secondary btn-sm">Enviar Relatório Final</a>
-              <a href="adendo.html"             class="btn btn-ghost btn-sm">Solicitar Adendo ao TCE</a>
-            </div>
-          </div>`;
+            <p>Seu estágio foi autorizado e está em andamento. Envie os relatórios parciais e final nos prazos e solicite adendos ao TCE se necessário.</p>
+          </div>
+          ${buildSecoesDocs(s)}`;
       }
 
       if (s.status === 'Encerrado') {
@@ -562,6 +571,385 @@
         reader.onerror = reject;
         reader.readAsDataURL(file);
       });
+    }
+
+    /* ════════════════════════════════════════
+       SEÇÕES DE DOCUMENTOS — HTML
+    ════════════════════════════════════════ */
+    function buildSecoesDocs(s) {
+      const avOpts = `
+        <option value="">Selecione...</option>
+        <option value="Ótimo">Ótimo</option>
+        <option value="Bom">Bom</option>
+        <option value="Regular">Regular</option>
+        <option value="Ruim">Ruim</option>`;
+
+      const tipoAdendoOpts = `
+        <option value="">Selecione o tipo...</option>
+        <option value="Prorrogação de prazo">Prorrogação de prazo</option>
+        <option value="Alteração de carga horária">Alteração de carga horária</option>
+        <option value="Alteração de horário">Alteração de horário</option>
+        <option value="Alteração de supervisor">Alteração de supervisor</option>
+        <option value="Outro">Outro</option>`;
+
+      const chevron = `<svg class="ds-chevron" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>`;
+
+      return `
+      <div class="doc-sections-wrap">
+        <p class="doc-sections-title">Documentos do Estágio</p>
+
+        <!-- ── Relatório Parcial ── -->
+        <div class="doc-section">
+          <div class="doc-section-hdr" id="rp-hdr" onclick="toggleDocSection('rp')">
+            <h3>📄 Relatório Parcial</h3>
+            ${chevron}
+          </div>
+          <div class="doc-section-body" id="rp-body">
+            <p style="font-size:var(--font-size-sm);color:var(--color-text-muted);margin-bottom:var(--space-4)">
+              Descreva as atividades realizadas no período de referência. Após o envio, o documento passará pelo fluxo de assinaturas digitais (gov.br): <strong>você → empresa concedente → supervisor</strong>.
+            </p>
+            <div id="fb-rp"></div>
+            <div class="form-group">
+              <label class="form-label">Período de Referência <span style="color:var(--color-error)">*</span></label>
+              <input type="text" id="rp-periodoRef" class="form-control" placeholder="Ex: Jan/2025 – Mar/2025">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Atividades Realizadas <span style="color:var(--color-error)">*</span></label>
+              <textarea id="rp-atividadesRealizadas" class="form-control" rows="4" placeholder="Descreva as principais atividades desenvolvidas no período..."></textarea>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Aprendizagens Obtidas</label>
+              <textarea id="rp-aprendizagens" class="form-control" rows="3" placeholder="Conhecimentos e habilidades adquiridos..."></textarea>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Relação com o Curso</label>
+              <textarea id="rp-relacaoCurso" class="form-control" rows="3" placeholder="Como as atividades se relacionam com o seu curso..."></textarea>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Avaliação do Estágio <span style="color:var(--color-error)">*</span></label>
+              <select id="rp-avaliacaoEstagio" class="form-control">${avOpts}</select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Dificuldades Encontradas</label>
+              <textarea id="rp-dificuldades" class="form-control" rows="3" placeholder="Dificuldades ou desafios encontrados..."></textarea>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Sugestões</label>
+              <textarea id="rp-sugestoes" class="form-control" rows="2" placeholder="Sugestões para melhoria do estágio..."></textarea>
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="submitRelatorioParcial(this)">Enviar Relatório Parcial</button>
+          </div>
+        </div>
+
+        <!-- ── Relatório Final ── -->
+        <div class="doc-section">
+          <div class="doc-section-hdr" id="rf-hdr" onclick="toggleDocSection('rf')">
+            <h3>📋 Relatório Final</h3>
+            ${chevron}
+          </div>
+          <div class="doc-section-body" id="rf-body">
+            <p style="font-size:var(--font-size-sm);color:var(--color-text-muted);margin-bottom:var(--space-4)">
+              Relatório a ser preenchido ao término do estágio. Após o envio, o documento passará pelo fluxo de assinaturas digitais (gov.br): <strong>você → empresa concedente → supervisor</strong>.
+            </p>
+            <div id="fb-rf"></div>
+            <div class="form-group">
+              <label class="form-label">Data de Encerramento <span style="color:var(--color-error)">*</span></label>
+              <input type="date" id="rf-dataEncerramento" class="form-control">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Resumo das Atividades <span style="color:var(--color-error)">*</span></label>
+              <textarea id="rf-resumoAtividades" class="form-control" rows="4" placeholder="Resumo geral das atividades realizadas durante todo o estágio..."></textarea>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Competências Desenvolvidas</label>
+              <textarea id="rf-competenciasDesenvolvidas" class="form-control" rows="3" placeholder="Competências técnicas e comportamentais desenvolvidas..."></textarea>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Contribuição para a Formação</label>
+              <textarea id="rf-contribuicaoFormacao" class="form-control" rows="3" placeholder="Como o estágio contribuiu para sua formação acadêmica e profissional..."></textarea>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Avaliação da Empresa Concedente <span style="color:var(--color-error)">*</span></label>
+              <select id="rf-avaliacaoConcedente" class="form-control">${avOpts}</select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Avaliação do Orientador Acadêmico <span style="color:var(--color-error)">*</span></label>
+              <select id="rf-avaliacaoOrientador" class="form-control">${avOpts}</select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Recomendaria este estágio? <span style="color:var(--color-error)">*</span></label>
+              <div style="display:flex;gap:var(--space-5);margin-top:var(--space-2)">
+                <label style="display:flex;align-items:center;gap:var(--space-2);font-size:var(--font-size-sm);font-weight:400;cursor:pointer">
+                  <input type="radio" name="recomendaria" value="Sim"> Sim
+                </label>
+                <label style="display:flex;align-items:center;gap:var(--space-2);font-size:var(--font-size-sm);font-weight:400;cursor:pointer">
+                  <input type="radio" name="recomendaria" value="Não"> Não
+                </label>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Considerações Finais</label>
+              <textarea id="rf-consideracoesFinais" class="form-control" rows="3" placeholder="Comentários finais sobre a experiência..."></textarea>
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="submitRelatorioFinal(this)">Enviar Relatório Final</button>
+          </div>
+        </div>
+
+        <!-- ── Adendo ao TCE ── -->
+        <div class="doc-section">
+          <div class="doc-section-hdr" id="adendo-hdr" onclick="toggleDocSection('adendo')">
+            <h3>✏️ Adendo ao TCE</h3>
+            ${chevron}
+          </div>
+          <div class="doc-section-body" id="adendo-body">
+            <p style="font-size:var(--font-size-sm);color:var(--color-text-muted);margin-bottom:var(--space-4)">
+              Solicite alterações no Termo de Compromisso de Estágio. Preencha o formulário ou, se preferir, anexe um documento já preparado.
+            </p>
+            <div class="mode-toggle">
+              <button class="mode-toggle-btn active" data-modo="form" onclick="setAdendoModo('form')">Preencher formulário</button>
+              <button class="mode-toggle-btn" data-modo="upload" onclick="setAdendoModo('upload')">Anexar documento</button>
+            </div>
+            <div id="fb-adendo"></div>
+
+            <!-- Modo formulário -->
+            <div id="adendo-form-area">
+              <div class="form-group">
+                <label class="form-label">Tipo de Adendo <span style="color:var(--color-error)">*</span></label>
+                <select id="adendo-tipoAdendo" class="form-control">${tipoAdendoOpts}</select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Nova Data de Término</label>
+                <input type="date" id="adendo-novaDataTermino" class="form-control">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Nova Carga Horária Semanal (h)</label>
+                <input type="number" id="adendo-novaCargaHoraria" class="form-control" min="1" max="40" placeholder="Ex: 20">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Novo Horário</label>
+                <input type="text" id="adendo-novoHorario" class="form-control" placeholder="Ex: Segunda a sexta, 08h–12h">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Justificativa <span style="color:var(--color-error)">*</span></label>
+                <textarea id="adendo-justificativa" class="form-control" rows="3" placeholder="Motivo da solicitação de alteração..."></textarea>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Observações Adicionais</label>
+                <textarea id="adendo-obsAdicionais" class="form-control" rows="2"></textarea>
+              </div>
+              <button class="btn btn-primary btn-sm" onclick="submitAdendoForm(this)">Enviar Adendo</button>
+            </div>
+
+            <!-- Modo upload -->
+            <div id="adendo-upload-area" style="display:none">
+              <div class="form-group">
+                <label class="form-label">Tipo de Adendo <span style="color:var(--color-error)">*</span></label>
+                <select id="adendo-tipoAdendo-up" class="form-control">${tipoAdendoOpts}</select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Justificativa <span style="color:var(--color-error)">*</span></label>
+                <textarea id="adendo-justificativa-up" class="form-control" rows="2" placeholder="Motivo da solicitação de alteração..."></textarea>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Documento do Adendo (PDF) <span style="color:var(--color-error)">*</span></label>
+                <div class="upload-area" id="drop-adendo" onclick="document.getElementById('upload-adendo').click()">
+                  <input type="file" id="upload-adendo" accept=".pdf">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m6.75 12H9m1.5-12H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg>
+                  <p>Clique ou arraste o PDF aqui</p><small>Apenas PDF — máx. 10 MB</small>
+                </div>
+                <div class="file-selected" id="file-adendo-info"></div>
+              </div>
+              <button class="btn btn-primary btn-sm" onclick="submitAdendoUpload(this)">Enviar Adendo</button>
+            </div>
+          </div>
+        </div>
+
+      </div>`;
+    }
+
+    /* ════════════════════════════════════════
+       SEÇÕES DE DOCUMENTOS — INTERAÇÃO
+    ════════════════════════════════════════ */
+    function toggleDocSection(id) {
+      const body = document.getElementById(id + '-body');
+      const hdr  = document.getElementById(id + '-hdr');
+      if (!body || !hdr) return;
+      const open = body.classList.toggle('is-open');
+      hdr.classList.toggle('is-open', open);
+    }
+
+    function setAdendoModo(modo) {
+      document.getElementById('adendo-form-area').style.display   = modo === 'form'   ? '' : 'none';
+      document.getElementById('adendo-upload-area').style.display = modo === 'upload' ? '' : 'none';
+      document.querySelectorAll('.mode-toggle-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.modo === modo);
+      });
+    }
+
+    function initAdendoUpload() {
+      const input = document.getElementById('upload-adendo');
+      if (!input) return;
+      input.addEventListener('change', () => {
+        const file = input.files[0];
+        if (!file) return;
+        if (file.type !== 'application/pdf') { alert('Apenas arquivos PDF são aceitos.'); input.value = ''; return; }
+        if (file.size > 10 * 1024 * 1024)   { alert('Arquivo muito grande. Máximo: 10 MB.'); input.value = ''; return; }
+        const info = document.getElementById('file-adendo-info');
+        if (info) { info.innerHTML = `✓ ${escapeHtml(file.name)} (${(file.size/1024).toFixed(1)} KB)`; info.classList.add('show'); }
+      });
+      const drop = document.getElementById('drop-adendo');
+      if (!drop) return;
+      drop.addEventListener('dragover',  e => { e.preventDefault(); drop.classList.add('drag-over'); });
+      drop.addEventListener('dragleave', ()  => drop.classList.remove('drag-over'));
+      drop.addEventListener('drop', e => {
+        e.preventDefault(); drop.classList.remove('drag-over');
+        const file = e.dataTransfer.files[0];
+        if (file) { input.files = e.dataTransfer.files; input.dispatchEvent(new Event('change')); }
+      });
+    }
+
+    /* ════════════════════════════════════════
+       ENVIO — RELATÓRIO PARCIAL
+    ════════════════════════════════════════ */
+    async function submitRelatorioParcial(btn) {
+      const fbId              = 'fb-rp';
+      const periodoRef        = document.getElementById('rp-periodoRef')?.value.trim();
+      const atividadesRealizadas = document.getElementById('rp-atividadesRealizadas')?.value.trim();
+      const avaliacaoEstagio  = document.getElementById('rp-avaliacaoEstagio')?.value;
+
+      if (!periodoRef || !atividadesRealizadas || !avaliacaoEstagio) {
+        showFormFeedback(fbId, 'error', 'Campos obrigatórios', 'Preencha o Período de Referência, Atividades Realizadas e Avaliação do Estágio.');
+        return;
+      }
+      btn.disabled = true; btn.classList.add('is-loading');
+      hideFormFeedback(fbId);
+      try {
+        await API.post('enviarRelatorioParcial', {
+          authToken:          getAccessToken(),
+          idEstagio:          _atual.id,
+          periodoRef,
+          atividadesRealizadas,
+          aprendizagens:      document.getElementById('rp-aprendizagens')?.value.trim(),
+          relacaoCurso:       document.getElementById('rp-relacaoCurso')?.value.trim(),
+          avaliacaoEstagio,
+          dificuldades:       document.getElementById('rp-dificuldades')?.value.trim(),
+          sugestoes:          document.getElementById('rp-sugestoes')?.value.trim(),
+        });
+        showFormFeedback(fbId, 'success', 'Relatório enviado!',
+          'Seu relatório parcial foi registrado. O documento passará pelo fluxo de assinaturas digitais (gov.br): você → empresa concedente → supervisor.');
+        btn.textContent = 'Enviado ✓';
+      } catch (err) {
+        showFormFeedback(fbId, 'error', 'Erro ao enviar', err.message);
+        btn.disabled = false; btn.classList.remove('is-loading');
+      }
+    }
+
+    /* ════════════════════════════════════════
+       ENVIO — RELATÓRIO FINAL
+    ════════════════════════════════════════ */
+    async function submitRelatorioFinal(btn) {
+      const fbId                = 'fb-rf';
+      const dataEncerramento    = document.getElementById('rf-dataEncerramento')?.value;
+      const resumoAtividades    = document.getElementById('rf-resumoAtividades')?.value.trim();
+      const avaliacaoConcedente = document.getElementById('rf-avaliacaoConcedente')?.value;
+      const avaliacaoOrientador = document.getElementById('rf-avaliacaoOrientador')?.value;
+      const recomendariaEl      = document.querySelector('input[name="recomendaria"]:checked');
+
+      if (!dataEncerramento || !resumoAtividades || !avaliacaoConcedente || !avaliacaoOrientador || !recomendariaEl) {
+        showFormFeedback(fbId, 'error', 'Campos obrigatórios', 'Preencha todos os campos obrigatórios, incluindo a avaliação e a opção de recomendação.');
+        return;
+      }
+      btn.disabled = true; btn.classList.add('is-loading');
+      hideFormFeedback(fbId);
+      try {
+        await API.post('enviarRelatorioFinal', {
+          authToken:               getAccessToken(),
+          idEstagio:               _atual.id,
+          dataEncerramento,
+          resumoAtividades,
+          competenciasDesenvolvidas: document.getElementById('rf-competenciasDesenvolvidas')?.value.trim(),
+          contribuicaoFormacao:      document.getElementById('rf-contribuicaoFormacao')?.value.trim(),
+          avaliacaoConcedente,
+          avaliacaoOrientador,
+          recomendaria:              recomendariaEl.value,
+          consideracoesFinais:       document.getElementById('rf-consideracoesFinais')?.value.trim(),
+        });
+        showFormFeedback(fbId, 'success', 'Relatório enviado!',
+          'Seu relatório final foi registrado. O documento passará pelo fluxo de assinaturas digitais (gov.br): você → empresa concedente → supervisor.');
+        btn.textContent = 'Enviado ✓';
+      } catch (err) {
+        showFormFeedback(fbId, 'error', 'Erro ao enviar', err.message);
+        btn.disabled = false; btn.classList.remove('is-loading');
+      }
+    }
+
+    /* ════════════════════════════════════════
+       ENVIO — ADENDO (formulário)
+    ════════════════════════════════════════ */
+    async function submitAdendoForm(btn) {
+      const fbId        = 'fb-adendo';
+      const tipoAdendo  = document.getElementById('adendo-tipoAdendo')?.value;
+      const justificativa = document.getElementById('adendo-justificativa')?.value.trim();
+
+      if (!tipoAdendo || !justificativa) {
+        showFormFeedback(fbId, 'error', 'Campos obrigatórios', 'Selecione o tipo de adendo e preencha a justificativa.');
+        return;
+      }
+      btn.disabled = true; btn.classList.add('is-loading');
+      hideFormFeedback(fbId);
+      try {
+        await API.post('enviarAdendo', {
+          authToken:        getAccessToken(),
+          idEstagio:        _atual.id,
+          tipoAdendo,
+          novaDataTermino:  document.getElementById('adendo-novaDataTermino')?.value  || '',
+          novaCargaHoraria: document.getElementById('adendo-novaCargaHoraria')?.value || '',
+          novoHorario:      document.getElementById('adendo-novoHorario')?.value.trim() || '',
+          justificativa,
+          obsAdicionais:    document.getElementById('adendo-obsAdicionais')?.value.trim() || '',
+        });
+        showFormFeedback(fbId, 'success', 'Adendo enviado!',
+          'Sua solicitação de adendo foi registrada e será analisada pelo setor de estágios.');
+        btn.textContent = 'Enviado ✓';
+      } catch (err) {
+        showFormFeedback(fbId, 'error', 'Erro ao enviar', err.message);
+        btn.disabled = false; btn.classList.remove('is-loading');
+      }
+    }
+
+    /* ════════════════════════════════════════
+       ENVIO — ADENDO (upload)
+    ════════════════════════════════════════ */
+    async function submitAdendoUpload(btn) {
+      const fbId        = 'fb-adendo';
+      const tipoAdendo  = document.getElementById('adendo-tipoAdendo-up')?.value;
+      const justificativa = document.getElementById('adendo-justificativa-up')?.value.trim();
+      const fileInput   = document.getElementById('upload-adendo');
+      const file        = fileInput?.files[0];
+
+      if (!tipoAdendo || !justificativa || !file) {
+        showFormFeedback(fbId, 'error', 'Campos obrigatórios', 'Selecione o tipo, informe a justificativa e anexe o PDF do adendo.');
+        return;
+      }
+      btn.disabled = true; btn.classList.add('is-loading');
+      hideFormFeedback(fbId);
+      try {
+        const b64 = await fileToBase64(file);
+        await API.post('enviarAdendo', {
+          authToken:   getAccessToken(),
+          idEstagio:   _atual.id,
+          tipoAdendo,
+          justificativa,
+          modoAnexo:   true,
+          arquivo:     { nome: file.name, base64: b64 },
+        });
+        showFormFeedback(fbId, 'success', 'Adendo enviado!',
+          'Seu documento de adendo foi recebido e será analisado pelo setor de estágios.');
+        btn.textContent = 'Enviado ✓';
+      } catch (err) {
+        showFormFeedback(fbId, 'error', 'Erro ao enviar', err.message);
+        btn.disabled = false; btn.classList.remove('is-loading');
+      }
     }
 
     /* ════════════════════════════════════════

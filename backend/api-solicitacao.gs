@@ -159,12 +159,12 @@ function solicitarEstagio_(dados) {
     return jsonError_('Muitas requisições. Aguarde um momento.', 'RATE_LIMIT');
   }
 
-  // Valida código de acesso e obtém dados do estudante
+  // Obtém dados do estudante pelo e-mail autenticado
   var estudante;
   try {
-    estudante = validarCodigoAcesso_(tokenInfo.email, dados.codigoAcesso);
+    estudante = buscarEstudantePorEmail_(tokenInfo.email);
   } catch (e) {
-    return jsonError_(e.message, 'INVALID_CODE');
+    return jsonError_(e.message, 'AUTH_ERROR');
   }
 
   // Sanitização dos campos da solicitação
@@ -304,7 +304,7 @@ function solicitarEstagio_(dados) {
   linha[COL_SOL.LINK_DOC_MAT]       = docMat;
   linha[COL_SOL.LINK_DOC_ID]      = docId;
   linha[COL_SOL.LINK_DOC_BOL]     = docBol;
-  linha[COL_SOL.STATUS]           = 'Pendente';
+  linha[COL_SOL.STATUS]           = 'Em Checklist';
   linha[COL_SOL.OBS_SETOR]        = '';
   linha[COL_SOL.MOTIVO_REPROVACAO]= '';
   linha[COL_SOL.DRIVE_URL]        = '';

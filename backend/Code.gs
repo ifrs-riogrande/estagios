@@ -55,6 +55,7 @@ var GET_ROUTES = {
   'listarAlunosAdmin':        doGetAdmin,
   'listarEmpresasAdmin':      doGetAdmin,
   'listarOrientadoresAdmin':  doGetAdmin,
+  'listarSupervisoresAdmin':  doGetAdmin,
   'listarCoordenadoresAdmin': doGetAdmin,
   'listarCadastrosPendentes': doGetAdmin,
   'listarAdendosAdmin':       doGetAdmin,
@@ -95,7 +96,6 @@ var POST_ROUTES = {
 
   // Estudantes â€” Admin
   'validarCadastroAdmin':      doPostAdmin,
-  'reenviarCodigoAdmin':       doPostAdmin,
 
   // Servidores
   'cadastrarOrientador':               doPostServidores,
@@ -134,6 +134,9 @@ var POST_ROUTES = {
   'inativarEmpresa':           doPostAdmin,
   'inativarOrientador':        doPostAdmin,
   'reativarOrientador':        doPostAdmin,
+  'validarSupervisor':         doPostAdmin,
+  'inativarSupervisor':        doPostAdmin,
+  'reativarSupervisor':        doPostAdmin,
   'aprovarAdendo':             doPostAdmin,
   'reprovarAdendo':            doPostAdmin,
   'inativarAgente':            doPostAdmin,

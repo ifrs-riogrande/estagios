@@ -4,11 +4,10 @@
  *
  * Rotas POST (via Code.gs):
  *   cadastrarEstudante   — Registra novo estudante (status: Aguardando Validação)
- *   obterMeuCadastro     — Retorna dados cadastrais (requer login + código permanente)
+ *   obterMeuCadastro     — Retorna dados cadastrais (requer login OAuth)
  *
  * Rotas POST — Admin (via Code.gs → doPostAdmin):
- *   validarCadastroAdmin — Valida cadastro, gera código permanente e envia e-mail
- *   reenviarCodigoAdmin  — Reenvia e-mail com código existente
+ *   validarCadastroAdmin — Valida cadastro e envia e-mail de confirmação
  *
  * Planilha consolidada SGE:
  *   ID: 1zVyseifVC6xeMpNjqwYd6jCq9HTJ2NS8BlN1dtM4s7Y
@@ -193,14 +192,14 @@ function cadastrarEstudante_(dados) {
         'E-mail: '  + emailInst,
         'Cursos: '  + cursosTexto,
         '',
-        'Acesse o painel administrativo para validar o cadastro e enviar o código de acesso.',
+        'Acesse o painel administrativo para validar o cadastro e liberar o acesso do aluno.',
         '',
         'Setor de Estágios — IFRS Campus Rio Grande',
       ].join('\n'),
     });
   } catch (e) { /* notificação não bloqueia o cadastro */ }
 
-  return jsonOk_({ mensagem: 'Cadastro realizado com sucesso! Aguarde a validação do setor para receber seu código de acesso por e-mail.' });
+  return jsonOk_({ mensagem: 'Cadastro realizado com sucesso! Aguarde a validação do setor. Você receberá um e-mail quando seu acesso for liberado.' });
 }
 
 // ---------------------------------------------------------------------------
@@ -235,58 +234,31 @@ function validarCadastroAdmin_(body) {
     return jsonError_('Este cadastro já foi validado anteriormente.', 'ALREADY_VALIDATED');
   }
 
-  // Gera código permanente
-  var codigo   = gerarCodigoPermanente_();
   var rowSheet = linhaIdx + 1;
-
-  sheet.getRange(rowSheet, COL_EST.COD_ACESSO + 1).setValue(codigo);
-  sheet.getRange(rowSheet, COL_EST.COD_EXPIRA + 1).setValue('');  // não usa expiração
   sheet.getRange(rowSheet, COL_EST.STATUS + 1).setValue('Ativo');
 
   var nome = String(dados[linhaIdx][COL_EST.NOME] || 'Estudante');
 
-  // Envia e-mail ao aluno com o código
-  enviarEmailCodigoAcesso_(emailBusca, nome, codigo);
+  // Notifica o aluno que o cadastro está ativo
+  try {
+    MailApp.sendEmail({
+      to: emailBusca,
+      subject: '[SGE IFRS] Cadastro validado — acesso liberado',
+      body: [
+        'Prezado(a) ' + nome + ',',
+        '',
+        'Seu cadastro no Sistema de Gestão de Estágios (SGE) do IFRS Campus Rio Grande foi validado.',
+        '',
+        'Você já pode acessar o sistema com sua conta Google institucional (@aluno.riogrande.ifrs.edu.br):',
+        CFG_EST.URL_SISTEMA,
+        '',
+        'Setor de Estágios — IFRS Campus Rio Grande',
+        'estagios@riogrande.ifrs.edu.br',
+      ].join('\n'),
+    });
+  } catch (e) { /* notificação não bloqueia */ }
 
-  return jsonOk_({ mensagem: 'Cadastro validado. Código de acesso enviado para ' + emailBusca + '.' });
-}
-
-// ---------------------------------------------------------------------------
-// POST Admin — Reenviar código existente
-// ---------------------------------------------------------------------------
-
-/**
- * Reenvia o e-mail com o código de acesso já gerado.
- * Usado quando o aluno perde o código.
- */
-function reenviarCodigoAdmin_(body) {
-  var emailBusca = sanitizar_(body.emailEstudante || '', 100).toLowerCase().trim();
-  if (!emailBusca) return jsonError_('E-mail do estudante é obrigatório.', 'VALIDATION');
-
-  var sheet = abrirAba_(CFG_EST.SS_ID, CFG_EST.ABA);
-  var dados = sheet.getDataRange().getValues();
-
-  var linhaIdx = -1;
-  for (var i = 1; i < dados.length; i++) {
-    if (String(dados[i][COL_EST.EMAIL_INST] || '').toLowerCase().trim() === emailBusca) {
-      linhaIdx = i;
-      break;
-    }
-  }
-
-  if (linhaIdx === -1) {
-    return jsonError_('Estudante não encontrado para o e-mail informado.', 'NOT_FOUND');
-  }
-
-  var codigo = String(dados[linhaIdx][COL_EST.COD_ACESSO] || '').trim();
-  if (!codigo) {
-    return jsonError_('Este estudante ainda não possui código de acesso. Use "Validar Cadastro" primeiro.', 'NO_CODE');
-  }
-
-  var nome = String(dados[linhaIdx][COL_EST.NOME] || 'Estudante');
-  enviarEmailCodigoAcesso_(emailBusca, nome, codigo);
-
-  return jsonOk_({ mensagem: 'Código de acesso reenviado para ' + emailBusca + '.' });
+  return jsonOk_({ mensagem: 'Cadastro validado. Notificação enviada para ' + emailBusca + '.' });
 }
 
 // ---------------------------------------------------------------------------
@@ -364,7 +336,7 @@ function verificarCpf_(e) {
 
 /**
  * Retorna os dados cadastrais do estudante autenticado.
- * Requer: authToken (Google) + codigoAcesso permanente.
+ * Requer: authToken (Google OAuth).
  */
 function obterMeuCadastro_(e) {
   var params = e.parameter || {};
@@ -374,12 +346,8 @@ function obterMeuCadastro_(e) {
   } catch (err) {
     return jsonError_(err.message, 'AUTH_ERROR');
   }
-
-  var codigo = sanitizar_(params.codigoAcesso || '', 20).trim().toUpperCase();
-  if (!codigo) return jsonError_('Código de acesso é obrigatório.', 'VALIDATION');
-
   try {
-    var est = buscarEstudantePorEmailECodigo_(tokenInfo.email, codigo);
+    var est = buscarEstudantePorEmail_(tokenInfo.email);
     return jsonOk_(est);
   } catch (err) {
     return jsonError_(err.message, 'AUTH_ERROR');
@@ -387,19 +355,19 @@ function obterMeuCadastro_(e) {
 }
 
 // ---------------------------------------------------------------------------
-// Função auxiliar: validar código de acesso (chamada por api-solicitacao.gs)
+// Função auxiliar: validar acesso (mantida para compatibilidade com api-solicitacao.gs)
 // ---------------------------------------------------------------------------
 
 /**
- * Valida código permanente e retorna dados do estudante.
- * Não invalida o código após uso (permanente).
+ * Retorna dados do estudante pelo e-mail autenticado.
+ * O parâmetro codigo é ignorado (mantido apenas para compatibilidade de assinatura).
  *
  * @param {string} emailEstudante
- * @param {string} codigo
+ * @param {string} codigo  (ignorado)
  * @returns {{ nome, matricula, curso, cpf, telefone, emailPessoal, emailInst, dataNasc, endereco }}
  */
 function validarCodigoAcesso_(emailEstudante, codigo) {
-  return buscarEstudantePorEmailECodigo_(emailEstudante, codigo);
+  return buscarEstudantePorEmail_(emailEstudante);
 }
 
 // ---------------------------------------------------------------------------
@@ -407,14 +375,13 @@ function validarCodigoAcesso_(emailEstudante, codigo) {
 // ---------------------------------------------------------------------------
 
 /**
- * Localiza estudante por e-mail (principal ou de qualquer vínculo) + código.
+ * Localiza estudante por e-mail (principal ou de qualquer vínculo).
  * Valida status Ativo e retorna dados completos.
  */
-function buscarEstudantePorEmailECodigo_(emailEstudante, codigo) {
+function buscarEstudantePorEmail_(emailEstudante) {
   var sheet = abrirAba_(CFG_EST.SS_ID, CFG_EST.ABA);
   var dados = sheet.getDataRange().getValues();
   var emailNorm  = String(emailEstudante || '').toLowerCase().trim();
-  var codigoNorm = String(codigo || '').trim().toUpperCase();
 
   var linhaEncontrada = null;
 
@@ -452,15 +419,7 @@ function buscarEstudantePorEmailECodigo_(emailEstudante, codigo) {
 
   var statusEst = String(linha[COL_EST.STATUS] || '').trim();
   if (statusEst !== 'Ativo') {
-    throw new Error('Cadastro ainda não validado pelo setor. Aguarde o e-mail com seu código de acesso.');
-  }
-
-  var codPlan = String(linha[COL_EST.COD_ACESSO] || '').trim().toUpperCase();
-  if (!codPlan) {
-    throw new Error('Nenhum código de acesso registrado. Entre em contato com o setor.');
-  }
-  if (codPlan !== codigoNorm) {
-    throw new Error('Código de acesso inválido.');
+    throw new Error('Cadastro ainda não validado pelo setor. Aguarde o e-mail de confirmação.');
   }
 
   // Recupera array de cursos; compatibilidade com registros antigos sem emailInst
@@ -541,9 +500,6 @@ function atualizarMeuCadastro_(dados) {
     return jsonError_('Muitas requisições. Aguarde um momento.', 'RATE_LIMIT');
   }
 
-  var codigo = sanitizar_(dados.codigoAcesso || '', 20).trim().toUpperCase();
-  if (!codigo) return jsonError_('Código de acesso é obrigatório.', 'VALIDATION');
-
   // Campos atualizáveis
   var emailPes = sanitizar_(dados.emailPessoal || '', 100).toLowerCase();
   var telefone = sanitizar_(dados.telefone     || '', 30);
@@ -586,7 +542,6 @@ function atualizarMeuCadastro_(dados) {
   var sheet = abrirAba_(CFG_EST.SS_ID, CFG_EST.ABA);
   var todosOsDados = sheet.getDataRange().getValues();
   var emailNorm  = String(tokenInfo.email || '').toLowerCase().trim();
-  var codigoNorm = codigo;
   var rowIdx = -1;
 
   for (var i = 1; i < todosOsDados.length; i++) {
@@ -612,10 +567,6 @@ function atualizarMeuCadastro_(dados) {
     if (statusLinha !== 'Ativo') {
       return jsonError_('Cadastro não está ativo.', 'AUTH_ERROR');
     }
-    var codPlan = String(linha[COL_EST.COD_ACESSO] || '').trim().toUpperCase();
-    if (codPlan !== codigoNorm) {
-      return jsonError_('Código de acesso inválido.', 'AUTH_ERROR');
-    }
     rowIdx = i;
     break;
   }
@@ -639,47 +590,3 @@ function atualizarMeuCadastro_(dados) {
   return jsonOk_({ mensagem: 'Dados atualizados com sucesso!' });
 }
 
-/**
- * Gera código permanente no formato SGE-XXXX-XXXX-XXXX.
- * Ex.: SGE-A3BX-9K2F-7QWR
- */
-function gerarCodigoPermanente_() {
-  var chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  function bloco4() {
-    var s = '';
-    for (var i = 0; i < 4; i++) s += chars[Math.floor(Math.random() * chars.length)];
-    return s;
-  }
-  return 'SGE-' + bloco4() + '-' + bloco4() + '-' + bloco4();
-}
-
-/**
- * Envia e-mail ao estudante com o código de acesso permanente.
- */
-function enviarEmailCodigoAcesso_(emailDest, nome, codigo) {
-  MailApp.sendEmail({
-    to:      emailDest,
-    subject: '[SGE IFRS] Cadastro validado — seu código de acesso',
-    body: [
-      'Prezado(a) ' + nome + ',',
-      '',
-      'Seu cadastro no Sistema de Gestão de Estágios (SGE) do IFRS Campus Rio Grande foi validado pelo setor de estágios.',
-      '',
-      'Seu código de acesso permanente é:',
-      '',
-      '  ' + codigo,
-      '',
-      'Guarde este código com segurança. Você precisará dele para:',
-      '  • Solicitar estágio',
-      '  • Acessar e visualizar seus dados cadastrais',
-      '',
-      'Este código é pessoal e intransferível.',
-      'Em caso de perda, entre em contato com o setor de estágios.',
-      '',
-      'Acesse o sistema: ' + CFG_EST.URL_SISTEMA,
-      '',
-      'Setor de Estágios — IFRS Campus Rio Grande',
-      'estagios@riogrande.ifrs.edu.br',
-    ].join('\n'),
-  });
-}
