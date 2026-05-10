@@ -722,74 +722,80 @@
       </div>`;
     }
 
+    /*
+     * PRINCÍPIO: o checklist serve para VALIDAR se os dados estão corretos.
+     * Cada ator precisa ver todas as informações relevantes para fazer sua
+     * verificação. Dados sensíveis (CPF, data nasc, matrícula) só para admin.
+     * ──────────────────────────────────────────────────────────────────────
+     */
+
     /* 1 — Estudante */
     let s1 = '';
     if (ator === 'admin') {
-      s1 = ckF('Estudante',info.nomeEstudante)+ckF('Matrícula',info.matricula)+ckF('CPF',info.cpf)
-         + ckF('Curso',info.curso)+ckF('Turno',info.turno)+ckF('Semestre',info.semestre)
-         + ckF('Formando',info.formando)+ckF('PNE/NEE',info.nee)+ckF('Telefone',info.telefone);
+      // Admin vê tudo — inclui dados sensíveis
+      s1 = ckF('Estudante',info.nomeEstudante) + ckF('Matrícula',info.matricula) + ckF('CPF',info.cpf)
+         + ckF('Curso',info.curso) + ckF('Turno',info.turno) + ckF('Semestre',info.semestre)
+         + ckF('Formando',info.formando) + ckF('PNE/NEE',info.nee) + ckF('Telefone',info.telefone);
     } else if (ator === 'coordenador') {
-      s1 = ckF('Estudante',info.nomeEstudante)+ckF('Matrícula',info.matricula)
-         + ckF('Curso',info.curso)+ckF('Semestre',info.semestre)+ckF('Formando',info.formando);
-    } else if (ator === 'orientador') {
-      s1 = ckF('Estudante',info.nomeEstudante)+ckF('Curso',info.curso)
-         + ckF('Turno',info.turno)+ckF('Semestre',info.semestre);
+      // Coordenador verifica adequação ao curso
+      s1 = ckF('Estudante',info.nomeEstudante) + ckF('Matrícula',info.matricula)
+         + ckF('Curso',info.curso) + ckF('Turno',info.turno) + ckF('Semestre',info.semestre)
+         + ckF('Formando',info.formando);
     } else {
-      s1 = ckF('Estudante', info.nomeEstudante);
+      // Orientador, Empresa, Supervisor — precisam saber quem é o estagiário
+      s1 = ckF('Estudante',info.nomeEstudante) + ckF('Curso',info.curso)
+         + ckF('Turno',info.turno) + ckF('Semestre',info.semestre);
     }
     if (s1) html += ckSec('👤 Estudante', s1);
 
     /* 2 — Empresa e Supervisor */
     let s2 = '';
     if (ator === 'admin') {
-      s2 = ckF('Empresa',info.nomeEmpresa)+ckF('CNPJ',info.cnpjEmpresa)
-         + ckF('Supervisor',info.nomeSupervisor)+ckF('Agente de Integração',info.nomeAgente);
-    } else if (ator === 'orientador') {
-      s2 = ckF('Empresa',info.nomeEmpresa)+ckF('Supervisor',info.nomeSupervisor);
-    } else if (ator === 'coordenador') {
-      s2 = ckF('Empresa',info.nomeEmpresa);
+      s2 = ckF('Empresa',info.nomeEmpresa) + ckF('CNPJ',info.cnpjEmpresa)
+         + ckF('Supervisor',info.nomeSupervisor) + ckF('Agente de Integração',info.nomeAgente);
     } else if (ator === 'empresa') {
-      s2 = ckF('Empresa',info.nomeEmpresa)+ckF('CNPJ',info.cnpjEmpresa)+ckF('Supervisor responsável',info.nomeSupervisor);
+      // Empresa confirma seus próprios dados
+      s2 = ckF('Empresa (você)',info.nomeEmpresa) + ckF('CNPJ',info.cnpjEmpresa)
+         + ckF('Supervisor responsável',info.nomeSupervisor);
     } else if (ator === 'supervisor') {
-      s2 = ckF('Empresa',info.nomeEmpresa)+ckF('Supervisor (você)',info.nomeSupervisor);
+      // Supervisor confirma seus dados e da empresa
+      s2 = ckF('Empresa',info.nomeEmpresa) + ckF('CNPJ',info.cnpjEmpresa)
+         + ckF('Supervisor (você)',info.nomeSupervisor);
+    } else {
+      // Orientador e Coordenador verificam onde o estudante vai estagiar
+      s2 = ckF('Empresa',info.nomeEmpresa) + ckF('CNPJ',info.cnpjEmpresa)
+         + ckF('Supervisor',info.nomeSupervisor);
+      if (info.nomeAgente) s2 += ckF('Agente de Integração',info.nomeAgente);
     }
     if (s2) html += ckSec('🏢 Empresa e Supervisor', s2);
 
-    /* 3 — Orientação */
+    /* 3 — Orientação Acadêmica */
     let s3 = '';
-    if (ator === 'admin')        s3 = ckF('Orientador', info.nomeOrientador);
-    else if (ator==='orientador') s3 = ckF('Orientador (você)', info.nomeOrientador);
-    else if (ator==='coordenador')s3 = ckF('Coordenador (você)', info.nomeOrientador);
-    else                          s3 = ckLk('Orientador / Coordenador');
-    html += ckSec('🎓 Orientação Acadêmica', s3);
+    if (ator === 'orientador') {
+      s3 = ckF('Orientador (você)',info.nomeOrientador);
+    } else if (ator === 'coordenador') {
+      s3 = ckF('Orientador',info.nomeOrientador);
+    } else {
+      // Admin, empresa, supervisor — precisam saber quem orienta
+      s3 = ckF('Orientador',info.nomeOrientador);
+    }
+    if (s3) html += ckSec('🎓 Orientação Acadêmica', s3);
 
     /* 4 — Detalhes do Estágio */
-    let s4 = '';
-    if (ator === 'admin') {
-      s4 = ckF('Tipo',info.tipoEstagio)+ckF('Início',dt(info.dataInicio))+ckF('Término',dt(info.dataTermino))
-         + ckF('Carga Horária',ch(info.cargaHoraria))+ckF('Horário',info.horario)
-         + ckF('Remuneração',info.remuneracao)+ckF('Bolsa',bR(info.valorBolsa));
-    } else if (ator === 'orientador') {
-      s4 = ckF('Tipo',info.tipoEstagio)+ckF('Início',dt(info.dataInicio))+ckF('Término',dt(info.dataTermino))
-         + ckF('Carga Horária',ch(info.cargaHoraria))+ckF('Horário',info.horario);
-    } else if (ator === 'coordenador') {
-      s4 = ckF('Tipo',info.tipoEstagio)+ckF('Início',dt(info.dataInicio))+ckF('Término',dt(info.dataTermino))
-         + ckF('Carga Horária',ch(info.cargaHoraria));
-    } else {
-      s4 = ckF('Início',dt(info.dataInicio))+ckF('Término',dt(info.dataTermino))
-         + ckF('Carga Horária',ch(info.cargaHoraria))+ckF('Horário',info.horario);
-      if (ator==='empresa') s4 += ckF('Remuneração',info.remuneracao)+ckF('Bolsa',bR(info.valorBolsa));
-    }
+    // Todos os atores veem os dados do estágio — é o que estão validando
+    let s4 = ckF('Tipo',info.tipoEstagio)
+           + ckF('Início',dt(info.dataInicio)) + ckF('Término',dt(info.dataTermino))
+           + ckF('Carga Horária',ch(info.cargaHoraria)) + ckF('Horário',info.horario)
+           + ckF('Remuneração',info.remuneracao) + ckF('Bolsa',bR(info.valorBolsa));
     if (s4) html += ckSec('📋 Detalhes do Estágio', s4);
 
     /* 5 — Plano de Atividades */
-    if (info.planoAtividades || info.objetivos) {
-      let s5 = ckF('Plano de Atividades', info.planoAtividades, true);
-      if (ator !== 'coordenador') s5 += ckF('Objetivos', info.objetivos, true);
-      if (s5) html += ckSec('📝 Plano de Atividades', s5);
-    }
+    // Todos validam — empresa e supervisor precisam confirmar que as atividades são viáveis
+    const s5 = ckF('Plano de Atividades',info.planoAtividades,true)
+             + ckF('Objetivos',info.objetivos,true);
+    if (s5) html += ckSec('📝 Plano de Atividades', s5);
 
-    /* 6 — Documentos */
+    /* 6 — Documentos (admin only) */
     if (ator === 'admin') {
       let dH = '';
       if (info.linkDocMat) dH += `<div class="ck-field">${ckDoc('Comprovante de Matrícula', info.linkDocMat)}</div>`;
@@ -798,8 +804,6 @@
       if (info.driveUrl)   dH += `<div class="ck-field">${ckDoc('Pasta Drive do Estágio',   info.driveUrl)}</div>`;
       if (!dH) dH = '<div class="ck-locked-section">Documentos ainda não disponíveis (gerados após aprovação).</div>';
       html += ckSec('📎 Documentos', dH);
-    } else {
-      html += ckSec('📎 Documentos', ckLk('Documentos'));
     }
 
     card.innerHTML = html;
@@ -1033,9 +1037,7 @@
 
       await API.post(ator === 'admin' ? 'salvarRespostaAdmin' : 'salvarRespostaAtor', body);
 
-      // Esconde formulário e mostra confirmação
-      document.getElementById('ck-content').hidden = true;
-      document.getElementById('ck-progress-bar').hidden = true;
+      // Mostra confirmação dentro do ck-content (sem apagar o DOM inteiro)
       mostrarRespondido({ status: decisao, data: new Date().toISOString(), obs: obsGeral });
 
     } catch (err) {
@@ -1051,43 +1053,42 @@
 
   // ── Tela "já respondido" ──────────────────────────────────────
   function mostrarRespondido(secao) {
-    document.getElementById('ck-loading').hidden  = true;
-    document.getElementById('ck-content').hidden  = true;
+    document.getElementById('ck-loading').hidden     = true;
+    document.getElementById('ck-progress-bar').hidden = true;
 
     const isAjuste = secao.status === 'ajuste';
     const dataStr  = secao.data ? ` em ${formatarDataHora(secao.data)}` : '';
 
-    const el = document.createElement('div');
-    el.className = `ck-respondido${isAjuste ? ' ck-respondido--ajuste' : ''}`;
-    el.innerHTML = isAjuste
-      ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-           <path stroke-linecap="round" stroke-linejoin="round"
-             d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/>
-         </svg>
-         <h2>Ajuste solicitado${dataStr}</h2>
-         <p>Sua solicitação de ajuste foi registrada. O setor de estágios será notificado.</p>
-         ${secao.obs ? `<p style="margin-top:var(--space-3);font-style:italic;">"${escapeHtml(secao.obs)}"</p>` : ''}`
-      : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-           <path stroke-linecap="round" stroke-linejoin="round"
-             d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-         </svg>
-         <h2>Checklist aprovado${dataStr}</h2>
-         <p>Sua resposta foi registrada com sucesso. Obrigado pela colaboração!</p>`;
-
-    const container = document.querySelector('#main-content .container > div');
-    container.innerHTML = '';
-    container.appendChild(el);
-
-    // Esconde hero para não confundir
-    document.getElementById('ck-hero').hidden = true;
-    document.getElementById('ck-progress-bar').hidden = true;
+    // Substitui o conteúdo de ck-content pela mensagem de confirmação
+    // (evita remover o DOM inteiro, o que causava tela em branco)
+    const content = document.getElementById('ck-content');
+    content.hidden = false;
+    content.innerHTML = isAjuste
+      ? `<div class="ck-respondido ck-respondido--ajuste">
+           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+             <path stroke-linecap="round" stroke-linejoin="round"
+               d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/>
+           </svg>
+           <h2>Ajuste solicitado${dataStr}</h2>
+           <p>Sua solicitação de ajuste foi registrada. O setor de estágios será notificado.</p>
+           ${secao.obs ? `<p style="margin-top:var(--space-3);font-style:italic;">"${escapeHtml(secao.obs)}"</p>` : ''}
+         </div>`
+      : `<div class="ck-respondido">
+           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+             <path stroke-linecap="round" stroke-linejoin="round"
+               d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+           </svg>
+           <h2>Checklist ${isAjuste ? 'com ajuste' : 'aprovado'}${dataStr}</h2>
+           <p>Sua resposta foi registrada com sucesso. Obrigado pela colaboração!</p>
+         </div>`;
   }
 
   // ── Tela "não liberado" ───────────────────────────────────────
   function mostrarNaoLiberado(ator) {
     document.getElementById('ck-loading').hidden = true;
-    const container = document.querySelector('#main-content .container > div');
-    container.innerHTML = `
+    const el = document.getElementById('ck-content');
+    el.hidden = false;
+    el.innerHTML = `
       <div class="ck-nao-liberado">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
           <path stroke-linecap="round" stroke-linejoin="round"
@@ -1095,15 +1096,16 @@
         </svg>
         <h2>Aguardando liberação</h2>
         <p>Seu checklist será liberado após o Setor de Estágios concluir a verificação inicial.
-           Você receberá um e-mail quando estiver disponível.</p>
+           Você receberá um e-mail com o link de acesso quando estiver disponível.</p>
       </div>`;
   }
 
   // ── Acesso negado ─────────────────────────────────────────────
   function mostrarAcessoNegado(email) {
     document.getElementById('ck-loading').hidden = true;
-    const container = document.querySelector('#main-content .container > div');
-    container.innerHTML = `
+    const el = document.getElementById('ck-content');
+    el.hidden = false;
+    el.innerHTML = `
       <div class="ck-acesso-negado">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
           <path stroke-linecap="round" stroke-linejoin="round"
@@ -1111,7 +1113,9 @@
         </svg>
         <h2>Acesso não autorizado</h2>
         <p>O e-mail <strong>${escapeHtml(email || '')}</strong> não está associado a nenhum ator deste checklist.</p>
-        <p>Se você acredita que isso é um erro, verifique se acessou com a conta correta.</p>
+        <p>Se você é da <strong>empresa ou supervisor</strong>, utilize o link recebido por e-mail
+           — ele contém um código de acesso e não exige conta Google.</p>
+        <p>Se você é orientador ou coordenador, verifique se acessou com a conta Google correta.</p>
         <button onclick="logout('../')" class="btn btn-ghost" style="margin-top:var(--space-4);">
           Sair e usar outra conta
         </button>
