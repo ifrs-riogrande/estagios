@@ -11,7 +11,7 @@
  */
 
 function configurarPlanilha() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ss = SpreadsheetApp.openById('1zVyseifVC6xeMpNjqwYd6jCq9HTJ2NS8BlN1dtM4s7Y');
 
   // ── 1. Define as abas e seus cabeçalhos ────────────────────────────
   var abas = [
@@ -63,11 +63,32 @@ function configurarPlanilha() {
 
     {
       nome: 'Supervisores',
+      // 24 colunas — espelhando COL_SUP em api-empresas.gs (índices 0–23)
       cabecalho: [
-        'Timestamp', 'E-mail Form.', 'CNPJ Empresa', 'Nome Empresa',
-        'Setor', 'Cargo', 'Formação', 'Área de Formação',
-        'Nome', 'Registro Prof.', 'Tipo Vínculo',
-        'Telefone', 'E-mail', 'Nível Formação', 'Área Formação', 'Status',
+        'Timestamp',          // 0  TIMESTAMP
+        'E-mail Form.',       // 1  EMAIL_FORM
+        'Tipo',               // 2  TIPO
+        'Nome Empresa',       // 3  EMPRESA
+        'Setor',              // 4  SETOR
+        'Endereço Setor',     // 5  ENDERECO_SETOR
+        'E-mail Setor',       // 6  EMAIL_SETOR_SUP
+        'Tel. Setor',         // 7  TEL_SETOR
+        'Nome',               // 8  NOME
+        'CPF',                // 9  CPF
+        'Cargo',              // 10 CARGO
+        'Telefone',           // 11 TEL_SUP
+        'E-mail',             // 12 EMAIL_SUP
+        'Nível Formação',     // 13 NIVEL_FORMACAO
+        'Área Formação',      // 14 AREA_FORMACAO
+        'Instituição',        // 15 INSTITUICAO
+        'Tempo Experiência',  // 16 TEMPO_EXP
+        'Descrição Experiência', // 17 DESC_EXP
+        'Declaração',         // 18 DECLARACAO
+        'Status',             // 19 STATUS
+        'Validado Por',       // 20 VALIDADO_POR
+        'Data Validação',     // 21 DATA_VALIDACAO
+        'Observações',        // 22 OBSERVACOES
+        'Data Ult. Atualização', // 23 DATA_ULT_ATZ
       ],
     },
 
@@ -90,9 +111,22 @@ function configurarPlanilha() {
 
     {
       nome: 'Agentes',
+      // 14 colunas — espelhando COL_AGT em api-agentes.gs (índices 0–13)
       cabecalho: [
-        'CNPJ', 'Nome Agente', 'Nome Responsável', 'Cargo Responsável',
-        'E-mail', 'Telefone', 'Endereço', 'Status',
+        'Timestamp',        // 0  TIMESTAMP
+        'Tipo',             // 1  TIPO
+        'Nome',             // 2  NOME
+        'Sigla',            // 3  SIGLA
+        'CNPJ',             // 4  CNPJ
+        'Site',             // 5  SITE
+        'Telefone',         // 6  TEL
+        'E-mail',           // 7  EMAIL
+        'Nº Edital',        // 8  NUM_EDITAL
+        'Período Vigência', // 9  PERIODO
+        'Link Edital',      // 10 LINK_EDITAL
+        'Observações',      // 11 OBS
+        'Status',           // 12 STATUS
+        'Cadastrado Por',   // 13 CADASTRADO_POR
       ],
     },
 
@@ -134,6 +168,16 @@ function configurarPlanilha() {
         'Timestamp', 'Título', 'Empresa', 'CNPJ', 'Área', 'Curso',
         'Tipo Estágio', 'Descrição', 'Requisitos', 'Carga Horária',
         'Valor Bolsa', 'Benefícios', 'Contato', 'Status',
+      ],
+    },
+
+    // ── Log de Alterações ─────────────────────────────────────────────────
+    {
+      nome: 'Log de Alterações',
+      // 8 colunas — usadas por registrarLog_() em api-empresas.gs
+      cabecalho: [
+        'Timestamp', 'CNPJ', 'Razão Social', 'Tipo',
+        'Campo', 'Valor Anterior', 'Valor Novo', 'Alterado Por',
       ],
     },
 
