@@ -548,14 +548,13 @@
     try {
       const data = await API.get('obterChecklist', { id });
       checklist = data;
-      console.log('[CK] Dados recebidos:', {
-        idEstagio:   checklist.idEstagio,
-        statusGeral: checklist.statusGeral,
-        adminStatus: checklist.admin ? checklist.admin.status : null,
-        adminItens:  checklist.admin ? checklist.admin.itens.length : 0,
-        infoSol:     checklist._infoSolicitacao,
-        emailAtores: checklist._emailAtores,
-      });
+      console.log('[CK] Dados recebidos:');
+      console.log('  idEstagio  :', checklist.idEstagio);
+      console.log('  statusGeral:', checklist.statusGeral);
+      console.log('  adminStatus:', checklist.admin ? checklist.admin.status : null);
+      console.log('  adminItens :', checklist.admin ? checklist.admin.itens.length : 0);
+      console.log('  infoSol    :', JSON.stringify(checklist._infoSolicitacao));
+      console.log('  emailAtores:', JSON.stringify(checklist._emailAtores));
       meuAtor = detectarAtor(meuEmail, checklist);
       console.log('[CK] meuEmail:', meuEmail, '| meuAtor:', meuAtor);
       renderizarChecklist();
