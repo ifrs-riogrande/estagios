@@ -504,10 +504,27 @@
   let checklist = null;
   let meuAtor   = null;  // 'admin' | 'orientador' | 'coordenador' | 'empresa' | 'supervisor'
   let meuEmail  = null;
+  let meuToken  = null;  // token para acesso sem Google (empresa / supervisor)
 
   // ── Inicialização ─────────────────────────────────────────────
   document.addEventListener('DOMContentLoaded', () => {
-    // 1. Autenticação — qualquer conta Google (admin, orientador, coordenador, empresa, supervisor)
+    const params = new URLSearchParams(window.location.search);
+    const id     = params.get('id');
+    const token  = params.get('token');
+
+    if (!id) {
+      mostrarErro('Parâmetro <code>id</code> não encontrado na URL. Verifique o link recebido por e-mail.');
+      return;
+    }
+
+    // Acesso por magic-link (empresa / supervisor sem conta Google)
+    if (token) {
+      meuToken = token;
+      carregarChecklistComToken(id, token);
+      return;
+    }
+
+    // Acesso por Google OAuth (admin, orientador, coordenador)
     const ok = requireExternalAuth(
       window.location.href,
       'Checklist de Estágio — IFRS Campus Rio Grande',
@@ -516,18 +533,21 @@
     if (!ok) return;
 
     meuEmail = getCurrentUserEmail();
-
-    // 2. Parâmetro id na URL
-    const params = new URLSearchParams(window.location.search);
-    const id = params.get('id');
-    if (!id) {
-      mostrarErro('Parâmetro <code>id</code> não encontrado na URL. Verifique o link recebido por e-mail.');
-      return;
-    }
-
-    // 3. Carregar checklist
     carregarChecklist(id);
   });
+
+  // ── Carregar via token (sem Google) ───────────────────────────
+  async function carregarChecklistComToken(id, token) {
+    try {
+      const data = await API.get('obterChecklist', { id, token });
+      checklist = data;
+      meuAtor   = data._meuAtor || null;
+      if (!meuAtor) { mostrarErro('Não foi possível identificar o ator pelo token.'); return; }
+      renderizarChecklist();
+    } catch (err) {
+      mostrarErro(err.message || 'Link inválido ou expirado. Entre em contato com o setor de estágios.');
+    }
+  }
 
   // ── Carregar dados do backend ─────────────────────────────────
   async function carregarChecklist(id) {
@@ -644,40 +664,47 @@
   // ── Info card ─────────────────────────────────────────────────
   function renderizarInfoCard(ator, secao) {
     const card = document.getElementById('ck-info-card');
-    const info = checklist._infoSolicitacao || {};
+    const info  = checklist._infoSolicitacao || {};
     const prazo = secao ? secao.prazoVencimento : null;
 
-    let html = '';
+    const campo = (label, valor, fullWidth) => valor
+      ? `<div class="ck-info-item"${fullWidth ? ' style="flex-basis:100%"' : ''}>
+           <span class="ck-info-item-label">${label}</span>
+           <span class="ck-info-item-value">${escapeHtml(String(valor))}</span>
+         </div>`
+      : '';
 
-    if (info.nomeEstudante) {
-      html += `<div class="ck-info-item">
-        <span class="ck-info-item-label">Estudante</span>
-        <span class="ck-info-item-value">${escapeHtml(info.nomeEstudante)}</span>
-      </div>`;
-    }
-    if (info.nomeEmpresa) {
-      html += `<div class="ck-info-item">
-        <span class="ck-info-item-label">Empresa</span>
-        <span class="ck-info-item-value">${escapeHtml(info.nomeEmpresa)}</span>
-      </div>`;
-    }
-    if (info.curso) {
-      html += `<div class="ck-info-item">
-        <span class="ck-info-item-label">Curso</span>
-        <span class="ck-info-item-value">${escapeHtml(info.curso)}</span>
-      </div>`;
-    }
-    if (prazo) {
+    const prazoHtml = prazo ? (() => {
       const cls = prazoClass(prazo);
-      html += `<div class="ck-info-item">
-        <span class="ck-info-item-label">Prazo</span>
-        <span class="ck-prazo-badge ck-prazo-badge--${cls}">
-          ${prazoIcon(cls)} ${formatarData(prazo)}
-        </span>
+      return `<div class="ck-info-item">
+        <span class="ck-info-item-label">Prazo para resposta</span>
+        <span class="ck-prazo-badge ck-prazo-badge--${cls}">${prazoIcon(cls)} ${formatarData(prazo)}</span>
       </div>`;
-    }
+    })() : '';
 
-    card.innerHTML = html || '<span class="ck-info-item-value" style="color:var(--color-text-muted)">Informações do estágio não disponíveis.</span>';
+    const bolsaStr = info.valorBolsa   ? 'R$ ' + info.valorBolsa   : '';
+    const chStr    = info.cargaHoraria ? info.cargaHoraria + ' h/semana' : '';
+
+    card.innerHTML = `
+      ${campo('Estudante',       info.nomeEstudante)}
+      ${campo('Matrícula',       info.matricula)}
+      ${campo('Curso',           info.curso)}
+      ${campo('Empresa',         info.nomeEmpresa)}
+      ${campo('CNPJ',            info.cnpjEmpresa)}
+      ${campo('Supervisor',      info.nomeSupervisor)}
+      ${campo('Orientador',      info.nomeOrientador)}
+      ${campo('Agente de Integração', info.nomeAgente)}
+      ${campo('Tipo de Estágio', info.tipoEstagio)}
+      ${campo('Início',          info.dataInicio  ? formatarData(info.dataInicio)  : '')}
+      ${campo('Término',         info.dataTermino ? formatarData(info.dataTermino) : '')}
+      ${campo('Carga Horária',   chStr)}
+      ${campo('Horário',         info.horario)}
+      ${campo('Remuneração',     info.remuneracao)}
+      ${campo('Bolsa',           bolsaStr)}
+      ${prazoHtml}
+      ${campo('Plano de Atividades', info.planoAtividades, true)}
+      ${campo('Objetivos',           info.objetivos,        true)}
+    ` || '<span class="ck-info-item-value" style="color:var(--color-text-muted)">Informações do estágio não disponíveis.</span>';
   }
 
   // ── Itens ─────────────────────────────────────────────────────
@@ -880,7 +907,8 @@
           itens:     itens,
           decisao:   decisao,
           obs:       obsGeral,
-          emailAtor: meuEmail,
+          emailAtor: meuEmail || '',
+          token:     meuToken || '',
         };
       }
 

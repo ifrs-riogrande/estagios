@@ -268,12 +268,14 @@ function salvarRespostaAdmin_(idEstagio, itens, decisao, obs, sol) {
       status: CK_STATUS.PENDENTE, data: null, obs: '',
       prazoVencimento: calcularPrazoVencimento_(prazos.checklist.empresa),
       lembretesEnviados: 0,
+      token: Utilities.getUuid(),   // magic-link para acesso sem Google
       itens: itensChecklistEmpresa_(),
     };
     checklist.supervisor = {
       status: CK_STATUS.PENDENTE, data: null, obs: '',
       prazoVencimento: calcularPrazoVencimento_(prazos.checklist.supervisor),
       lembretesEnviados: 0,
+      token: Utilities.getUuid(),   // magic-link para acesso sem Google
       itens: itensChecklistSupervisor_(),
     };
     checklist.etapaAtiva = 'paralelo';
@@ -502,6 +504,7 @@ function _notificarAdminNovoChecklist_(idEstagio, sol, checklist) {
 /** Notifica os 4 atores em paralelo (após Admin aprovar checklist). */
 function enviarNotificacoesChecklistParalelo_(idEstagio, checklist) {
   var sol = _obterDadosSolicitacaoCompleto_(idEstagio);
+  var BASE_URL = 'https://ifrs-riogrande.github.io/estagios/checklist/?id=';
   var atores = [
     { ator: 'orientador',  email: sol.emailOrientador  || '' },
     { ator: 'coordenador', email: sol.emailCoordenador || '' },
@@ -511,6 +514,9 @@ function enviarNotificacoesChecklistParalelo_(idEstagio, checklist) {
   atores.forEach(function (a) {
     if (!a.email) return;
     var ck = checklist[a.ator];
+    // Empresa e supervisor recebem link com token (não precisam de conta Google)
+    var urlChecklist = BASE_URL + idEstagio;
+    if (ck && ck.token) urlChecklist += '&token=' + ck.token;
     MAIL.enviarEmailChecklistAtor({
       idEstagio:       idEstagio,
       nomeEstudante:   sol.nomeEstudante || '',
@@ -519,6 +525,7 @@ function enviarNotificacoesChecklistParalelo_(idEstagio, checklist) {
       labelAtor:       LABELS_ATORES_CK_[a.ator],
       prazoVencimento: ck ? ck.prazoVencimento : '',
       email:           a.email,
+      urlChecklist:    urlChecklist,
     });
   });
 }
@@ -671,20 +678,58 @@ function doGetChecklist(e) {
       if (!id) return jsonError_('Parâmetro id obrigatório.', 'MISSING_PARAM');
       var ck = obterChecklist_(id);
       if (!ck) return jsonError_('Checklist não encontrado.', 'NOT_FOUND');
-      try {
-        var solDados = _obterDadosSolicitacaoCompleto_(id);
-        ck._emailAtores = {
-          orientador:  solDados.emailOrientador  || '',
-          coordenador: solDados.emailCoordenador || '',
-          empresa:     solDados.emailEmpresa     || '',
-          supervisor:  solDados.emailSupervisor  || '',
-        };
-        ck._infoSolicitacao = {
-          nomeEstudante: solDados.nomeEstudante || '',
-          nomeEmpresa:   solDados.nomeEmpresa   || '',
-          curso:         solDados.curso         || '',
-        };
-      } catch (e) { /* não bloqueia se solicitação não encontrada */ }
+
+      // Dados completos da solicitação (tolerante a falhas)
+      var solDados = {};
+      try { solDados = _obterDadosSolicitacaoCompleto_(id); } catch (_e) {}
+
+      var infoSol = {
+        nomeEstudante:   String(solDados.nomeEstudante   || ''),
+        emailEstudante:  String(solDados.emailEstudante  || ''),
+        matricula:       String(solDados.matricula       || ''),
+        curso:           String(solDados.curso           || ''),
+        nomeEmpresa:     String(solDados.nomeEmpresa     || ''),
+        cnpjEmpresa:     String(solDados.cnpjEmpresa     || ''),
+        nomeSupervisor:  String(solDados.nomeSupervisor  || ''),
+        nomeOrientador:  String(solDados.nomeOrientador  || ''),
+        tipoEstagio:     String(solDados.tipoEstagio     || ''),
+        dataInicio:      String(solDados.dataInicio      || ''),
+        dataTermino:     String(solDados.dataTermino     || ''),
+        cargaHoraria:    String(solDados.cargaHoraria    || ''),
+        horario:         String(solDados.horario         || ''),
+        remuneracao:     String(solDados.remuneracao     || ''),
+        valorBolsa:      String(solDados.valorBolsa      || ''),
+        planoAtividades: String(solDados.planoAtividades || ''),
+        objetivos:       String(solDados.objetivos       || ''),
+        nomeAgente:      String(solDados.nomeAgente      || ''),
+      };
+
+      // ── Acesso por token (empresa / supervisor sem conta Google) ─────────
+      var token = (e.parameter && e.parameter.token) || '';
+      if (token) {
+        var atoresToken = ['empresa', 'supervisor', 'orientador', 'coordenador'];
+        var atorToken = null;
+        for (var t = 0; t < atoresToken.length; t++) {
+          var secToken = ck[atoresToken[t]];
+          if (secToken && secToken.token && secToken.token === token) {
+            atorToken = atoresToken[t];
+            break;
+          }
+        }
+        if (!atorToken) return jsonError_('Token inválido ou link expirado. Solicite um novo link ao setor de estágios.', 'INVALID_TOKEN');
+        var respToken = { _meuAtor: atorToken, _infoSolicitacao: infoSol };
+        respToken[atorToken] = ck[atorToken];
+        return jsonOk_(respToken);
+      }
+
+      // ── Acesso por Google OAuth ──────────────────────────────────────────
+      ck._emailAtores = {
+        orientador:  String(solDados.emailOrientador  || ''),
+        coordenador: String(solDados.emailCoordenador || ''),
+        empresa:     String(solDados.emailEmpresa     || ''),
+        supervisor:  String(solDados.emailSupervisor  || ''),
+      };
+      ck._infoSolicitacao = infoSol;
       return jsonOk_(ck);
 
     case 'obterPrazos':
