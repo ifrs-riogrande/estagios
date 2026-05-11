@@ -1492,10 +1492,17 @@ function aprovarCadastroServidor_(body) {
         if (novoStatus === 'Rejeitado' && email) {
           var nomeOri = String(dados[i][COL_ORI.NOME] || '');
           try {
-            enviarEmailRejeicaoServidor_({ email: email, nome: nomeOri, tipo: 'orientador', obs: obs });
+            var assuntoOri = '[IFRS Estágios] Cadastro de orientador não aprovado';
+            var corpoOri = 'Olá' + (nomeOri ? ' ' + nomeOri : '') + ',\n\n'
+              + 'Seu cadastro como orientador de estágio não foi aprovado pelo setor de estágios do IFRS Campus Rio Grande.'
+              + (obs ? '\n\nMotivo: ' + obs : '')
+              + '\n\nAcesse o portal para verificar seu cadastro:\nhttps://ifrs-riogrande.github.io/estagios/servidores/perfil-orientador.html'
+              + '\n\nDúvidas: estagios@riogrande.ifrs.edu.br'
+              + '\n\nAtenciosamente,\nSetor de Estágios — IFRS Campus Rio Grande';
+            MailApp.sendEmail(email, assuntoOri, corpoOri);
             emailEnviadoOri = true;
           } catch(mailErr) {
-            emailErroOri = String(mailErr.message || mailErr);
+            emailErroOri = mailErr + '';
             logErro_('aprovarCadastroServidor_.mailOri', mailErr);
           }
         }
@@ -1530,10 +1537,17 @@ function aprovarCadastroServidor_(body) {
     if (novoStatus === 'Rejeitado' && email) {
       var nomeCoord = String(dadosCoord[pendIdx][2] || '');
       try {
-        enviarEmailRejeicaoServidor_({ email: email, nome: nomeCoord, tipo: 'coordenador', obs: obs });
+        var assuntoCoord = '[IFRS Estágios] Cadastro de coordenador não aprovado';
+        var corpoCoord = 'Olá' + (nomeCoord ? ' ' + nomeCoord : '') + ',\n\n'
+          + 'Seu cadastro como coordenador de curso não foi aprovado pelo setor de estágios do IFRS Campus Rio Grande.'
+          + (obs ? '\n\nMotivo: ' + obs : '')
+          + '\n\nAcesse o portal para verificar seu cadastro:\nhttps://ifrs-riogrande.github.io/estagios/servidores/perfil-coordenador.html'
+          + '\n\nDúvidas: estagios@riogrande.ifrs.edu.br'
+          + '\n\nAtenciosamente,\nSetor de Estágios — IFRS Campus Rio Grande';
+        MailApp.sendEmail(email, assuntoCoord, corpoCoord);
         emailEnviadoCoord = true;
       } catch(mailErr) {
-        emailErroCoord = String(mailErr.message || mailErr);
+        emailErroCoord = mailErr + '';
         logErro_('aprovarCadastroServidor_.mailCoord', mailErr);
       }
     }

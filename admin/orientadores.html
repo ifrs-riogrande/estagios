@@ -507,7 +507,7 @@
       el.style.border = `1px solid ${type === 'success' ? 'var(--color-success-border)' : 'var(--color-error-border)'}`;
       el.textContent = msg;
       document.body.appendChild(el);
-      setTimeout(() => el.remove(), 4000);
+      setTimeout(() => el.remove(), type === 'error' ? 10000 : 4000);
     }
   </script>
 </body>
