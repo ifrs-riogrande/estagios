@@ -374,10 +374,13 @@
           novoStatus: 'Rejeitado', obs,
           authToken: getAccessToken(),
         });
-        const msg = res?.emailEnviado === false
-          ? 'Cadastro rejeitado (falha ao enviar e-mail — verifique logs GAS).'
-          : 'Cadastro rejeitado e e-mail enviado ao coordenador.';
-        toast(msg, 'success');
+        const emailOk = res?.emailEnviado === true;
+        const errDetail = res?.emailErro ? ` Erro: ${res.emailErro}` : '';
+        toast(
+          emailOk ? 'Cadastro rejeitado e e-mail enviado ao coordenador.'
+                  : `Cadastro rejeitado, mas falha ao enviar e-mail.${errDetail}`,
+          emailOk ? 'success' : 'error'
+        );
         fechar(); carregar();
       } catch (err) {
         btn.disabled = false; btn.textContent = 'Confirmar rejeição';

@@ -240,6 +240,40 @@ var MAIL = (function () {
     enviar_(SETOR_EMAIL, assunto, htmlBase_('[SGE] Novo Coordenador', corpo));
   }
 
+  /**
+   * Notifica servidor (orientador ou coordenador) sobre rejeição do cadastro.
+   * Tenta GmailApp; se falhar, tenta MailApp.
+   * Lança erro se ambos falharem (para surface do erro na chamada).
+   * dados: { email, nome, tipo ('orientador'|'coordenador'), obs }
+   */
+  function enviarEmailRejeicaoServidor(dados) {
+    var tipoLabel  = dados.tipo === 'coordenador' ? 'coordenador de curso' : 'orientador de estágio';
+    var linkPerfil = dados.tipo === 'coordenador'
+      ? 'https://ifrs-riogrande.github.io/estagios/servidores/perfil-coordenador.html'
+      : 'https://ifrs-riogrande.github.io/estagios/servidores/perfil-orientador.html';
+    var corpo = '<p>Olá' + (dados.nome ? ', <strong>' + dados.nome + '</strong>' : '') + ',</p>'
+      + '<p>Seu cadastro como <strong>' + tipoLabel + '</strong> não foi aprovado pelo setor de estágios do IFRS Campus Rio Grande.</p>'
+      + (dados.obs ? '<p class="label">Motivo / Observações</p><p class="value" style="white-space:pre-wrap">' + dados.obs + '</p>' : '')
+      + '<p>Você pode corrigir os dados e reenviar seu cadastro pelo portal:</p>'
+      + '<p><a href="' + linkPerfil + '" style="color:#1d4ed8;">' + linkPerfil + '</a></p>'
+      + '<p>Dúvidas: <a href="mailto:' + SETOR_EMAIL + '">' + SETOR_EMAIL + '</a></p>';
+    var assunto = '[IFRS Estágios] Cadastro de ' + tipoLabel + ' não aprovado';
+    var html = htmlBase_(assunto, corpo);
+    var err1 = null, err2 = null;
+    // Tentativa 1: GmailApp
+    try {
+      GmailApp.sendEmail(dados.email, assunto, '', { htmlBody: html, name: SISTEMA_NOME, replyTo: SETOR_EMAIL });
+      return; // sucesso
+    } catch (e1) { err1 = e1.message || String(e1); }
+    // Tentativa 2: MailApp (fallback)
+    try {
+      MailApp.sendEmail({ to: dados.email, subject: assunto, htmlBody: html, name: SISTEMA_NOME, replyTo: SETOR_EMAIL });
+      return; // sucesso
+    } catch (e2) { err2 = e2.message || String(e2); }
+    // Ambos falharam — lança para que o chamador capture e informe o admin
+    throw new Error('GmailApp: ' + err1 + ' | MailApp: ' + err2);
+  }
+
   function enviarEmailAtualizacaoServidor(dados) {
     var tipo  = dados.tipo === 'coordenador' ? 'coordenador de curso' : 'orientador de estágio';
     var extra = dados.curso ? ' — ' + dados.curso : '';
@@ -451,6 +485,7 @@ var MAIL = (function () {
     enviarEmailAdendoRecebido:           enviarEmailAdendoRecebido,
     enviarEmailNovoOrientador:           enviarEmailNovoOrientador,
     enviarEmailNovoCoordenador:          enviarEmailNovoCoordenador,
+    enviarEmailRejeicaoServidor:         enviarEmailRejeicaoServidor,
     enviarEmailAtualizacaoServidor:      enviarEmailAtualizacaoServidor,
     enviarEmailNovoAgente:               enviarEmailNovoAgente,
     // Checklist
@@ -580,6 +615,7 @@ function enviarEmailRelatorioFinalRecebido_(d)   { return MAIL.enviarEmailRelato
 function enviarEmailAdendoRecebido_(d)           { return MAIL.enviarEmailAdendoRecebido(d); }
 function enviarEmailNovoOrientador_(d)           { return MAIL.enviarEmailNovoOrientador(d); }
 function enviarEmailNovoCoordenador_(d)          { return MAIL.enviarEmailNovoCoordenador(d); }
+function enviarEmailRejeicaoServidor_(d)         { return MAIL.enviarEmailRejeicaoServidor(d); }
 function enviarEmailAtualizacaoServidor_(d)      { return MAIL.enviarEmailAtualizacaoServidor(d); }
 function enviarEmailNovoAgente_(d)               { return MAIL.enviarEmailNovoAgente(d); }
 // Checklist

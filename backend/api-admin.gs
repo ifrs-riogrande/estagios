@@ -1488,28 +1488,22 @@ function aprovarCadastroServidor_(body) {
         found = true;
         // Notificar por e-mail ao rejeitar
         var emailEnviadoOri = false;
-        if (novoStatus === 'Rejeitado') {
+        var emailErroOri = null;
+        if (novoStatus === 'Rejeitado' && email) {
           var nomeOri = String(dados[i][COL_ORI.NOME] || '');
-          var corpoOri = 'Olá' + (nomeOri ? ', ' + nomeOri : '') + ',\n\n' +
-            'Seu cadastro como orientador de estágio não foi aprovado pelo setor de estágios do IFRS Campus Rio Grande.' +
-            (obs ? '\n\nMotivo / Observações:\n' + obs : '') +
-            '\n\nVocê pode corrigir e reenviar seu cadastro pelo portal:\n' +
-            'https://ifrs-riogrande.github.io/estagios/servidores/perfil-orientador.html' +
-            '\n\nDúvidas: estagios@riogrande.ifrs.edu.br\n\nAtenciosamente,\nSetor de Estágios — IFRS Campus Rio Grande';
           try {
-            GmailApp.sendEmail(email,
-              '[IFRS Estágios] Cadastro de orientador não aprovado',
-              corpoOri,
-              { name: 'Setor de Estágios IFRS', replyTo: 'estagios@riogrande.ifrs.edu.br' }
-            );
+            enviarEmailRejeicaoServidor_({ email: email, nome: nomeOri, tipo: 'orientador', obs: obs });
             emailEnviadoOri = true;
-          } catch(mailErr) { logErro_('aprovarCadastroServidor_.mailOri', mailErr); }
+          } catch(mailErr) {
+            emailErroOri = String(mailErr.message || mailErr);
+            logErro_('aprovarCadastroServidor_.mailOri', mailErr);
+          }
         }
         break;
       }
     }
     if (!found) return jsonError_('Orientador pendente não encontrado.', 'NOT_FOUND');
-    return jsonOk_({ status: novoStatus, emailEnviado: emailEnviadoOri });
+    return jsonOk_({ status: novoStatus, emailEnviado: emailEnviadoOri, emailErro: emailErroOri });
   }
 
   if (tipo === 'coordenador') {
@@ -1532,22 +1526,16 @@ function aprovarCadastroServidor_(body) {
 
     // Notificar por e-mail ao rejeitar
     var emailEnviadoCoord = false;
-    if (novoStatus === 'Rejeitado') {
+    var emailErroCoord = null;
+    if (novoStatus === 'Rejeitado' && email) {
       var nomeCoord = String(dadosCoord[pendIdx][2] || '');
-      var corpoCoord = 'Olá' + (nomeCoord ? ', ' + nomeCoord : '') + ',\n\n' +
-        'Seu cadastro como coordenador de curso não foi aprovado pelo setor de estágios do IFRS Campus Rio Grande.' +
-        (obs ? '\n\nMotivo / Observações:\n' + obs : '') +
-        '\n\nVocê pode corrigir e reenviar seu cadastro pelo portal:\n' +
-        'https://ifrs-riogrande.github.io/estagios/servidores/perfil-coordenador.html' +
-        '\n\nDúvidas: estagios@riogrande.ifrs.edu.br\n\nAtenciosamente,\nSetor de Estágios — IFRS Campus Rio Grande';
       try {
-        GmailApp.sendEmail(email,
-          '[IFRS Estágios] Cadastro de coordenador não aprovado',
-          corpoCoord,
-          { name: 'Setor de Estágios IFRS', replyTo: 'estagios@riogrande.ifrs.edu.br' }
-        );
+        enviarEmailRejeicaoServidor_({ email: email, nome: nomeCoord, tipo: 'coordenador', obs: obs });
         emailEnviadoCoord = true;
-      } catch(mailErr) { logErro_('aprovarCadastroServidor_.mailCoord', mailErr); }
+      } catch(mailErr) {
+        emailErroCoord = String(mailErr.message || mailErr);
+        logErro_('aprovarCadastroServidor_.mailCoord', mailErr);
+      }
     }
 
     // Se aprovando (Ativo) e solicitado inativar o anterior do mesmo curso
@@ -1561,7 +1549,7 @@ function aprovarCadastroServidor_(body) {
         }
       }
     }
-    return jsonOk_({ status: novoStatus, emailEnviado: emailEnviadoCoord });
+    return jsonOk_({ status: novoStatus, emailEnviado: emailEnviadoCoord, emailErro: emailErroCoord });
   }
 
   return jsonError_('Tipo inválido: ' + tipo, 'VALIDATION');
