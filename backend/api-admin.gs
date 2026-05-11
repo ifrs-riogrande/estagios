@@ -182,6 +182,8 @@ function doPostAdmin(e) {
       case 'reprovarAdendo':       return processarAdendo_(body, 'Reprovado');
       case 'inativarAgente':            return alterarStatusAgente_(body.cnpj, 'Inativo');
       case 'reativarAgente':            return alterarStatusAgente_(body.cnpj, 'Ativo');
+      case 'editarAgente':              return editarAgente_(body);
+      case 'excluirAgente':             return excluirAgente_(body);
       case 'aprovarCadastroServidor':   return aprovarCadastroServidor_(body);
       case 'inativarCoordenador':       return alterarStatusCoordenador_(body.email, 'Inativo');
       case 'reativarCoordenador':       return alterarStatusCoordenador_(body.email, 'Ativo');
@@ -489,19 +491,23 @@ function listarAgentesAdmin_() {
   if (!sheet) return jsonOk_([]);
   var dados = sheet.getDataRange().getValues();
   var lista = [];
+  // COL_AGT: TIMESTAMP=0, TIPO=1, NOME=2, SIGLA=3, CNPJ=4, SITE=5,
+  //          TEL=6, EMAIL=7, NUM_EDITAL=8, PERIODO=9, LINK_EDITAL=10, OBS=11, STATUS=12, CADASTRADO_POR=13
   for (var i = 1; i < dados.length; i++) {
     var r = dados[i];
     if (!r[0]) continue;
     lista.push({
-      cnpj:            String(r[0] || ''),
-      nomeAgente:      String(r[1] || ''),
-      nomeResponsavel: String(r[2] || ''),
-      cargoResponsavel:String(r[3] || ''),
-      email:           String(r[4] || ''),
-      telefone:        String(r[5] || ''),
-      endereco:        String(r[6] || ''),
-      status:          String(r[7] || 'Ativo'),
-      totalEstagios:   0,
+      cnpj:       String(r[4]  || ''),
+      nomeAgente: String(r[2]  || ''),
+      sigla:      String(r[3]  || ''),
+      telefone:   String(r[6]  || ''),
+      email:      String(r[7]  || ''),
+      site:       String(r[5]  || ''),
+      numEdital:  String(r[8]  || ''),
+      periodo:    String(r[9]  || ''),
+      linkEdital: String(r[10] || ''),
+      obs:        String(r[11] || ''),
+      status:     String(r[12] || 'Ativo'),
     });
   }
   return jsonOk_(lista);
@@ -929,9 +935,65 @@ function alterarStatusAgente_(cnpj, novoStatus) {
   if (!sheet) return jsonError_('Aba de agentes não encontrada.', 'NOT_FOUND');
   var dados = sheet.getDataRange().getValues();
   for (var i = 1; i < dados.length; i++) {
-    if (String(dados[i][0] || '').replace(/\D/g,'') === cnpjLimpo) {
-      sheet.getRange(i + 1, 8).setValue(novoStatus);
+    if (String(dados[i][4] || '').replace(/\D/g,'') === cnpjLimpo) {  // COL_AGT.CNPJ = 4
+      sheet.getRange(i + 1, 13).setValue(novoStatus);  // COL_AGT.STATUS = 12 → 1-based = 13
       return jsonOk_({ status: novoStatus });
+    }
+  }
+  return jsonError_('Agente não encontrado.', 'NOT_FOUND');
+}
+
+function editarAgente_(body) {
+  validarTokenServidor_(body.authToken);
+  var cnpjLimpo = String(body.cnpj || '').replace(/\D/g,'');
+  if (!cnpjLimpo) return jsonError_('CNPJ não informado.', 'VALIDATION');
+  var san = function(v, max) { return sanitizar_(String(v || ''), max || 200); };
+  var ss    = SpreadsheetApp.openById(CFG_ADMIN.SS_ID);
+  var sheet = ss.getSheetByName(CFG_ADMIN.ABA_AGENTES);
+  if (!sheet) return jsonError_('Aba de agentes não encontrada.', 'NOT_FOUND');
+  var dados = sheet.getDataRange().getValues();
+  for (var i = 1; i < dados.length; i++) {
+    if (String(dados[i][4] || '').replace(/\D/g,'') === cnpjLimpo) {
+      // COL_AGT (base-0) → getRange col (1-based):
+      // NOME=2→3, SIGLA=3→4, SITE=5→6, TEL=6→7, EMAIL=7→8
+      // NUM_EDITAL=8→9, PERIODO=9→10, LINK_EDITAL=10→11, OBS=11→12
+      var nome  = san(body.nomeAgente, 200);
+      var sigla = san(body.sigla, 20).toUpperCase();
+      if (!nome)  return jsonError_('Nome é obrigatório.', 'VALIDATION');
+      if (!sigla) return jsonError_('Sigla é obrigatória.', 'VALIDATION');
+      var campos = [
+        [3,  nome],
+        [4,  sigla],
+        [6,  san(body.site, 300)],
+        [7,  san(body.telefone, 30)],
+        [8,  san(body.email, 100).toLowerCase()],
+        [9,  san(body.numEdital, 100)],
+        [10, san(body.periodo, 100)],
+        [11, san(body.linkEdital, 300)],
+        [12, san(body.obs, 1000)],
+      ];
+      campos.forEach(function(c) {
+        sheet.getRange(i + 1, c[0]).setValue(c[1]);
+      });
+      return jsonOk_({ mensagem: 'Agente atualizado com sucesso.' });
+    }
+  }
+  return jsonError_('Agente não encontrado.', 'NOT_FOUND');
+}
+
+function excluirAgente_(body) {
+  validarTokenServidor_(body.authToken);
+  var cnpjLimpo = String(body.cnpj || '').replace(/\D/g,'');
+  if (!cnpjLimpo) return jsonError_('CNPJ não informado.', 'VALIDATION');
+  var ss    = SpreadsheetApp.openById(CFG_ADMIN.SS_ID);
+  var sheet = ss.getSheetByName(CFG_ADMIN.ABA_AGENTES);
+  if (!sheet) return jsonError_('Aba de agentes não encontrada.', 'NOT_FOUND');
+  var dados = sheet.getDataRange().getValues();
+  for (var i = 1; i < dados.length; i++) {
+    if (String(dados[i][4] || '').replace(/\D/g,'') === cnpjLimpo) {
+      sheet.getRange(i + 1, 13).setValue('Excluído');
+      sheet.getRange(i + 1, 1, 1, dados[i].length).setFontColor('#9CA3AF');
+      return jsonOk_({ mensagem: 'Agente excluído com sucesso.' });
     }
   }
   return jsonError_('Agente não encontrado.', 'NOT_FOUND');

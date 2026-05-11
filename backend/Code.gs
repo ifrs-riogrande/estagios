@@ -150,6 +150,8 @@ var POST_ROUTES = {
   'reprovarAdendo':            doPostAdmin,
   'inativarAgente':            doPostAdmin,
   'reativarAgente':            doPostAdmin,
+  'editarAgente':              doPostAdmin,
+  'excluirAgente':             doPostAdmin,
   'inativarCoordenador':       doPostAdmin,
   'reativarCoordenador':       doPostAdmin,
   'aprovarCadastroServidor':   doPostAdmin,
