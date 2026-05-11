@@ -261,16 +261,16 @@ function configurarPlanilha() {
 
   // ── 6. Mensagem de confirmação ──────────────────────────────────────
   var aviso = ignoradas.length > 0
-    ? '\n\n⚠️ Abas vinculadas a formulários (não deletadas, apenas esvaziadas):\n' +
-      ignoradas.map(function (n) { return '• ' + n; }).join('\n')
+    ? '\n⚠️ Abas vinculadas a formulários (não deletadas, apenas esvaziadas):\n' +
+      ignoradas.map(function (n) { return '  • ' + n; }).join('\n')
     : '';
 
-  SpreadsheetApp.getUi().alert(
-    '✅ Planilha configurada com sucesso!\n\n' +
+  Logger.log(
+    '✅ Planilha configurada com sucesso!\n' +
     abas.length + ' abas criadas:\n' +
-    abas.map(function (a) { return '• ' + a.nome; }).join('\n') +
+    abas.map(function (a) { return '  • ' + a.nome; }).join('\n') +
     aviso +
-    '\n\nPróximo passo: preencha a aba "Diretor Geral" com os dados do DG.'
+    '\nPróximo passo: preencha a aba "Diretor Geral" com os dados do DG.'
   );
 }
 
