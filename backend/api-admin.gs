@@ -824,21 +824,26 @@ function editarEmpresaAdmin_(body) {
   for (var i = 1; i < dados.length; i++) {
     if (String(dados[i][5] || '').replace(/\D/g,'') !== cnpjLimpo) continue;
 
+    // COL_EMP (base-0): RAZAO_SOCIAL=3, NOME_FANTASIA=4, CNPJ=5(skip), RAMO=6,
+    // ENDERECO=7, BAIRRO=8, MUNICIPIO=9, UF=10, CEP=11, TEL=12, EMAIL=13,
+    // SITE=14, NOME_REP=15, CARGO_REP=16, EMAIL_REP=17
+    // getRange usa coluna 1-based, então c.col + 1 = COL_EMP + 1
     var campos = [
-      { col: 4,  val: san(body.razaoSocial)   }, // D — Razão Social
-      { col: 5,  val: san(body.nomeFantasia)  }, // E — Nome Fantasia
-      { col: 7,  val: san(body.ramo)          }, // G — Ramo
-      { col: 8,  val: san(body.endereco)      }, // H — Endereço
-      { col: 9,  val: san(body.bairro)        }, // I — Bairro
-      { col: 10, val: san(body.municipio)     }, // J — Município
-      { col: 11, val: san(body.uf)            }, // K — UF
-      { col: 12, val: san(body.cep)           }, // L — CEP
-      { col: 13, val: san(body.telefone)      }, // M — Telefone
-      { col: 14, val: san(body.email).toLowerCase() }, // N — E-mail
-      { col: 15, val: san(body.site)          }, // O — Site
-      { col: 16, val: san(body.nomeRep)       }, // P — Nome Rep
-      { col: 17, val: san(body.cargoRep)      }, // Q — Cargo Rep
-      { col: 18, val: san(body.emailRep).toLowerCase() }, // R — E-mail Rep
+      { col: 3,  val: san(body.razaoSocial)             }, // D — Razão Social
+      { col: 4,  val: san(body.nomeFantasia)             }, // E — Nome Fantasia
+      // col 5 = CNPJ — não editável
+      { col: 6,  val: san(body.ramo)                    }, // G — Ramo
+      { col: 7,  val: san(body.endereco)                }, // H — Endereço
+      { col: 8,  val: san(body.bairro)                  }, // I — Bairro
+      { col: 9,  val: san(body.municipio)               }, // J — Município
+      { col: 10, val: san(body.uf)                      }, // K — UF
+      { col: 11, val: san(body.cep)                     }, // L — CEP
+      { col: 12, val: san(body.telefone)                }, // M — Telefone
+      { col: 13, val: san(body.email).toLowerCase()     }, // N — E-mail
+      { col: 14, val: san(body.site)                    }, // O — Site
+      { col: 15, val: san(body.nomeRep)                 }, // P — Nome Rep
+      { col: 16, val: san(body.cargoRep)                }, // Q — Cargo Rep
+      { col: 17, val: san(body.emailRep).toLowerCase()  }, // R — E-mail Rep
     ];
     campos.forEach(function(c) {
       if (c.val !== undefined && c.val !== null) {

@@ -277,6 +277,7 @@
         footer.innerHTML = `
           <button class="btn btn-ghost" onclick="fechar()">Cancelar</button>
           <button class="btn btn-secondary btn-sm" onclick="abrirEdicao()">Editar</button>
+          <button style="background:#dc2626;color:#fff;border:none;" class="btn btn-sm" onclick="confirmarExcluir()">Excluir</button>
           <button class="btn btn-danger btn-sm" onclick="abrirRecusa()">Recusar</button>
           <button class="btn btn-primary btn-sm" onclick="acaoSimples('validarSupervisor','Supervisor validado com sucesso.')">Validar</button>`;
       } else if (st === 'Recusado') {
