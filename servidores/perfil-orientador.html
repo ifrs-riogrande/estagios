@@ -427,15 +427,22 @@
           exibirDados(dados);
         }
       } catch (err) {
-        var msg = (err.message || '').toLowerCase();
-        // "não cadastrado" / "não encontrado" → mostra formulário de cadastro
-        if (msg.includes('não cadastrado') || msg.includes('não encontrado') ||
-            msg.includes('not found') || msg.includes('sem cadastro')) {
+        try {
+          var msg  = (err && err.message || '').toLowerCase();
+          var code = (err && err.code   || '').toUpperCase();
+          var semCadastro = msg.includes('não cadastrado') || msg.includes('não encontrado') ||
+              msg.includes('not found')  || msg.includes('sem cadastro') ||
+              msg.includes('não encontrada') || msg.includes('interno') ||
+              code === 'NOT_FOUND' || code === 'INTERNAL' || code === 'TIMEOUT';
+          if (semCadastro) {
+            mostrarPanelNovo();
+          } else {
+            var alertEl = document.querySelector('#msg-erro-inicial .alert-content');
+            if (alertEl) alertEl.textContent = 'Erro ao verificar cadastro: ' + (err.message || 'tente novamente.');
+            mostrarPainel('painel-erro-inicial');
+          }
+        } catch (e2) {
           mostrarPanelNovo();
-        } else {
-          document.getElementById('msg-erro-inicial').querySelector('.alert-content').textContent =
-            'Erro ao verificar cadastro: ' + (err.message || 'tente novamente.');
-          mostrarPainel('painel-erro-inicial');
         }
       }
     }
