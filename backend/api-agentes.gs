@@ -113,8 +113,8 @@ function cadastrarAgente_(dados) {
   // Validações
   var nome  = sanitizar_(dados.nomeAgente, 200);
   var sigla = sanitizar_(dados.siglaAgente, 20).toUpperCase();
-  var cnpj  = sanitizar_(dados.cnpjAgente, 14).replace(/\D/g, '');
-  var tipo  = sanitizar_(dados.tipoAgente, 50);
+  var cnpj  = sanitizar_(dados.cnpjAgente, 20).replace(/\D/g, '');
+  var tipo  = sanitizar_(dados.tipoAgente || '', 50);
   var tel   = sanitizar_(dados.telAgente,  30);
   var email = sanitizar_(dados.emailAgente,100).toLowerCase();
   var edital= sanitizar_(dados.numEdital,  100);
@@ -125,7 +125,6 @@ function cadastrarAgente_(dados) {
 
   if (!nome)  return jsonError_('Nome do agente é obrigatório.', 'VALIDATION');
   if (!sigla) return jsonError_('Sigla é obrigatória.', 'VALIDATION');
-  if (!tipo)  return jsonError_('Tipo de agente é obrigatório.', 'VALIDATION');
   if (!validarCNPJ_(cnpj)) return jsonError_('CNPJ inválido.', 'VALIDATION');
   if (!tel)   return jsonError_('Telefone é obrigatório.', 'VALIDATION');
   if (!validarEmail_(email)) return jsonError_('E-mail inválido.', 'VALIDATION');

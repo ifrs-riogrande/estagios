@@ -240,28 +240,17 @@
         </div>
         <div class="form-row">
           <div class="form-group">
-            <label class="form-label">Tipo <span style="color:var(--color-error)">*</span></label>
-            <select id="f-tipo" class="form-control">
-              <option value="">Selecione…</option>
-              <option value="CIEE">CIEE</option>
-              <option value="IEL">IEL</option>
-              <option value="Outro">Outro</option>
-            </select>
-          </div>
-          <div class="form-group">
             <label class="form-label">CNPJ <span style="color:var(--color-error)">*</span></label>
             <input id="f-cnpj" class="form-control" placeholder="00.000.000/0000-00">
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">E-mail <span style="color:var(--color-error)">*</span></label>
-            <input id="f-email" type="email" class="form-control">
           </div>
           <div class="form-group">
             <label class="form-label">Telefone <span style="color:var(--color-error)">*</span></label>
             <input id="f-tel" class="form-control" placeholder="(53) 99999-9999">
           </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">E-mail <span style="color:var(--color-error)">*</span></label>
+          <input id="f-email" type="email" class="form-control">
         </div>
         <div class="form-row">
           <div class="form-group">
@@ -299,13 +288,12 @@
       const btn    = document.getElementById('btn-salvar-agente');
       const nome   = document.getElementById('f-nome').value.trim();
       const sigla  = document.getElementById('f-sigla').value.trim().toUpperCase();
-      const tipo   = document.getElementById('f-tipo').value.trim();
       const cnpj   = document.getElementById('f-cnpj').value.trim();
       const email  = document.getElementById('f-email').value.trim();
       const tel    = document.getElementById('f-tel').value.trim();
       const edital = document.getElementById('f-edital').value.trim();
       const period = document.getElementById('f-periodo').value.trim();
-      if (!nome || !sigla || !tipo || !cnpj || !email || !tel || !edital || !period) {
+      if (!nome || !sigla || !cnpj || !email || !tel || !edital || !period) {
         toast('Preencha todos os campos obrigatórios.', 'error'); return;
       }
       btn.classList.add('is-loading'); btn.disabled = true;
@@ -313,7 +301,6 @@
         await API.post('cadastrarAgente', {
           nomeAgente:     nome,
           siglaAgente:    sigla,
-          tipoAgente:     tipo,
           cnpjAgente:     cnpj,
           emailAgente:    email,
           telAgente:      tel,
