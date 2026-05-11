@@ -300,14 +300,26 @@
           exibirDados(dados);
         }
       } catch (err) {
-        var msg = (err.message || '').toLowerCase();
-        if (msg.includes('não cadastrado') || msg.includes('não encontrado') ||
-            msg.includes('not found') || msg.includes('sem cadastro')) {
+        try {
+          var msg  = (err && err.message || '').toLowerCase();
+          var code = (err && err.code   || '').toUpperCase();
+          // Usuário não cadastrado, aba ainda inexistente, ou qualquer erro
+          // do servidor que impeça confirmar o cadastro → mostra formulário de cadastro.
+          // Apenas erros genuínos de rede vão para o painel de erro.
+          var semCadastro = msg.includes('não cadastrado') || msg.includes('não encontrado') ||
+              msg.includes('not found')  || msg.includes('sem cadastro') ||
+              msg.includes('não encontrada') || msg.includes('interno') ||
+              code === 'NOT_FOUND' || code === 'INTERNAL' || code === 'TIMEOUT';
+          if (semCadastro) {
+            mostrarPainelNovo();
+          } else {
+            var alertEl = document.querySelector('#msg-erro-inicial .alert-content');
+            if (alertEl) alertEl.textContent = 'Erro ao verificar cadastro: ' + (err.message || 'tente novamente.');
+            mostrarPainel('painel-erro-inicial');
+          }
+        } catch (e2) {
+          // Fallback absoluto: qualquer erro dentro do catch → exibe formulário de cadastro.
           mostrarPainelNovo();
-        } else {
-          document.getElementById('msg-erro-inicial').querySelector('.alert-content').textContent =
-            'Erro ao verificar cadastro: ' + (err.message || 'tente novamente.');
-          mostrarPainel('painel-erro-inicial');
         }
       }
     }
