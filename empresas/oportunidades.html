@@ -63,10 +63,19 @@
 
             <div class="form-row">
               <div class="form-group">
-                <label class="form-label required" for="nome-empresa">Nome da empresa</label>
-                <input type="text" id="nome-empresa" name="nomeEmpresa" class="form-control"
-                  placeholder="Razão social ou nome fantasia" required aria-required="true"
-                  aria-describedby="nome-empresa-error" autocomplete="organization">
+                <label class="form-label required" for="select-empresa">Nome da empresa</label>
+                <select id="select-empresa" class="form-control" disabled
+                  aria-required="true" aria-describedby="nome-empresa-error">
+                  <option value="">Carregando empresas cadastradas…</option>
+                </select>
+                <!-- Campo de texto manual: aparece apenas quando "Outra empresa" é selecionada -->
+                <div id="empresa-outro-wrap" hidden style="margin-top:var(--space-3);">
+                  <input type="text" id="nome-empresa" name="nomeEmpresa" class="form-control"
+                    placeholder="Razão social ou nome fantasia"
+                    aria-describedby="nome-empresa-hint nome-empresa-error"
+                    autocomplete="organization">
+                  <span id="nome-empresa-hint" class="form-hint">Empresa não cadastrada no sistema. Informe o nome completo.</span>
+                </div>
                 <span id="nome-empresa-error" class="form-error hidden" role="alert"></span>
               </div>
               <div class="form-group">
@@ -375,7 +384,59 @@
     const btnEnviar = document.getElementById('btn-enviar');
     const btnLimpar = document.getElementById('btn-limpar');
 
-    // Define prazo mínimo como amanhã
+    // ── Carrega empresas cadastradas para o select ──────────────────────────
+    async function carregarSelectEmpresas() {
+      const sel = document.getElementById('select-empresa');
+      try {
+        const empresas = await apiListarEmpresas();
+        sel.innerHTML = '<option value="">Selecione a empresa…</option>';
+        if (Array.isArray(empresas) && empresas.length > 0) {
+          empresas.forEach(function (e) {
+            const opt = document.createElement('option');
+            opt.value = e.razaoSocial;
+            opt.textContent = e.razaoSocial;
+            sel.appendChild(opt);
+          });
+        }
+      } catch (err) {
+        sel.innerHTML = '<option value="">Selecione a empresa…</option>';
+        console.warn('[oportunidades] Erro ao carregar empresas:', err);
+      }
+      // Sempre adiciona a opção "Outra empresa"
+      const optOutro = document.createElement('option');
+      optOutro.value = '__outro__';
+      optOutro.textContent = '— Outra empresa (não cadastrada) —';
+      sel.appendChild(optOutro);
+      sel.disabled = false;
+    }
+
+    // ── Controla campo manual ao mudar a seleção ────────────────────────────
+    document.getElementById('select-empresa').addEventListener('change', function () {
+      const wrap  = document.getElementById('empresa-outro-wrap');
+      const input = document.getElementById('nome-empresa');
+      const errEl = document.getElementById('nome-empresa-error');
+
+      if (this.value === '__outro__') {
+        // Exibe campo manual e limpa valor anterior
+        wrap.hidden = false;
+        input.value = '';
+        input.focus();
+        this.classList.remove('is-invalid');
+        errEl.textContent = '';
+        errEl.classList.add('hidden');
+      } else {
+        // Oculta campo manual e propaga o nome selecionado para o input interno
+        wrap.hidden = true;
+        input.value = this.value;           // '' se placeholder, nome real se empresa
+        this.classList.remove('is-invalid');
+        errEl.textContent = '';
+        errEl.classList.add('hidden');
+      }
+    });
+
+    carregarSelectEmpresas();
+
+    // ── Define prazo mínimo como amanhã ─────────────────────────────────────
     document.getElementById('prazo-candidatura').min = getMinDateString(1);
 
     // Preenche select de cursos dinamicamente + opções especiais
@@ -402,11 +463,15 @@
       });
     });
 
-    ['nome-empresa', 'responsavel-vaga', 'titulo-vaga', 'atividades', 'requisitos',
+    ['responsavel-vaga', 'titulo-vaga', 'atividades', 'requisitos',
      'remuneracao', 'contato-candidatura', 'carga-horaria', 'cidade-vaga'].forEach(id => {
       document.getElementById(id)?.addEventListener('input', function () {
         if (this.value.trim()) clearFieldError(id);
       });
+    });
+    // nome-empresa manual: limpa erro ao digitar
+    document.getElementById('nome-empresa')?.addEventListener('input', function () {
+      if (this.value.trim()) clearFieldError('nome-empresa');
     });
 
     // ── Validação completa ──
@@ -421,8 +486,19 @@
         valid = false;
       }
 
-      // Seção 1
-      if (!document.getElementById('nome-empresa').value.trim())   fail('nome-empresa', 'Informe o nome da empresa.');
+      // Seção 1 — nome da empresa (select ou campo manual)
+      const _selEmp = document.getElementById('select-empresa');
+      if (!_selEmp.value) {
+        // Nenhuma opção selecionada no dropdown
+        _selEmp.classList.add('is-invalid');
+        const _errEmp = document.getElementById('nome-empresa-error');
+        _errEmp.textContent = 'Selecione uma empresa cadastrada ou escolha "Outra empresa".';
+        _errEmp.classList.remove('hidden');
+        if (!firstInvalid) firstInvalid = 'select-empresa';
+        valid = false;
+      } else if (_selEmp.value === '__outro__' && !document.getElementById('nome-empresa').value.trim()) {
+        fail('nome-empresa', 'Informe o nome da empresa.');
+      }
       if (!document.getElementById('responsavel-vaga').value.trim()) fail('responsavel-vaga', 'Informe o nome do responsável.');
       if (!document.getElementById('email-contato').value.trim()) {
         fail('email-contato', 'Informe o e-mail de contato.');
@@ -521,6 +597,9 @@
 
     btnLimpar.addEventListener('click', function () {
       form.reset();
+      // Restaura estado do campo de empresa
+      document.getElementById('empresa-outro-wrap').hidden = true;
+      document.getElementById('select-empresa').classList.remove('is-invalid', 'is-valid');
       document.getElementById('prazo-candidatura').min = getMinDateString(1);
       form.querySelectorAll('.form-control').forEach(el => {
         el.classList.remove('is-invalid', 'is-valid');
