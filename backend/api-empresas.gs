@@ -804,16 +804,26 @@ function obterCadastroSupervisor_(cpf, codigo) {
     var cpfLinha = String(dados[i][COL_SUP.CPF] || '').replace(/\D/g, '').trim();
     if (cpfLinha !== doc) continue;
 
-    // Pendente — ainda sem código, retorna flag para o frontend mostrar painel de espera
-    if (status === 'Pendente') {
-      return {
-        pendente: true,
-        status:   'Pendente',
-        nome:     String(dados[i][COL_SUP.NOME] || '').trim(),
-      };
+    // Excluído — removido pelo setor
+    if (status === 'Excluído') {
+      throw new Error('Este cadastro foi removido pelo setor de estágios. Entre em contato: ' + CFG.EMAIL_SETOR);
     }
 
-    // Validado / Inativo — requer código de acesso
+    // Pendente — verifica se já tem código (gerado no cadastro)
+    if (status === 'Pendente') {
+      var codigoPend = String(dados[i][COL_SUP.CODIGO_ACESSO] || '').trim();
+      if (!codigoPend) {
+        // Cadastro antigo sem código — mostra painel de espera
+        return {
+          pendente: true,
+          status:   'Pendente',
+          nome:     String(dados[i][COL_SUP.NOME] || '').trim(),
+        };
+      }
+      // Tem código → trata igual a Validado/Recusado/Inativo
+    }
+
+    // Validado / Inativo / Recusado / Pendente (com código) — requer código de acesso
     var codigoSalvo = String(dados[i][COL_SUP.CODIGO_ACESSO] || '').trim().toUpperCase();
     var codigoInfo  = String(codigo || '').trim().toUpperCase();
 
@@ -847,6 +857,7 @@ function obterCadastroSupervisor_(cpf, codigo) {
       tempoExperiencia: String(dados[i][COL_SUP.TEMPO_EXP]      || '').trim(),
       descExperiencia:  String(dados[i][COL_SUP.DESC_EXP]       || '').trim(),
       status:           status,
+      obs:              String(dados[i][COL_SUP.OBSERVACOES]     || '').trim(),
     };
   }
   throw new Error('Supervisor não encontrado para este CPF.');
@@ -921,6 +932,7 @@ function salvarMeuCadastroSupervisor_(body) {
       { col: COL_SUP.TEMPO_EXP,       val: tempoExp      },
       { col: COL_SUP.DESC_EXP,        val: descExp       },
       { col: COL_SUP.DATA_ULT_ATZ,    val: timestamp     },
+      { col: COL_SUP.OBSERVACOES,     val: ''            },  // limpa obs de recusa anterior
     ];
     campos.forEach(function(c) {
       aba.getRange(linhaExistente, c.col + 1).setValue(c.val);
@@ -935,6 +947,7 @@ function salvarMeuCadastroSupervisor_(body) {
   }
 
   // Novo cadastro
+  var codigoAcesso = 'S' + Math.random().toString(36).substr(2, 6).toUpperCase();
   var novaLinha = new Array(25).fill('');
   novaLinha[COL_SUP.TIMESTAMP]      = timestamp;
   novaLinha[COL_SUP.EMAIL_FORM]     = emailSup;
@@ -957,6 +970,7 @@ function salvarMeuCadastroSupervisor_(body) {
   novaLinha[COL_SUP.DECLARACAO]     = 'Sim — via portal web';
   novaLinha[COL_SUP.STATUS]         = 'Pendente';
   novaLinha[COL_SUP.DATA_ULT_ATZ]   = timestamp;
+  novaLinha[COL_SUP.CODIGO_ACESSO]  = codigoAcesso;
 
   aba.appendRow(novaLinha);
   aba.getRange(aba.getLastRow(), 1, 1, aba.getLastColumn()).setBackground('#FFF9C4');
@@ -968,12 +982,20 @@ function salvarMeuCadastroSupervisor_(body) {
     { name: 'Sistema de Estágios IFRS' }
   );
   GmailApp.sendEmail(emailSup,
-    '[IFRS Estágios] Cadastro recebido — ' + nome,
-    'Olá, ' + nome + ',\n\nSeu cadastro como supervisor de estágio foi recebido.\nApós validação (prazo: 1 dia útil), você receberá uma confirmação.\n\nDúvidas: ' + CFG.EMAIL_SETOR + '\n\nAtenciosamente,\n' + CFG.NOME_SETOR,
+    '[IFRS Estágios] Cadastro recebido — seu código de acesso',
+    'Olá, ' + nome + ',\n\n' +
+    'Seu cadastro como supervisor de estágio foi recebido e está aguardando validação.\n\n' +
+    '━━━━━━━━━━━━━━━━━━━━\n' +
+    'SEU CÓDIGO DE ACESSO: ' + codigoAcesso + '\n' +
+    '━━━━━━━━━━━━━━━━━━━━\n\n' +
+    'Guarde este código. Você precisará dele para acessar seu perfil no portal:\n' +
+    'https://ifrs-riogrande.github.io/estagios/empresas/perfil-supervisor.html\n\n' +
+    'Prazo de análise: até 1 dia útil.\n\n' +
+    'Dúvidas: ' + CFG.EMAIL_SETOR + '\n\nAtenciosamente,\n' + CFG.NOME_SETOR,
     { name: CFG.NOME_SETOR, replyTo: CFG.EMAIL_SETOR }
   );
 
-  return { mensagem: 'Cadastro enviado! Você receberá confirmação por e-mail em até 1 dia útil.', acao: 'cadastrado' };
+  return { mensagem: 'Cadastro enviado! Seu código de acesso foi enviado por e-mail.', acao: 'cadastrado' };
 }
 
 // ─────────────────────────────────────────

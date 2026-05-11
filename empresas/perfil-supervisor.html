@@ -127,7 +127,7 @@
                 Código de Acesso
               </h2>
               <p style="color:var(--color-text-muted);font-size:var(--font-size-sm);margin-bottom:var(--space-4);">
-                Cadastro encontrado. Informe o código de acesso enviado ao seu e-mail quando seu cadastro foi validado.
+                Cadastro encontrado. Informe o código de acesso enviado ao seu e-mail no momento do cadastro (ou quando validado).
               </p>
               <div class="form-group">
                 <label class="form-label required" for="busca-codigo">Código de acesso</label>
@@ -135,7 +135,7 @@
                   placeholder="Ex.: SA1B2C3" autocomplete="off" inputmode="text"
                   style="text-transform:uppercase;letter-spacing:.1em;"
                   aria-describedby="busca-codigo-hint busca-codigo-error">
-                <span id="busca-codigo-hint" class="form-hint">Código enviado por e-mail ao validar seu cadastro. Não diferencia maiúsculas/minúsculas.</span>
+                <span id="busca-codigo-hint" class="form-hint">Código enviado por e-mail ao cadastrar ou validar seu registro. Não diferencia maiúsculas/minúsculas.</span>
                 <span id="busca-codigo-error" class="form-error hidden" role="alert"></span>
               </div>
               <div id="feedback-codigo" class="form-feedback" role="status" aria-live="polite"></div>
@@ -163,7 +163,7 @@
             <div class="alert alert-warning" role="status">
               <div class="alert-content">
                 <div class="alert-title" id="pendente-nome-msg">Cadastro em análise</div>
-                <div>Seu cadastro foi recebido e está aguardando validação pelo setor de estágios. Quando aprovado, você receberá um <strong>código de acesso</strong> no e-mail cadastrado.</div>
+                <div>Seu cadastro foi recebido e está aguardando validação pelo setor de estágios. O <strong>código de acesso</strong> foi enviado ao seu e-mail no momento do cadastro — use-o para acessar seu perfil.</div>
               </div>
             </div>
             <div style="margin-top:var(--space-5);">
@@ -726,7 +726,12 @@
 
       } catch (err) {
         var msg = (err.message || '').toLowerCase();
-        if (msg.includes('não encontrad') || msg.includes('not found') || msg.includes('sem cadastro')) {
+        if (msg.includes('removido') || msg.includes('excluíd') || msg.includes('excluido')) {
+          document.getElementById('msg-erro-inicial').querySelector('.alert-content').innerHTML =
+            '<strong>Cadastro removido.</strong><br>Este cadastro foi removido pelo setor de estágios. ' +
+            'Para reativar ou dúvidas, entre em contato: <a href="mailto:estagios@riogrande.ifrs.edu.br">estagios@riogrande.ifrs.edu.br</a>.';
+          mostrarPainel('painel-erro-inicial');
+        } else if (msg.includes('não encontrad') || msg.includes('not found') || msg.includes('sem cadastro')) {
           await carregarEmpresas();
           mostrarPainelNovo();
         } else {
@@ -819,18 +824,51 @@
     // ── Exibir dados ───────────────────────────────────────────────────────────
     function exibirDados(d) {
       document.getElementById('subtitulo-pagina').textContent = 'Seus dados cadastrais como supervisor.';
-      document.getElementById('alerta-texto').textContent = 'Cadastro encontrado: ' + (d.nome || '');
 
       var val = function(v) {
         return v ? '<p>' + escapeHtml(String(v)) + '</p>' : '<p class="vazio">Não informado</p>';
       };
 
       var st    = (d.status || '').toLowerCase();
-      var stCls = st === 'validado' ? 'validado' : (st === 'pendente' ? 'pendente' : 'reprovado');
+      var stCls = st === 'validado' ? 'validado' : (st === 'recusado' ? 'reprovado' : (st === 'pendente' ? 'pendente' : 'reprovado'));
+
+      // Alerta principal
+      var alertEl = document.querySelector('#painel-dados .alert');
+      alertEl.className = 'alert ' + (st === 'validado' ? 'alert-success' : st === 'pendente' ? 'alert-warning' : 'alert-danger');
+
+      // Obs banner para recusados
+      var obsBannerHtml = '';
+      if (st === 'recusado' && d.obs) {
+        obsBannerHtml = '<div style="background:#fee2e2;border:1px solid #fca5a5;border-radius:8px;padding:16px;margin-bottom:20px;">' +
+          '<strong style="display:block;color:#991b1b;margin-bottom:4px;">Cadastro recusado pelo setor de estágios</strong>' +
+          '<p style="color:#7f1d1d;font-size:var(--font-size-sm);margin:0 0 8px;">' + escapeHtml(d.obs) + '</p>' +
+          '<p style="color:#991b1b;font-size:var(--font-size-sm);margin:0;">Corrija os dados abaixo e clique em <strong>Editar dados</strong> para reenviar.</p>' +
+          '</div>';
+      }
+
+      var alertMsg = st === 'validado'
+        ? 'Cadastro validado — ' + (d.nome || '')
+        : st === 'recusado'
+        ? 'Cadastro recusado — você pode corrigir e reenviar'
+        : st === 'pendente'
+        ? 'Cadastro em análise — ' + (d.nome || '')
+        : 'Cadastro encontrado: ' + (d.nome || '');
+      document.getElementById('alerta-texto').textContent = alertMsg;
+
       var statusHtml = '<p><span class="tag-status ' + stCls + '">' + escapeHtml(d.status || 'Desconhecido') + '</span></p>'
         + (st === 'pendente' ? '<p style="font-size:var(--font-size-sm);color:#92400e;margin-top:4px;">Aguardando análise do setor.</p>' : '');
 
       var cpfFmt = (d.cpf || '').replace(/\D/g,'').replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, '$1.$2.$3-$4');
+
+      // Insere banner de recusa antes do card de dados
+      var obsContainer = document.getElementById('obs-sup-container');
+      if (!obsContainer) {
+        obsContainer = document.createElement('div');
+        obsContainer.id = 'obs-sup-container';
+        var dadosCard = document.querySelector('#painel-dados .card');
+        dadosCard.parentNode.insertBefore(obsContainer, dadosCard);
+      }
+      obsContainer.innerHTML = obsBannerHtml;
 
       document.getElementById('dados-content').innerHTML =
         '<div class="section-divider">Vínculo com a Empresa</div>' +
@@ -966,7 +1004,7 @@
         btn,
         'feedback-novo',
         'Cadastro enviado com sucesso!',
-        'Seus dados foram recebidos. Após validação (prazo: 1 dia útil), você receberá confirmação por e-mail.',
+        'Seu código de acesso foi enviado para o e-mail informado. Guarde-o para acessar seu perfil. Prazo de análise: até 1 dia útil.',
         function() {
           document.getElementById('form-novo').querySelectorAll('input,select,textarea,button').forEach(function(el) { el.disabled = true; });
         }

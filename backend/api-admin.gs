@@ -172,9 +172,12 @@ function doPostAdmin(e) {
       case 'excluirEmpresa':       return excluirEmpresa_(body);
       case 'inativarOrientador':   return alterarStatusOrientador_(body.email, 'Inativo');
       case 'reativarOrientador':   return alterarStatusOrientador_(body.email, 'Ativo');
-      case 'validarSupervisor':    return alterarStatusSupervisor_(body.cpf, 'Validado');
-      case 'inativarSupervisor':   return alterarStatusSupervisor_(body.cpf, 'Inativo');
-      case 'reativarSupervisor':   return alterarStatusSupervisor_(body.cpf, 'Validado');
+      case 'validarSupervisor':     return alterarStatusSupervisor_(body.cpf, 'Validado');
+      case 'inativarSupervisor':    return alterarStatusSupervisor_(body.cpf, 'Inativo');
+      case 'reativarSupervisor':    return alterarStatusSupervisor_(body.cpf, 'Validado');
+      case 'recusarSupervisor':     return recusarSupervisor_(body);
+      case 'editarSupervisorAdmin': return editarSupervisorAdmin_(body);
+      case 'excluirSupervisor':     return excluirSupervisor_(body);
       case 'aprovarAdendo':        return processarAdendo_(body, 'Aprovado');
       case 'reprovarAdendo':       return processarAdendo_(body, 'Reprovado');
       case 'inativarAgente':            return alterarStatusAgente_(body.cnpj, 'Inativo');
@@ -1815,4 +1818,113 @@ function alterarStatusSupervisor_(cpf, novoStatus) {
   }
   if (!found) return jsonError_('Supervisor não encontrado.', 'NOT_FOUND');
   return jsonOk_({ status: novoStatus });
+}
+
+// ─────────────────────────────────────────────────────────────────
+// POST — Recusar supervisor (registra obs + notifica por e-mail)
+// ─────────────────────────────────────────────────────────────────
+function recusarSupervisor_(body) {
+  var cpfNorm = String(body.cpf || '').replace(/\D/g, '').trim();
+  var obs     = String(body.obs || '').trim();
+  if (!cpfNorm) return jsonError_('CPF não informado.', 'VALIDATION');
+  if (!obs)     return jsonError_('Observações são obrigatórias ao recusar.', 'VALIDATION');
+
+  var ss    = SpreadsheetApp.openById(CFG_ADMIN.SS_ID);
+  var sheet = ss.getSheetByName('Supervisores');
+  if (!sheet) return jsonError_('Aba de supervisores não encontrada.', 'NOT_FOUND');
+
+  var dados = sheet.getDataRange().getValues();
+  for (var i = 1; i < dados.length; i++) {
+    var cpfLinha = String(dados[i][9] || '').replace(/\D/g, '').trim(); // CPF=9
+    if (cpfLinha !== cpfNorm) continue;
+
+    sheet.getRange(i + 1, 20).setValue('Recusado');  // STATUS=19 → col 20
+    sheet.getRange(i + 1, 23).setValue(obs);         // OBSERVACOES=22 → col 23
+    sheet.getRange(i + 1, 1, 1, sheet.getLastColumn()).setBackground('#fce4ec');
+
+    var nome     = String(dados[i][8]  || '').trim();
+    var emailSup = String(dados[i][12] || '').trim();
+    if (emailSup) {
+      try {
+        GmailApp.sendEmail(emailSup,
+          '[IFRS Estágios] Cadastro de supervisor não aprovado',
+          'Olá, ' + (nome || 'Supervisor') + ',\n\n' +
+          'Seu cadastro como supervisor de estágio não foi aprovado pelo setor de estágios.\n\n' +
+          'Motivo / Observações:\n' + obs + '\n\n' +
+          'Você pode corrigir os dados e reenviar pelo portal:\n' +
+          'https://ifrs-riogrande.github.io/estagios/empresas/perfil-supervisor.html\n\n' +
+          'Dúvidas: estagios@riogrande.ifrs.edu.br\n\nAtenciosamente,\nSetor de Estágios — IFRS Campus Rio Grande',
+          { name: 'Setor de Estágios IFRS', replyTo: 'estagios@riogrande.ifrs.edu.br' }
+        );
+      } catch(mailErr) { logErro_('recusarSupervisor_.email', mailErr); }
+    }
+    return jsonOk_({ status: 'Recusado' });
+  }
+  return jsonError_('Supervisor não encontrado.', 'NOT_FOUND');
+}
+
+// ─────────────────────────────────────────────────────────────────
+// POST — Editar dados do supervisor pelo admin
+// ─────────────────────────────────────────────────────────────────
+function editarSupervisorAdmin_(body) {
+  var cpfNorm = String(body.cpf || '').replace(/\D/g, '').trim();
+  if (!cpfNorm) return jsonError_('CPF não informado.', 'VALIDATION');
+
+  var ss    = SpreadsheetApp.openById(CFG_ADMIN.SS_ID);
+  var sheet = ss.getSheetByName('Supervisores');
+  if (!sheet) return jsonError_('Aba de supervisores não encontrada.', 'NOT_FOUND');
+
+  var dados = sheet.getDataRange().getValues();
+  for (var i = 1; i < dados.length; i++) {
+    var cpfLinha = String(dados[i][9] || '').replace(/\D/g, '').trim();
+    if (cpfLinha !== cpfNorm) continue;
+
+    var san = function(v) { return String(v === undefined ? '' : v).trim(); };
+    // base-0 map: SETOR=4, ENDERECO_SETOR=5, EMAIL_SETOR_SUP=6, TEL_SETOR=7,
+    //             NOME=8, CARGO=10, TEL_SUP=11, EMAIL_SUP=12,
+    //             NIVEL_FORMACAO=13, AREA_FORMACAO=14, INSTITUICAO=15, TEMPO_EXP=16, DESC_EXP=17
+    var campos = [
+      [5,  san(body.setor)],
+      [6,  san(body.enderecoSetor)],
+      [7,  san(body.emailSetor)],
+      [8,  san(body.telSetor)],
+      [9,  san(body.nome)],
+      [11, san(body.cargo)],
+      [12, san(body.telSupervisor)],
+      [13, san(body.emailSupervisor)],
+      [14, san(body.nivelFormacao)],
+      [15, san(body.areaFormacao)],
+      [16, san(body.instituicao)],
+      [17, san(body.tempoExperiencia)],
+      [18, san(body.descExperiencia)],
+    ];
+    campos.forEach(function(c) {
+      if (c[1] !== '') sheet.getRange(i + 1, c[0]).setValue(c[1]);
+    });
+    return jsonOk_({ ok: true });
+  }
+  return jsonError_('Supervisor não encontrado.', 'NOT_FOUND');
+}
+
+// ─────────────────────────────────────────────────────────────────
+// POST — Soft-delete supervisor (status = 'Excluído')
+// ─────────────────────────────────────────────────────────────────
+function excluirSupervisor_(body) {
+  var cpfNorm = String(body.cpf || '').replace(/\D/g, '').trim();
+  if (!cpfNorm) return jsonError_('CPF não informado.', 'VALIDATION');
+
+  var ss    = SpreadsheetApp.openById(CFG_ADMIN.SS_ID);
+  var sheet = ss.getSheetByName('Supervisores');
+  if (!sheet) return jsonError_('Aba de supervisores não encontrada.', 'NOT_FOUND');
+
+  var dados = sheet.getDataRange().getValues();
+  for (var i = 1; i < dados.length; i++) {
+    var cpfLinha = String(dados[i][9] || '').replace(/\D/g, '').trim();
+    if (cpfLinha !== cpfNorm) continue;
+    sheet.getRange(i + 1, 20).setValue('Excluído');
+    sheet.getRange(i + 1, 1, 1, sheet.getLastColumn())
+      .setBackground('#e0e0e0').setFontColor('#9e9e9e');
+    return jsonOk_({ status: 'Excluído' });
+  }
+  return jsonError_('Supervisor não encontrado.', 'NOT_FOUND');
 }
