@@ -229,18 +229,64 @@
       document.getElementById('modal-body').innerHTML = `
         <div id="feedback-agente"></div>
         <div class="form-row">
-          <div class="form-group"><label class="form-label">Nome / Razão Social <span style="color:var(--color-error)">*</span></label><input id="f-nome" class="form-control" placeholder="Centro de Integração Empresa-Escola…"></div>
-          <div class="form-group"><label class="form-label">CNPJ <span style="color:var(--color-error)">*</span></label><input id="f-cnpj" class="form-control" placeholder="00.000.000/0000-00"></div>
+          <div class="form-group" style="flex:2">
+            <label class="form-label">Nome / Razão Social <span style="color:var(--color-error)">*</span></label>
+            <input id="f-nome" class="form-control" placeholder="Centro de Integração Empresa-Escola…">
+          </div>
+          <div class="form-group" style="flex:1">
+            <label class="form-label">Sigla <span style="color:var(--color-error)">*</span></label>
+            <input id="f-sigla" class="form-control" placeholder="CIEE" maxlength="20" style="text-transform:uppercase">
+          </div>
         </div>
         <div class="form-row">
-          <div class="form-group"><label class="form-label">Responsável <span style="color:var(--color-error)">*</span></label><input id="f-resp" class="form-control"></div>
-          <div class="form-group"><label class="form-label">Cargo</label><input id="f-cargo" class="form-control"></div>
+          <div class="form-group">
+            <label class="form-label">Tipo <span style="color:var(--color-error)">*</span></label>
+            <select id="f-tipo" class="form-control">
+              <option value="">Selecione…</option>
+              <option value="CIEE">CIEE</option>
+              <option value="IEL">IEL</option>
+              <option value="Outro">Outro</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">CNPJ <span style="color:var(--color-error)">*</span></label>
+            <input id="f-cnpj" class="form-control" placeholder="00.000.000/0000-00">
+          </div>
         </div>
         <div class="form-row">
-          <div class="form-group"><label class="form-label">E-mail <span style="color:var(--color-error)">*</span></label><input id="f-email" type="email" class="form-control"></div>
-          <div class="form-group"><label class="form-label">Telefone</label><input id="f-tel" class="form-control" placeholder="(53) 99999-9999"></div>
+          <div class="form-group">
+            <label class="form-label">E-mail <span style="color:var(--color-error)">*</span></label>
+            <input id="f-email" type="email" class="form-control">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Telefone <span style="color:var(--color-error)">*</span></label>
+            <input id="f-tel" class="form-control" placeholder="(53) 99999-9999">
+          </div>
         </div>
-        <div class="form-group"><label class="form-label">Endereço</label><input id="f-end" class="form-control"></div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Nº do Edital <span style="color:var(--color-error)">*</span></label>
+            <input id="f-edital" class="form-control" placeholder="Edital nº …/20XX">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Período de vigência <span style="color:var(--color-error)">*</span></label>
+            <input id="f-periodo" class="form-control" placeholder="01/01/2024 – 31/12/2026">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Site</label>
+            <input id="f-site" type="url" class="form-control" placeholder="https://…">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Link do Edital</label>
+            <input id="f-link-edital" type="url" class="form-control" placeholder="https://…">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Observações</label>
+          <textarea id="f-obs" class="form-control" rows="3" maxlength="500"></textarea>
+        </div>
       `;
       document.getElementById('modal-footer').innerHTML = `
         <button class="btn btn-ghost" onclick="fechar()">Cancelar</button>
@@ -250,20 +296,33 @@
     }
 
     async function salvarAgente() {
-      const btn = document.getElementById('btn-salvar-agente');
-      const nome  = document.getElementById('f-nome').value.trim();
-      const cnpj  = document.getElementById('f-cnpj').value.trim();
-      const resp  = document.getElementById('f-resp').value.trim();
-      const email = document.getElementById('f-email').value.trim();
-      if (!nome || !cnpj || !resp || !email) { toast('Preencha todos os campos obrigatórios.', 'error'); return; }
+      const btn    = document.getElementById('btn-salvar-agente');
+      const nome   = document.getElementById('f-nome').value.trim();
+      const sigla  = document.getElementById('f-sigla').value.trim().toUpperCase();
+      const tipo   = document.getElementById('f-tipo').value.trim();
+      const cnpj   = document.getElementById('f-cnpj').value.trim();
+      const email  = document.getElementById('f-email').value.trim();
+      const tel    = document.getElementById('f-tel').value.trim();
+      const edital = document.getElementById('f-edital').value.trim();
+      const period = document.getElementById('f-periodo').value.trim();
+      if (!nome || !sigla || !tipo || !cnpj || !email || !tel || !edital || !period) {
+        toast('Preencha todos os campos obrigatórios.', 'error'); return;
+      }
       btn.classList.add('is-loading'); btn.disabled = true;
       try {
         await API.post('cadastrarAgente', {
-          nomeAgente: nome, cnpj, nomeResponsavel: resp,
-          cargoResponsavel: document.getElementById('f-cargo').value.trim(),
-          email, telefone: document.getElementById('f-tel').value.trim(),
-          endereco: document.getElementById('f-end').value.trim(),
-          authToken: getAccessToken(),
+          nomeAgente:     nome,
+          siglaAgente:    sigla,
+          tipoAgente:     tipo,
+          cnpjAgente:     cnpj,
+          emailAgente:    email,
+          telAgente:      tel,
+          numEdital:      edital,
+          periodoConvenio: period,
+          siteAgente:     document.getElementById('f-site').value.trim(),
+          linkEdital:     document.getElementById('f-link-edital').value.trim(),
+          obsAgente:      document.getElementById('f-obs').value.trim(),
+          authToken:      getAccessToken(),
         });
         toast('Agente cadastrado com sucesso!', 'success');
         fechar(); carregar();
