@@ -167,6 +167,9 @@ function doPostAdmin(e) {
       case 'validarDocumentosDG':  return validarDocumentosDG_(body);
       case 'validarEmpresa':       return alterarStatusEmpresa_(body.cnpj, 'Validada');
       case 'inativarEmpresa':      return alterarStatusEmpresa_(body.cnpj, 'Inativa');
+      case 'recusarEmpresa':       return recusarEmpresa_(body);
+      case 'editarEmpresaAdmin':   return editarEmpresaAdmin_(body);
+      case 'excluirEmpresa':       return excluirEmpresa_(body);
       case 'inativarOrientador':   return alterarStatusOrientador_(body.email, 'Inativo');
       case 'reativarOrientador':   return alterarStatusOrientador_(body.email, 'Ativo');
       case 'validarSupervisor':    return alterarStatusSupervisor_(body.cpf, 'Validado');
@@ -390,6 +393,7 @@ function listarEmpresasAdmin_() {
       razaoSocial:        String(r[3]  || ''),
       nomeFantasia:       String(r[4]  || ''),
       tipoEmpresa:        String(r[2]  || ''),
+      ramo:               String(r[6]  || ''),
       endereco:           String(r[7]  || ''),
       bairro:             String(r[8]  || ''),
       municipio:          String(r[9]  || ''),
@@ -397,6 +401,7 @@ function listarEmpresasAdmin_() {
       cep:                String(r[11] || ''),
       telefone:           String(r[12] || ''),
       email:              String(r[13] || ''),
+      site:               String(r[14] || ''),
       nomeRepresentante:  String(r[15] || ''),
       cargoRepresentante: String(r[16] || ''),
       emailRep:           String(r[17] || ''),
@@ -404,6 +409,7 @@ function listarEmpresasAdmin_() {
       status:             String(r[19] || 'Pendente'),
       estagiosAtivos:     ativosPorEmpresa[cnpjNorm] || 0,
       driveDocs:          String(r[21] || ''),
+      obs:                String(r[22] || ''),
     });
   }
   return jsonOk_(lista);
@@ -708,49 +714,154 @@ function alterarStatusEmpresa_(cnpj, novoStatus) {
   if (!sheet) return jsonError_('Aba de empresas não encontrada.', 'NOT_FOUND');
   var dados = sheet.getDataRange().getValues();
   for (var i = 1; i < dados.length; i++) {
-    // CNPJ está na coluna F (índice 5 base-0) — COL_EMP.CNPJ = 5
-    if (String(dados[i][5] || '').replace(/\D/g,'') === cnpjLimpo) {
-      sheet.getRange(i + 1, 20).setValue(novoStatus); // STATUS = col T (índice 19 base-0 = col 20 base-1)
+    if (String(dados[i][5] || '').replace(/\D/g,'') !== cnpjLimpo) continue;
 
-      if (novoStatus === 'Validada') {
-        // Gera código de acesso único (formato EMP-XXXXXX)
-        var codigo = 'EMP-' + Math.random().toString(36).substr(2, 6).toUpperCase();
-        sheet.getRange(i + 1, 21).setValue(codigo); // CODIGO_ACESSO = col U (índice 20 = col 21 base-1)
+    sheet.getRange(i + 1, 20).setValue(novoStatus); // STATUS = col T
 
-        // Lê dados da linha para envio de e-mail
-        var razaoSocial = String(dados[i][3]  || '').trim(); // COL_EMP.RAZAO_SOCIAL = 3
-        var nomeRep     = String(dados[i][15] || '').trim(); // COL_EMP.NOME_REP = 15
-        var emailRep    = String(dados[i][17] || '').trim(); // COL_EMP.EMAIL_REP = 17
-        var emailEmp    = String(dados[i][13] || '').trim(); // COL_EMP.EMAIL_EMPRESA = 13
-
-        var assunto = '[IFRS Estágios] Cadastro validado — ' + razaoSocial;
-        var corpo = [
-          'Olá' + (nomeRep ? ', ' + nomeRep : '') + ',',
-          '',
-          'O cadastro de "' + razaoSocial + '" foi validado pelo setor de estágios.',
-          '',
-          'Para acessar ou editar seus dados no portal, utilize:',
-          '  Código de acesso: ' + codigo,
-          '',
-          'Guarde este código em local seguro.',
-          'Ele será solicitado sempre que você acessar seu perfil no portal.',
-          '',
-          'Em caso de perda, entre em contato:',
-          'estagios@riogrande.ifrs.edu.br',
-          '',
-          'Atenciosamente,',
-          'Central de Estágios — IFRS Campus Rio Grande',
-        ].join('\n');
-
-        var opts = { name: 'Central de Estágios IFRS', replyTo: 'estagios@riogrande.ifrs.edu.br' };
-        try { if (emailRep) MailApp.sendEmail({ to: emailRep, subject: assunto, body: corpo }); } catch(e2) {}
-        try { if (emailEmp && emailEmp !== emailRep) MailApp.sendEmail({ to: emailEmp, subject: assunto, body: corpo }); } catch(e2) {}
-
-        return jsonOk_({ status: novoStatus, codigo: codigo });
+    if (novoStatus === 'Validada') {
+      // Reusa código existente ou gera novo (para empresas cadastradas antes desta atualização)
+      var codigoExistente = String(dados[i][20] || '').trim(); // CODIGO_ACESSO = col U
+      var codigo = codigoExistente || ('EMP-' + Math.random().toString(36).substr(2, 6).toUpperCase());
+      if (!codigoExistente) {
+        sheet.getRange(i + 1, 21).setValue(codigo);
       }
 
-      return jsonOk_({ status: novoStatus });
+      var razaoSocial = String(dados[i][3]  || '').trim();
+      var nomeRep     = String(dados[i][15] || '').trim();
+      var emailRep    = String(dados[i][17] || '').trim();
+      var emailEmp    = String(dados[i][13] || '').trim();
+
+      var assunto = '[IFRS Estágios] Cadastro validado — ' + razaoSocial;
+      var corpo = [
+        'Olá' + (nomeRep ? ', ' + nomeRep : '') + ',',
+        '',
+        'O cadastro de "' + razaoSocial + '" foi validado pelo setor de estágios.',
+        '',
+        'Para acessar ou editar seus dados no portal, utilize:',
+        '  Código de acesso: ' + codigo,
+        '',
+        'Guarde este código em local seguro.',
+        '',
+        'Acesse: https://ifrs-riogrande.github.io/estagios/empresas/perfil-empresa.html',
+        '',
+        'Dúvidas: estagios@riogrande.ifrs.edu.br',
+        '',
+        'Atenciosamente,',
+        'Central de Estágios — IFRS Campus Rio Grande',
+      ].join('\n');
+
+      try { if (emailRep) MailApp.sendEmail({ to: emailRep, subject: assunto, body: corpo }); } catch(e2) {}
+      try { if (emailEmp && emailEmp !== emailRep) MailApp.sendEmail({ to: emailEmp, subject: assunto, body: corpo }); } catch(e2) {}
+      return jsonOk_({ status: novoStatus, codigo: codigo });
     }
+
+    return jsonOk_({ status: novoStatus });
+  }
+  return jsonError_('Empresa não encontrada.', 'NOT_FOUND');
+}
+
+// ── Recusar empresa (com obs) ─────────────────────────────────────────────
+function recusarEmpresa_(body) {
+  var cnpjLimpo = String(body.cnpj || '').replace(/\D/g,'');
+  var obs       = String(body.obs  || '').trim().substring(0, 500);
+  if (!cnpjLimpo) return jsonError_('CNPJ obrigatório.', 'VALIDATION');
+
+  var ss    = SpreadsheetApp.openById(CFG_ADMIN.SS_ID);
+  var sheet = ss.getSheetByName(CFG_ADMIN.ABA_EMPRESAS);
+  if (!sheet) return jsonError_('Aba de empresas não encontrada.', 'NOT_FOUND');
+  var dados = sheet.getDataRange().getValues();
+
+  for (var i = 1; i < dados.length; i++) {
+    if (String(dados[i][5] || '').replace(/\D/g,'') !== cnpjLimpo) continue;
+
+    sheet.getRange(i + 1, 20).setValue('Recusada'); // STATUS col T
+    sheet.getRange(i + 1, 23).setValue(obs);         // OBSERVACOES col W
+
+    var razaoSocial = String(dados[i][3]  || '').trim();
+    var nomeRep     = String(dados[i][15] || '').trim();
+    var emailRep    = String(dados[i][17] || '').trim();
+    var emailEmp    = String(dados[i][13] || '').trim();
+
+    var assunto = '[IFRS Estágios] Cadastro não aprovado — ' + razaoSocial;
+    var corpo = [
+      'Olá' + (nomeRep ? ', ' + nomeRep : '') + ',',
+      '',
+      'O cadastro de "' + razaoSocial + '" não foi aprovado pelo setor de estágios.',
+      obs ? '\nMotivo: ' + obs : '',
+      '',
+      'Você pode corrigir os dados e resubmeter pelo portal:',
+      'https://ifrs-riogrande.github.io/estagios/empresas/perfil-empresa.html',
+      '',
+      'Dúvidas: estagios@riogrande.ifrs.edu.br',
+      '',
+      'Atenciosamente,',
+      'Central de Estágios — IFRS Campus Rio Grande',
+    ].join('\n');
+
+    try { if (emailRep) MailApp.sendEmail({ to: emailRep, subject: assunto, body: corpo }); } catch(e2) {}
+    try { if (emailEmp && emailEmp !== emailRep) MailApp.sendEmail({ to: emailEmp, subject: assunto, body: corpo }); } catch(e2) {}
+
+    return jsonOk_({ status: 'Recusada' });
+  }
+  return jsonError_('Empresa não encontrada.', 'NOT_FOUND');
+}
+
+// ── Editar empresa (admin) ────────────────────────────────────────────────
+function editarEmpresaAdmin_(body) {
+  var cnpjLimpo = String(body.cnpj || '').replace(/\D/g,'');
+  if (!cnpjLimpo) return jsonError_('CNPJ obrigatório.', 'VALIDATION');
+
+  var ss    = SpreadsheetApp.openById(CFG_ADMIN.SS_ID);
+  var sheet = ss.getSheetByName(CFG_ADMIN.ABA_EMPRESAS);
+  if (!sheet) return jsonError_('Aba de empresas não encontrada.', 'NOT_FOUND');
+  var dados = sheet.getDataRange().getValues();
+
+  var san = function(v) { return String(v || '').replace(/<[^>]*>/g,'').trim().substring(0,500); };
+
+  for (var i = 1; i < dados.length; i++) {
+    if (String(dados[i][5] || '').replace(/\D/g,'') !== cnpjLimpo) continue;
+
+    var campos = [
+      { col: 4,  val: san(body.razaoSocial)   }, // D — Razão Social
+      { col: 5,  val: san(body.nomeFantasia)  }, // E — Nome Fantasia
+      { col: 7,  val: san(body.ramo)          }, // G — Ramo
+      { col: 8,  val: san(body.endereco)      }, // H — Endereço
+      { col: 9,  val: san(body.bairro)        }, // I — Bairro
+      { col: 10, val: san(body.municipio)     }, // J — Município
+      { col: 11, val: san(body.uf)            }, // K — UF
+      { col: 12, val: san(body.cep)           }, // L — CEP
+      { col: 13, val: san(body.telefone)      }, // M — Telefone
+      { col: 14, val: san(body.email).toLowerCase() }, // N — E-mail
+      { col: 15, val: san(body.site)          }, // O — Site
+      { col: 16, val: san(body.nomeRep)       }, // P — Nome Rep
+      { col: 17, val: san(body.cargoRep)      }, // Q — Cargo Rep
+      { col: 18, val: san(body.emailRep).toLowerCase() }, // R — E-mail Rep
+    ];
+    campos.forEach(function(c) {
+      if (c.val !== undefined && c.val !== null) {
+        sheet.getRange(i + 1, c.col + 1).setValue(c.val);
+      }
+    });
+    return jsonOk_({ mensagem: 'Dados atualizados.' });
+  }
+  return jsonError_('Empresa não encontrada.', 'NOT_FOUND');
+}
+
+// ── Excluir empresa (soft delete) ─────────────────────────────────────────
+function excluirEmpresa_(body) {
+  var cnpjLimpo = String(body.cnpj || '').replace(/\D/g,'');
+  if (!cnpjLimpo) return jsonError_('CNPJ obrigatório.', 'VALIDATION');
+
+  var ss    = SpreadsheetApp.openById(CFG_ADMIN.SS_ID);
+  var sheet = ss.getSheetByName(CFG_ADMIN.ABA_EMPRESAS);
+  if (!sheet) return jsonError_('Aba de empresas não encontrada.', 'NOT_FOUND');
+  var dados = sheet.getDataRange().getValues();
+
+  for (var i = 1; i < dados.length; i++) {
+    if (String(dados[i][5] || '').replace(/\D/g,'') !== cnpjLimpo) continue;
+    sheet.getRange(i + 1, 20).setValue('Excluída'); // STATUS col T
+    sheet.getRange(i + 1, 1, 1, sheet.getLastColumn()).setBackground('#f3f4f6'); // visual muted
+    return jsonOk_({ status: 'Excluída' });
   }
   return jsonError_('Empresa não encontrada.', 'NOT_FOUND');
 }

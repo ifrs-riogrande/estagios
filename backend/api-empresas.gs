@@ -58,7 +58,7 @@ var COL_EMP = {
   BAIRRO:       8, MUNICIPIO:   9, UF:        10, CEP:          11,
   TEL_EMPRESA: 12, EMAIL_EMPRESA:13, SITE:    14,
   NOME_REP:    15, CARGO_REP:  16, EMAIL_REP: 17, CPF_REP:      18,
-  STATUS:      19, CODIGO_ACESSO: 20, DRIVE_DOCS: 21,
+  STATUS:      19, CODIGO_ACESSO: 20, DRIVE_DOCS: 21, OBSERVACOES: 22,
 };
 
 // Colunas da planilha de supervisores (base 0)
@@ -603,6 +603,11 @@ function obterCadastroEmpresa_(cnpjCpf, codigo) {
     var docLinha = String(dados[i][COL_EMP.CNPJ] || '').replace(/\D/g, '').trim();
     if (docLinha !== doc) continue;
 
+    // Soft-deleted — empresa vê mensagem amigável
+    if (status === 'Excluída') {
+      throw new Error('Este cadastro foi removido pelo setor de estágios. Entre em contato: ' + CFG.EMAIL_SETOR);
+    }
+
     // Backward compat: registros antigos tinham TIPO = "Novo cadastro"
     var tipo = String(dados[i][COL_EMP.TIPO] || '').trim();
     if (tipo !== 'Pessoa Jurídica' && tipo !== 'Profissional Liberal' && tipo !== 'Produtor Rural') {
@@ -621,7 +626,7 @@ function obterCadastroEmpresa_(cnpjCpf, codigo) {
     }
 
     // Com código: valida antes de expor dados sensíveis
-    var codigoSalvo    = String(dados[i][COL_EMP.CODIGO_ACESSO] || '').trim();
+    var codigoSalvo     = String(dados[i][COL_EMP.CODIGO_ACESSO] || '').trim();
     var codigoInformado = String(codigo).trim().toUpperCase();
     if (!codigoSalvo || codigoInformado !== codigoSalvo) {
       throw new Error('Código de acesso inválido. Verifique o e-mail enviado pelo setor.');
@@ -647,6 +652,7 @@ function obterCadastroEmpresa_(cnpjCpf, codigo) {
       emailRep:       String(dados[i][COL_EMP.EMAIL_REP]      || '').trim(),
       cpfRep:         String(dados[i][COL_EMP.CPF_REP]        || '').trim(),
       status:         status,
+      obs:            String(dados[i][COL_EMP.OBSERVACOES]    || '').trim(),
     };
   }
   throw new Error('Cadastro não encontrado para este documento.');
@@ -744,8 +750,10 @@ function salvarMeuCadastroEmpresa_(body) {
     return { mensagem: 'Dados atualizados. Aguarde validação do setor (prazo: 1 dia útil).', acao: 'atualizado' };
   }
 
-  // Novo cadastro — 21 colunas (A–U, alinhado com COL_EMP; U=CódigoAcesso preenchido pelo admin na validação)
-  var novaLinha = new Array(21).fill('');
+  // Novo cadastro — gera código de acesso imediatamente (EMP-XXXXXX)
+  var codigoAcesso = 'EMP-' + Math.random().toString(36).substr(2, 6).toUpperCase();
+
+  var novaLinha = new Array(23).fill('');
   novaLinha[COL_EMP.TIMESTAMP]      = timestamp;
   novaLinha[COL_EMP.EMAIL_FORM]     = emailRep;
   novaLinha[COL_EMP.TIPO]           = tipo;
@@ -766,14 +774,15 @@ function salvarMeuCadastroEmpresa_(body) {
   novaLinha[COL_EMP.EMAIL_REP]      = emailRep;
   novaLinha[COL_EMP.CPF_REP]        = cpfRep;
   novaLinha[COL_EMP.STATUS]         = 'Pendente';
+  novaLinha[COL_EMP.CODIGO_ACESSO]  = codigoAcesso;
 
   aba.appendRow(novaLinha);
   aba.getRange(aba.getLastRow(), 1, 1, aba.getLastColumn()).setBackground('#FFF9C4');
 
   notificarSetor_(razaoSocial, cnpjCpf, emailRep, 'Novo cadastro');
-  enviarConfirmacao_(emailEmp, emailRep, nomeRep, razaoSocial, 'novo');
+  enviarConfirmacaoComCodigo_(emailEmp, emailRep, nomeRep, razaoSocial, codigoAcesso);
 
-  return { mensagem: 'Cadastro enviado! Você receberá confirmação por e-mail em até 1 dia útil.', acao: 'cadastrado' };
+  return { mensagem: 'Cadastro enviado! Seu código de acesso foi enviado por e-mail.', acao: 'cadastrado' };
 }
 
 // ─────────────────────────────────────────
@@ -1085,8 +1094,34 @@ function enviarConfirmacao_(emailEmp, emailRep, nomeRep, razaoSocial, tipo) {
     (tipo === 'novo'
       ? 'O cadastro da empresa ' + razaoSocial + ' foi recebido com sucesso.'
       : 'A solicitação de atualização da empresa ' + razaoSocial + ' foi recebida.') +
-    '\n\nAps validação, você receberá uma confirmação.\nPrazo: até 1 dia útil.' +
+    '\n\nApós validação, você receberá uma confirmação.\nPrazo: até 1 dia útil.' +
     '\n\nDúvidas: ' + CFG.EMAIL_SETOR + '\n\nAtenciosamente,\n' + CFG.NOME_SETOR;
+  var opts = { name: CFG.NOME_SETOR, replyTo: CFG.EMAIL_SETOR };
+  try { if (emailEmp) GmailApp.sendEmail(emailEmp, assunto, corpo, opts); } catch(e) {}
+  try { if (emailRep && emailRep !== emailEmp) GmailApp.sendEmail(emailRep, assunto, corpo, opts); } catch(e) {}
+}
+
+function enviarConfirmacaoComCodigo_(emailEmp, emailRep, nomeRep, razaoSocial, codigo) {
+  var assunto = '[IFRS Estágios] Cadastro recebido — ' + razaoSocial;
+  var corpo = [
+    'Olá' + (nomeRep ? ', ' + nomeRep : '') + ',',
+    '',
+    'O cadastro de "' + razaoSocial + '" foi recebido com sucesso!',
+    '',
+    'Seu cadastro está em análise pelo setor de estágios (prazo: até 1 dia útil).',
+    'Enquanto aguarda, você já pode acessar o portal com o código abaixo:',
+    '',
+    '  Código de acesso: ' + codigo,
+    '',
+    'Guarde este código — ele será necessário para visualizar e editar seus dados.',
+    '',
+    'Acesse o portal em: https://ifrs-riogrande.github.io/estagios/empresas/perfil-empresa.html',
+    '',
+    'Dúvidas: ' + CFG.EMAIL_SETOR,
+    '',
+    'Atenciosamente,',
+    CFG.NOME_SETOR,
+  ].join('\n');
   var opts = { name: CFG.NOME_SETOR, replyTo: CFG.EMAIL_SETOR };
   try { if (emailEmp) GmailApp.sendEmail(emailEmp, assunto, corpo, opts); } catch(e) {}
   try { if (emailRep && emailRep !== emailEmp) GmailApp.sendEmail(emailRep, assunto, corpo, opts); } catch(e) {}

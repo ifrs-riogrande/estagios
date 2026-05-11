@@ -1040,6 +1040,10 @@
         var msg = (err.message || '').toLowerCase();
         if (msg.includes('não encontrad') || msg.includes('not found') || msg.includes('sem cadastro')) {
           mostrarPainelNovo();
+        } else if (msg.includes('removido') || msg.includes('excluíd')) {
+          document.getElementById('msg-erro-inicial').querySelector('.alert-content').innerHTML =
+            escapeHtml(err.message || 'Cadastro removido.');
+          mostrarPainel('painel-erro-inicial');
         } else {
           document.getElementById('msg-erro-inicial').querySelector('.alert-content').textContent =
             'Erro ao buscar cadastro: ' + (err.message || 'tente novamente.');
@@ -1053,7 +1057,11 @@
       var nome   = resp.razaoSocial || '';
       var status = resp.status || '';
       var st     = status.toLowerCase();
-      var stLabel = st === 'validada' ? 'Validada ✓' : (st === 'pendente' ? 'Aguardando validação' : status);
+      var stLabel = st === 'validada'  ? 'Validada ✓'
+                  : st === 'pendente'  ? 'Aguardando validação'
+                  : st === 'recusada'  ? 'Cadastro recusado'
+                  : st === 'excluída'  ? 'Cadastro removido'
+                  : status;
 
       document.getElementById('codigo-empresa-nome').textContent   = nome;
       document.getElementById('codigo-empresa-status').textContent = stLabel;
@@ -1126,7 +1134,27 @@
     // ── Exibir dados ───────────────────────────────────────────────────────────
     function exibirDados(d) {
       document.getElementById('subtitulo-pagina').textContent = 'Dados cadastrais do concedente.';
-      document.getElementById('alerta-texto').textContent = 'Cadastro encontrado: ' + (d.razaoSocial || '');
+
+      // Adapta o alerta de topo conforme status
+      var alertaEl = document.querySelector('#painel-dados .alert');
+      var st = (d.status || '').toLowerCase();
+      if (alertaEl) {
+        alertaEl.className = 'alert ' + (
+          st === 'validada' ? 'alert-success' :
+          st === 'recusada' ? 'alert-danger'  : 'alert-info'
+        );
+      }
+
+      if (st === 'recusada') {
+        document.getElementById('alerta-texto').innerHTML =
+          '<strong>Cadastro recusado pelo setor de estágios.</strong>'
+          + (d.obs ? '<br>Motivo: ' + escapeHtml(d.obs) : '')
+          + '<br><span style="font-size:var(--font-size-sm);">Corrija os dados abaixo e clique em <strong>Editar dados</strong> para resubmeter.</span>';
+      } else if (st === 'pendente') {
+        document.getElementById('alerta-texto').textContent = 'Cadastro em análise — aguardando validação pelo setor de estágios.';
+      } else {
+        document.getElementById('alerta-texto').textContent = 'Cadastro encontrado: ' + (d.razaoSocial || '');
+      }
 
       var val = function(v) {
         return v ? '<p>' + escapeHtml(String(v)) + '</p>' : '<p class="vazio">Não informado</p>';
@@ -1136,10 +1164,12 @@
       var isPJ = tipo === 'Pessoa Jurídica';
       var isPL = tipo === 'Profissional Liberal';
 
-      var st    = (d.status || '').toLowerCase();
-      var stCls = st === 'validada' ? 'validada' : (st === 'pendente' ? 'pendente' : 'reprovada');
+      var stCls = st === 'validada' ? 'validada'
+                : st === 'pendente' ? 'pendente'
+                : 'reprovada';
       var statusHtml = '<p><span class="tag-status ' + stCls + '">' + escapeHtml(d.status || 'Desconhecido') + '</span></p>'
-        + (st === 'pendente' ? '<p style="font-size:var(--font-size-sm);color:#92400e;margin-top:4px;">Aguardando análise do setor.</p>' : '');
+        + (st === 'pendente' ? '<p style="font-size:var(--font-size-sm);color:#92400e;margin-top:4px;">Aguardando análise do setor (prazo: 1 dia útil).</p>' : '')
+        + (st === 'recusada' ? '<p style="font-size:var(--font-size-sm);color:#991b1b;margin-top:4px;">Corrija os dados e clique em "Editar dados" para resubmeter.</p>' : '');
 
       var rawDoc = (d.cnpj || '').replace(/\D/g, '');
       var docFmt = isPJ

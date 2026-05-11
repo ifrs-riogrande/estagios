@@ -26,6 +26,8 @@
     .badge-valid   {background:var(--color-success-light);color:var(--color-success);}
     .badge-pending {background:var(--color-warning-light);color:var(--color-warning);}
     .badge-inactive{background:var(--color-bg);color:var(--color-text-muted);}
+    .badge-refused {background:#fee2e2;color:#991b1b;}
+    .badge-deleted {background:#f3f4f6;color:#6b7280;}
     .empty-state{text-align:center;padding:var(--space-12);color:var(--color-text-muted);}
     .empty-state svg{width:48px;height:48px;margin:0 auto var(--space-4);opacity:.3;}
     .table-loading{text-align:center;padding:var(--space-12);color:var(--color-text-muted);font-size:var(--font-size-sm);}
@@ -89,7 +91,9 @@
             <option value="">Todos</option>
             <option value="Pendente" selected>Pendente</option>
             <option value="Validada">Validada</option>
+            <option value="Recusada">Recusada</option>
             <option value="Inativa">Inativa</option>
+            <option value="Excluída">Excluída</option>
           </select>
         </div>
         <div style="display:flex;gap:var(--space-2);align-items:flex-end;">
@@ -173,9 +177,9 @@
 
     function filtrar() {
       const busca  = document.getElementById('busca-empresa').value.toLowerCase().trim();
-      const status = document.getElementById('filtro-status').value.toLowerCase();
+      const status = document.getElementById('filtro-status').value;
       _filtrados = _dados.filter(e => {
-        if (status && (e.status || '').toLowerCase() !== status) return false;
+        if (status && (e.status || '') !== status) return false;
         if (busca) {
           const t = [e.razaoSocial, e.nomeFantasia, e.cnpj].join(' ').toLowerCase();
           if (!t.includes(busca)) return false;
@@ -206,46 +210,207 @@
         </tr>`).join('');
     }
 
+    // ── Painel de visualização ──────────────────────────────────────────────────
     function abrir(e) {
       _atual = e;
       document.getElementById('modal-title').textContent = e.nomeFantasia || e.razaoSocial || 'Empresa';
+      renderVisualizacao();
+      document.getElementById('modal-overlay').classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function renderVisualizacao() {
+      const e = _atual;
       document.getElementById('modal-body').innerHTML = `
+        ${e.status === 'Recusada' && e.obs ? `
+          <div style="background:#fee2e2;border:1px solid #fecaca;border-radius:var(--radius-md);padding:var(--space-3) var(--space-4);margin-bottom:var(--space-4);font-size:var(--font-size-sm);">
+            <strong style="color:#991b1b;">Motivo da recusa:</strong>
+            <p style="color:#7f1d1d;margin:4px 0 0;">${escapeHtml(e.obs)}</p>
+          </div>` : ''}
         <div class="detail-grid">
           <div class="detail-item"><label>Razão Social</label><p>${escapeHtml(e.razaoSocial||'—')}</p></div>
           <div class="detail-item"><label>Nome Fantasia</label><p>${escapeHtml(e.nomeFantasia||'—')}</p></div>
           <div class="detail-item"><label>CNPJ</label><p>${escapeHtml(e.cnpj||'—')}</p></div>
           <div class="detail-item"><label>Tipo</label><p>${escapeHtml(e.tipoEmpresa||'—')}</p></div>
-          <div class="detail-item detail-full"><label>Endereço</label><p>${escapeHtml(e.endereco||'—')}, ${escapeHtml(e.municipio||'')} — ${escapeHtml(e.uf||'')}</p></div>
-          <div class="detail-item"><label>Representante Legal</label><p>${escapeHtml(e.nomeRepresentante||'—')}</p></div>
-          <div class="detail-item"><label>Cargo do Representante</label><p>${escapeHtml(e.cargoRepresentante||'—')}</p></div>
-          <div class="detail-item"><label>E-mail</label><p>${escapeHtml(e.email||'—')}</p></div>
+          <div class="detail-item"><label>Ramo</label><p>${escapeHtml(e.ramo||'—')}</p></div>
+          <div class="detail-item detail-full"><label>Endereço</label><p>${escapeHtml(e.endereco||'—')}${e.bairro?', '+escapeHtml(e.bairro):''} — ${escapeHtml(e.municipio||'')}/${escapeHtml(e.uf||'')} ${escapeHtml(e.cep||'')}</p></div>
           <div class="detail-item"><label>Telefone</label><p>${escapeHtml(e.telefone||'—')}</p></div>
+          <div class="detail-item"><label>E-mail</label><p>${escapeHtml(e.email||'—')}</p></div>
+          <div class="detail-item detail-full"><label>Site</label><p>${e.site ? `<a href="${escapeHtml(e.site)}" target="_blank" rel="noopener">${escapeHtml(e.site)}</a>` : '—'}</p></div>
+          <div class="detail-item"><label>Representante</label><p>${escapeHtml(e.nomeRepresentante||'—')}</p></div>
+          <div class="detail-item"><label>Cargo</label><p>${escapeHtml(e.cargoRepresentante||'—')}</p></div>
+          <div class="detail-item"><label>E-mail Rep.</label><p>${escapeHtml(e.emailRep||'—')}</p></div>
+          <div class="detail-item"><label>CPF Rep.</label><p>${escapeHtml(e.cpfRep||'—')}</p></div>
           <div class="detail-item"><label>Status</label><p>${badgeEmpresa(e.status)}</p></div>
           <div class="detail-item"><label>Estágios Ativos</label><p>${e.estagiosAtivos||0}</p></div>
-          ${e.driveDocs ? `<div class="detail-item detail-full"><label>Documentos da Empresa</label><p><a href="${escapeHtml(e.driveDocs)}" target="_blank" rel="noopener" style="color:var(--color-primary);text-decoration:underline;display:inline-flex;align-items:center;gap:6px;"><svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z"/><path d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z"/></svg>Ver pasta no Google Drive</a></p></div>` : ''}
+          ${e.driveDocs ? `<div class="detail-item detail-full"><label>Documentos</label><p><a href="${escapeHtml(e.driveDocs)}" target="_blank" rel="noopener" style="color:var(--color-primary);text-decoration:underline;">Ver pasta no Google Drive ↗</a></p></div>` : ''}
         </div>`;
+
       const footer = document.getElementById('modal-footer');
-      if (e.status === 'Pendente') {
-        footer.innerHTML = `
-          <button class="btn btn-ghost" onclick="fechar()">Cancelar</button>
-          <button class="btn btn-danger btn-sm" onclick="acao('inativarEmpresa')">Recusar</button>
-          <button class="btn btn-primary btn-sm" onclick="acao('validarEmpresa')">Validar Empresa</button>`;
-      } else if (e.status === 'Validada') {
+      const s = e.status;
+      if (s === 'Pendente') {
         footer.innerHTML = `
           <button class="btn btn-ghost" onclick="fechar()">Fechar</button>
-          <button class="btn btn-danger btn-sm" onclick="acao('inativarEmpresa')">Inativar</button>`;
+          <button class="btn btn-secondary btn-sm" onclick="abrirEdicao()">Editar</button>
+          <button class="btn btn-danger btn-sm" onclick="abrirRecusa()">Recusar</button>
+          <button class="btn btn-primary btn-sm" onclick="acaoSimples('validarEmpresa','Empresa validada.')">Validar</button>`;
+      } else if (s === 'Recusada') {
+        footer.innerHTML = `
+          <button class="btn btn-ghost" onclick="fechar()">Fechar</button>
+          <button class="btn btn-secondary btn-sm" onclick="abrirEdicao()">Editar</button>
+          <button style="background:#dc2626;color:#fff;border:none;" class="btn btn-sm" onclick="confirmarExcluir()">Excluir</button>
+          <button class="btn btn-primary btn-sm" onclick="acaoSimples('validarEmpresa','Empresa validada.')">Validar mesmo assim</button>`;
+      } else if (s === 'Validada') {
+        footer.innerHTML = `
+          <button class="btn btn-ghost" onclick="fechar()">Fechar</button>
+          <button class="btn btn-secondary btn-sm" onclick="abrirEdicao()">Editar</button>
+          <button class="btn btn-danger btn-sm" onclick="acaoSimples('inativarEmpresa','Empresa inativada.')">Inativar</button>`;
+      } else if (s === 'Inativa') {
+        footer.innerHTML = `
+          <button class="btn btn-ghost" onclick="fechar()">Fechar</button>
+          <button class="btn btn-secondary btn-sm" onclick="abrirEdicao()">Editar</button>
+          <button style="background:#dc2626;color:#fff;border:none;" class="btn btn-sm" onclick="confirmarExcluir()">Excluir</button>
+          <button class="btn btn-primary btn-sm" onclick="acaoSimples('validarEmpresa','Empresa reativada.')">Reativar</button>`;
       } else {
         footer.innerHTML = `<button class="btn btn-ghost" onclick="fechar()">Fechar</button>`;
       }
-      document.getElementById('modal-overlay').classList.remove('hidden');
-      document.body.style.overflow = 'hidden';
     }
 
-    async function acao(action) {
+    // ── Modo Edição ─────────────────────────────────────────────────────────────
+    function abrirEdicao() {
+      const e = _atual;
+      document.getElementById('modal-body').innerHTML = `
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3) var(--space-4);">
+          <div class="form-group"><label class="form-label">Razão Social *</label><input id="fe-razao" class="form-control" value="${escapeHtml(e.razaoSocial||'')}"></div>
+          <div class="form-group"><label class="form-label">Nome Fantasia</label><input id="fe-fantasia" class="form-control" value="${escapeHtml(e.nomeFantasia||'')}"></div>
+          <div class="form-group"><label class="form-label">Ramo</label><input id="fe-ramo" class="form-control" value="${escapeHtml(e.ramo||'')}"></div>
+          <div class="form-group"><label class="form-label">Telefone</label><input id="fe-tel" class="form-control" value="${escapeHtml(e.telefone||'')}"></div>
+          <div class="form-group"><label class="form-label">E-mail</label><input id="fe-email" type="email" class="form-control" value="${escapeHtml(e.email||'')}"></div>
+          <div class="form-group"><label class="form-label">Site</label><input id="fe-site" class="form-control" value="${escapeHtml(e.site||'')}"></div>
+          <div style="grid-column:1/-1"><label class="form-label">Endereço</label><input id="fe-end" class="form-control" value="${escapeHtml(e.endereco||'')}"></div>
+          <div class="form-group"><label class="form-label">Bairro</label><input id="fe-bairro" class="form-control" value="${escapeHtml(e.bairro||'')}"></div>
+          <div class="form-group"><label class="form-label">Município</label><input id="fe-mun" class="form-control" value="${escapeHtml(e.municipio||'')}"></div>
+          <div class="form-group"><label class="form-label">UF</label><input id="fe-uf" class="form-control" maxlength="2" value="${escapeHtml(e.uf||'')}"></div>
+          <div class="form-group"><label class="form-label">CEP</label><input id="fe-cep" class="form-control" value="${escapeHtml(e.cep||'')}"></div>
+          <div class="form-group"><label class="form-label">Representante</label><input id="fe-nome-rep" class="form-control" value="${escapeHtml(e.nomeRepresentante||'')}"></div>
+          <div class="form-group"><label class="form-label">Cargo Rep.</label><input id="fe-cargo-rep" class="form-control" value="${escapeHtml(e.cargoRepresentante||'')}"></div>
+          <div class="form-group"><label class="form-label">E-mail Rep.</label><input id="fe-email-rep" type="email" class="form-control" value="${escapeHtml(e.emailRep||'')}"></div>
+        </div>`;
+      document.getElementById('modal-footer').innerHTML = `
+        <button class="btn btn-ghost" onclick="renderVisualizacao()">Cancelar</button>
+        <button class="btn btn-primary" id="btn-salvar-edicao" onclick="salvarEdicaoAdmin()">Salvar alterações</button>`;
+    }
+
+    async function salvarEdicaoAdmin() {
+      const btn = document.getElementById('btn-salvar-edicao');
+      btn.classList.add('is-loading'); btn.disabled = true;
+      try {
+        await API.post('editarEmpresaAdmin', {
+          authToken:   getAccessToken(),
+          cnpj:        _atual.cnpj,
+          razaoSocial: document.getElementById('fe-razao').value.trim(),
+          nomeFantasia:document.getElementById('fe-fantasia').value.trim(),
+          ramo:        document.getElementById('fe-ramo').value.trim(),
+          telefone:    document.getElementById('fe-tel').value.trim(),
+          email:       document.getElementById('fe-email').value.trim(),
+          site:        document.getElementById('fe-site').value.trim(),
+          endereco:    document.getElementById('fe-end').value.trim(),
+          bairro:      document.getElementById('fe-bairro').value.trim(),
+          municipio:   document.getElementById('fe-mun').value.trim(),
+          uf:          document.getElementById('fe-uf').value.trim(),
+          cep:         document.getElementById('fe-cep').value.trim(),
+          nomeRep:     document.getElementById('fe-nome-rep').value.trim(),
+          cargoRep:    document.getElementById('fe-cargo-rep').value.trim(),
+          emailRep:    document.getElementById('fe-email-rep').value.trim(),
+        });
+        // Atualiza cache local
+        _atual.razaoSocial       = document.getElementById('fe-razao').value.trim() || _atual.razaoSocial;
+        _atual.nomeFantasia      = document.getElementById('fe-fantasia').value.trim();
+        _atual.ramo              = document.getElementById('fe-ramo').value.trim();
+        _atual.telefone          = document.getElementById('fe-tel').value.trim();
+        _atual.email             = document.getElementById('fe-email').value.trim();
+        _atual.site              = document.getElementById('fe-site').value.trim();
+        _atual.endereco          = document.getElementById('fe-end').value.trim();
+        _atual.bairro            = document.getElementById('fe-bairro').value.trim();
+        _atual.municipio         = document.getElementById('fe-mun').value.trim();
+        _atual.uf                = document.getElementById('fe-uf').value.trim();
+        _atual.cep               = document.getElementById('fe-cep').value.trim();
+        _atual.nomeRepresentante = document.getElementById('fe-nome-rep').value.trim();
+        _atual.cargoRepresentante= document.getElementById('fe-cargo-rep').value.trim();
+        _atual.emailRep          = document.getElementById('fe-email-rep').value.trim();
+        toast('Dados salvos.', 'success');
+        renderVisualizacao();
+        carregar();
+      } catch (err) { toast('Erro: ' + err.message, 'error'); }
+      finally { btn.classList.remove('is-loading'); btn.disabled = false; }
+    }
+
+    // ── Modo Recusa ─────────────────────────────────────────────────────────────
+    function abrirRecusa() {
+      document.getElementById('modal-body').innerHTML = `
+        <p style="margin-bottom:var(--space-3);font-size:var(--font-size-sm);color:var(--color-text-muted);">
+          Informe o motivo da recusa. Este texto será enviado por e-mail à empresa.
+        </p>
+        <div class="form-group">
+          <label class="form-label" for="motivo-recusa">Observações <span style="font-weight:400;color:var(--color-text-muted)">(opcional)</span></label>
+          <textarea id="motivo-recusa" class="form-control" rows="4" maxlength="500"
+            placeholder="Ex.: Documentação incompleta, CNPJ divergente, dados incorretos…"></textarea>
+        </div>`;
+      document.getElementById('modal-footer').innerHTML = `
+        <button class="btn btn-ghost" onclick="renderVisualizacao()">Cancelar</button>
+        <button class="btn btn-danger" id="btn-confirmar-recusa" onclick="confirmarRecusa()">Confirmar recusa</button>`;
+      document.getElementById('motivo-recusa').focus();
+    }
+
+    async function confirmarRecusa() {
+      const btn = document.getElementById('btn-confirmar-recusa');
+      btn.classList.add('is-loading'); btn.disabled = true;
+      const obs = document.getElementById('motivo-recusa').value.trim();
+      try {
+        await API.post('recusarEmpresa', { authToken: getAccessToken(), cnpj: _atual.cnpj, obs });
+        _atual.status = 'Recusada';
+        _atual.obs    = obs;
+        toast('Empresa recusada. E-mail enviado.', 'success');
+        renderVisualizacao();
+        carregar();
+      } catch (err) { toast('Erro: ' + err.message, 'error'); }
+      finally { btn.classList.remove('is-loading'); btn.disabled = false; }
+    }
+
+    // ── Excluir (soft delete) ───────────────────────────────────────────────────
+    function confirmarExcluir() {
+      document.getElementById('modal-body').innerHTML = `
+        <div style="text-align:center;padding:var(--space-6) 0;">
+          <div style="font-size:48px;margin-bottom:var(--space-4);">🗑️</div>
+          <h3 style="margin-bottom:var(--space-3);">Excluir cadastro?</h3>
+          <p style="color:var(--color-text-muted);max-width:360px;margin:0 auto;">
+            O cadastro de <strong>${escapeHtml(_atual.razaoSocial||'esta empresa')}</strong> será marcado como excluído.
+            Ele não aparecerá mais nas listagens normais, mas poderá ser visualizado pelo filtro "Excluída".
+          </p>
+        </div>`;
+      document.getElementById('modal-footer').innerHTML = `
+        <button class="btn btn-ghost" onclick="renderVisualizacao()">Cancelar</button>
+        <button style="background:#dc2626;color:#fff;border:none;" class="btn" id="btn-conf-excluir" onclick="executarExcluir()">Sim, excluir</button>`;
+    }
+
+    async function executarExcluir() {
+      const btn = document.getElementById('btn-conf-excluir');
+      btn.classList.add('is-loading'); btn.disabled = true;
+      try {
+        await API.post('excluirEmpresa', { authToken: getAccessToken(), cnpj: _atual.cnpj });
+        toast('Cadastro excluído.', 'success');
+        fechar();
+        carregar();
+      } catch (err) { toast('Erro: ' + err.message, 'error'); }
+      finally { btn.classList.remove('is-loading'); btn.disabled = false; }
+    }
+
+    // ── Ações simples (validar / inativar) ─────────────────────────────────────
+    async function acaoSimples(action, successMsg) {
       if (!_atual) return;
       try {
         await API.post(action, { cnpj: _atual.cnpj, authToken: getAccessToken() });
-        toast(action === 'validarEmpresa' ? 'Empresa validada com sucesso.' : 'Empresa inativada.', 'success');
+        toast(successMsg, 'success');
         fechar();
         carregar();
       } catch (err) { toast('Erro: ' + err.message, 'error'); }
@@ -258,7 +423,13 @@
     }
 
     function badgeEmpresa(s) {
-      const m = { 'Validada': 'badge-valid', 'Pendente': 'badge-pending', 'Inativa': 'badge-inactive' };
+      const m = {
+        'Validada':  'badge-valid',
+        'Pendente':  'badge-pending',
+        'Recusada':  'badge-refused',
+        'Inativa':   'badge-inactive',
+        'Excluída':  'badge-deleted',
+      };
       return `<span class="badge ${m[s]||'badge-inactive'}">${escapeHtml(s||'—')}</span>`;
     }
 
