@@ -281,7 +281,11 @@
           <div class="detail-item"><label>Titulação</label><p>${escapeHtml(o.titulacao||'—')}</p></div>
           <div class="detail-item"><label>Área</label><p>${escapeHtml(o.area||'—')}</p></div>
           <div class="detail-item"><label>Vínculo</label><p>${escapeHtml(o.tipoVinculo||'—')}</p></div>
-          ${o.tipoVinculo==='Substituto' ? `<div class="detail-item"><label>Fim do Contrato</label><p>${escapeHtml(o.fimContrato||'—')}</p></div>` : '<div></div>'}
+          ${o.tipoVinculo==='Substituto'
+            ? `<div class="detail-item"><label>Início do Contrato</label><p>${escapeHtml(o.iniContrato||'—')}</p></div>
+               <div class="detail-item detail-full"></div>
+               <div class="detail-item"><label>Fim do Contrato</label><p>${escapeHtml(o.fimContrato||'—')}</p></div>`
+            : '<div></div>'}
           <div class="detail-item detail-full"><label>Cursos</label><p>${escapeHtml((o.cursos||[]).join(', ')||'—')}</p></div>
           <div class="detail-item"><label>Status</label><p>${badgeStatus(o.status)}</p></div>
           <div class="detail-item"><label>Estágios Ativos</label><p>${o.estagiosAtivos||0}</p></div>
@@ -307,26 +311,63 @@
     function renderEdicao() {
       const o = _atual;
       const cursosStr = (o.cursos||[]).join(', ');
+      const eSub = o.tipoVinculo === 'Substituto';
       document.getElementById('modal-body').innerHTML = `
-        <div class="form-group">
-          <label class="form-label">Telefone</label>
-          <input id="ed-tel" class="form-control" value="${escapeHtml(o.tel||'')}" maxlength="30">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Titulação</label>
-          <input id="ed-titulacao" class="form-control" value="${escapeHtml(o.titulacao||'')}" maxlength="100">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Área de atuação</label>
-          <input id="ed-area" class="form-control" value="${escapeHtml(o.area||'')}" maxlength="200">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Cursos <span style="font-weight:400;color:var(--color-text-muted)">(separados por vírgula)</span></label>
-          <input id="ed-cursos" class="form-control" value="${escapeHtml(cursosStr)}" maxlength="500">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3) var(--space-4);">
+          <div class="form-group" style="grid-column:1/-1;margin-bottom:0">
+            <label class="form-label">Nome completo</label>
+            <input id="ed-nome" class="form-control" value="${escapeHtml(o.nome||'')}" maxlength="200">
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <label class="form-label">CPF</label>
+            <input id="ed-cpf" class="form-control" value="${escapeHtml(o.cpf||'')}" maxlength="20" placeholder="000.000.000-00">
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <label class="form-label">SIAPE</label>
+            <input id="ed-siape" class="form-control" value="${escapeHtml(o.siape||'')}" maxlength="30">
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <label class="form-label">Telefone</label>
+            <input id="ed-tel" class="form-control" value="${escapeHtml(o.tel||'')}" maxlength="30" placeholder="(53) 99999-9999">
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <label class="form-label">Titulação</label>
+            <input id="ed-titulacao" class="form-control" value="${escapeHtml(o.titulacao||'')}" maxlength="100">
+          </div>
+          <div class="form-group" style="grid-column:1/-1;margin-bottom:0">
+            <label class="form-label">Área de atuação</label>
+            <input id="ed-area" class="form-control" value="${escapeHtml(o.area||'')}" maxlength="200">
+          </div>
+          <div class="form-group" style="grid-column:1/-1;margin-bottom:0">
+            <label class="form-label">Cursos <span style="font-weight:400;color:var(--color-text-muted)">(separados por vírgula)</span></label>
+            <input id="ed-cursos" class="form-control" value="${escapeHtml(cursosStr)}" maxlength="500">
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <label class="form-label">Tipo de vínculo</label>
+            <select id="ed-vinculo" class="form-control" onchange="toggleDatasContrato()">
+              <option value="Efetivo"    ${!eSub?'selected':''}>Efetivo</option>
+              <option value="Substituto" ${eSub?'selected':''}>Substituto</option>
+            </select>
+          </div>
+          <div id="ed-datas-wrap" style="display:${eSub?'contents':'none'}">
+            <div class="form-group" style="margin-bottom:0">
+              <label class="form-label">Início do contrato</label>
+              <input id="ed-ini-contrato" class="form-control" value="${escapeHtml(o.iniContrato||'')}" maxlength="10" placeholder="DD/MM/AAAA">
+            </div>
+            <div class="form-group" style="margin-bottom:0">
+              <label class="form-label">Fim do contrato</label>
+              <input id="ed-fim-contrato" class="form-control" value="${escapeHtml(o.fimContrato||'')}" maxlength="10" placeholder="DD/MM/AAAA">
+            </div>
+          </div>
         </div>`;
       document.getElementById('modal-footer').innerHTML = `
         <button class="btn btn-ghost" onclick="renderVisualizacao()">Cancelar</button>
         <button class="btn btn-primary" id="btn-salvar-edicao" onclick="salvarEdicao()">Salvar</button>`;
+    }
+
+    function toggleDatasContrato() {
+      const sub = document.getElementById('ed-vinculo').value === 'Substituto';
+      document.getElementById('ed-datas-wrap').style.display = sub ? 'contents' : 'none';
     }
 
     function renderRejeicao() {
@@ -361,20 +402,33 @@
       const btn = document.getElementById('btn-salvar-edicao');
       btn.disabled = true; btn.textContent = 'Salvando…';
       try {
-        const cursos = document.getElementById('ed-cursos').value.trim();
+        const g = id => document.getElementById(id)?.value.trim() ?? '';
+        const cursos      = g('ed-cursos');
+        const tipoVinculo = g('ed-vinculo');
+        const iniContrato = tipoVinculo === 'Substituto' ? g('ed-ini-contrato') : '';
+        const fimContrato = tipoVinculo === 'Substituto' ? g('ed-fim-contrato') : '';
         await API.post('editarOrientadorAdmin', {
-          email:     _atual.email,
-          tel:       document.getElementById('ed-tel').value.trim(),
-          titulacao: document.getElementById('ed-titulacao').value.trim(),
-          area:      document.getElementById('ed-area').value.trim(),
-          cursos:    cursos,
-          authToken: getAccessToken(),
+          email:       _atual.email,
+          nome:        g('ed-nome'),
+          cpf:         g('ed-cpf'),
+          siape:       g('ed-siape'),
+          tel:         g('ed-tel'),
+          titulacao:   g('ed-titulacao'),
+          area:        g('ed-area'),
+          cursos,
+          tipoVinculo,
+          iniContrato,
+          fimContrato,
+          authToken:   getAccessToken(),
         });
-        // Atualizar _atual para que renderVisualizacao exiba os novos valores
-        _atual.tel       = document.getElementById('ed-tel').value.trim();
-        _atual.titulacao = document.getElementById('ed-titulacao').value.trim();
-        _atual.area      = document.getElementById('ed-area').value.trim();
-        _atual.cursos    = cursos.split(',').map(c => c.trim()).filter(Boolean);
+        // Sincronizar _atual para que renderVisualizacao exiba os novos valores
+        Object.assign(_atual, {
+          nome: g('ed-nome'), cpf: g('ed-cpf'), siape: g('ed-siape'),
+          tel: g('ed-tel'), titulacao: g('ed-titulacao'), area: g('ed-area'),
+          cursos: cursos.split(',').map(c => c.trim()).filter(Boolean),
+          tipoVinculo, iniContrato, fimContrato,
+        });
+        document.getElementById('modal-title').textContent = _atual.nome || 'Orientador';
         toast('Orientador atualizado.', 'success');
         renderVisualizacao();
         carregar();
@@ -390,12 +444,15 @@
       btn.disabled = true; btn.textContent = 'Rejeitando…';
       const obs = document.getElementById('motivo-rejeicao').value.trim();
       try {
-        await API.post('aprovarCadastroServidor', {
+        const res = await API.post('aprovarCadastroServidor', {
           tipo: 'orientador', email: _atual.email,
           novoStatus: 'Rejeitado', obs,
           authToken: getAccessToken(),
         });
-        toast('Cadastro rejeitado.', 'success');
+        const msg = res?.emailEnviado === false
+          ? 'Cadastro rejeitado (falha ao enviar e-mail — verifique logs GAS).'
+          : 'Cadastro rejeitado e e-mail enviado ao orientador.';
+        toast(msg, 'success');
         fechar(); carregar();
       } catch (err) {
         btn.disabled = false; btn.textContent = 'Confirmar rejeição';

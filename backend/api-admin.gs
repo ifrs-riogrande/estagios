@@ -450,12 +450,14 @@ function listarOrientadoresAdmin_() {
     var emailOri = String(r[COL_ORI.EMAIL] || '').toLowerCase();
     lista.push({
       nome:        String(r[COL_ORI.NOME]         || ''),
+      cpf:         String(r[COL_ORI.CPF]          || ''),
       siape:       String(r[COL_ORI.SIAPE]        || ''),
       tel:         String(r[COL_ORI.TEL]          || ''),
       titulacao:   String(r[COL_ORI.TITULACAO]    || ''),
       area:        String(r[COL_ORI.AREA]         || ''),
       email:       emailOri,
       tipoVinculo: String(r[COL_ORI.TIPO_VINCULO] || ''),
+      iniContrato: formatarData_(r[COL_ORI.INI_CONTRATO]),
       fimContrato: formatarData_(r[COL_ORI.FIM_CONTRATO]),
       cursos:      String(r[COL_ORI.CURSOS] || '').split(',').map(function(c){ return c.trim(); }).filter(Boolean),
       status:      String(r[COL_ORI.STATUS] || 'Ativo'),
@@ -1485,26 +1487,29 @@ function aprovarCadastroServidor_(body) {
         if (obs) sheet.getRange(i + 1, COL_ORI.STATUS + 2).setValue(obs); // col após STATUS
         found = true;
         // Notificar por e-mail ao rejeitar
+        var emailEnviadoOri = false;
         if (novoStatus === 'Rejeitado') {
           var nomeOri = String(dados[i][COL_ORI.NOME] || '');
+          var corpoOri = 'Olá' + (nomeOri ? ', ' + nomeOri : '') + ',\n\n' +
+            'Seu cadastro como orientador de estágio não foi aprovado pelo setor de estágios do IFRS Campus Rio Grande.' +
+            (obs ? '\n\nMotivo / Observações:\n' + obs : '') +
+            '\n\nVocê pode corrigir e reenviar seu cadastro pelo portal:\n' +
+            'https://ifrs-riogrande.github.io/estagios/servidores/perfil-orientador.html' +
+            '\n\nDúvidas: estagios@riogrande.ifrs.edu.br\n\nAtenciosamente,\nSetor de Estágios — IFRS Campus Rio Grande';
           try {
-            MailApp.sendEmail({
-              to:      email,
-              subject: '[IFRS Estágios] Cadastro de orientador não aprovado',
-              body:    'Olá' + (nomeOri ? ', ' + nomeOri : '') + ',\n\n' +
-                       'Seu cadastro como orientador de estágio não foi aprovado pelo setor de estágios do IFRS Campus Rio Grande.' +
-                       (obs ? '\n\nMotivo / Observações:\n' + obs : '') +
-                       '\n\nVocê pode atualizar seu cadastro pelo portal:\n' +
-                       'https://ifrs-riogrande.github.io/estagios/servidores/perfil-orientador.html' +
-                       '\n\nDúvidas: estagios@riogrande.ifrs.edu.br\n\nAtenciosamente,\nSetor de Estágios — IFRS Campus Rio Grande',
-            });
+            GmailApp.sendEmail(email,
+              '[IFRS Estágios] Cadastro de orientador não aprovado',
+              corpoOri,
+              { name: 'Setor de Estágios IFRS', replyTo: 'estagios@riogrande.ifrs.edu.br' }
+            );
+            emailEnviadoOri = true;
           } catch(mailErr) { logErro_('aprovarCadastroServidor_.mailOri', mailErr); }
         }
         break;
       }
     }
     if (!found) return jsonError_('Orientador pendente não encontrado.', 'NOT_FOUND');
-    return jsonOk_({ status: novoStatus });
+    return jsonOk_({ status: novoStatus, emailEnviado: emailEnviadoOri });
   }
 
   if (tipo === 'coordenador') {
@@ -1526,19 +1531,22 @@ function aprovarCadastroServidor_(body) {
     if (obs) shCoord.getRange(pendIdx + 1, 10).setValue(obs); // col após STATUS
 
     // Notificar por e-mail ao rejeitar
+    var emailEnviadoCoord = false;
     if (novoStatus === 'Rejeitado') {
       var nomeCoord = String(dadosCoord[pendIdx][2] || '');
+      var corpoCoord = 'Olá' + (nomeCoord ? ', ' + nomeCoord : '') + ',\n\n' +
+        'Seu cadastro como coordenador de curso não foi aprovado pelo setor de estágios do IFRS Campus Rio Grande.' +
+        (obs ? '\n\nMotivo / Observações:\n' + obs : '') +
+        '\n\nVocê pode corrigir e reenviar seu cadastro pelo portal:\n' +
+        'https://ifrs-riogrande.github.io/estagios/servidores/perfil-coordenador.html' +
+        '\n\nDúvidas: estagios@riogrande.ifrs.edu.br\n\nAtenciosamente,\nSetor de Estágios — IFRS Campus Rio Grande';
       try {
-        MailApp.sendEmail({
-          to:      email,
-          subject: '[IFRS Estágios] Cadastro de coordenador não aprovado',
-          body:    'Olá' + (nomeCoord ? ', ' + nomeCoord : '') + ',\n\n' +
-                   'Seu cadastro como coordenador de curso não foi aprovado pelo setor de estágios do IFRS Campus Rio Grande.' +
-                   (obs ? '\n\nMotivo / Observações:\n' + obs : '') +
-                   '\n\nVocê pode atualizar seu cadastro pelo portal:\n' +
-                   'https://ifrs-riogrande.github.io/estagios/servidores/perfil-coordenador.html' +
-                   '\n\nDúvidas: estagios@riogrande.ifrs.edu.br\n\nAtenciosamente,\nSetor de Estágios — IFRS Campus Rio Grande',
-        });
+        GmailApp.sendEmail(email,
+          '[IFRS Estágios] Cadastro de coordenador não aprovado',
+          corpoCoord,
+          { name: 'Setor de Estágios IFRS', replyTo: 'estagios@riogrande.ifrs.edu.br' }
+        );
+        emailEnviadoCoord = true;
       } catch(mailErr) { logErro_('aprovarCadastroServidor_.mailCoord', mailErr); }
     }
 
@@ -1553,7 +1561,7 @@ function aprovarCadastroServidor_(body) {
         }
       }
     }
-    return jsonOk_({ status: novoStatus });
+    return jsonOk_({ status: novoStatus, emailEnviado: emailEnviadoCoord });
   }
 
   return jsonError_('Tipo inválido: ' + tipo, 'VALIDATION');
@@ -1595,11 +1603,20 @@ function editarOrientadorAdmin_(body) {
   var dados = sheet.getDataRange().getValues();
   for (var i = 1; i < dados.length; i++) {
     if (String(dados[i][COL_ORI.EMAIL] || '').toLowerCase().trim() !== emailLower) continue;
-    // Campos editáveis: TEL=7(→8), TITULACAO=9(→10), AREA=10(→11), CURSOS=11(→12)
-    sheet.getRange(i + 1, COL_ORI.TEL       + 1).setValue(san(body.tel,       50));
-    sheet.getRange(i + 1, COL_ORI.TITULACAO + 1).setValue(san(body.titulacao, 100));
-    sheet.getRange(i + 1, COL_ORI.AREA      + 1).setValue(san(body.area,      200));
-    sheet.getRange(i + 1, COL_ORI.CURSOS    + 1).setValue(san(body.cursos,    500));
+    // COL_ORI (0-based) → getRange col (1-based)
+    // TIPO_VINCULO=1→2, INI_CONTRATO=2→3, FIM_CONTRATO=3→4
+    // NOME=4→5, CPF=5→6, SIAPE=6→7, TEL=7→8
+    // TITULACAO=9→10, AREA=10→11, CURSOS=11→12
+    sheet.getRange(i + 1, COL_ORI.TIPO_VINCULO + 1).setValue(san(body.tipoVinculo, 50));
+    sheet.getRange(i + 1, COL_ORI.INI_CONTRATO + 1).setValue(san(body.iniContrato, 20));
+    sheet.getRange(i + 1, COL_ORI.FIM_CONTRATO + 1).setValue(san(body.fimContrato, 20));
+    sheet.getRange(i + 1, COL_ORI.NOME         + 1).setValue(san(body.nome,        200));
+    sheet.getRange(i + 1, COL_ORI.CPF          + 1).setValue(san(body.cpf,          20));
+    sheet.getRange(i + 1, COL_ORI.SIAPE        + 1).setValue(san(body.siape,        30));
+    sheet.getRange(i + 1, COL_ORI.TEL          + 1).setValue(san(body.tel,           50));
+    sheet.getRange(i + 1, COL_ORI.TITULACAO    + 1).setValue(san(body.titulacao,    100));
+    sheet.getRange(i + 1, COL_ORI.AREA         + 1).setValue(san(body.area,         200));
+    sheet.getRange(i + 1, COL_ORI.CURSOS       + 1).setValue(san(body.cursos,       500));
     return jsonOk_({ ok: true });
   }
   return jsonError_('Orientador não encontrado.', 'NOT_FOUND');
@@ -1641,12 +1658,13 @@ function editarCoordenadorAdmin_(body) {
   var dados = sheet.getDataRange().getValues();
   for (var i = 1; i < dados.length; i++) {
     if (String(dados[i][3] || '').toLowerCase().trim() !== emailLower) continue;
-    // COL_COORD (0-based): NOME=2, SIAPE=1, TEL=4, TITULACAO=5, CURSO=6
-    sheet.getRange(i + 1, 3).setValue(san(body.nome,      200)); // NOME
+    // COL_COORD (0-based) → col (1-based): CPF=0→1, SIAPE=1→2, NOME=2→3, TEL=4→5, TITULACAO=5→6, CURSO=6→7
+    sheet.getRange(i + 1, 1).setValue(san(body.cpf,        20)); // CPF
     sheet.getRange(i + 1, 2).setValue(san(body.siape,      30)); // SIAPE
-    sheet.getRange(i + 1, 5).setValue(san(body.tel,         50)); // TEL
-    sheet.getRange(i + 1, 6).setValue(san(body.titulacao,  100)); // TITULACAO
-    sheet.getRange(i + 1, 7).setValue(san(body.curso,      200)); // CURSO
+    sheet.getRange(i + 1, 3).setValue(san(body.nome,      200)); // NOME
+    sheet.getRange(i + 1, 5).setValue(san(body.tel,        50)); // TEL
+    sheet.getRange(i + 1, 6).setValue(san(body.titulacao, 100)); // TITULACAO
+    sheet.getRange(i + 1, 7).setValue(san(body.curso,     200)); // CURSO
     return jsonOk_({ ok: true });
   }
   return jsonError_('Coordenador não encontrado.', 'NOT_FOUND');

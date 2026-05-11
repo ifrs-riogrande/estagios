@@ -235,6 +235,7 @@
       document.getElementById('modal-body').innerHTML = `
         <div class="detail-grid">
           <div class="detail-item detail-full"><label>Nome</label><p>${escapeHtml(c.nome||'—')}</p></div>
+          <div class="detail-item"><label>CPF</label><p>${escapeHtml(c.cpf||'—')}</p></div>
           <div class="detail-item"><label>SIAPE</label><p>${escapeHtml(c.siape||'—')}</p></div>
           <div class="detail-item"><label>E-mail</label><p>${escapeHtml(c.email||'—')}</p></div>
           <div class="detail-item"><label>Titulação</label><p>${escapeHtml(c.titulacao||'—')}</p></div>
@@ -274,25 +275,31 @@
     function renderEdicao() {
       const c = _atual;
       document.getElementById('modal-body').innerHTML = `
-        <div class="form-group">
-          <label class="form-label">Nome completo</label>
-          <input id="ed-nome" class="form-control" value="${escapeHtml(c.nome||'')}" maxlength="200">
-        </div>
-        <div class="form-group">
-          <label class="form-label">SIAPE</label>
-          <input id="ed-siape" class="form-control" value="${escapeHtml(c.siape||'')}" maxlength="30">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Telefone</label>
-          <input id="ed-tel" class="form-control" value="${escapeHtml(c.tel||'')}" maxlength="30">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Titulação</label>
-          <input id="ed-titulacao" class="form-control" value="${escapeHtml(c.titulacao||'')}" maxlength="100">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Curso que coordena</label>
-          <input id="ed-curso" class="form-control" value="${escapeHtml(c.curso||'')}" maxlength="200">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3) var(--space-4);">
+          <div class="form-group" style="grid-column:1/-1;margin-bottom:0">
+            <label class="form-label">Nome completo</label>
+            <input id="ed-nome" class="form-control" value="${escapeHtml(c.nome||'')}" maxlength="200">
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <label class="form-label">CPF</label>
+            <input id="ed-cpf" class="form-control" value="${escapeHtml(c.cpf||'')}" maxlength="20" placeholder="000.000.000-00">
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <label class="form-label">SIAPE</label>
+            <input id="ed-siape" class="form-control" value="${escapeHtml(c.siape||'')}" maxlength="30">
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <label class="form-label">Telefone</label>
+            <input id="ed-tel" class="form-control" value="${escapeHtml(c.tel||'')}" maxlength="30" placeholder="(53) 99999-9999">
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <label class="form-label">Titulação</label>
+            <input id="ed-titulacao" class="form-control" value="${escapeHtml(c.titulacao||'')}" maxlength="100">
+          </div>
+          <div class="form-group" style="grid-column:1/-1;margin-bottom:0">
+            <label class="form-label">Curso que coordena</label>
+            <input id="ed-curso" class="form-control" value="${escapeHtml(c.curso||'')}" maxlength="200">
+          </div>
         </div>`;
       document.getElementById('modal-footer').innerHTML = `
         <button class="btn btn-ghost" onclick="renderVisualizacao()">Cancelar</button>
@@ -331,20 +338,21 @@
       const btn = document.getElementById('btn-salvar-edicao');
       btn.disabled = true; btn.textContent = 'Salvando…';
       try {
+        const g = id => document.getElementById(id)?.value.trim() ?? '';
         await API.post('editarCoordenadorAdmin', {
           email:     _atual.email,
-          nome:      document.getElementById('ed-nome').value.trim(),
-          siape:     document.getElementById('ed-siape').value.trim(),
-          tel:       document.getElementById('ed-tel').value.trim(),
-          titulacao: document.getElementById('ed-titulacao').value.trim(),
-          curso:     document.getElementById('ed-curso').value.trim(),
+          cpf:       g('ed-cpf'),
+          nome:      g('ed-nome'),
+          siape:     g('ed-siape'),
+          tel:       g('ed-tel'),
+          titulacao: g('ed-titulacao'),
+          curso:     g('ed-curso'),
           authToken: getAccessToken(),
         });
-        _atual.nome      = document.getElementById('ed-nome').value.trim();
-        _atual.siape     = document.getElementById('ed-siape').value.trim();
-        _atual.tel       = document.getElementById('ed-tel').value.trim();
-        _atual.titulacao = document.getElementById('ed-titulacao').value.trim();
-        _atual.curso     = document.getElementById('ed-curso').value.trim();
+        Object.assign(_atual, {
+          cpf: g('ed-cpf'), nome: g('ed-nome'), siape: g('ed-siape'),
+          tel: g('ed-tel'), titulacao: g('ed-titulacao'), curso: g('ed-curso'),
+        });
         document.getElementById('modal-title').textContent = _atual.nome || 'Coordenador';
         toast('Coordenador atualizado.', 'success');
         renderVisualizacao();
@@ -361,12 +369,15 @@
       btn.disabled = true; btn.textContent = 'Rejeitando…';
       const obs = document.getElementById('motivo-rejeicao').value.trim();
       try {
-        await API.post('aprovarCadastroServidor', {
+        const res = await API.post('aprovarCadastroServidor', {
           tipo: 'coordenador', email: _atual.email,
           novoStatus: 'Rejeitado', obs,
           authToken: getAccessToken(),
         });
-        toast('Cadastro rejeitado.', 'success');
+        const msg = res?.emailEnviado === false
+          ? 'Cadastro rejeitado (falha ao enviar e-mail — verifique logs GAS).'
+          : 'Cadastro rejeitado e e-mail enviado ao coordenador.';
+        toast(msg, 'success');
         fechar(); carregar();
       } catch (err) {
         btn.disabled = false; btn.textContent = 'Confirmar rejeição';
