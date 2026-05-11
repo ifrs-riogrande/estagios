@@ -463,7 +463,110 @@ var MAIL = (function () {
     enviarEmailAssinaturaInterno:        enviarEmailAssinaturaInterno,
     enviarEmailLembreteAssinatura:       enviarEmailLembreteAssinatura,
     enviarEmailPdfFinalAssinaturas:      enviarEmailPdfFinalAssinaturas,
+    // Aceite orientador
+    enviarEmailAceiteOrientador:         enviarEmailAceiteOrientador,
+    enviarEmailAguardandoAceiteEstudante:enviarEmailAguardandoAceiteEstudante,
+    enviarEmailRespostaAceiteEstudante:  enviarEmailRespostaAceiteEstudante,
   };
+
+  // --------------------------------------------------------------------------
+  // Aceite de orientação
+  // --------------------------------------------------------------------------
+
+  /** E-mail para o ORIENTADOR com botões Aceitar / Recusar. */
+  function enviarEmailAceiteOrientador(dados) {
+    var BASE_URL = 'https://ifrs-riogrande.github.io/estagios/orientadores/aceite-orientacao.html';
+    var linkAceite  = BASE_URL + '?token=' + dados.token + '&r=aceito';
+    var linkRecusa  = BASE_URL + '?token=' + dados.token + '&r=recusado';
+
+    var corpo =
+      '<p>Olá, <strong>' + dados.nomeOrientador + '</strong>,</p>'
+      + '<p>O(a) estudante <strong>' + dados.nomeEstudante + '</strong> selecionou você como orientador(a) de estágio. '
+      + 'Por favor, confirme se você aceita assumir a orientação desta solicitação.</p>'
+
+      + '<table style="border-collapse:collapse;width:100%;margin:16px 0;">'
+      + '<tr><td style="padding:8px 0;color:#6b7280;font-size:12px;text-transform:uppercase;letter-spacing:.04em;">Estudante</td>'
+      +    '<td style="padding:8px 0;font-weight:600;">' + dados.nomeEstudante + ' — ' + dados.curso + (dados.turno ? ' (' + dados.turno + ')' : '') + '</td></tr>'
+      + '<tr><td style="padding:8px 0;color:#6b7280;font-size:12px;text-transform:uppercase;">Empresa</td>'
+      +    '<td style="padding:8px 0;font-weight:600;">' + dados.nomeEmpresa + '</td></tr>'
+      + '<tr><td style="padding:8px 0;color:#6b7280;font-size:12px;text-transform:uppercase;">Tipo</td>'
+      +    '<td style="padding:8px 0;">' + dados.tipoEstagio + '</td></tr>'
+      + '<tr><td style="padding:8px 0;color:#6b7280;font-size:12px;text-transform:uppercase;">Período</td>'
+      +    '<td style="padding:8px 0;">' + dados.dataInicio + ' a ' + dados.dataTermino + '</td></tr>'
+      + '<tr><td style="padding:8px 0;color:#6b7280;font-size:12px;text-transform:uppercase;">Carga horária</td>'
+      +    '<td style="padding:8px 0;">' + dados.cargaHoraria + '</td></tr>'
+      + '</table>'
+
+      + '<p style="color:#374151;"><strong>Plano de atividades:</strong><br>' + (dados.planoAtividades || '—') + '</p>'
+
+      + '<p style="margin-top:28px;font-weight:600;">Clique em uma das opções abaixo:</p>'
+      + '<table><tr>'
+      + '<td style="padding-right:12px;">'
+      +   '<a href="' + linkAceite + '" style="display:inline-block;padding:12px 24px;background:#16a34a;color:#fff;text-decoration:none;border-radius:6px;font-weight:600;font-size:15px;">✓ Aceitar orientação</a>'
+      + '</td>'
+      + '<td>'
+      +   '<a href="' + linkRecusa + '" style="display:inline-block;padding:12px 24px;background:#dc2626;color:#fff;text-decoration:none;border-radius:6px;font-weight:600;font-size:15px;">✗ Recusar</a>'
+      + '</td>'
+      + '</tr></table>'
+
+      + '<p style="margin-top:24px;font-size:13px;color:#6b7280;">Se os botões não funcionarem, copie e acesse o link:<br>'
+      + '<a href="' + BASE_URL + '?token=' + dados.token + '" style="color:#1d4ed8;">' + BASE_URL + '?token=' + dados.token + '</a></p>';
+
+    enviar_(dados.emailOrientador,
+      '[IFRS Estágios] Solicitação de orientação — ' + dados.nomeEstudante + ' (' + dados.idEstagio + ')',
+      htmlBase_('Solicitação de Orientação', corpo));
+  }
+
+  /** E-mail para o ESTUDANTE: solicitação enviada, aguardando aceite do orientador. */
+  function enviarEmailAguardandoAceiteEstudante(dados) {
+    var corpo =
+      '<p>Olá, <strong>' + dados.nomeEstudante + '</strong>!</p>'
+      + '<p>Sua solicitação de estágio foi recebida. Agora aguardamos o aceite do(a) orientador(a) escolhido(a).</p>'
+      + campo_('ID da solicitação', dados.idEstagio)
+      + campo_('Orientador(a)', dados.nomeOrientador)
+      + campo_('Empresa', dados.nomeEmpresa)
+      + campo_('Tipo', dados.tipoEstagio)
+      + campo_('Período', dados.dataInicio + ' a ' + dados.dataTermino)
+      + '<p style="background:#fef3c7;border-left:3px solid #f59e0b;padding:12px;border-radius:4px;margin-top:16px;">'
+      + '⏳ <strong>Próximo passo:</strong> o(a) Prof(a). ' + dados.nomeOrientador
+      + ' receberá um e-mail para confirmar a orientação. Você será notificado(a) assim que ele(a) responder.</p>'
+      + '<p style="font-size:13px;color:#6b7280;">Guarde este ID — ele será necessário para relatórios e adendos.</p>';
+
+    enviar_(dados.emailEstudante,
+      '[IFRS Estágios] Solicitação enviada — aguardando orientador (' + dados.idEstagio + ')',
+      htmlBase_('Solicitação Recebida', corpo));
+  }
+
+  /** E-mail para o ESTUDANTE após o orientador aceitar OU recusar. */
+  function enviarEmailRespostaAceiteEstudante(dados) {
+    var aceito = dados.resposta === 'aceito';
+    var corpo;
+    if (aceito) {
+      corpo =
+        '<p>Olá, <strong>' + dados.nomeEstudante + '</strong>!</p>'
+        + '<p>Boa notícia! O(a) Prof(a). <strong>' + dados.nomeOrientador + '</strong> '
+        + '<strong style="color:#16a34a;">aceitou</strong> orientar seu estágio. '
+        + 'Sua solicitação avançou para o checklist de validação com todos os envolvidos.</p>'
+        + campo_('ID do estágio', dados.idEstagio)
+        + campo_('Empresa', dados.nomeEmpresa)
+        + '<p>Acompanhe o andamento pelo seu portal de estágios. Em breve você receberá mais informações.</p>';
+    } else {
+      corpo =
+        '<p>Olá, <strong>' + dados.nomeEstudante + '</strong>,</p>'
+        + '<p>Infelizmente o(a) Prof(a). <strong>' + dados.nomeOrientador + '</strong> '
+        + '<strong style="color:#dc2626;">não pôde aceitar</strong> a orientação do seu estágio neste momento.</p>'
+        + campo_('ID do estágio', dados.idEstagio)
+        + (dados.obs ? campo_('Motivo informado', dados.obs) : '')
+        + '<p style="background:#fef3c7;border-left:3px solid #f59e0b;padding:12px;border-radius:4px;margin-top:16px;">'
+        + '👉 <strong>O que fazer:</strong> acesse seu portal de estágios, localize esta solicitação e escolha outro(a) orientador(a) disponível.</p>'
+        + '<p>Dúvidas? Entre em contato: <a href="mailto:' + SETOR_EMAIL + '">' + SETOR_EMAIL + '</a></p>';
+    }
+
+    enviar_(dados.emailEstudante,
+      '[IFRS Estágios] ' + (aceito ? 'Orientador aceitou' : 'Orientador recusou') + ' — ' + dados.idEstagio,
+      htmlBase_(aceito ? 'Orientação Aceita ✓' : 'Orientação Recusada', corpo));
+  }
+
 })();
 
 // Aliases globais
@@ -489,3 +592,7 @@ function enviarEmailAssinaturaGovBr_(d)          { return MAIL.enviarEmailAssina
 function enviarEmailAssinaturaInterno_(d)        { return MAIL.enviarEmailAssinaturaInterno(d); }
 function enviarEmailLembreteAssinatura_(d)       { return MAIL.enviarEmailLembreteAssinatura(d); }
 function enviarEmailPdfFinalAssinaturas_(d)      { return MAIL.enviarEmailPdfFinalAssinaturas(d); }
+// Aceite orientador
+function enviarEmailAceiteOrientador_(d)              { return MAIL.enviarEmailAceiteOrientador(d); }
+function enviarEmailAguardandoAceiteEstudante_(d)      { return MAIL.enviarEmailAguardandoAceiteEstudante(d); }
+function enviarEmailRespostaAceiteEstudante_(d)        { return MAIL.enviarEmailRespostaAceiteEstudante(d); }

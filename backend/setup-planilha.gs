@@ -33,6 +33,7 @@ function configurarPlanilha() {
         'Turno', 'Semestre', 'E-mail Inst. Estágio',
         'Nome Responsável', 'CPF Responsável', 'Tel. Responsável',
         'NEE',
+        'Token Aceite Orientador', // 44 TOKEN_ACEITE_ORI — UUID de uso único, apagado após resposta
       ],
     },
 
@@ -480,4 +481,25 @@ function adicionarAbasFluxo() {
   });
 
   Logger.log('Concluído. Execute adicionarAbasFluxo apenas uma vez.');
+}
+
+/**
+ * Adiciona a coluna "Token Aceite Orientador" (col 45, índice 44) à aba Solicitações
+ * SEM apagar dados existentes.
+ * Execute manualmente no editor GAS: Executar → adicionarColunaTokenAceite
+ */
+function adicionarColunaTokenAceite() {
+  var ss    = SpreadsheetApp.openById('1zVyseifVC6xeMpNjqwYd6jCq9HTJ2NS8BlN1dtM4s7Y');
+  var sheet = ss.getSheetByName('Solicitações');
+  if (!sheet) { Logger.log('❌ Aba Solicitações não encontrada.'); return; }
+
+  var cab = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  if (cab[44] === 'Token Aceite Orientador') {
+    Logger.log('✅ Coluna já existe na posição 45.');
+    return;
+  }
+
+  sheet.getRange(1, 45).setValue('Token Aceite Orientador');
+  _formatarCelulaCabecalho_(sheet, 45);
+  Logger.log('✅ Coluna "Token Aceite Orientador" adicionada na col 45 da aba Solicitações.');
 }

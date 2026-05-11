@@ -264,6 +264,21 @@ async function apiSalvarMeuCadastroSupervisor(dados) {
   return API.post('salvarMeuCadastroSupervisor', dados);
 }
 
+/** Busca dados da solicitação pelo token de aceite (sem autenticação). */
+async function apiVerificarAceiteOrientador(token) {
+  return API.get('verificarAceiteOrientador', { token: token });
+}
+
+/** Orientador aceita ou recusa a orientação. */
+async function apiResponderAceiteOrientador(dados) {
+  return API.post('responderAceiteOrientador', dados);
+}
+
+/** Estudante troca o orientador após recusa. Requer authToken. */
+async function apiTrocarOrientador(dados) {
+  return API.post('trocarOrientador', dados);
+}
+
 /** Envia formulário de cadastro de estudante. */
 async function apiCadastrarEstudante(dados) {
   return API.post('cadastrarEstudante', dados);

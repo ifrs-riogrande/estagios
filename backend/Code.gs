@@ -46,8 +46,9 @@ var GET_ROUTES = {
   // Agentes
   'listarAgentes':           doGetAgentes,
 
-  // SolicitaÃ§Ãµes (estudante)
-  'verificarIdEstagio':      doGetSolicitacao,
+  // Solicitações (estudante)
+  'verificarIdEstagio':         doGetSolicitacao,
+  'verificarAceiteOrientador':  doGetSolicitacao,
 
   // Admin
   'listarSolicitacoesAdmin':  doGetAdmin,
@@ -110,6 +111,8 @@ var POST_ROUTES = {
   'enviarAdendo':              doPostSolicitacao,
   'enviarDocumentosAssinados': doPostSolicitacao,
   'enviarDocumentoDG':         doPostSolicitacao,
+  'responderAceiteOrientador': doPostSolicitacao,
+  'trocarOrientador':          doPostSolicitacao,
 
   // Agentes (pÃºblico)
   'cadastrarAgente':           doPostAgentes,
@@ -237,6 +240,8 @@ function doPostServidores(e) {
 }
 
 function doGetSolicitacao(e) {
+  var action = (e.parameter && e.parameter.action) || '';
+  if (action === 'verificarAceiteOrientador') return verificarAceiteOrientador_(e);
   return verificarIdEstagio_(e);
 }
 
@@ -249,8 +254,10 @@ function doPostSolicitacao(e) {
     case 'enviarRelatorioFinal':      return enviarRelatorioFinal_(body);
     case 'enviarAdendo':              return enviarAdendo_(body);
     case 'enviarDocumentosAssinados': return enviarDocumentosAssinados_(body);
-    case 'enviarDocumentoDG':         return enviarDocumentoDG_(body);
-    default: return jsonError_('AÃ§Ã£o nÃ£o implementada: ' + action, 'NOT_IMPLEMENTED');
+    case 'enviarDocumentoDG':          return enviarDocumentoDG_(body);
+    case 'responderAceiteOrientador':  return responderAceiteOrientador_(body);
+    case 'trocarOrientador':           return trocarOrientador_(body);
+    default: return jsonError_('Ação não implementada: ' + action, 'NOT_IMPLEMENTED');
   }
 }
 

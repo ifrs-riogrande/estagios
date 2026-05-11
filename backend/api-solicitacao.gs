@@ -70,6 +70,7 @@ var COL_SOL = {
   CPF_RESP:          41,   // CPF do responsável legal
   TEL_RESP:          42,   // Telefone do responsável legal
   NEE:               43,   // Portador de Necessidades Específicas — copiado do cadastro do estudante
+  TOKEN_ACEITE_ORI:  44,   // UUID de uso único para aceite/recusa do orientador via magic link
 };
 
 /** Colunas da aba Relatórios Parciais (base 0). */
@@ -304,43 +305,58 @@ function solicitarEstagio_(dados) {
   linha[COL_SOL.LINK_DOC_MAT]       = docMat;
   linha[COL_SOL.LINK_DOC_ID]      = docId;
   linha[COL_SOL.LINK_DOC_BOL]     = docBol;
-  linha[COL_SOL.STATUS]           = 'Em Checklist';
+  // Status inicial: aguarda o orientador aceitar antes de ir para o checklist
+  linha[COL_SOL.STATUS]           = 'Aguardando aceite orientador';
   linha[COL_SOL.OBS_SETOR]        = '';
   linha[COL_SOL.MOTIVO_REPROVACAO]= '';
   linha[COL_SOL.DRIVE_URL]        = '';
+  var aceiteToken = Utilities.getUuid();
+  linha[COL_SOL.TOKEN_ACEITE_ORI] = aceiteToken;
 
   sheet.appendRow(linha);
 
-  // ── Inicia o fluxo de checklist ──────────────────────────────────────────
-  try {
-    iniciarChecklist_(idEstagio, {
-      dataNasc:   estudante.dataNasc,
-      dataInicio: dataInicio,
-      nomeAgente: nomeAgente,
-    });
-  } catch (e) { logErro_('solicitarEstagio_.checklist', e); }
+  // ── NÃO inicia o checklist aqui — só após o orientador aceitar ──────────
 
-  // Notificações por e-mail
+  // ── Notificações ─────────────────────────────────────────────────────────
+  // 1. Estudante: confirmação de envio, aguardando aceite
   try {
-    enviarEmailSolicitacaoRecebida_({
-      idEstagio:       idEstagio,
-      nomeEstudante:   estudante.nome,
-      emailEstudante:  estudante.emailInst,
-      matricula:       estudante.matricula,
-      curso:           estudante.curso,
-      nomeEmpresa:     nomeEmpresa,
-      nomeSupervisor:  nomeSupervisor,
+    enviarEmailAguardandoAceiteEstudante_({
+      nomeEstudante:  estudante.nome,
+      emailEstudante: estudante.emailInst,
+      idEstagio:      idEstagio,
+      nomeOrientador: nomeOrientador,
+      nomeEmpresa:    nomeEmpresa,
+      tipoEstagio:    tipoEstagio,
+      dataInicio:     formatarData_(dataInicio),
+      dataTermino:    formatarData_(dataTermino),
+    });
+  } catch (e) { logErro_('solicitarEstagio_.mailEstudante', e); }
+
+  // 2. Orientador: link de aceite/recusa
+  try {
+    enviarEmailAceiteOrientador_({
       nomeOrientador:  nomeOrientador,
       emailOrientador: emailOrientador,
+      nomeEstudante:   estudante.nome,
+      idEstagio:       idEstagio,
+      nomeEmpresa:     nomeEmpresa,
       tipoEstagio:     tipoEstagio,
+      curso:           cursoEstagio,
+      turno:           turno,
+      semestre:        semestreAtual,
       dataInicio:      formatarData_(dataInicio),
       dataTermino:     formatarData_(dataTermino),
+      cargaHoraria:    cargaHor,
+      horario:         horario,
+      planoAtividades: planoAtiv,
+      objetivos:       objetivos,
+      token:           aceiteToken,
     });
-  } catch (e) { logErro_('solicitarEstagio_.mail', e); }
+  } catch (e) { logErro_('solicitarEstagio_.mailOrientador', e); }
 
   return jsonOk_({
     idEstagio: idEstagio,
-    mensagem:  'Solicitação enviada com sucesso! Seu ID de estágio é ' + idEstagio + '. Guarde este código.',
+    mensagem:  'Solicitação enviada! O orientador ' + nomeOrientador + ' receberá um e-mail para aceitar a orientação. Você será notificado(a) assim que ele responder.',
   });
 }
 
@@ -555,6 +571,250 @@ function enviarAdendo_(dados) {
   } catch (e) { logErro_('enviarAdendo_.mail', e); }
 
   return jsonOk_({ mensagem: 'Adendo enviado com sucesso!' });
+}
+
+// ---------------------------------------------------------------------------
+// GET — Verificar token de aceite do orientador
+// ---------------------------------------------------------------------------
+
+/**
+ * Valida o token de aceite e retorna os dados da solicitação (sem dados sensíveis).
+ * Chamado pela página orientadores/aceite-orientacao.html via ?token=UUID
+ */
+function verificarAceiteOrientador_(e) {
+  var token = (e.parameter && e.parameter.token) || '';
+  if (!token) return jsonError_('Token não informado.', 'VALIDATION');
+
+  var ss    = SpreadsheetApp.openById(CFG_SOL.SS_ID);
+  var sheet = ss.getSheetByName(CFG_SOL.ABA_SOL);
+  if (!sheet) return jsonError_('Planilha não configurada.', 'NOT_FOUND');
+  var dados = sheet.getDataRange().getValues();
+
+  for (var i = 1; i < dados.length; i++) {
+    var tokenLinha = String(dados[i][COL_SOL.TOKEN_ACEITE_ORI] || '').trim();
+    if (tokenLinha !== token || tokenLinha === 'usado') continue;
+
+    var status = String(dados[i][COL_SOL.STATUS] || '').trim();
+    if (status !== 'Aguardando aceite orientador') {
+      return jsonError_('Este link já foi utilizado ou expirou.', 'EXPIRED');
+    }
+
+    return jsonOk_({
+      idEstagio:       String(dados[i][COL_SOL.ID_ESTAGIO]       || ''),
+      nomeEstudante:   String(dados[i][COL_SOL.NOME_ESTUDANTE]   || ''),
+      curso:           String(dados[i][COL_SOL.CURSO]            || ''),
+      turno:           String(dados[i][COL_SOL.TURNO]            || ''),
+      semestre:        String(dados[i][COL_SOL.SEMESTRE_SOL]     || ''),
+      nomeEmpresa:     String(dados[i][COL_SOL.NOME_EMPRESA]     || ''),
+      tipoEstagio:     String(dados[i][COL_SOL.TIPO_ESTAGIO]     || ''),
+      dataInicio:      formatarData_(String(dados[i][COL_SOL.DATA_INICIO]  || '')),
+      dataTermino:     formatarData_(String(dados[i][COL_SOL.DATA_TERMINO] || '')),
+      cargaHoraria:    String(dados[i][COL_SOL.CARGA_HOR]        || ''),
+      horario:         String(dados[i][COL_SOL.HORARIO]          || ''),
+      planoAtividades: String(dados[i][COL_SOL.PLANO_ATIVIDADES] || ''),
+      objetivos:       String(dados[i][COL_SOL.OBJETIVOS]        || ''),
+      nomeOrientador:  String(dados[i][COL_SOL.NOME_ORIENTADOR]  || ''),
+    });
+  }
+  return jsonError_('Link inválido ou expirado.', 'NOT_FOUND');
+}
+
+// ---------------------------------------------------------------------------
+// POST — Orientador responde ao aceite (aceito / recusado)
+// ---------------------------------------------------------------------------
+
+function responderAceiteOrientador_(body) {
+  var token    = String(body.token    || '').trim();
+  var resposta = String(body.resposta || '').trim(); // 'aceito' | 'recusado'
+  var obs      = sanitizar_(body.obs  || '', 500);
+
+  if (!token)   return jsonError_('Token não informado.', 'VALIDATION');
+  if (resposta !== 'aceito' && resposta !== 'recusado') {
+    return jsonError_('Resposta inválida.', 'VALIDATION');
+  }
+
+  var ss    = SpreadsheetApp.openById(CFG_SOL.SS_ID);
+  var sheet = ss.getSheetByName(CFG_SOL.ABA_SOL);
+  if (!sheet) return jsonError_('Planilha não configurada.', 'NOT_FOUND');
+  var dados = sheet.getDataRange().getValues();
+
+  for (var i = 1; i < dados.length; i++) {
+    var tokenLinha = String(dados[i][COL_SOL.TOKEN_ACEITE_ORI] || '').trim();
+    if (tokenLinha !== token || tokenLinha === 'usado') continue;
+
+    var status = String(dados[i][COL_SOL.STATUS] || '').trim();
+    if (status !== 'Aguardando aceite orientador') {
+      return jsonError_('Este link já foi utilizado.', 'EXPIRED');
+    }
+
+    // Extrai dados da linha para emails/checklist
+    var idEstagio       = String(dados[i][COL_SOL.ID_ESTAGIO]       || '');
+    var nomeEstudante   = String(dados[i][COL_SOL.NOME_ESTUDANTE]   || '');
+    var emailEstudante  = String(dados[i][COL_SOL.EMAIL_ESTUDANTE]  || '');
+    var nomeOrientador  = String(dados[i][COL_SOL.NOME_ORIENTADOR]  || '');
+    var emailOrientador = String(dados[i][COL_SOL.EMAIL_ORIENTADOR] || '');
+    var nomeEmpresa     = String(dados[i][COL_SOL.NOME_EMPRESA]     || '');
+    var nomeSupervisor  = String(dados[i][COL_SOL.NOME_SUPERVISOR]  || '');
+    var tipoEstagio     = String(dados[i][COL_SOL.TIPO_ESTAGIO]     || '');
+    var curso           = String(dados[i][COL_SOL.CURSO]            || '');
+    var matricula       = String(dados[i][COL_SOL.MATRICULA]        || '');
+    var dataInicio      = String(dados[i][COL_SOL.DATA_INICIO]      || '');
+    var dataTermino     = String(dados[i][COL_SOL.DATA_TERMINO]     || '');
+    var dataNasc        = String(dados[i][COL_SOL.DATA_NASC]        || '');
+    var nomeAgente      = String(dados[i][COL_SOL.NOME_AGENTE]      || '');
+
+    // Invalida token (uso único)
+    sheet.getRange(i + 1, COL_SOL.TOKEN_ACEITE_ORI + 1).setValue('usado');
+
+    if (resposta === 'aceito') {
+      sheet.getRange(i + 1, COL_SOL.STATUS + 1).setValue('Em Checklist');
+
+      // Inicia o fluxo de checklist agora
+      try {
+        iniciarChecklist_(idEstagio, {
+          dataNasc:   dataNasc,
+          dataInicio: dataInicio,
+          nomeAgente: nomeAgente,
+        });
+      } catch (ckErr) { logErro_('responderAceiteOrientador_.checklist', ckErr); }
+
+      // Email ao estudante: orientador aceitou
+      try {
+        enviarEmailRespostaAceiteEstudante_({
+          nomeEstudante:  nomeEstudante,
+          emailEstudante: emailEstudante,
+          idEstagio:      idEstagio,
+          nomeOrientador: nomeOrientador,
+          nomeEmpresa:    nomeEmpresa,
+          resposta:       'aceito',
+        });
+      } catch (e) { logErro_('responderAceiteOrientador_.mailEstAceito', e); }
+
+      // Notifica o setor (mesma função já existente)
+      try {
+        enviarEmailSolicitacaoRecebida_({
+          idEstagio:       idEstagio,
+          nomeEstudante:   nomeEstudante,
+          emailEstudante:  emailEstudante,
+          matricula:       matricula,
+          curso:           curso,
+          nomeEmpresa:     nomeEmpresa,
+          nomeSupervisor:  nomeSupervisor,
+          nomeOrientador:  nomeOrientador,
+          emailOrientador: emailOrientador,
+          tipoEstagio:     tipoEstagio,
+          dataInicio:      formatarData_(dataInicio),
+          dataTermino:     formatarData_(dataTermino),
+        });
+      } catch (e) { logErro_('responderAceiteOrientador_.mailSetor', e); }
+
+      return jsonOk_({ mensagem: 'Orientação aceita. O checklist de validação foi iniciado.' });
+
+    } else {
+      // Recusado
+      sheet.getRange(i + 1, COL_SOL.STATUS + 1).setValue('Aceite recusado');
+      if (obs) sheet.getRange(i + 1, COL_SOL.OBS_SETOR + 1).setValue('Motivo de recusa: ' + obs);
+
+      // Email ao estudante: orientador recusou
+      try {
+        enviarEmailRespostaAceiteEstudante_({
+          nomeEstudante:  nomeEstudante,
+          emailEstudante: emailEstudante,
+          idEstagio:      idEstagio,
+          nomeOrientador: nomeOrientador,
+          nomeEmpresa:    nomeEmpresa,
+          resposta:       'recusado',
+          obs:            obs,
+        });
+      } catch (e) { logErro_('responderAceiteOrientador_.mailEstRecusado', e); }
+
+      return jsonOk_({ mensagem: 'Orientação recusada. O estudante será notificado para escolher outro orientador.' });
+    }
+  }
+
+  return jsonError_('Link inválido ou expirado.', 'NOT_FOUND');
+}
+
+// ---------------------------------------------------------------------------
+// POST — Estudante troca orientador após recusa
+// ---------------------------------------------------------------------------
+
+function trocarOrientador_(body) {
+  var tokenInfo = validarTokenEstudante_(body.authToken);
+
+  var idEstagio       = sanitizar_(body.idEstagio, 20);
+  var nomeOrientador  = sanitizar_(body.nomeOrientador, 200);
+  var emailOrientador = sanitizar_(body.emailOrientador, 100).toLowerCase();
+
+  if (!idEstagio)                        return jsonError_('ID do estágio é obrigatório.', 'VALIDATION');
+  if (!nomeOrientador)                   return jsonError_('Orientador é obrigatório.', 'VALIDATION');
+  if (!validarEmail_(emailOrientador))   return jsonError_('E-mail do orientador inválido.', 'VALIDATION');
+
+  var ss    = SpreadsheetApp.openById(CFG_SOL.SS_ID);
+  var sheet = ss.getSheetByName(CFG_SOL.ABA_SOL);
+  if (!sheet) return jsonError_('Planilha não configurada.', 'NOT_FOUND');
+  var dados = sheet.getDataRange().getValues();
+
+  for (var i = 1; i < dados.length; i++) {
+    if (String(dados[i][COL_SOL.ID_ESTAGIO] || '') !== idEstagio) continue;
+
+    var emailEst = String(dados[i][COL_SOL.EMAIL_ESTUDANTE] || '').toLowerCase();
+    if (emailEst !== tokenInfo.email.toLowerCase()) {
+      return jsonError_('Esta solicitação não pertence a este estudante.', 'AUTH_ERROR');
+    }
+
+    var statusAtual = String(dados[i][COL_SOL.STATUS] || '').trim();
+    if (statusAtual !== 'Aceite recusado') {
+      return jsonError_('Só é possível trocar o orientador quando o status for "Aceite recusado" (atual: ' + statusAtual + ').', 'VALIDATION');
+    }
+
+    var novoToken       = Utilities.getUuid();
+    var nomeEstudante   = String(dados[i][COL_SOL.NOME_ESTUDANTE]   || '');
+    var nomeEmpresa     = String(dados[i][COL_SOL.NOME_EMPRESA]     || '');
+    var tipoEstagio     = String(dados[i][COL_SOL.TIPO_ESTAGIO]     || '');
+    var curso           = String(dados[i][COL_SOL.CURSO]            || '');
+    var turno           = String(dados[i][COL_SOL.TURNO]            || '');
+    var semestre        = String(dados[i][COL_SOL.SEMESTRE_SOL]     || '');
+    var dataInicio      = String(dados[i][COL_SOL.DATA_INICIO]      || '');
+    var dataTermino     = String(dados[i][COL_SOL.DATA_TERMINO]     || '');
+    var cargaHor        = String(dados[i][COL_SOL.CARGA_HOR]        || '');
+    var horario         = String(dados[i][COL_SOL.HORARIO]          || '');
+    var planoAtiv       = String(dados[i][COL_SOL.PLANO_ATIVIDADES] || '');
+    var objetivos       = String(dados[i][COL_SOL.OBJETIVOS]        || '');
+
+    // Atualiza planilha
+    sheet.getRange(i + 1, COL_SOL.NOME_ORIENTADOR  + 1).setValue(nomeOrientador);
+    sheet.getRange(i + 1, COL_SOL.EMAIL_ORIENTADOR + 1).setValue(emailOrientador);
+    sheet.getRange(i + 1, COL_SOL.STATUS           + 1).setValue('Aguardando aceite orientador');
+    sheet.getRange(i + 1, COL_SOL.OBS_SETOR        + 1).setValue('');
+    sheet.getRange(i + 1, COL_SOL.TOKEN_ACEITE_ORI + 1).setValue(novoToken);
+
+    // Email para o novo orientador
+    try {
+      enviarEmailAceiteOrientador_({
+        nomeOrientador:  nomeOrientador,
+        emailOrientador: emailOrientador,
+        nomeEstudante:   nomeEstudante,
+        idEstagio:       idEstagio,
+        nomeEmpresa:     nomeEmpresa,
+        tipoEstagio:     tipoEstagio,
+        curso:           curso,
+        turno:           turno,
+        semestre:        semestre,
+        dataInicio:      formatarData_(dataInicio),
+        dataTermino:     formatarData_(dataTermino),
+        cargaHoraria:    cargaHor,
+        horario:         horario,
+        planoAtividades: planoAtiv,
+        objetivos:       objetivos,
+        token:           novoToken,
+      });
+    } catch (e) { logErro_('trocarOrientador_.mail', e); }
+
+    return jsonOk_({ mensagem: 'Novo orientador selecionado. Aguardando aceite de ' + nomeOrientador + '.' });
+  }
+
+  return jsonError_('Solicitação não encontrada.', 'NOT_FOUND');
 }
 
 // ---------------------------------------------------------------------------
