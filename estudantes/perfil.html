@@ -76,9 +76,12 @@
     <div class="container">
       <div class="form-wrapper">
 
-        <div class="form-page-header">
-          <h1>Meu Perfil</h1>
-          <p id="subtitulo-pagina">Verificando seu cadastro...</p>
+        <div class="form-page-header" style="display:flex;align-items:center;justify-content:space-between;gap:var(--space-4);">
+          <div>
+            <h1>Meu Perfil</h1>
+            <p id="subtitulo-pagina">Verificando seu cadastro...</p>
+          </div>
+          <div id="perfil-avatar" aria-hidden="true"></div>
         </div>
 
         <!-- ══════════════════════════════════════════════
@@ -919,6 +922,21 @@
       });
       hideFormFeedback('cad-feedback');
     }
+
+    // ── Foto de perfil ──────────────────────────────
+    (function() {
+      var s = typeof getSession === 'function' ? getSession() : null;
+      var el = document.getElementById('perfil-avatar');
+      if (!el || !s) return;
+      if (s.picture) {
+        el.innerHTML = '<img src="' + s.picture + '" alt="Foto de perfil" referrerpolicy="no-referrer" '
+          + 'style="width:64px;height:64px;border-radius:50%;border:2px solid var(--color-border);object-fit:cover;display:block;">';
+      } else if (s.name) {
+        el.innerHTML = '<div style="width:64px;height:64px;border-radius:50%;background:var(--color-primary);color:#fff;'
+          + 'display:flex;align-items:center;justify-content:center;font-size:1.5rem;font-weight:600;">'
+          + s.name.charAt(0).toUpperCase() + '</div>';
+      }
+    })();
   </script>
 </body>
 </html>
