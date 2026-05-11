@@ -187,6 +187,10 @@ function doPostAdmin(e) {
       case 'aprovarCadastroServidor':   return aprovarCadastroServidor_(body);
       case 'inativarCoordenador':       return alterarStatusCoordenador_(body.email, 'Inativo');
       case 'reativarCoordenador':       return alterarStatusCoordenador_(body.email, 'Ativo');
+      case 'editarOrientadorAdmin':     return editarOrientadorAdmin_(body);
+      case 'excluirOrientador':         return excluirOrientador_(body);
+      case 'editarCoordenadorAdmin':    return editarCoordenadorAdmin_(body);
+      case 'excluirCoordenador':        return excluirCoordenador_(body);
       // Estudantes — validação de cadastro e reenvio de código
       case 'validarCadastroAdmin':   return validarCadastroAdmin_(body);
       case 'reenviarCodigoAdmin':    return reenviarCodigoAdmin_(body);
@@ -447,7 +451,9 @@ function listarOrientadoresAdmin_() {
     lista.push({
       nome:        String(r[COL_ORI.NOME]         || ''),
       siape:       String(r[COL_ORI.SIAPE]        || ''),
+      tel:         String(r[COL_ORI.TEL]          || ''),
       titulacao:   String(r[COL_ORI.TITULACAO]    || ''),
+      area:        String(r[COL_ORI.AREA]         || ''),
       email:       emailOri,
       tipoVinculo: String(r[COL_ORI.TIPO_VINCULO] || ''),
       fimContrato: formatarData_(r[COL_ORI.FIM_CONTRATO]),
@@ -1464,6 +1470,7 @@ function aprovarCadastroServidor_(body) {
   var tipo       = String(body.tipo       || '');
   var email      = String(body.email      || '').toLowerCase().trim();
   var novoStatus = String(body.novoStatus || 'Ativo');
+  var obs        = String(body.obs        || '').trim().substring(0, 500);
   var ss = SpreadsheetApp.openById(CFG_ADMIN.SS_ID);
 
   if (tipo === 'orientador') {
@@ -1475,7 +1482,24 @@ function aprovarCadastroServidor_(body) {
       if (String(dados[i][COL_ORI.EMAIL] || '').toLowerCase() === email &&
           String(dados[i][COL_ORI.STATUS] || '') === 'Pendente') {
         sheet.getRange(i + 1, COL_ORI.STATUS + 1).setValue(novoStatus);
+        if (obs) sheet.getRange(i + 1, COL_ORI.STATUS + 2).setValue(obs); // col após STATUS
         found = true;
+        // Notificar por e-mail ao rejeitar
+        if (novoStatus === 'Rejeitado') {
+          var nomeOri = String(dados[i][COL_ORI.NOME] || '');
+          try {
+            MailApp.sendEmail({
+              to:      email,
+              subject: '[IFRS Estágios] Cadastro de orientador não aprovado',
+              body:    'Olá' + (nomeOri ? ', ' + nomeOri : '') + ',\n\n' +
+                       'Seu cadastro como orientador de estágio não foi aprovado pelo setor de estágios do IFRS Campus Rio Grande.' +
+                       (obs ? '\n\nMotivo / Observações:\n' + obs : '') +
+                       '\n\nVocê pode atualizar seu cadastro pelo portal:\n' +
+                       'https://ifrs-riogrande.github.io/estagios/servidores/perfil-orientador.html' +
+                       '\n\nDúvidas: estagios@riogrande.ifrs.edu.br\n\nAtenciosamente,\nSetor de Estágios — IFRS Campus Rio Grande',
+            });
+          } catch(mailErr) { logErro_('aprovarCadastroServidor_.mailOri', mailErr); }
+        }
         break;
       }
     }
@@ -1499,6 +1523,24 @@ function aprovarCadastroServidor_(body) {
     }
     if (pendIdx === -1) return jsonError_('Coordenador pendente não encontrado.', 'NOT_FOUND');
     shCoord.getRange(pendIdx + 1, 9).setValue(novoStatus);
+    if (obs) shCoord.getRange(pendIdx + 1, 10).setValue(obs); // col após STATUS
+
+    // Notificar por e-mail ao rejeitar
+    if (novoStatus === 'Rejeitado') {
+      var nomeCoord = String(dadosCoord[pendIdx][2] || '');
+      try {
+        MailApp.sendEmail({
+          to:      email,
+          subject: '[IFRS Estágios] Cadastro de coordenador não aprovado',
+          body:    'Olá' + (nomeCoord ? ', ' + nomeCoord : '') + ',\n\n' +
+                   'Seu cadastro como coordenador de curso não foi aprovado pelo setor de estágios do IFRS Campus Rio Grande.' +
+                   (obs ? '\n\nMotivo / Observações:\n' + obs : '') +
+                   '\n\nVocê pode atualizar seu cadastro pelo portal:\n' +
+                   'https://ifrs-riogrande.github.io/estagios/servidores/perfil-coordenador.html' +
+                   '\n\nDúvidas: estagios@riogrande.ifrs.edu.br\n\nAtenciosamente,\nSetor de Estágios — IFRS Campus Rio Grande',
+        });
+      } catch(mailErr) { logErro_('aprovarCadastroServidor_.mailCoord', mailErr); }
+    }
 
     // Se aprovando (Ativo) e solicitado inativar o anterior do mesmo curso
     if (novoStatus === 'Ativo' && body.inativarAnterior && cursoAlvo) {
@@ -1536,6 +1578,99 @@ function alterarStatusCoordenador_(email, novoStatus) {
   }
   if (!found) return jsonError_('Coordenador não encontrado.', 'NOT_FOUND');
   return jsonOk_({ status: novoStatus });
+}
+
+// ─────────────────────────────────────────────────────────────────
+// POST — Editar orientador (admin)
+// ─────────────────────────────────────────────────────────────────
+function editarOrientadorAdmin_(body) {
+  validarTokenAdmin_(body.authToken);
+  var emailLower = String(body.email || '').toLowerCase().trim();
+  if (!emailLower) return jsonError_('E-mail não informado.', 'VALIDATION');
+  var san = function(v, max) { return sanitizar_(String(v || ''), max || 200); };
+
+  var ss    = SpreadsheetApp.openById(CFG_ADMIN.SS_ID);
+  var sheet = ss.getSheetByName(CFG_ADMIN.ABA_ORIENTADORES);
+  if (!sheet) return jsonError_('Aba de orientadores não encontrada.', 'NOT_FOUND');
+  var dados = sheet.getDataRange().getValues();
+  for (var i = 1; i < dados.length; i++) {
+    if (String(dados[i][COL_ORI.EMAIL] || '').toLowerCase().trim() !== emailLower) continue;
+    // Campos editáveis: TEL=7(→8), TITULACAO=9(→10), AREA=10(→11), CURSOS=11(→12)
+    sheet.getRange(i + 1, COL_ORI.TEL       + 1).setValue(san(body.tel,       50));
+    sheet.getRange(i + 1, COL_ORI.TITULACAO + 1).setValue(san(body.titulacao, 100));
+    sheet.getRange(i + 1, COL_ORI.AREA      + 1).setValue(san(body.area,      200));
+    sheet.getRange(i + 1, COL_ORI.CURSOS    + 1).setValue(san(body.cursos,    500));
+    return jsonOk_({ ok: true });
+  }
+  return jsonError_('Orientador não encontrado.', 'NOT_FOUND');
+}
+
+// ─────────────────────────────────────────────────────────────────
+// POST — Soft-delete orientador
+// ─────────────────────────────────────────────────────────────────
+function excluirOrientador_(body) {
+  validarTokenAdmin_(body.authToken);
+  var emailLower = String(body.email || '').toLowerCase().trim();
+  if (!emailLower) return jsonError_('E-mail não informado.', 'VALIDATION');
+
+  var ss    = SpreadsheetApp.openById(CFG_ADMIN.SS_ID);
+  var sheet = ss.getSheetByName(CFG_ADMIN.ABA_ORIENTADORES);
+  if (!sheet) return jsonError_('Aba de orientadores não encontrada.', 'NOT_FOUND');
+  var dados = sheet.getDataRange().getValues();
+  for (var i = 1; i < dados.length; i++) {
+    if (String(dados[i][COL_ORI.EMAIL] || '').toLowerCase().trim() !== emailLower) continue;
+    sheet.getRange(i + 1, COL_ORI.STATUS + 1).setValue('Excluído');
+    sheet.getRange(i + 1, 1, 1, sheet.getLastColumn()).setFontColor('#9CA3AF');
+    return jsonOk_({ status: 'Excluído' });
+  }
+  return jsonError_('Orientador não encontrado.', 'NOT_FOUND');
+}
+
+// ─────────────────────────────────────────────────────────────────
+// POST — Editar coordenador (admin)
+// ─────────────────────────────────────────────────────────────────
+function editarCoordenadorAdmin_(body) {
+  validarTokenAdmin_(body.authToken);
+  var emailLower = String(body.email || '').toLowerCase().trim();
+  if (!emailLower) return jsonError_('E-mail não informado.', 'VALIDATION');
+  var san = function(v, max) { return sanitizar_(String(v || ''), max || 200); };
+
+  var ss    = SpreadsheetApp.openById(CFG_ADMIN.SS_ID);
+  var sheet = ss.getSheetByName(CFG_ADMIN.ABA_COORDENADORES);
+  if (!sheet) return jsonError_('Aba de coordenadores não encontrada.', 'NOT_FOUND');
+  var dados = sheet.getDataRange().getValues();
+  for (var i = 1; i < dados.length; i++) {
+    if (String(dados[i][3] || '').toLowerCase().trim() !== emailLower) continue;
+    // COL_COORD (0-based): NOME=2, SIAPE=1, TEL=4, TITULACAO=5, CURSO=6
+    sheet.getRange(i + 1, 3).setValue(san(body.nome,      200)); // NOME
+    sheet.getRange(i + 1, 2).setValue(san(body.siape,      30)); // SIAPE
+    sheet.getRange(i + 1, 5).setValue(san(body.tel,         50)); // TEL
+    sheet.getRange(i + 1, 6).setValue(san(body.titulacao,  100)); // TITULACAO
+    sheet.getRange(i + 1, 7).setValue(san(body.curso,      200)); // CURSO
+    return jsonOk_({ ok: true });
+  }
+  return jsonError_('Coordenador não encontrado.', 'NOT_FOUND');
+}
+
+// ─────────────────────────────────────────────────────────────────
+// POST — Soft-delete coordenador
+// ─────────────────────────────────────────────────────────────────
+function excluirCoordenador_(body) {
+  validarTokenAdmin_(body.authToken);
+  var emailLower = String(body.email || '').toLowerCase().trim();
+  if (!emailLower) return jsonError_('E-mail não informado.', 'VALIDATION');
+
+  var ss    = SpreadsheetApp.openById(CFG_ADMIN.SS_ID);
+  var sheet = ss.getSheetByName(CFG_ADMIN.ABA_COORDENADORES);
+  if (!sheet) return jsonError_('Aba de coordenadores não encontrada.', 'NOT_FOUND');
+  var dados = sheet.getDataRange().getValues();
+  for (var i = 1; i < dados.length; i++) {
+    if (String(dados[i][3] || '').toLowerCase().trim() !== emailLower) continue;
+    sheet.getRange(i + 1, 9).setValue('Excluído');  // STATUS col
+    sheet.getRange(i + 1, 1, 1, sheet.getLastColumn()).setFontColor('#9CA3AF');
+    return jsonOk_({ status: 'Excluído' });
+  }
+  return jsonError_('Coordenador não encontrado.', 'NOT_FOUND');
 }
 
 function obterOuCriarAba_(ss, nome, cabecalho) {

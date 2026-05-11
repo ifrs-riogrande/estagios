@@ -101,6 +101,7 @@
             <option value="Ativo" selected>Ativo</option>
             <option value="Pendente">Pendente</option>
             <option value="Inativo">Inativo</option>
+            <option value="Excluído">Excluído</option>
             <option value="">Todos</option>
           </select>
         </div>
@@ -218,6 +219,13 @@
       render();
     }
 
+    function badgeStatus(s) {
+      if (s === 'Ativo')    return '<span class="badge badge-active">Ativo</span>';
+      if (s === 'Pendente') return '<span class="badge badge-pending">Pendente</span>';
+      if (s === 'Excluído') return '<span class="badge badge-error">Excluído</span>';
+      return '<span class="badge badge-inactive">' + escapeHtml(s||'Inativo') + '</span>';
+    }
+
     function render() {
       const tb = document.getElementById('tbody-ori');
       if (_filtrados.length === 0) {
@@ -244,7 +252,7 @@
           <td><span class="badge ${o.tipoVinculo==='Substituto'?'badge-warning':'badge-active'}">${escapeHtml(o.tipoVinculo||'—')}</span></td>
           <td style="font-size:12px">${fimHtml}</td>
           <td style="text-align:center">${o.estagiosAtivos||0}</td>
-          <td>${o.status==='Ativo' ? '<span class="badge badge-active">Ativo</span>' : o.status==='Pendente' ? '<span class="badge badge-pending">Pendente</span>' : '<span class="badge badge-inactive">Inativo</span>'}</td>
+          <td>${badgeStatus(o.status)}</td>
           <td><div class="td-actions">
             <button class="btn btn-secondary btn-sm" onclick="abrir(${JSON.stringify(o).replace(/"/g,'&quot;')})">Ver</button>
           </div></td>
@@ -252,35 +260,156 @@
       }).join('');
     }
 
+    // ── Modal ─────────────────────────────────────────────────────────────────
+
     function abrir(o) {
       _atual = o;
       document.getElementById('modal-title').textContent = o.nome || 'Orientador';
+      document.getElementById('modal-overlay').classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+      renderVisualizacao();
+    }
+
+    function renderVisualizacao() {
+      const o = _atual;
       document.getElementById('modal-body').innerHTML = `
         <div class="detail-grid">
           <div class="detail-item"><label>Nome</label><p>${escapeHtml(o.nome||'—')}</p></div>
           <div class="detail-item"><label>SIAPE</label><p>${escapeHtml(o.siape||'—')}</p></div>
           <div class="detail-item"><label>E-mail</label><p>${escapeHtml(o.email||'—')}</p></div>
+          <div class="detail-item"><label>Telefone</label><p>${escapeHtml(o.tel||'—')}</p></div>
           <div class="detail-item"><label>Titulação</label><p>${escapeHtml(o.titulacao||'—')}</p></div>
+          <div class="detail-item"><label>Área</label><p>${escapeHtml(o.area||'—')}</p></div>
           <div class="detail-item"><label>Vínculo</label><p>${escapeHtml(o.tipoVinculo||'—')}</p></div>
           ${o.tipoVinculo==='Substituto' ? `<div class="detail-item"><label>Fim do Contrato</label><p>${escapeHtml(o.fimContrato||'—')}</p></div>` : '<div></div>'}
           <div class="detail-item detail-full"><label>Cursos</label><p>${escapeHtml((o.cursos||[]).join(', ')||'—')}</p></div>
-          <div class="detail-item"><label>Status</label><p>${o.status==='Ativo'?'<span class="badge badge-active">Ativo</span>':'<span class="badge badge-inactive">Inativo</span>'}</p></div>
+          <div class="detail-item"><label>Status</label><p>${badgeStatus(o.status)}</p></div>
           <div class="detail-item"><label>Estágios Ativos</label><p>${o.estagiosAtivos||0}</p></div>
         </div>`;
-      const footer = document.getElementById('modal-footer');
-      if (o.status === 'Pendente') {
-        footer.innerHTML = `<button class="btn btn-ghost" onclick="fechar()">Fechar</button>
-          <button class="btn btn-danger btn-sm" onclick="aprovarCadastro('Rejeitado')">Rejeitar</button>
-          <button class="btn btn-primary btn-sm" onclick="aprovarCadastro('Ativo')">Aprovar</button>`;
-      } else if (o.status === 'Ativo') {
-        footer.innerHTML = `<button class="btn btn-ghost" onclick="fechar()">Fechar</button>
-          <button class="btn btn-danger btn-sm" onclick="acao('inativarOrientador')">Inativar</button>`;
-      } else {
-        footer.innerHTML = `<button class="btn btn-ghost" onclick="fechar()">Fechar</button>
-          <button class="btn btn-primary btn-sm" onclick="acao('reativarOrientador')">Reativar</button>`;
+
+      const excluido = o.status === 'Excluído';
+      let footer = `<button class="btn btn-ghost" onclick="fechar()">Fechar</button>`;
+      if (!excluido) {
+        footer += `<button class="btn btn-danger btn-sm" onclick="abrirExclusao()">Excluir</button>`;
+        footer += `<button class="btn btn-secondary btn-sm" onclick="renderEdicao()">Editar</button>`;
       }
-      document.getElementById('modal-overlay').classList.remove('hidden');
-      document.body.style.overflow = 'hidden';
+      if (o.status === 'Pendente') {
+        footer += `<button class="btn btn-danger btn-sm" onclick="renderRejeicao()">Rejeitar</button>`;
+        footer += `<button class="btn btn-primary btn-sm" onclick="aprovarCadastro('Ativo')">Aprovar</button>`;
+      } else if (o.status === 'Ativo') {
+        footer += `<button class="btn btn-danger btn-sm" onclick="acao('inativarOrientador')">Inativar</button>`;
+      } else if (o.status === 'Inativo') {
+        footer += `<button class="btn btn-primary btn-sm" onclick="acao('reativarOrientador')">Reativar</button>`;
+      }
+      document.getElementById('modal-footer').innerHTML = footer;
+    }
+
+    function renderEdicao() {
+      const o = _atual;
+      const cursosStr = (o.cursos||[]).join(', ');
+      document.getElementById('modal-body').innerHTML = `
+        <div class="form-group">
+          <label class="form-label">Telefone</label>
+          <input id="ed-tel" class="form-control" value="${escapeHtml(o.tel||'')}" maxlength="30">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Titulação</label>
+          <input id="ed-titulacao" class="form-control" value="${escapeHtml(o.titulacao||'')}" maxlength="100">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Área de atuação</label>
+          <input id="ed-area" class="form-control" value="${escapeHtml(o.area||'')}" maxlength="200">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Cursos <span style="font-weight:400;color:var(--color-text-muted)">(separados por vírgula)</span></label>
+          <input id="ed-cursos" class="form-control" value="${escapeHtml(cursosStr)}" maxlength="500">
+        </div>`;
+      document.getElementById('modal-footer').innerHTML = `
+        <button class="btn btn-ghost" onclick="renderVisualizacao()">Cancelar</button>
+        <button class="btn btn-primary" id="btn-salvar-edicao" onclick="salvarEdicao()">Salvar</button>`;
+    }
+
+    function renderRejeicao() {
+      document.getElementById('modal-body').innerHTML = `
+        <p style="margin-bottom:var(--space-3);font-size:var(--font-size-sm);color:var(--color-text-muted);">
+          Informe o motivo da rejeição. Este texto será enviado por e-mail ao orientador.
+        </p>
+        <div class="form-group">
+          <label class="form-label" for="motivo-rejeicao">Observações <span style="font-weight:400;color:var(--color-text-muted)">(opcional)</span></label>
+          <textarea id="motivo-rejeicao" class="form-control" rows="4" maxlength="500"
+            placeholder="Ex.: Dados incompletos, SIAPE divergente…"></textarea>
+        </div>`;
+      document.getElementById('modal-footer').innerHTML = `
+        <button class="btn btn-ghost" onclick="renderVisualizacao()">Cancelar</button>
+        <button class="btn btn-danger" id="btn-confirmar-rejeicao" onclick="confirmarRejeicao()">Confirmar rejeição</button>`;
+      document.getElementById('motivo-rejeicao').focus();
+    }
+
+    function abrirExclusao() {
+      document.getElementById('modal-body').innerHTML = `
+        <p style="font-size:var(--font-size-sm);color:var(--color-text-muted);">
+          Tem certeza que deseja excluir o orientador <strong>${escapeHtml(_atual.nome||_atual.email)}</strong>?<br>
+          O registro será marcado como excluído e não aparecerá mais nas listagens padrão.
+        </p>`;
+      document.getElementById('modal-footer').innerHTML = `
+        <button class="btn btn-ghost" onclick="renderVisualizacao()">Cancelar</button>
+        <button class="btn btn-danger" onclick="confirmarExclusao()">Confirmar exclusão</button>`;
+    }
+
+    async function salvarEdicao() {
+      if (!_atual) return;
+      const btn = document.getElementById('btn-salvar-edicao');
+      btn.disabled = true; btn.textContent = 'Salvando…';
+      try {
+        const cursos = document.getElementById('ed-cursos').value.trim();
+        await API.post('editarOrientadorAdmin', {
+          email:     _atual.email,
+          tel:       document.getElementById('ed-tel').value.trim(),
+          titulacao: document.getElementById('ed-titulacao').value.trim(),
+          area:      document.getElementById('ed-area').value.trim(),
+          cursos:    cursos,
+          authToken: getAccessToken(),
+        });
+        // Atualizar _atual para que renderVisualizacao exiba os novos valores
+        _atual.tel       = document.getElementById('ed-tel').value.trim();
+        _atual.titulacao = document.getElementById('ed-titulacao').value.trim();
+        _atual.area      = document.getElementById('ed-area').value.trim();
+        _atual.cursos    = cursos.split(',').map(c => c.trim()).filter(Boolean);
+        toast('Orientador atualizado.', 'success');
+        renderVisualizacao();
+        carregar();
+      } catch (err) {
+        btn.disabled = false; btn.textContent = 'Salvar';
+        toast('Erro: ' + err.message, 'error');
+      }
+    }
+
+    async function confirmarRejeicao() {
+      if (!_atual) return;
+      const btn = document.getElementById('btn-confirmar-rejeicao');
+      btn.disabled = true; btn.textContent = 'Rejeitando…';
+      const obs = document.getElementById('motivo-rejeicao').value.trim();
+      try {
+        await API.post('aprovarCadastroServidor', {
+          tipo: 'orientador', email: _atual.email,
+          novoStatus: 'Rejeitado', obs,
+          authToken: getAccessToken(),
+        });
+        toast('Cadastro rejeitado.', 'success');
+        fechar(); carregar();
+      } catch (err) {
+        btn.disabled = false; btn.textContent = 'Confirmar rejeição';
+        toast('Erro: ' + err.message, 'error');
+      }
+    }
+
+    async function confirmarExclusao() {
+      if (!_atual) return;
+      try {
+        await API.post('excluirOrientador', { email: _atual.email, authToken: getAccessToken() });
+        toast('Orientador excluído.', 'success');
+        fechar(); carregar();
+      } catch (err) { toast('Erro: ' + err.message, 'error'); }
     }
 
     async function acao(action) {
@@ -295,7 +424,10 @@
     async function aprovarCadastro(novoStatus) {
       if (!_atual) return;
       try {
-        await API.post('aprovarCadastroServidor', { tipo: 'orientador', email: _atual.email, novoStatus: novoStatus, authToken: getAccessToken() });
+        await API.post('aprovarCadastroServidor', {
+          tipo: 'orientador', email: _atual.email,
+          novoStatus, authToken: getAccessToken(),
+        });
         toast(novoStatus === 'Ativo' ? 'Orientador aprovado e ativado.' : 'Cadastro rejeitado.', 'success');
         fechar(); carregar();
       } catch (err) { toast('Erro: ' + err.message, 'error'); }

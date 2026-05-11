@@ -155,6 +155,10 @@ var POST_ROUTES = {
   'inativarCoordenador':       doPostAdmin,
   'reativarCoordenador':       doPostAdmin,
   'aprovarCadastroServidor':   doPostAdmin,
+  'editarOrientadorAdmin':     doPostAdmin,
+  'excluirOrientador':         doPostAdmin,
+  'editarCoordenadorAdmin':    doPostAdmin,
+  'excluirCoordenador':        doPostAdmin,
 
   // Checklist
   'salvarRespostaAdmin':       doPostChecklist,
