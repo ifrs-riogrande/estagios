@@ -67,6 +67,12 @@
     .badge-running {background:var(--color-success-light);color:#065F46;}
     .badge-closed  {background:var(--color-bg);color:var(--color-text-muted);}
     .badge-rejected{background:var(--color-error-light);color:var(--color-error);}
+    .badge-waiting {background:#FEF9C3;color:#854D0E;}
+    .badge-refused {background:var(--color-error-light);color:var(--color-error);}
+
+    /* ── Trocar orientador ── */
+    .trocar-ori-box{margin-top:var(--space-4);padding:var(--space-4);background:#fff;border:1px solid var(--color-border);border-radius:var(--radius-md);}
+    .trocar-ori-box h3{font-size:var(--font-size-sm);font-weight:600;margin-bottom:var(--space-3);}
 
     /* ── Layout ── */
     .main-cols{display:grid;grid-template-columns:1fr 320px;gap:var(--space-6);}
@@ -274,6 +280,9 @@
       initUpload('upload-tce', 'tce');
       initUpload('upload-tce-nao', 'tce_nao_obrig');
       initAdendoUpload();
+
+      // Inicializa picker de troca de orientador (se visível)
+      if (s.status === 'Aceite recusado') inicializarTrocaOrientador();
     }
 
     /* ════════════════════════════════════════
@@ -302,7 +311,8 @@
     /* ── FLUXO NOVO ── */
     const PASSOS_NOVO = [
       { label: 'Solicitação enviada',  desc: 'Dados do estágio submetidos ao sistema.' },
-      { label: 'Checklist',            desc: 'Validação interna pelos atores do processo (orientador, coordenador, empresa e supervisor).' },
+      { label: 'Aceite do orientador', desc: 'Orientador confirma disponibilidade para a orientação.' },
+      { label: 'Checklist',            desc: 'Validação interna pelos atores do processo (setor, orientador, coordenador, empresa e supervisor).' },
       { label: 'Você assina o TCE',    desc: 'Você é o 1º a assinar o Termo de Compromisso pelo gov.br.' },
       { label: 'Empresa assina',       desc: 'Empresa concedente assina o TCE.' },
       { label: 'Supervisor assina',    desc: 'Supervisor do estágio assina o TCE.' },
@@ -313,26 +323,31 @@
       { label: 'Estágio ativo',        desc: 'Processo concluído. Estágio em andamento.' },
     ];
     const STATUS_PASSO_NOVO = {
-      'Em Checklist':  2,
-      'Em Assinaturas':3,
-      'Ativo':         10,
-      'Encerrado':     10,
+      'Aguardando aceite orientador': 2,
+      'Aceite recusado':              2,
+      'Em Checklist':                 3,
+      'Em Assinaturas':               4,
+      'Ativo':                        11,
+      'Encerrado':                    11,
     };
 
-    const STATUSES_NOVO = new Set(['Em Checklist','Em Assinaturas','Ativo']);
+    const STATUSES_NOVO = new Set(['Aguardando aceite orientador','Aceite recusado','Em Checklist','Em Assinaturas','Ativo']);
 
     function buildTimeline(status) {
       if (STATUSES_NOVO.has(status)) {
-        const etapa = STATUS_PASSO_NOVO[status] || 1;
+        const etapa    = STATUS_PASSO_NOVO[status] || 1;
+        const recusado = status === 'Aceite recusado';
         return PASSOS_NOVO.map((p, i) => {
           const num = i + 1;
           let cls = 'timeline-dot--pending';
-          if (num < etapa) cls = 'timeline-dot--done';
+          let label = p.label;
+          if (recusado && num === 2) { cls = 'timeline-dot--error'; label = 'Aceite recusado — escolha outro orientador'; }
+          else if (num < etapa) cls = 'timeline-dot--done';
           else if (num === etapa) cls = 'timeline-dot--active';
           return `
             <div class="timeline-item">
-              <div class="timeline-dot ${cls}">${num < etapa ? '✓' : num}</div>
-              <div class="timeline-label">${escapeHtml(p.label)}</div>
+              <div class="timeline-dot ${cls}">${(num < etapa && !recusado) || (recusado && num < 2) ? '✓' : num}</div>
+              <div class="timeline-label">${escapeHtml(label)}</div>
               <div class="timeline-desc">${escapeHtml(p.desc)}</div>
             </div>`;
         }).join('');
@@ -361,6 +376,41 @@
        CARD DE AÇÃO POR STATUS
     ════════════════════════════════════════ */
     function buildCardAcao(s) {
+
+      // ── Fluxo novo: Aguardando aceite orientador ───────────────────────────
+      if (s.status === 'Aguardando aceite orientador') {
+        return `
+          <div class="action-card" style="border-color:var(--color-warning);background:var(--color-warning-light)">
+            <h2>⏳ Aguardando resposta do orientador</h2>
+            <p><strong>${escapeHtml(s.nomeOrientador||'O orientador selecionado')}</strong> receberá um e-mail para confirmar ou recusar a orientação. Você será notificado por e-mail assim que houver uma resposta.</p>
+            <p style="font-size:var(--font-size-xs);color:var(--color-text-muted);margin-top:var(--space-3)">Caso não haja resposta em até 5 dias úteis, entre em contato com o setor de estágios.</p>
+          </div>`;
+      }
+
+      // ── Fluxo novo: Aceite recusado ────────────────────────────────────────
+      if (s.status === 'Aceite recusado') {
+        const motivo = s.observacaoSetor
+          ? escapeHtml(s.observacaoSetor.replace(/^Motivo de recusa:\s*/i, ''))
+          : '';
+        return `
+          <div class="action-card" style="border-color:var(--color-error);background:var(--color-error-light)">
+            <h2>❌ Orientador recusou a orientação</h2>
+            ${motivo ? `<div style="background:#fff;border:1px solid var(--color-error-border);border-radius:var(--radius-sm);padding:var(--space-3) var(--space-4);font-size:var(--font-size-sm);margin-bottom:var(--space-3)"><strong>Motivo:</strong> ${motivo}</div>` : ''}
+            <p>Você pode indicar outro orientador. Um novo e-mail de aceite será enviado automaticamente.</p>
+            <div id="fb-trocar-ori" style="margin-top:var(--space-3)"></div>
+            <div class="trocar-ori-box" id="trocar-ori-box">
+              <h3>🔄 Escolher novo orientador</h3>
+              <div id="trocar-ori-loading" style="font-size:var(--font-size-sm);color:var(--color-text-muted)">Carregando lista de orientadores…</div>
+              <div id="trocar-ori-form" style="display:none">
+                <div class="form-group" style="margin-bottom:var(--space-3)">
+                  <label class="form-label" for="sel-novo-ori">Orientador</label>
+                  <select id="sel-novo-ori" class="form-control"></select>
+                </div>
+                <button class="btn btn-primary" onclick="confirmarTrocaOrientador()">Solicitar orientação</button>
+              </div>
+            </div>
+          </div>`;
+      }
 
       // ── Fluxo novo: Em Checklist ────────────────────────────────────────────
       if (s.status === 'Em Checklist') {
@@ -957,20 +1007,88 @@
     ════════════════════════════════════════ */
     function badgeStatus(status) {
       const m = {
-        'Pendente':                  'badge-pending',
-        'Em análise':                'badge-analysis',
-        'Aguardando Documentos':     'badge-approved',
-        'Docs Enviados':             'badge-docs',
-        'Aguardando DG':             'badge-dg',
-        'Aguardando Validação Final':'badge-dg',
-        'Em execução':               'badge-running',
-        'Em Checklist':              'badge-analysis',
-        'Em Assinaturas':            'badge-docs',
-        'Ativo':                     'badge-running',
-        'Encerrado':                 'badge-closed',
-        'Reprovado':                 'badge-rejected',
+        'Pendente':                       'badge-pending',
+        'Em análise':                     'badge-analysis',
+        'Aguardando Documentos':          'badge-approved',
+        'Docs Enviados':                  'badge-docs',
+        'Aguardando DG':                  'badge-dg',
+        'Aguardando Validação Final':     'badge-dg',
+        'Em execução':                    'badge-running',
+        'Em Checklist':                   'badge-analysis',
+        'Em Assinaturas':                 'badge-docs',
+        'Ativo':                          'badge-running',
+        'Encerrado':                      'badge-closed',
+        'Reprovado':                      'badge-rejected',
+        'Aguardando aceite orientador':   'badge-waiting',
+        'Aceite recusado':                'badge-refused',
       };
       return `<span class="badge ${m[status]||'badge-closed'}">${escapeHtml(status||'—')}</span>`;
+    }
+
+    /* ════════════════════════════════════════
+       TROCAR ORIENTADOR
+    ════════════════════════════════════════ */
+    let _orientadoresTroca = [];
+
+    async function carregarOrientadoresTroca() {
+      if (_orientadoresTroca.length) return; // já carregado
+      try {
+        const lista = await apiListarOrientadores(_atual?.curso || '');
+        _orientadoresTroca = Array.isArray(lista) ? lista : [];
+      } catch (e) {
+        _orientadoresTroca = [];
+      }
+    }
+
+    // Chamado quando o DOM do card "Aceite recusado" é montado
+    async function inicializarTrocaOrientador() {
+      await carregarOrientadoresTroca();
+      const loading = document.getElementById('trocar-ori-loading');
+      const form    = document.getElementById('trocar-ori-form');
+      const sel     = document.getElementById('sel-novo-ori');
+      if (!loading || !form || !sel) return;
+
+      if (!_orientadoresTroca.length) {
+        loading.textContent = 'Nenhum orientador disponível. Entre em contato com o setor de estágios.';
+        return;
+      }
+
+      sel.innerHTML = '<option value="">Escolha um orientador…</option>' +
+        _orientadoresTroca.map(o =>
+          `<option value="${escapeHtml(o.email)}" data-nome="${escapeHtml(o.nome)}">${escapeHtml(o.nome)}</option>`
+        ).join('');
+
+      loading.style.display = 'none';
+      form.style.display    = '';
+    }
+
+    async function confirmarTrocaOrientador() {
+      const sel  = document.getElementById('sel-novo-ori');
+      const fbId = 'fb-trocar-ori';
+      if (!sel || !sel.value) {
+        showFormFeedback(fbId, 'error', 'Selecione um orientador', 'Escolha um orientador da lista antes de continuar.');
+        return;
+      }
+      const emailOri = sel.value;
+      const nomeOri  = sel.options[sel.selectedIndex]?.dataset?.nome || sel.value;
+      const btn      = document.querySelector('#trocar-ori-form .btn-primary');
+      if (btn) { btn.disabled = true; btn.classList.add('is-loading'); }
+      hideFormFeedback(fbId);
+      try {
+        await apiTrocarOrientador({
+          authToken:       getAccessToken(),
+          idEstagio:       _atual.id,
+          nomeOrientador:  nomeOri,
+          emailOrientador: emailOri,
+        });
+        showFormFeedback(fbId, 'success', 'Solicitação enviada!',
+          nomeOri + ' receberá um e-mail para aceitar a orientação. Você será notificado por e-mail.');
+        if (btn) { btn.textContent = 'Enviado ✓'; }
+        setTimeout(() => carregarEstagios(), 3000);
+      } catch (err) {
+        showFormFeedback(fbId, 'error', 'Erro ao trocar orientador', err.message);
+        if (btn) { btn.disabled = false; btn.classList.remove('is-loading'); }
+      }
     }
   </script>
 </body>

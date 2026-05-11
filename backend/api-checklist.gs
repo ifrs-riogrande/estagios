@@ -667,6 +667,30 @@ function _verificarPrazosAssinaturas_() {
   }
 }
 
+// ── Histórico público do processo ─────────────────────────────────────────────
+
+/**
+ * Gera um resumo do histórico do processo visível a todos os atores.
+ * Contém apenas timestamps e status — sem dados sensíveis.
+ */
+function _buildHistoricoPublico_(ck) {
+  function _atorInfo(a) {
+    if (!a) return { status: '', data: '' };
+    return { status: String(a.status || ''), data: String(a.data || '') };
+  }
+  return {
+    criacao:     String(ck.timestampCriacao || ''),
+    conclusao:   String(ck.timestampConclusao || ''),
+    etapaAtiva:  String(ck.etapaAtiva  || ''),
+    statusGeral: String(ck.statusGeral || ''),
+    admin:       _atorInfo(ck.admin),
+    orientador:  _atorInfo(ck.orientador),
+    coordenador: _atorInfo(ck.coordenador),
+    empresa:     _atorInfo(ck.empresa),
+    supervisor:  _atorInfo(ck.supervisor),
+  };
+}
+
 // ── Handlers GET / POST ───────────────────────────────────────────────────────
 
 function doGetChecklist(e) {
@@ -722,7 +746,7 @@ function doGetChecklist(e) {
           }
         }
         if (!atorToken) return jsonError_('Token inválido ou link expirado. Solicite um novo link ao setor de estágios.', 'INVALID_TOKEN');
-        var respToken = { _meuAtor: atorToken, _infoSolicitacao: infoSol };
+        var respToken = { _meuAtor: atorToken, _infoSolicitacao: infoSol, _historico: _buildHistoricoPublico_(ck) };
         respToken[atorToken] = ck[atorToken];
         return jsonOk_(respToken);
       }
@@ -735,6 +759,7 @@ function doGetChecklist(e) {
         supervisor:  String(solDados.emailSupervisor  || ''),
       };
       ck._infoSolicitacao = infoSol;
+      ck._historico = _buildHistoricoPublico_(ck);
       return jsonOk_(ck);
 
     case 'obterPrazos':
