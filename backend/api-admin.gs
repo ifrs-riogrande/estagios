@@ -1397,6 +1397,7 @@ function listarCoordenadoresAdmin_() {
       curso:     String(r[6] || ''),
       timestamp: formatarData_(r[7]),
       status:    String(r[8] || 'Pendente'),
+      portaria:  String(r[9] || ''),
     });
   }
   lista.reverse(); // mais recentes primeiro
@@ -1669,12 +1670,12 @@ function editarCoordenadorAdmin_(body) {
   for (var i = 1; i < dados.length; i++) {
     if (String(dados[i][3] || '').toLowerCase().trim() !== emailLower) continue;
     // COL_COORD (0-based) → col (1-based): CPF=0→1, SIAPE=1→2, NOME=2→3, TEL=4→5, TITULACAO=5→6, CURSO=6→7
-    sheet.getRange(i + 1, 1).setValue(san(body.cpf,        20)); // CPF
-    sheet.getRange(i + 1, 2).setValue(san(body.siape,      30)); // SIAPE
-    sheet.getRange(i + 1, 3).setValue(san(body.nome,      200)); // NOME
-    sheet.getRange(i + 1, 5).setValue(san(body.tel,        50)); // TEL
-    sheet.getRange(i + 1, 6).setValue(san(body.titulacao, 100)); // TITULACAO
-    sheet.getRange(i + 1, 7).setValue(san(body.curso,     200)); // CURSO
+    sheet.getRange(i + 1,  1).setValue(san(body.cpf,       20)); // CPF
+    sheet.getRange(i + 1,  2).setValue(san(body.siape,     30)); // SIAPE
+    sheet.getRange(i + 1,  3).setValue(san(body.nome,     200)); // NOME
+    sheet.getRange(i + 1,  5).setValue(san(body.tel,       50)); // TEL
+    sheet.getRange(i + 1,  7).setValue(san(body.curso,    500)); // CURSO
+    sheet.getRange(i + 1, 10).setValue(san(body.portaria, 200)); // PORTARIA
     return jsonOk_({ ok: true });
   }
   return jsonError_('Coordenador não encontrado.', 'NOT_FOUND');

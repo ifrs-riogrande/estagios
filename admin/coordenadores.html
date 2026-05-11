@@ -238,9 +238,9 @@
           <div class="detail-item"><label>CPF</label><p>${escapeHtml(c.cpf||'—')}</p></div>
           <div class="detail-item"><label>SIAPE</label><p>${escapeHtml(c.siape||'—')}</p></div>
           <div class="detail-item"><label>E-mail</label><p>${escapeHtml(c.email||'—')}</p></div>
-          <div class="detail-item"><label>Titulação</label><p>${escapeHtml(c.titulacao||'—')}</p></div>
           <div class="detail-item"><label>Telefone</label><p>${escapeHtml(c.tel||'—')}</p></div>
-          <div class="detail-item detail-full"><label>Curso que Coordena</label><p>${escapeHtml(c.curso||'—')}</p></div>
+          <div class="detail-item"><label>Portaria</label><p>${escapeHtml(c.portaria||'—')}</p></div>
+          <div class="detail-item detail-full"><label>Curso(s) que Coordena</label><p>${escapeHtml(c.curso||'—')}</p></div>
           <div class="detail-item"><label>Status</label><p>${badgeStatus(c.status)}</p></div>
         </div>`;
 
@@ -293,12 +293,12 @@
             <input id="ed-tel" class="form-control" value="${escapeHtml(c.tel||'')}" maxlength="30" placeholder="(53) 99999-9999">
           </div>
           <div class="form-group" style="margin-bottom:0">
-            <label class="form-label">Titulação</label>
-            <input id="ed-titulacao" class="form-control" value="${escapeHtml(c.titulacao||'')}" maxlength="100">
+            <label class="form-label">Portaria</label>
+            <input id="ed-portaria" class="form-control" value="${escapeHtml(c.portaria||'')}" maxlength="200" placeholder="Ex.: Portaria nº 01/2025">
           </div>
           <div class="form-group" style="grid-column:1/-1;margin-bottom:0">
-            <label class="form-label">Curso que coordena</label>
-            <input id="ed-curso" class="form-control" value="${escapeHtml(c.curso||'')}" maxlength="200">
+            <label class="form-label">Curso(s) que coordena</label>
+            <input id="ed-curso" class="form-control" value="${escapeHtml(c.curso||'')}" maxlength="500">
           </div>
         </div>`;
       document.getElementById('modal-footer').innerHTML = `
@@ -340,18 +340,18 @@
       try {
         const g = id => document.getElementById(id)?.value.trim() ?? '';
         await API.post('editarCoordenadorAdmin', {
-          email:     _atual.email,
-          cpf:       g('ed-cpf'),
-          nome:      g('ed-nome'),
-          siape:     g('ed-siape'),
-          tel:       g('ed-tel'),
-          titulacao: g('ed-titulacao'),
-          curso:     g('ed-curso'),
+          email:    _atual.email,
+          cpf:      g('ed-cpf'),
+          nome:     g('ed-nome'),
+          siape:    g('ed-siape'),
+          tel:      g('ed-tel'),
+          portaria: g('ed-portaria'),
+          curso:    g('ed-curso'),
           authToken: getAccessToken(),
         });
         Object.assign(_atual, {
           cpf: g('ed-cpf'), nome: g('ed-nome'), siape: g('ed-siape'),
-          tel: g('ed-tel'), titulacao: g('ed-titulacao'), curso: g('ed-curso'),
+          tel: g('ed-tel'), portaria: g('ed-portaria'), curso: g('ed-curso'),
         });
         document.getElementById('modal-title').textContent = _atual.nome || 'Coordenador';
         toast('Coordenador atualizado.', 'success');

@@ -107,7 +107,7 @@ function configurarPlanilha() {
       nome: 'Coordenadores',
       cabecalho: [
         'CPF', 'Matrícula SIAPE', 'Nome', 'E-mail',
-        'Telefone', 'Titulação', 'Curso', 'Timestamp', 'Status',
+        'Telefone', 'Titulação', 'Curso', 'Timestamp', 'Status', 'Portaria',
       ],
     },
 
@@ -274,6 +274,31 @@ function configurarPlanilha() {
     aviso +
     '\nPróximo passo: preencha a aba "Diretor Geral" com os dados do DG.'
   );
+}
+
+/**
+ * Adiciona a coluna "Portaria" (col 10) à aba Coordenadores na planilha existente,
+ * sem apagar dados. Execute manualmente: Executar → corrigirCabecalhoCoordenadores
+ */
+function corrigirCabecalhoCoordenadores() {
+  var ss    = SpreadsheetApp.openById('1zVyseifVC6xeMpNjqwYd6jCq9HTJ2NS8BlN1dtM4s7Y');
+  var sheet = ss.getSheetByName('Coordenadores');
+  if (!sheet) { Logger.log('❌ Aba Coordenadores não encontrada.'); return; }
+
+  var cabecalho = [
+    'CPF', 'Matrícula SIAPE', 'Nome', 'E-mail',
+    'Telefone', 'Titulação', 'Curso', 'Timestamp', 'Status', 'Portaria',
+  ];
+
+  var range = sheet.getRange(1, 1, 1, cabecalho.length);
+  range.setValues([cabecalho]);
+  range.setFontWeight('bold');
+  range.setBackground('#1a73e8');
+  range.setFontColor('#ffffff');
+  sheet.setFrozenRows(1);
+  // Garante que a col 10 existe
+  if (sheet.getMaxColumns() < 10) sheet.insertColumnsAfter(sheet.getMaxColumns(), 10 - sheet.getMaxColumns());
+  Logger.log('✅ Cabeçalho da aba Coordenadores atualizado com coluna Portaria.');
 }
 
 /**
