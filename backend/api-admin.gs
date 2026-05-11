@@ -1502,7 +1502,11 @@ function aprovarCadastroServidor_(body) {
             MailApp.sendEmail(email, assuntoOri, corpoOri);
             emailEnviadoOri = true;
           } catch(mailErr) {
-            emailErroOri = mailErr + '';
+            try {
+              emailErroOri = (mailErr.name || 'Error') + ': ' + (mailErr.message || String(mailErr) || 'sem mensagem');
+            } catch(_) { emailErroOri = 'erro ao serializar exceção'; }
+            if (!emailErroOri) emailErroOri = 'exceção vazia';
+            Logger.log('MAIL_ERR_ORI: ' + emailErroOri);
             logErro_('aprovarCadastroServidor_.mailOri', mailErr);
           }
         }
@@ -1547,7 +1551,11 @@ function aprovarCadastroServidor_(body) {
         MailApp.sendEmail(email, assuntoCoord, corpoCoord);
         emailEnviadoCoord = true;
       } catch(mailErr) {
-        emailErroCoord = mailErr + '';
+        try {
+          emailErroCoord = (mailErr.name || 'Error') + ': ' + (mailErr.message || String(mailErr) || 'sem mensagem');
+        } catch(_) { emailErroCoord = 'erro ao serializar exceção'; }
+        if (!emailErroCoord) emailErroCoord = 'exceção vazia';
+        Logger.log('MAIL_ERR_COORD: ' + emailErroCoord);
         logErro_('aprovarCadastroServidor_.mailCoord', mailErr);
       }
     }
@@ -2150,3 +2158,25 @@ function excluirSupervisor_(body) {
   }
   return jsonError_('Supervisor não encontrado.', 'NOT_FOUND');
 }
+
+// ─────────────────────────────────────────────────────────────────
+// DIAGNÓSTICO — Rode esta função diretamente no editor do GAS
+// para verificar se MailApp está autorizado e funcionando.
+// ─────────────────────────────────────────────────────────────────
+function testarEnvioEmail() {
+  var destinatario = Session.getActiveUser().getEmail();
+  Logger.log('Testando envio para: ' + destinatario);
+  try {
+    MailApp.sendEmail(destinatario, '[Teste SGE] MailApp funcionando', 'Se você recebeu isto, o MailApp está OK.');
+    Logger.log('SUCESSO MailApp: e-mail enviado para ' + destinatario);
+  } catch(e) {
+    Logger.log('ERRO MailApp: name=' + e.name + ' | message=' + e.message + ' | str=' + String(e));
+    try {
+      GmailApp.sendEmail(destinatario, '[Teste SGE] GmailApp funcionando', 'Se você recebeu isto, o GmailApp está OK.');
+      Logger.log('SUCESSO GmailApp');
+    } catch(e2) {
+      Logger.log('ERRO GmailApp: name=' + e2.name + ' | message=' + e2.message + ' | str=' + String(e2));
+    }
+  }
+}
+
