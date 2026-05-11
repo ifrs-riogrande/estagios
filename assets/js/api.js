@@ -250,9 +250,13 @@ async function apiEnviarDocumentosEmpresa(dados) {
   return API.post('enviarDocumentosEmpresa', dados);
 }
 
-/** Obtém cadastro de supervisor por CPF. */
-async function apiObterCadastroSupervisor(cpf) {
-  return API.get('obterCadastroSupervisor', { cpf });
+/** Obtém cadastro de supervisor por CPF.
+ *  Sem código retorna flag {pendente:true} ou {codigoNecessario:true}.
+ *  Com código correto retorna os dados completos. */
+async function apiObterCadastroSupervisor(cpf, codigo) {
+  var params = { cpf: cpf };
+  if (codigo) params.codigo = codigo;
+  return API.get('obterCadastroSupervisor', params);
 }
 
 /** Salva (cria ou atualiza) cadastro de supervisor. Sem autenticação. */

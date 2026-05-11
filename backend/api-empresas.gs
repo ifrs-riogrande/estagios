@@ -69,7 +69,7 @@ var COL_SUP = {
   EMAIL_SUP: 12, NIVEL_FORMACAO: 13, AREA_FORMACAO: 14,
   INSTITUICAO: 15, TEMPO_EXP: 16, DESC_EXP: 17, DECLARACAO: 18,
   STATUS: 19, VALIDADO_POR: 20, DATA_VALIDACAO: 21,
-  OBSERVACOES: 22, DATA_ULT_ATZ: 23,
+  OBSERVACOES: 22, DATA_ULT_ATZ: 23, CODIGO_ACESSO: 24,
 };
 
 // ─────────────────────────────────────────
@@ -780,7 +780,7 @@ function salvarMeuCadastroEmpresa_(body) {
 //  GET: obterCadastroSupervisor
 //  Busca supervisor pelo CPF (sem autenticação)
 // ─────────────────────────────────────────
-function obterCadastroSupervisor_(cpf) {
+function obterCadastroSupervisor_(cpf, codigo) {
   var doc = String(cpf || '').replace(/\D/g, '');
   if (!doc) throw new Error('CPF inválido.');
 
@@ -795,6 +795,28 @@ function obterCadastroSupervisor_(cpf) {
     var cpfLinha = String(dados[i][COL_SUP.CPF] || '').replace(/\D/g, '').trim();
     if (cpfLinha !== doc) continue;
 
+    // Pendente — ainda sem código, retorna flag para o frontend mostrar painel de espera
+    if (status === 'Pendente') {
+      return {
+        pendente: true,
+        status:   'Pendente',
+        nome:     String(dados[i][COL_SUP.NOME] || '').trim(),
+      };
+    }
+
+    // Validado / Inativo — requer código de acesso
+    var codigoSalvo = String(dados[i][COL_SUP.CODIGO_ACESSO] || '').trim().toUpperCase();
+    var codigoInfo  = String(codigo || '').trim().toUpperCase();
+
+    if (!codigoInfo) {
+      // Sem código na requisição → frontend deve mostrar campo de código
+      return { codigoNecessario: true, status: status };
+    }
+    if (!codigoSalvo || codigoInfo !== codigoSalvo) {
+      throw new Error('Código de acesso inválido. Verifique o e-mail enviado pelo setor.');
+    }
+
+    // Código correto — retorna dados completos
     var empStr = String(dados[i][COL_SUP.EMPRESA] || '');
     var partes = empStr.split('—');
 
@@ -864,6 +886,17 @@ function salvarMeuCadastroSupervisor_(body) {
   var linhaExistente = buscarSupervisorPorCPF_(aba, cpfNorm, -1);
 
   if (linhaExistente > 0) {
+    // Se o supervisor já foi validado anteriormente, exige o código de acesso para confirmar identidade
+    var rowAtual    = aba.getRange(linhaExistente, 1, 1, 25).getValues()[0];
+    var statusAtual = String(rowAtual[COL_SUP.STATUS] || '').trim();
+    if (statusAtual !== 'Pendente') {
+      var codigoSalvo  = String(rowAtual[COL_SUP.CODIGO_ACESSO] || '').trim().toUpperCase();
+      var codigoEnviad = String(body.codigoAcesso || '').trim().toUpperCase();
+      if (!codigoEnviad || codigoEnviad !== codigoSalvo) {
+        throw new Error('Código de acesso inválido. Autentique-se novamente para editar seus dados.');
+      }
+    }
+
     var campos = [
       { col: COL_SUP.EMPRESA,         val: empresa + ' — ' + empresaNome },
       { col: COL_SUP.SETOR,           val: setor         },
@@ -893,7 +926,7 @@ function salvarMeuCadastroSupervisor_(body) {
   }
 
   // Novo cadastro
-  var novaLinha = new Array(24).fill('');
+  var novaLinha = new Array(25).fill('');
   novaLinha[COL_SUP.TIMESTAMP]      = timestamp;
   novaLinha[COL_SUP.EMAIL_FORM]     = emailSup;
   novaLinha[COL_SUP.TIPO]           = 'Novo cadastro';

@@ -89,6 +89,7 @@ function configurarPlanilha() {
         'Data Validação',     // 21 DATA_VALIDACAO
         'Observações',        // 22 OBSERVACOES
         'Data Ult. Atualização', // 23 DATA_ULT_ATZ
+        'Código de Acesso',  // 24 CODIGO_ACESSO
       ],
     },
 

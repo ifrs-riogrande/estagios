@@ -1667,15 +1667,31 @@ function alterarStatusSupervisor_(cpf, novoStatus) {
       sheet.getRange(i + 1, 21).setValue(admin);                         // VALIDADO_POR
       sheet.getRange(i + 1, 22).setValue(Utilities.formatDate(
         new Date(), Session.getScriptTimeZone(), 'dd/MM/yyyy'));          // DATA_VALIDACAO
-      // Notifica o supervisor por e-mail
+
+      // Gera código de acesso — mantém o existente se já houver (ex.: revalidação)
+      var codigoExist = String(sheet.getRange(i + 1, 25).getValue() || '').trim();
+      var codigoAcesso = codigoExist;
+      if (!codigoAcesso) {
+        codigoAcesso = 'S' + Math.random().toString(36).substr(2, 6).toUpperCase();
+        sheet.getRange(i + 1, 25).setValue(codigoAcesso);                // CODIGO_ACESSO
+      }
+
+      // Notifica o supervisor por e-mail com o código de acesso
       var nome     = String(dados[i][8]  || '').trim();
       var emailSup = String(dados[i][12] || '').trim();
       if (emailSup) {
         try {
           GmailApp.sendEmail(emailSup,
-            '[IFRS Estágios] Cadastro de supervisor validado',
+            '[IFRS Estágios] Cadastro de supervisor validado — seu código de acesso',
             'Olá, ' + (nome || 'Supervisor') + ',\n\n' +
-            'Seu cadastro como supervisor de estágio foi validado pelo setor de estágios do IFRS Campus Rio Grande.\n' +
+            'Seu cadastro como supervisor de estágio foi validado pelo setor de estágios do IFRS Campus Rio Grande.\n\n' +
+            '━━━━━━━━━━━━━━━━━━━━\n' +
+            'SEU CÓDIGO DE ACESSO: ' + codigoAcesso + '\n' +
+            '━━━━━━━━━━━━━━━━━━━━\n\n' +
+            'Guarde este código com segurança. Você precisará dele para acessar e editar\n' +
+            'seu perfil no portal de estágios.\n\n' +
+            'Acesse seu perfil em:\n' +
+            'https://ifrs-riogrande.github.io/estagios/empresas/perfil-supervisor.html\n\n' +
             'A partir de agora você pode ser selecionado em solicitações de estágio.\n\n' +
             'Dúvidas: estagios@riogrande.ifrs.edu.br\n\nAtenciosamente,\nSetor de Estágios — IFRS Campus Rio Grande',
             { name: 'Setor de Estágios IFRS', replyTo: 'estagios@riogrande.ifrs.edu.br' }
