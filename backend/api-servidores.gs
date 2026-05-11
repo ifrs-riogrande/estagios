@@ -343,33 +343,30 @@ function cadastrarCoordenador_(dados) {
     return jsonError_('Muitas requisições. Aguarde um momento.', 'RATE_LIMIT');
   }
 
-  var nome      = sanitizar_(dados.nome,      200);
-  var cpf       = sanitizar_(dados.cpf,        14).replace(/\D/g, '');
-  var siape     = sanitizar_(dados.siape,      10).replace(/\D/g, '');
-  var tel       = sanitizar_(dados.telefone,   30);
-  var titulacao = sanitizar_(dados.titulacao,  50);
-  var curso     = sanitizar_(dados.curso,     200);
+  var nome  = sanitizar_(dados.nome,     200);
+  var cpf   = sanitizar_(dados.cpf,       14).replace(/\D/g, '');
+  var siape = sanitizar_(dados.siape,     10).replace(/\D/g, '');
+  var tel   = sanitizar_(dados.telefone,  30);
+  var curso = sanitizar_(dados.curso,    500); // pode ser múltiplos cursos separados por vírgula
 
   if (!nome)                      return jsonError_('Nome é obrigatório.', 'VALIDATION');
   if (!validarCPF_(cpf))          return jsonError_('CPF inválido.', 'VALIDATION');
   if (!siape || siape.length < 6) return jsonError_('SIAPE inválido.', 'VALIDATION');
-  if (!titulacao)                 return jsonError_('Titulação é obrigatória.', 'VALIDATION');
-  if (!curso)                     return jsonError_('Curso é obrigatório.', 'VALIDATION');
+  if (!curso)                     return jsonError_('Selecione ao menos um curso.', 'VALIDATION');
 
   var ss    = SpreadsheetApp.openById(CFG_SRV.SS_ID);
   var sheet = obterOuCriarAbaCoord_(ss);
   var dadosPlanilha = sheet.getDataRange().getValues();
 
-  // Verifica se já existe registro para este email+curso → atualiza
+  // Verifica se já existe registro para este email → atualiza
   for (var i = 1; i < dadosPlanilha.length; i++) {
-    if (String(dadosPlanilha[i][COL_COORD.EMAIL] || '').toLowerCase() === email &&
-        String(dadosPlanilha[i][COL_COORD.CURSO] || '') === curso) {
+    if (String(dadosPlanilha[i][COL_COORD.EMAIL] || '').toLowerCase() === email) {
       var rowIdx = i + 1;
       sheet.getRange(rowIdx, COL_COORD.CPF       + 1).setValue(cpf);
       sheet.getRange(rowIdx, COL_COORD.SIAPE     + 1).setValue(siape);
       sheet.getRange(rowIdx, COL_COORD.NOME      + 1).setValue(nome);
       sheet.getRange(rowIdx, COL_COORD.TEL       + 1).setValue(tel);
-      sheet.getRange(rowIdx, COL_COORD.TITULACAO + 1).setValue(titulacao);
+      sheet.getRange(rowIdx, COL_COORD.CURSO     + 1).setValue(curso);
       sheet.getRange(rowIdx, COL_COORD.TIMESTAMP + 1).setValue(new Date());
       sheet.getRange(rowIdx, COL_COORD.STATUS    + 1).setValue('Pendente');
       try { enviarEmailAtualizacaoServidor_({ nome: nome, email: email, tipo: 'coordenador', curso: curso }); } catch (e) { logErro_('cadastrarCoordenador_.mailAtualiza', e); }
@@ -384,7 +381,7 @@ function cadastrarCoordenador_(dados) {
   novaLinha[COL_COORD.NOME]      = nome;
   novaLinha[COL_COORD.EMAIL]     = email;
   novaLinha[COL_COORD.TEL]       = tel;
-  novaLinha[COL_COORD.TITULACAO] = titulacao;
+  novaLinha[COL_COORD.TITULACAO] = '';
   novaLinha[COL_COORD.CURSO]     = curso;
   novaLinha[COL_COORD.TIMESTAMP] = new Date();
   novaLinha[COL_COORD.STATUS]    = 'Pendente';
@@ -406,31 +403,30 @@ function atualizarMeuCadastroCoordenador_(dados) {
     return jsonError_('Muitas requisições. Aguarde um momento.', 'RATE_LIMIT');
   }
 
-  var tel       = sanitizar_(dados.tel,       30);
-  var titulacao = sanitizar_(dados.titulacao,  50);
+  var tel    = sanitizar_(dados.tel,    30);
+  var cursos = sanitizar_(dados.cursos, 500);
 
-  if (!tel)       return jsonError_('Telefone é obrigatório.', 'VALIDATION');
-  if (!titulacao) return jsonError_('Titulação é obrigatória.', 'VALIDATION');
+  if (!cursos) return jsonError_('Selecione ao menos um curso.', 'VALIDATION');
 
   var ss    = SpreadsheetApp.openById(CFG_SRV.SS_ID);
   var sheet = ss.getSheetByName(CFG_SRV.ABA_COORD);
   if (!sheet) return jsonError_('Coordenador não encontrado.', 'NOT_FOUND');
   var dadosPlanilha = sheet.getDataRange().getValues();
 
-  // Atualiza o registro mais recente (ou Ativo) deste e-mail
+  // Atualiza o registro mais recente deste e-mail
   var rowIdx = -1, nomeSalvo = '', cursoSalvo = '';
   for (var i = 1; i < dadosPlanilha.length; i++) {
     if (String(dadosPlanilha[i][COL_COORD.EMAIL] || '').toLowerCase() === email) {
-      rowIdx    = i + 1;
-      nomeSalvo = String(dadosPlanilha[i][COL_COORD.NOME]  || '');
+      rowIdx     = i + 1;
+      nomeSalvo  = String(dadosPlanilha[i][COL_COORD.NOME]  || '');
       cursoSalvo = String(dadosPlanilha[i][COL_COORD.CURSO] || '');
     }
   }
   if (rowIdx === -1) return jsonError_('Coordenador não encontrado.', 'NOT_FOUND');
 
-  sheet.getRange(rowIdx, COL_COORD.TEL       + 1).setValue(tel);
-  sheet.getRange(rowIdx, COL_COORD.TITULACAO + 1).setValue(titulacao);
-  sheet.getRange(rowIdx, COL_COORD.STATUS    + 1).setValue('Pendente');
+  sheet.getRange(rowIdx, COL_COORD.TEL    + 1).setValue(tel);
+  sheet.getRange(rowIdx, COL_COORD.CURSO  + 1).setValue(cursos);
+  sheet.getRange(rowIdx, COL_COORD.STATUS + 1).setValue('Pendente');
 
   try { enviarEmailAtualizacaoServidor_({ nome: nomeSalvo, email: email, tipo: 'coordenador', curso: cursoSalvo }); } catch (e) { logErro_('atualizarMeuCadastroCoordenador_.mail', e); }
   return jsonOk_({ mensagem: 'Dados atualizados. Aguardando aprovação do setor.', pendente: true });

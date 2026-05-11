@@ -33,6 +33,24 @@
     .tag-status.ativo    { background: #d1fae5; color: #065f46; }
     .tag-status.inativo  { background: #fee2e2; color: #991b1b; }
     .tag-status.pendente { background: #fef3c7; color: #92400e; }
+
+    /* ── Seletor de cursos com tags ── */
+    .curso-picker-row { display: flex; gap: var(--space-2); align-items: center; margin-bottom: var(--space-2); }
+    .curso-picker-row select { flex: 1; }
+    .curso-tags { display: flex; flex-wrap: wrap; gap: var(--space-2); min-height: 28px; }
+    .curso-tag {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 3px 6px 3px 10px;
+      background: #e0f2fe; color: #0369a1;
+      border-radius: 999px; font-size: var(--font-size-sm); font-weight: 500;
+    }
+    .curso-tag button {
+      background: none; border: none; cursor: pointer; color: #0369a1;
+      padding: 0; line-height: 1; font-size: 16px; display: flex; align-items: center;
+      border-radius: 50%; width: 18px; height: 18px; justify-content: center;
+    }
+    .curso-tag button:hover { background: #bae6fd; }
+    .cursos-vazio { color: var(--color-text-muted); font-size: var(--font-size-sm); font-style: italic; }
   </style>
 </head>
 <body>
@@ -139,31 +157,23 @@
               </div>
             </div>
 
-            <!-- Formação e Curso -->
+            <!-- Cursos Coordenados -->
             <div class="form-section">
               <h2 class="form-section-title">
                 <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3z"/></svg>
-                Formação e Curso Coordenado
+                Curso(s) Coordenado(s)
               </h2>
-              <div class="form-row">
-                <div class="form-group">
-                  <label class="form-label required" for="titulacao">Titulação</label>
-                  <select id="titulacao" name="titulacao" class="form-control" required aria-required="true" aria-describedby="titulacao-error">
-                    <option value="">Selecione...</option>
-                    <option value="Especialização">Especialização</option>
-                    <option value="Mestrado">Mestrado</option>
-                    <option value="Doutorado">Doutorado</option>
-                    <option value="Pós-doutorado">Pós-doutorado</option>
-                    <option value="Graduação">Graduação</option>
-                  </select>
-                  <span id="titulacao-error" class="form-error hidden" role="alert"></span>
-                </div>
-              </div>
+
               <div class="form-group">
-                <label class="form-label required" for="curso">Curso que coordena</label>
-                <select id="curso" name="curso" class="form-control" required aria-required="true" aria-describedby="curso-error" disabled>
-                  <option value="">Carregando cursos…</option>
-                </select>
+                <label class="form-label required">Curso(s) que coordena</label>
+                <div class="curso-picker-row">
+                  <select id="curso-select" class="form-control" disabled>
+                    <option value="">Carregando cursos…</option>
+                  </select>
+                  <button type="button" class="btn btn-secondary btn-sm" onclick="adicionarCurso('cad')">+ Adicionar</button>
+                </div>
+                <div id="cursos-tags" class="curso-tags" style="margin-bottom:var(--space-2);"></div>
+                <input type="hidden" id="cursos-hidden">
                 <span id="curso-error" class="form-error hidden" role="alert"></span>
               </div>
             </div>
@@ -197,7 +207,7 @@
           </div>
 
           <p style="margin-top:var(--space-4);font-size:var(--font-size-sm);color:var(--color-text-muted);">
-            Para alterar dados de identificação (nome, CPF, SIAPE, curso), entre em contato:
+            Para alterar dados de identificação (nome, CPF, SIAPE), entre em contato:
             <a href="mailto:estagios@riogrande.ifrs.edu.br" class="link">estagios@riogrande.ifrs.edu.br</a>
           </p>
         </div>
@@ -206,7 +216,7 @@
         <div id="painel-edicao">
           <div class="alert alert-warning" style="margin-bottom:var(--space-5);">
             <svg class="alert-icon" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
-            <div class="alert-content">Você pode editar telefone e titulação. Após salvar, o setor será notificado para aprovação.</div>
+            <div class="alert-content">Você pode editar telefone e cursos coordenados. Após salvar, o setor será notificado.</div>
           </div>
 
           <div id="edicao-feedback" style="display:none;margin-bottom:var(--space-5);"></div>
@@ -220,18 +230,18 @@
           </div>
 
           <div class="form-section">
-            <h3 class="form-section-title">Formação</h3>
+            <h3 class="form-section-title">Curso(s) Coordenado(s)</h3>
             <div class="form-group">
-              <label class="form-label required" for="edit-titulacao">Titulação</label>
-              <select id="edit-titulacao" class="form-control">
-                <option value="">Selecione...</option>
-                <option value="Especialização">Especialização</option>
-                <option value="Mestrado">Mestrado</option>
-                <option value="Doutorado">Doutorado</option>
-                <option value="Pós-doutorado">Pós-doutorado</option>
-                <option value="Graduação">Graduação</option>
-              </select>
-              <span id="edit-titulacao-error" class="form-error hidden" role="alert"></span>
+              <label class="form-label required">Adicionar ou remover cursos</label>
+              <div class="curso-picker-row">
+                <select id="edit-curso-select" class="form-control" disabled>
+                  <option value="">Carregando cursos…</option>
+                </select>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="adicionarCurso('edit')">+ Adicionar</button>
+              </div>
+              <div id="edit-cursos-tags" class="curso-tags" style="margin-bottom:var(--space-2);"></div>
+              <input type="hidden" id="edit-cursos-hidden">
+              <span id="edit-curso-error" class="form-error hidden" role="alert"></span>
             </div>
           </div>
 
@@ -262,6 +272,8 @@
     'use strict';
 
     var dadosCache = null;
+    var _cursosCad  = []; // cursos selecionados no formulário de cadastro
+    var _cursosEdit = []; // cursos selecionados na edição
     var PAINEIS = ['painel-carregando','painel-erro-inicial','painel-novo','painel-dados','painel-edicao'];
 
     function mostrarPainel(id) {
@@ -274,8 +286,10 @@
       if (!requireStaffAuth()) return;
       applyMasks();
       carregarDados();
-      // Preenche select de cursos dinamicamente
-      preencherSelectCursos('curso', 'Selecione o curso...');
+
+      // Preenche os dois selects de cursos
+      preencherSelectCursos('curso-select',      'Selecione o curso...');
+      preencherSelectCursos('edit-curso-select',  'Selecione o curso...');
 
       document.getElementById('cpf').addEventListener('blur', function () {
         var v = this.value.replace(/\D/g, '');
@@ -291,6 +305,47 @@
       document.getElementById('btn-limpar').addEventListener('click', limparFormulario);
     });
 
+    // ── Gerenciador de tags de cursos ─────────────────────────────
+    function adicionarCurso(contexto) {
+      var selectId = contexto === 'edit' ? 'edit-curso-select' : 'curso-select';
+      var arr      = contexto === 'edit' ? _cursosEdit : _cursosCad;
+      var val = document.getElementById(selectId).value;
+      if (!val) return;
+      if (arr.indexOf(val) === -1) arr.push(val);
+      renderCursosTags(contexto);
+    }
+
+    function removerCurso(contexto, val) {
+      if (contexto === 'edit') {
+        _cursosEdit = _cursosEdit.filter(function(c) { return c !== val; });
+      } else {
+        _cursosCad = _cursosCad.filter(function(c) { return c !== val; });
+      }
+      renderCursosTags(contexto);
+    }
+
+    function renderCursosTags(contexto) {
+      var tagsId  = contexto === 'edit' ? 'edit-cursos-tags'   : 'cursos-tags';
+      var hiddenId= contexto === 'edit' ? 'edit-cursos-hidden'  : 'cursos-hidden';
+      var arr     = contexto === 'edit' ? _cursosEdit : _cursosCad;
+
+      var container = document.getElementById(tagsId);
+      var hidden    = document.getElementById(hiddenId);
+
+      if (arr.length === 0) {
+        container.innerHTML = '<span class="cursos-vazio">Nenhum curso selecionado.</span>';
+      } else {
+        container.innerHTML = arr.map(function(c) {
+          var safe = escapeHtml(c);
+          return '<span class="curso-tag">' + safe
+            + '<button type="button" onclick="removerCurso(\'' + contexto + '\',\'' + safe.replace(/'/g,"\\'") + '\')" aria-label="Remover ' + safe + '">×</button>'
+            + '</span>';
+        }).join('');
+      }
+      hidden.value = arr.join(', ');
+    }
+
+    // ── Dados ──────────────────────────────────────────────────────
     async function carregarDados() {
       mostrarPainel('painel-carregando');
       document.getElementById('subtitulo-pagina').textContent = 'Verificando seu cadastro...';
@@ -306,9 +361,6 @@
         try {
           var msg  = (err && err.message || '').toLowerCase();
           var code = (err && err.code   || '').toUpperCase();
-          // Usuário não cadastrado, aba ainda inexistente, ou qualquer erro
-          // do servidor que impeça confirmar o cadastro → mostra formulário de cadastro.
-          // Apenas erros genuínos de rede vão para o painel de erro.
           var semCadastro = msg.includes('não cadastrado') || msg.includes('não encontrado') ||
               msg.includes('not found')  || msg.includes('sem cadastro') ||
               msg.includes('não encontrada') || msg.includes('interno') ||
@@ -321,7 +373,6 @@
             mostrarPainel('painel-erro-inicial');
           }
         } catch (e2) {
-          // Fallback absoluto: qualquer erro dentro do catch → exibe formulário de cadastro.
           mostrarPainelNovo();
         }
       }
@@ -330,9 +381,7 @@
     function mostrarPainelNovo() {
       document.getElementById('subtitulo-pagina').textContent = 'Preencha seus dados para se cadastrar como coordenador.';
       var session = getSession();
-      if (session && session.email) {
-        document.getElementById('email-inst').value = session.email;
-      }
+      if (session && session.email) document.getElementById('email-inst').value = session.email;
       mostrarPainel('painel-novo');
     }
 
@@ -347,30 +396,44 @@
       var statusHtml = '<p><span class="tag-status ' + statusCls + '">' + escapeHtml(d.status || 'Desconhecido') + '</span></p>'
         + (st === 'pendente' ? '<p style="font-size:var(--font-size-sm);color:#92400e;margin-top:4px;">Aguardando aprovação do setor de estágios.</p>' : '');
 
+      // Cursos: pode ser comma-separated
+      var cursosHtml;
+      var cursosStr = d.curso || d.cursos || '';
+      if (cursosStr) {
+        var lista = cursosStr.split(',').map(function(c) { return c.trim(); }).filter(Boolean);
+        cursosHtml = lista.map(function(c) {
+          return '<span style="display:inline-block;background:#e0f2fe;color:#0369a1;border-radius:999px;padding:2px 10px;font-size:13px;font-weight:500;margin:2px 4px 2px 0;">' + escapeHtml(c) + '</span>';
+        }).join('');
+        cursosHtml = '<p style="margin:0;">' + cursosHtml + '</p>';
+      } else {
+        cursosHtml = '<p class="vazio">Não informado</p>';
+      }
+
       document.getElementById('dados-content').innerHTML =
         '<div class="section-divider">Identificação</div>' +
         '<div class="dado-item dado-full"><label>Nome</label>' + val(d.nome) + '</div>' +
         '<div class="dado-item"><label>CPF</label>' + val(d.cpf ? d.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4') : '') + '</div>' +
         '<div class="dado-item"><label>SIAPE</label>' + val(d.siape) + '</div>' +
         '<div class="dado-item"><label>E-mail institucional</label>' + val(d.email) + '</div>' +
+        '<div class="dado-item"><label>Telefone</label>' + val(d.tel) + '</div>' +
         '<div class="dado-item"><label>Status</label>' + statusHtml + '</div>' +
-        '<div class="section-divider">Curso e Formação</div>' +
-        '<div class="dado-item dado-full"><label>Curso que Coordena</label>' + val(d.curso) + '</div>' +
-        '<div class="dado-item"><label>Titulação</label>' + val(d.titulacao) + '</div>' +
-        '<div class="dado-item"><label>Telefone</label>' + val(d.tel) + '</div>';
+        '<div class="section-divider">Cursos Coordenados</div>' +
+        '<div class="dado-item dado-full"><label>Curso(s) que coordena</label>' + cursosHtml + '</div>';
 
       mostrarPainel('painel-dados');
     }
 
     function iniciarEdicao() {
       if (!dadosCache) return;
-      document.getElementById('edit-tel').value      = dadosCache.tel      || '';
-      document.getElementById('edit-titulacao').value = dadosCache.titulacao || '';
+      document.getElementById('edit-tel').value = dadosCache.tel || '';
+
+      // Popula os cursos no editor
+      var cursosStr = dadosCache.curso || dadosCache.cursos || '';
+      _cursosEdit = cursosStr ? cursosStr.split(',').map(function(c) { return c.trim(); }).filter(Boolean) : [];
+      renderCursosTags('edit');
 
       var fb = document.getElementById('edicao-feedback');
       fb.style.display = 'none'; fb.innerHTML = '';
-      var errTit = document.getElementById('edit-titulacao-error');
-      if (errTit) { errTit.textContent = ''; errTit.classList.add('hidden'); }
 
       document.getElementById('subtitulo-pagina').textContent = 'Atualize seus dados.';
       mostrarPainel('painel-edicao');
@@ -383,20 +446,24 @@
     }
 
     async function salvarEdicao() {
-      var btn       = document.getElementById('btn-salvar');
-      var fb        = document.getElementById('edicao-feedback');
-      var tel       = document.getElementById('edit-tel').value.trim();
-      var titulacao = document.getElementById('edit-titulacao').value;
+      var btn    = document.getElementById('btn-salvar');
+      var fb     = document.getElementById('edicao-feedback');
+      var tel    = document.getElementById('edit-tel').value.trim();
+      var cursos = document.getElementById('edit-cursos-hidden').value.trim();
 
-      var errTit = document.getElementById('edit-titulacao-error');
-      errTit.textContent = ''; errTit.classList.add('hidden');
-      if (!titulacao) { errTit.textContent = 'Selecione a titulação.'; errTit.classList.remove('hidden'); return; }
+      var errCurso = document.getElementById('edit-curso-error');
+      errCurso.textContent = ''; errCurso.classList.add('hidden');
+      if (!cursos) {
+        errCurso.textContent = 'Selecione ao menos um curso.';
+        errCurso.classList.remove('hidden');
+        return;
+      }
 
       fb.style.display = 'none'; fb.innerHTML = '';
       btn.disabled = true; btn.classList.add('is-loading');
 
       try {
-        await API.post('atualizarMeuCadastroCoordenador', { tel: tel, titulacao: titulacao, authToken: getAccessToken() });
+        await API.post('atualizarMeuCadastroCoordenador', { tel: tel, cursos: cursos, authToken: getAccessToken() });
 
         var novos = await API.get('obterMeuCadastroCoordenador', { authToken: getAccessToken() });
         dadosCache = novos;
@@ -419,14 +486,13 @@
       var valid = true, firstInvalid = null;
       function fail(id, msg) { showFieldError(id, msg); if (!firstInvalid) firstInvalid = id; valid = false; }
 
-      if (!document.getElementById('nome').value.trim())    fail('nome',      'Informe o nome completo.');
+      if (!document.getElementById('nome').value.trim())    fail('nome',  'Informe o nome completo.');
       var cpf = document.getElementById('cpf').value.replace(/\D/g, '');
       if (!cpf)               fail('cpf', 'Informe o CPF.');
       else if (!validateCPF(cpf)) fail('cpf', 'CPF inválido.');
       var siape = document.getElementById('siape').value.replace(/\D/g, '');
       if (!siape || siape.length < 6) fail('siape', 'SIAPE inválido.');
-      if (!document.getElementById('titulacao').value) fail('titulacao', 'Selecione a titulação.');
-      if (!document.getElementById('curso').value)     fail('curso',     'Selecione o curso.');
+      if (!document.getElementById('cursos-hidden').value.trim()) fail('curso', 'Selecione ao menos um curso.');
 
       if (firstInvalid) {
         var el = document.getElementById(firstInvalid);
@@ -446,8 +512,7 @@
         siape:     document.getElementById('siape').value.replace(/\D/g, ''),
         telefone:  document.getElementById('telefone').value.trim(),
         emailInst: document.getElementById('email-inst').value.trim(),
-        titulacao: document.getElementById('titulacao').value,
-        curso:     document.getElementById('curso').value,
+        curso:     document.getElementById('cursos-hidden').value.trim(),
         authToken: getAccessToken(),
       };
 
@@ -466,6 +531,8 @@
       var form = document.getElementById('form-coordenador');
       form.reset();
       form.querySelectorAll('.form-error').forEach(function(el) { el.textContent = ''; el.classList.add('hidden'); });
+      _cursosCad = [];
+      renderCursosTags('cad');
       hideFormFeedback('form-feedback');
       var session = getSession();
       if (session && session.email) document.getElementById('email-inst').value = session.email;
