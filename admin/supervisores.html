@@ -112,6 +112,10 @@
         </div>
       </div>
 
+      <div id="alerta-pendentes" style="display:none;background:#fef3c7;border:1px solid #f59e0b;border-radius:var(--radius-md);padding:var(--space-3) var(--space-4);margin-bottom:var(--space-4);font-size:var(--font-size-sm);color:#92400e;">
+        ⏳ Há supervisores aguardando aprovação.
+      </div>
+
       <div class="table-wrap">
         <table class="data-table" aria-label="Supervisores cadastrados">
           <thead>
@@ -180,6 +184,10 @@
       try {
         const data = await API.get('listarSupervisoresAdmin', { authToken: getAccessToken() });
         _dados = Array.isArray(data) ? data : (data.supervisores || []);
+        const pendentes = _dados.filter(s => s.status === 'Pendente').length;
+        const elP = document.getElementById('alerta-pendentes');
+        elP.style.display = pendentes > 0 ? '' : 'none';
+        if (pendentes > 0) elP.textContent = `⏳ Há ${pendentes} supervisor${pendentes > 1 ? 'es' : ''} aguardando aprovação.`;
         filtrar();
       } catch (err) {
         document.getElementById('tbody-sup').innerHTML =

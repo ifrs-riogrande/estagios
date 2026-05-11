@@ -126,6 +126,10 @@
         </div>
       </div>
 
+      <div id="alerta-pendentes" style="display:none;background:#fef3c7;border:1px solid #f59e0b;border-radius:var(--radius-md);padding:var(--space-3) var(--space-4);margin-bottom:var(--space-4);font-size:var(--font-size-sm);color:#92400e;">
+        ⏳ Há alunos aguardando validação.
+      </div>
+
       <div class="table-wrap">
         <table class="data-table" aria-label="Alunos cadastrados">
           <thead>
@@ -219,6 +223,11 @@
     }
 
     function renderContadores() {
+      const pendentes = _dados.filter(a => a.status === 'Aguardando Validação').length;
+      const elP = document.getElementById('alerta-pendentes');
+      elP.style.display = pendentes > 0 ? '' : 'none';
+      if (pendentes > 0) elP.textContent = `⏳ Há ${pendentes} aluno${pendentes > 1 ? 's' : ''} aguardando validação.`;
+
       const conts = { 'Aguardando Validação': 0, 'Ativo': 0, 'Inativo': 0 };
       _dados.forEach(a => { const s = a.status || 'Aguardando Validação'; if (s in conts) conts[s]++; });
       const el = document.getElementById('status-counters');

@@ -110,6 +110,10 @@
         </div>
       </div>
 
+      <div id="alerta-pendentes" style="display:none;background:#fef3c7;border:1px solid #f59e0b;border-radius:var(--radius-md);padding:var(--space-3) var(--space-4);margin-bottom:var(--space-4);font-size:var(--font-size-sm);color:#92400e;">
+        ⏳ Há orientadores aguardando aprovação.
+      </div>
+
       <div id="alerta-contratos" style="display:none;background:var(--color-warning-light);border:1px solid var(--color-warning-border);border-radius:var(--radius-md);padding:var(--space-3) var(--space-4);margin-bottom:var(--space-4);font-size:var(--font-size-sm);color:var(--color-warning);">
         ⚠️ Há contratos de substitutos vencendo em breve (destacados na tabela).
       </div>
@@ -193,6 +197,11 @@
     }
 
     function verificarAlertas() {
+      const pendentes = _dados.filter(o => o.status === 'Pendente').length;
+      document.getElementById('alerta-pendentes').style.display = pendentes > 0 ? '' : 'none';
+      if (pendentes > 0) document.getElementById('alerta-pendentes').textContent =
+        `⏳ Há ${pendentes} orientador${pendentes > 1 ? 'es' : ''} aguardando aprovação.`;
+
       const hoje = new Date(); hoje.setHours(0,0,0,0);
       const alerta = _dados.some(o => {
         if (o.tipoVinculo !== 'Substituto' || o.status === 'Inativo') return false;

@@ -101,6 +101,10 @@
         </div>
       </div>
 
+      <div id="alerta-pendentes" style="display:none;background:#fef3c7;border:1px solid #f59e0b;border-radius:var(--radius-md);padding:var(--space-3) var(--space-4);margin-bottom:var(--space-4);font-size:var(--font-size-sm);color:#92400e;">
+        ⏳ Há empresas aguardando aprovação.
+      </div>
+
       <div class="table-wrap">
         <table class="data-table" aria-label="Empresas cadastradas">
           <thead>
@@ -168,6 +172,10 @@
       try {
         const data = await API.get('listarEmpresasAdmin', { authToken: getAccessToken() });
         _dados = Array.isArray(data) ? data : (data.empresas || []);
+        const pendentes = _dados.filter(e => e.status === 'Pendente').length;
+        const elP = document.getElementById('alerta-pendentes');
+        elP.style.display = pendentes > 0 ? '' : 'none';
+        if (pendentes > 0) elP.textContent = `⏳ Há ${pendentes} empresa${pendentes > 1 ? 's' : ''} aguardando aprovação.`;
         filtrar();
       } catch (err) {
         document.getElementById('tbody-empresas').innerHTML =
