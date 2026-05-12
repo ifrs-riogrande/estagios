@@ -304,7 +304,9 @@
           <div class="doc-card-header">
             <div>
               <div class="doc-card-title">${escapeHtml(s.nomeEstudante || '—')}</div>
-              <code style="font-size:12px;color:var(--color-secondary)">${escapeHtml(s.id)}</code>
+              <a href="estagio.html?id=${escapeHtml(s.id)}" style="font-size:12px;color:var(--color-secondary);text-decoration:none" title="Ver ficha completa">
+                <code>${escapeHtml(s.id)}</code> ↗
+              </a>
             </div>
             ${statusBadge}
           </div>
@@ -379,7 +381,9 @@
             <div class="doc-card-header">
               <div>
                 <div class="doc-card-title">${escapeHtml(item.nomeEstudante || '—')}</div>
-                <code style="font-size:12px;color:var(--color-secondary)">${escapeHtml(item.idEstagio)}</code>
+                <a href="estagio.html?id=${escapeHtml(item.idEstagio)}" style="font-size:12px;color:var(--color-secondary);text-decoration:none" title="Ver ficha completa">
+                  <code>${escapeHtml(item.idEstagio)}</code> ↗
+                </a>
               </div>
               <span class="badge badge-docs">Revisão Central</span>
             </div>

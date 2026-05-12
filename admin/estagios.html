@@ -279,10 +279,6 @@
 
       document.getElementById('btn-atualizar').addEventListener('click', carregarEstagios);
       document.getElementById('btn-limpar').addEventListener('click', limparFiltros);
-      document.getElementById('btn-modal-close').addEventListener('click', fecharModal);
-      document.getElementById('modal-overlay').addEventListener('click', function (e) {
-        if (e.target === this) fecharModal();
-      });
 
       ['filtro-status','filtro-tipo','filtro-empresa','filtro-orientador','filtro-supervisor'].forEach(id => {
         document.getElementById(id).addEventListener('change', aplicarFiltros);
