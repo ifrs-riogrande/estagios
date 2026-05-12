@@ -82,55 +82,6 @@
     .pagination button.active { background: var(--color-primary); border-color: var(--color-primary); color: #fff; }
     .pagination button:disabled { opacity: 0.4; cursor: not-allowed; }
 
-    /* ── Modal ── */
-    .modal-overlay {
-      position: fixed; inset: 0; background: rgba(0,0,0,0.5);
-      z-index: 1000; display: flex; align-items: flex-start; justify-content: center;
-      padding: var(--space-8) var(--space-4); overflow-y: auto;
-    }
-    .modal-overlay.hidden { display: none; }
-    .modal {
-      background: var(--color-surface); border-radius: var(--radius-xl);
-      box-shadow: 0 20px 40px rgba(0,0,0,0.2); width: 100%; max-width: 700px;
-      animation: modal-in 0.2s ease;
-    }
-    @keyframes modal-in { from { opacity: 0; transform: translateY(-16px); } }
-    .modal-header {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: var(--space-5) var(--space-6);
-      border-bottom: 1px solid var(--color-border);
-    }
-    .modal-header h2 { font-size: var(--font-size-lg); font-weight: var(--font-weight-semibold); }
-    .modal-close { background: none; border: none; cursor: pointer; color: var(--color-text-muted); padding: var(--space-1); border-radius: var(--radius-md); }
-    .modal-close:hover { background: var(--color-bg); }
-    .modal-body { padding: var(--space-6); }
-    .modal-footer {
-      padding: var(--space-4) var(--space-6);
-      border-top: 1px solid var(--color-border);
-      display: flex; gap: var(--space-3); justify-content: flex-end; flex-wrap: wrap;
-    }
-
-    /* ── Detail grid ── */
-    .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4) var(--space-6); margin-bottom: var(--space-6); }
-    @media (max-width: 560px) { .detail-grid { grid-template-columns: 1fr; } }
-    .detail-item label { font-size: var(--font-size-xs); color: var(--color-text-muted); display: block; margin-bottom: 2px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.04em; }
-    .detail-item p { font-size: var(--font-size-sm); color: var(--color-text); word-break: break-word; }
-    .detail-full { grid-column: 1 / -1; }
-
-    /* ── Dados sensíveis ── */
-    .dado-oculto { font-family: monospace; color: var(--color-text-muted); letter-spacing: 2px; user-select: none; }
-    .dado-visivel { font-family: monospace; }
-    .sensivel-badge {
-      display: inline-block; font-size: 9px; font-weight: 600; letter-spacing: .04em;
-      background: var(--color-warning-light); color: var(--color-warning);
-      border: 1px solid var(--color-warning-border, #fbbf24); border-radius: 3px;
-      padding: 0 4px; margin-left: 4px; vertical-align: middle; text-transform: uppercase;
-    }
-
-    /* ── Rejeição ── */
-    .reject-area { display: none; margin-top: var(--space-4); }
-    .reject-area.show { display: block; }
-
     /* ── Loading spinner inline ── */
     .table-loading { text-align: center; padding: var(--space-12); color: var(--color-text-muted); font-size: var(--font-size-sm); }
 
@@ -295,24 +246,6 @@
     </div>
   </main>
 
-  <!-- ═══ MODAL DETALHE / AÇÃO ═══ -->
-  <div id="modal-overlay" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="modal-title">
-    <div class="modal">
-      <div class="modal-header">
-        <h2 id="modal-title">Detalhe do Estágio</h2>
-        <button class="modal-close" id="btn-modal-close" aria-label="Fechar">
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
-        </button>
-      </div>
-      <div class="modal-body" id="modal-body">
-        <!-- preenchido via JS -->
-      </div>
-      <div class="modal-footer" id="modal-footer">
-        <!-- botões de ação preenchidos via JS -->
-      </div>
-    </div>
-  </div>
-
   <footer id="app-footer">
     <div class="container">
       <div class="footer-inner">
@@ -336,7 +269,6 @@
     let _dadosFiltrados = [];
     let _paginaAtual = 1;
     const POR_PAGINA = 25;
-    let _estagioAtual = null;
 
     /* ────────────────────────────────────
        Inicialização
@@ -495,7 +427,7 @@
           <td>${badgeStatus(s.status)}</td>
           <td>
             <div class="td-actions">
-              <button class="btn btn-secondary btn-sm" onclick="abrirModal('${escapeHtml(s.id)}')">Ver</button>
+              <a href="estagio.html?id=${escapeHtml(s.id)}" class="btn btn-secondary btn-sm">Ver</a>
             </div>
           </td>
         </tr>`;
@@ -765,57 +697,13 @@
 
     function showToast(msg, type = 'success') {
       const el = document.createElement('div');
-      el.className = 'form-feedback form-feedback--' + type;
-      el.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:9999;max-width:360px;animation:modal-in 0.2s ease;padding:12px 16px;border-radius:8px;font-size:14px;box-shadow:0 4px 16px rgba(0,0,0,0.15)';
+      el.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:9999;max-width:360px;padding:12px 16px;border-radius:8px;font-size:14px;box-shadow:0 4px 16px rgba(0,0,0,.15)';
       el.style.background = type === 'success' ? 'var(--color-success-light)' : 'var(--color-error-light)';
       el.style.color = type === 'success' ? 'var(--color-success)' : 'var(--color-error)';
       el.style.border = `1px solid ${type === 'success' ? 'var(--color-success-border)' : 'var(--color-error-border)'}`;
       el.textContent = msg;
       document.body.appendChild(el);
       setTimeout(() => el.remove(), type === 'error' ? 10000 : 4000);
-    }
-
-    /* ── Dados sensíveis: show/hide ── */
-    let _sensivelVisivel = false;
-
-    function toggleDadosSensiveis() {
-      _sensivelVisivel = !_sensivelVisivel;
-      const spans = document.querySelectorAll('.dado-sensivel');
-      spans.forEach(span => {
-        if (_sensivelVisivel) {
-          span.textContent = span.dataset.valor || '—';
-          span.classList.remove('dado-oculto');
-          span.classList.add('dado-visivel');
-        } else {
-          span.textContent = '••••••••••••';
-          span.classList.remove('dado-visivel');
-          span.classList.add('dado-oculto');
-        }
-      });
-      const olhoAberto  = document.getElementById('icon-olho-aberto');
-      const olhoFechado = document.getElementById('icon-olho-fechado');
-      const label       = document.getElementById('label-sensivel');
-      if (_sensivelVisivel) {
-        if (olhoAberto)  olhoAberto.hidden  = true;
-        if (olhoFechado) olhoFechado.hidden = false;
-        if (label)       label.textContent  = 'Ocultar dados sensíveis';
-      } else {
-        if (olhoAberto)  olhoAberto.hidden  = false;
-        if (olhoFechado) olhoFechado.hidden = true;
-        if (label)       label.textContent  = 'Mostrar dados sensíveis';
-      }
-    }
-
-    function formatarCPF(cpf) {
-      const d = String(cpf).replace(/\D/g, '');
-      if (d.length !== 11) return cpf;
-      return d.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
-    }
-
-    function formatarCNPJ(cnpj) {
-      const d = String(cnpj).replace(/\D/g, '');
-      if (d.length !== 14) return cnpj;
-      return d.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5');
     }
   </script>
 </body>
