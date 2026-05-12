@@ -148,7 +148,7 @@
       <div class="dash-section">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-4)">
           <h2 style="margin-bottom:0">Solicitações Recentes</h2>
-          <a href="solicitacoes.html" class="btn btn-secondary btn-sm">Ver todas →</a>
+          <a href="estagios.html" class="btn btn-secondary btn-sm">Ver todas →</a>
         </div>
         <div class="table-wrap">
           <table class="data-table">
@@ -276,7 +276,7 @@
       };
       tb.innerHTML = recent.map(s => `
         <tr>
-          <td><code style="font-size:11px;color:var(--color-secondary)">${escapeHtml(s.id||'—')}</code></td>
+          <td><a href="estagio.html?id=${escapeHtml(s.id||'')}" style="text-decoration:none"><code style="font-size:11px;color:var(--color-secondary)">${escapeHtml(s.id||'—')}</code> ↗</a></td>
           <td style="font-weight:500">${escapeHtml(s.nomeEstudante||'—')}</td>
           <td style="font-size:12px">${escapeHtml(s.curso||'—')}</td>
           <td style="font-size:12px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(s.empresa||'—')}</td>
