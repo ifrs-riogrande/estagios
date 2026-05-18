@@ -42,6 +42,8 @@ var GET_ROUTES = {
   'listarCoordenadores':             doGetServidores,
   'obterMeuCadastroOrientador':      doGetServidores,
   'obterMeuCadastroCoordenador':     doGetServidores,
+  'listarMeusOrientandos':           doGetServidores,
+  'listarEstagiosCoordenador':       doGetServidores,
 
   // Agentes
   'listarAgentes':           doGetAgentes,
@@ -238,6 +240,8 @@ function doGetServidores(e) {
   if (action === 'listarCoordenadores')          return listarCoordenadores_(e);
   if (action === 'obterMeuCadastroOrientador')   return obterMeuCadastroOrientador_(e);
   if (action === 'obterMeuCadastroCoordenador')  return obterMeuCadastroCoordenador_(e);
+  if (action === 'listarMeusOrientandos')        return listarMeusOrientandos_(e);
+  if (action === 'listarEstagiosCoordenador')    return listarEstagiosCoordenador_(e);
   return jsonError_('AÃ§Ã£o nÃ£o implementada: ' + action, 'NOT_IMPLEMENTED');
 }
 

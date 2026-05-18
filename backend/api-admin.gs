@@ -854,7 +854,7 @@ function editarEmpresaAdmin_(body) {
       { col: 11, val: san(body.cep)                     }, // L — CEP
       { col: 12, val: san(body.telefone)                }, // M — Telefone
       { col: 13, val: san(body.email).toLowerCase()     }, // N — E-mail
-      { col: 14, val: san(body.site)                    }, // O — Site
+      { col: 14, val: validarUrl_(san(body.site))         }, // O — Site
       { col: 15, val: san(body.nomeRep)                 }, // P — Nome Rep
       { col: 16, val: san(body.cargoRep)                }, // Q — Cargo Rep
       { col: 17, val: san(body.emailRep).toLowerCase()  }, // R — E-mail Rep
@@ -972,12 +972,12 @@ function editarAgente_(body) {
       var campos = [
         [3,  nome],
         [4,  sigla],
-        [6,  san(body.site, 300)],
+        [6,  validarUrl_(san(body.site, 300))],
         [7,  san(body.telefone, 30)],
         [8,  san(body.email, 100).toLowerCase()],
         [9,  san(body.numEdital, 100)],
         [10, san(body.periodo, 100)],
-        [11, san(body.linkEdital, 300)],
+        [11, validarUrl_(san(body.linkEdital, 300))],
         [12, san(body.obs, 1000)],
       ];
       campos.forEach(function(c) {

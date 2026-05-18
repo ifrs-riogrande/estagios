@@ -119,8 +119,8 @@ function cadastrarAgente_(dados) {
   var email = sanitizar_(dados.emailAgente,100).toLowerCase();
   var edital= sanitizar_(dados.numEdital,  100);
   var period= sanitizar_(dados.periodoConvenio, 100);
-  var site  = sanitizar_(dados.siteAgente, 300);
-  var link  = sanitizar_(dados.linkEdital, 300);
+  var site  = validarUrl_(sanitizar_(dados.siteAgente, 300));
+  var link  = validarUrl_(sanitizar_(dados.linkEdital, 300));
   var obs   = sanitizar_(dados.obsAgente,  1000);
 
   if (!nome)  return jsonError_('Nome do agente é obrigatório.', 'VALIDATION');

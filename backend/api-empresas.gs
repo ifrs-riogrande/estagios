@@ -549,7 +549,7 @@ function cadastrarOportunidade_(dados) {
     cargaHoraria,
     remuneracao,
     sanitizar_(dados.beneficios),
-    sanitizar_(dados.comoCandidatar),
+    validarUrl_(sanitizar_(dados.comoCandidatar)),
     sanitizar_(dados.contatoCandidatura),
     sanitizar_(dados.prazoCandidatura),
     sanitizar_(dados.instagram),
@@ -676,7 +676,7 @@ function salvarMeuCadastroEmpresa_(body) {
   var cep           = sanitizar_(body.cep);
   var telEmpresa    = sanitizar_(body.telEmpresa);
   var emailEmp      = sanitizar_(body.emailEmpresa).toLowerCase();
-  var site          = sanitizar_(body.site);
+  var site          = validarUrl_(sanitizar_(body.site));
   var registroProf  = sanitizar_(body.registroProf);
   var blocoProdutor = sanitizar_(body.blocoProdutor);
 

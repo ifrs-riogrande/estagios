@@ -453,3 +453,107 @@ function obterOuCriarAbaCoord_(ss) {
   }
   return sheet;
 }
+
+// ---------------------------------------------------------------------------
+// Meus Orientandos — lista estágios onde o orientador autenticado é responsável
+// ---------------------------------------------------------------------------
+
+function listarMeusOrientandos_(e) {
+  var authToken = e.parameter && e.parameter.authToken;
+  var tokenInfo = validarTokenServidor_(authToken);
+  var email = tokenInfo.email.toLowerCase().trim();
+
+  var ss    = SpreadsheetApp.openById(CFG_SRV.SS_ID);
+  var sheet = ss.getSheetByName('Solicitações');
+  if (!sheet) return jsonOk_([]);
+
+  var dados = sheet.getDataRange().getValues();
+  var lista = [];
+
+  for (var i = 1; i < dados.length; i++) {
+    var linha = dados[i];
+    var emailOri = String(linha[16] || '').toLowerCase().trim(); // COL_SOL.EMAIL_ORIENTADOR
+    if (emailOri !== email) continue;
+
+    lista.push({
+      id:                  String(linha[1]  || ''),   // ID_ESTAGIO
+      nomeEstudante:       String(linha[3]  || ''),   // NOME_ESTUDANTE
+      matricula:           String(linha[4]  || ''),   // MATRICULA
+      curso:               String(linha[5]  || ''),   // CURSO
+      tipoEstagio:         String(linha[9]  || ''),   // TIPO_ESTAGIO
+      empresa:             String(linha[10] || ''),   // NOME_EMPRESA
+      nomeSupervisor:      String(linha[12] || ''),   // NOME_SUPERVISOR
+      dataInicio:          normalizarDataISO_(linha[17]), // DATA_INICIO
+      dataTermino:         normalizarDataISO_(linha[18]), // DATA_TERMINO
+      cargaHorariaSemanal: String(linha[19] || ''),   // CARGA_HOR
+      status:              String(linha[28] || ''),   // STATUS
+      obsSetor:            String(linha[29] || ''),   // OBS_SETOR
+      driveUrl:            String(linha[31] || ''),   // DRIVE_URL
+    });
+  }
+
+  // Mais recentes primeiro
+  lista.reverse();
+  return jsonOk_(lista);
+}
+
+// ---------------------------------------------------------------------------
+// Estágios do Curso — lista estágios pelo curso que o coordenador gerencia
+// ---------------------------------------------------------------------------
+
+function listarEstagiosCoordenador_(e) {
+  var authToken = e.parameter && e.parameter.authToken;
+  var tokenInfo = validarTokenServidor_(authToken);
+  var email = tokenInfo.email.toLowerCase().trim();
+
+  var ss = SpreadsheetApp.openById(CFG_SRV.SS_ID);
+
+  // Localiza o curso do coordenador pela coluna E-mail (índice 3) na aba Coordenadores
+  var sheetCoord = obterOuCriarAbaCoord_(ss);
+  var dadosCoord = sheetCoord.getDataRange().getValues();
+  var curso = '';
+  for (var i = 1; i < dadosCoord.length; i++) {
+    var emailCoord = String(dadosCoord[i][3] || '').toLowerCase().trim(); // E-mail = índice 3
+    if (emailCoord === email) {
+      curso = String(dadosCoord[i][6] || '').trim(); // Curso = índice 6
+      break;
+    }
+  }
+
+  if (!curso) {
+    return jsonError_('Coordenador não encontrado ou sem curso vinculado.', 'NOT_FOUND');
+  }
+
+  // Filtra Solicitações pelo nome do curso (COL_SOL.CURSO = índice 5)
+  var sheetSol = ss.getSheetByName('Solicitações');
+  if (!sheetSol) return jsonOk_({ curso: curso, estagios: [] });
+
+  var dados = sheetSol.getDataRange().getValues();
+  var lista = [];
+
+  for (var j = 1; j < dados.length; j++) {
+    var linha = dados[j];
+    var cursoBanco = String(linha[5] || '').trim(); // CURSO = índice 5
+    if (cursoBanco !== curso) continue;
+
+    lista.push({
+      id:                  String(linha[1]  || ''),
+      nomeEstudante:       String(linha[3]  || ''),
+      matricula:           String(linha[4]  || ''),
+      curso:               String(linha[5]  || ''),
+      tipoEstagio:         String(linha[9]  || ''),
+      empresa:             String(linha[10] || ''),
+      nomeOrientador:      String(linha[15] || ''),
+      nomeSupervisor:      String(linha[12] || ''),
+      dataInicio:          normalizarDataISO_(linha[17]),
+      dataTermino:         normalizarDataISO_(linha[18]),
+      cargaHorariaSemanal: String(linha[19] || ''),
+      status:              String(linha[28] || ''),
+      obsSetor:            String(linha[29] || ''),
+      driveUrl:            String(linha[31] || ''),
+    });
+  }
+
+  lista.reverse();
+  return jsonOk_({ curso: curso, estagios: lista });
+}

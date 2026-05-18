@@ -97,6 +97,21 @@ function validarEmail_(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(String(email || '').trim());
 }
 
+/**
+ * Valida que uma URL use protocolo seguro (https:// ou http://).
+ * Bloqueia javascript:, data:, vbscript: etc.
+ * Retorna a URL limpa se válida, ou '' se inválida ou vazia.
+ *
+ * @param {string} url
+ * @returns {string}
+ */
+function validarUrl_(url) {
+  var s = String(url || '').trim();
+  if (!s) return '';
+  if (/^https?:\/\//i.test(s)) return s;
+  return ''; // Bloqueia qualquer outro protocolo
+}
+
 // ---------------------------------------------------------------------------
 // Rate limiting simples via PropertiesService
 // ---------------------------------------------------------------------------

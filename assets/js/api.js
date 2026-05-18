@@ -338,6 +338,11 @@ async function apiObterMeuCadastroCoordenador() {
   return API.get('obterMeuCadastroCoordenador', { authToken: getAccessToken() });
 }
 
+/** Lista estágios do curso que o coordenador autenticado gerencia. */
+async function apiListarEstagiosCoordenador() {
+  return API.get('listarEstagiosCoordenador', { authToken: getAccessToken() });
+}
+
 // ─────────────────────────────────────────
 //  ADMIN — chamadas restritas ao setor
 // ─────────────────────────────────────────
