@@ -442,11 +442,13 @@
               <span class="hist-item-title">${escapeHtml(d.titulo||'—')}</span>
               <span class="hist-item-date">${escapeHtml(d.data||'—')}</span>
             </div>
-            <div class="hist-item-meta">Enviado por: ${escapeHtml(d.perfil==='Admin'?'Setor de Estágios':'Você')}</div>
-            ${d.linkDrive ? `<a href="${escapeHtml(d.linkDrive)}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm" style="margin-top:var(--space-2)">
-              <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
-              Baixar ↗
-            </a>` : ''}
+            <div class="hist-item-meta">Enviado por: ${escapeHtml(d.perfil==='Admin'?'Setor de Estágios':'Você')}${d.nomeArquivo?' · '+escapeHtml(d.nomeArquivo):''}</div>
+            ${d.linkDrive
+              ? `<a href="${escapeHtml(d.linkDrive)}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm" style="margin-top:var(--space-2)">
+                  <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+                  Baixar ↗
+                </a>`
+              : `<span style="font-size:var(--font-size-xs);color:var(--color-text-light);margin-top:var(--space-1);display:block">Arquivo registrado — link disponível após aprovação do estágio</span>`}
           </div>`;
         });
         html += `</div>`;
