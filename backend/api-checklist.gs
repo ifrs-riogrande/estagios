@@ -35,189 +35,106 @@ var CK_STATUS = {
   RECUSADO:     'recusado',
 };
 
-// ── Templates de itens por ator ──────────────────────────────────────────────
+// ── Itens do checklist — gerados a partir dos campos da solicitação ──────────
 
 /**
- * Itens do Orientador (1º ator):
- *   - Aceite de orientação (obrigatório, 1º item)
- *   - Itens do papel de orientador
- *   - Itens do papel de coordenador de curso
+ * Gera lista de itens do checklist baseada nos campos reais da solicitação.
+ * Todos os 3 atores recebem a mesma lista; a diferença de exibição
+ * (ocultar sensível, mostrar/ocultar docs) é tratada no frontend pelas flags:
+ *   sensivel: true  → exibido mascarado para orientador/supervisor; admin vê tudo
+ *   isDoc:    true  → supervisor não vê; orientador e admin veem com link + checkbox
+ *
+ * @param {Object} sol  Dados completos da solicitação (de _obterDadosSolicitacaoCompleto_)
  */
-function itensChecklistOrientador_() {
-  return [
-    // ── Aceite de orientação ──────────────────────────────────────────────
-    {
-      id:          'aceite_orientacao',
-      label:       'Aceito assumir a orientação deste estágio',
-      auto:        false,
-      checked:     false,
-      obs:         '',
-      obrigatorio: true,  // se false → recusa (fluxo especial)
-    },
-    // ── Papel de orientador ───────────────────────────────────────────────
-    {
-      id:      'dados_orientador',
-      label:   'Confirmo meus dados como orientador nesta solicitação',
-      auto:    false, checked: false, obs: '',
-    },
-    {
-      id:      'coerencia_ppc',
-      label:   'As atividades de estágio são coerentes com o PPC do curso',
-      auto:    false, checked: false, obs: '',
-    },
-    {
-      id:      'qualidade_pedagogica',
-      label:   'As atividades propostas têm qualidade pedagógica adequada',
-      auto:    false, checked: false, obs: '',
-    },
-    {
-      id:      'compatibilidade',
-      label:   'As atividades são compatíveis com a formação do estudante',
-      auto:    false, checked: false, obs: '',
-    },
-    {
-      id:      'formacao_area',
-      label:   'Tenho formação ou experiência na área do estágio',
-      auto:    false, checked: false, obs: '',
-    },
-    {
-      id:      'disponibilidade_ch',
-      label:   'Tenho disponibilidade de carga horária para esta orientação',
-      auto:    false, checked: false, obs: '',
-    },
-    // ── Papel de coordenador de curso ─────────────────────────────────────
-    {
-      id:      'conformidade_curso',
-      label:   'O estágio está em conformidade com os requisitos do curso',
-      auto:    false, checked: false, obs: '',
-    },
-    {
-      id:      'etapa_adequada',
-      label:   'O estudante está na etapa adequada do curso para realizar estágio',
-      auto:    false, checked: false, obs: '',
-    },
-    {
-      id:      'carga_horaria_curso',
-      label:   'A carga horária semanal está dentro dos limites permitidos pelo curso',
-      auto:    false, checked: false, obs: '',
-    },
-  ];
+function itensCamposSolicitacao_(sol) {
+  var itens = [];
+
+  function add(id, label, valor, opts) {
+    opts = opts || {};
+    if (opts.skipIf) return;
+    itens.push({
+      id:       id,
+      label:    label,
+      valor:    String(valor || ''),
+      sensivel: !!opts.sensivel,
+      isDoc:    !!opts.isDoc,
+      secao:    opts.secao  || 'geral',
+      checked:  false,
+      obs:      '',
+      auto:     false,
+    });
+  }
+
+  var temAgente    = !!(sol.nomeAgente      && String(sol.nomeAgente).trim());
+  var temResp      = !!(sol.nomeResp        && String(sol.nomeResp).trim());
+  var temNEE       = !!(sol.nee             && String(sol.nee).trim()
+                        && String(sol.nee).toLowerCase() !== 'não'
+                        && String(sol.nee).toLowerCase() !== 'nao');
+  var temBolsa     = !!(sol.valorBolsa      && String(sol.valorBolsa).trim()
+                        && String(sol.valorBolsa) !== '0');
+  var temTransp    = !!(sol.valorTransporte && String(sol.valorTransporte).trim()
+                        && String(sol.valorTransporte) !== '0');
+  var temObjetivos = !!(sol.objetivos       && String(sol.objetivos).trim());
+
+  // ── Dados do Estudante ─────────────────────────────────────────────────────
+  add('nome_estudante',  'Nome',                   sol.nomeEstudante,  { secao: 'estudante' });
+  add('matricula',       'Matrícula',              sol.matricula,      { secao: 'estudante' });
+  add('curso',           'Curso',                  sol.curso,          { secao: 'estudante' });
+  add('turno',           'Turno',                  sol.turno,          { secao: 'estudante' });
+  add('semestre',        'Semestre / Período',     sol.semestre,       { secao: 'estudante' });
+  add('formando',        'Formando no período',    sol.formando,       { secao: 'estudante' });
+  add('email_estudante', 'E-mail Institucional',   sol.emailEstudante, { secao: 'estudante' });
+  add('telefone',        'Telefone',               sol.telefone,       { secao: 'estudante' });
+  add('cpf',             'CPF',                    sol.cpf,            { secao: 'estudante', sensivel: true });
+  add('data_nasc',       'Data de Nascimento',     _fmtDataCk_(sol.dataNasc), { secao: 'estudante', sensivel: true });
+  if (temNEE) add('nee', 'Necessidades Específicas', sol.nee,          { secao: 'estudante' });
+
+  // ── Dados do Estágio ───────────────────────────────────────────────────────
+  add('tipo_estagio',    'Tipo de Estágio',         sol.tipoEstagio,    { secao: 'estagio' });
+  add('nome_empresa',    'Empresa',                 sol.nomeEmpresa,    { secao: 'estagio' });
+  add('cnpj_empresa',    'CNPJ',                    sol.cnpjEmpresa,    { secao: 'estagio' });
+  add('nome_supervisor', 'Supervisor na Empresa',   sol.nomeSupervisor, { secao: 'estagio' });
+  add('email_supervisor','E-mail do Supervisor',    sol.emailSupervisor,{ secao: 'estagio' });
+  add('data_inicio',     'Data de Início',          _fmtDataCk_(sol.dataInicio),  { secao: 'estagio' });
+  add('data_termino',    'Data de Término',         _fmtDataCk_(sol.dataTermino), { secao: 'estagio' });
+  add('carga_horaria',   'Carga Horária Semanal',   sol.cargaHoraria ? sol.cargaHoraria + ' h/semana' : '', { secao: 'estagio' });
+  add('horario',         'Horário',                 sol.horario,        { secao: 'estagio' });
+  add('remuneracao',     'Remuneração',             sol.remuneracao,    { secao: 'estagio' });
+  if (temBolsa)  add('valor_bolsa',      'Valor da Bolsa',     sol.valorBolsa,      { secao: 'estagio' });
+  if (temTransp) add('valor_transporte', 'Auxílio Transporte', sol.valorTransporte, { secao: 'estagio' });
+
+  // ── Agente de Integração ───────────────────────────────────────────────────
+  if (temAgente) add('nome_agente', 'Agente de Integração', sol.nomeAgente, { secao: 'agente' });
+
+  // ── Plano de Atividades ────────────────────────────────────────────────────
+  add('plano_atividades', 'Plano de Atividades', sol.planoAtividades, { secao: 'plano' });
+  if (temObjetivos) add('objetivos', 'Objetivos', sol.objetivos, { secao: 'plano' });
+
+  // ── Responsável Legal (menores de 18) ──────────────────────────────────────
+  if (temResp) {
+    add('nome_resp', 'Nome do Responsável Legal',     sol.nomeResp, { secao: 'responsavel' });
+    add('cpf_resp',  'CPF do Responsável Legal',      sol.cpfResp,  { secao: 'responsavel', sensivel: true });
+    add('tel_resp',  'Telefone do Responsável Legal', sol.telResp,  { secao: 'responsavel' });
+  }
+
+  // ── Documentos (supervisor não vê — filtrado no frontend via isDoc) ─────────
+  if (sol.linkDocMat) add('doc_matricula',  'Comprovante de Matrícula', sol.linkDocMat,  { secao: 'documentos', isDoc: true });
+  if (sol.linkDocId)  add('doc_identidade', 'Documento de Identidade',  sol.linkDocId,   { secao: 'documentos', isDoc: true });
+  if (sol.linkDocBol) add('doc_boletim',    'Boletim',                  sol.linkDocBol,  { secao: 'documentos', isDoc: true });
+
+  return itens;
 }
 
 /**
- * Itens do Supervisor (2º ator):
- *   - Itens do papel de supervisor
- *   - Verificação da empresa
+ * Formata um valor de data (Date ou string) como dd/MM/yyyy.
  */
-function itensChecklistSupervisor_() {
-  return [
-    // ── Papel de supervisor ───────────────────────────────────────────────
-    {
-      id:      'identificacao_ok',
-      label:   'Estou corretamente identificado como supervisor nesta solicitação',
-      auto:    false, checked: false, obs: '',
-    },
-    {
-      id:      'plano_atividades',
-      label:   'O plano de atividades é adequado ao perfil do estagiário',
-      auto:    false, checked: false, obs: '',
-    },
-    {
-      id:      'atividades_viaveis',
-      label:   'As atividades propostas são viáveis no ambiente de trabalho',
-      auto:    false, checked: false, obs: '',
-    },
-    {
-      id:      'aceite_supervisao',
-      label:   'Aceito formalmente a responsabilidade de supervisão deste estágio',
-      auto:    false, checked: false, obs: '',
-    },
-    // ── Verificação da empresa ────────────────────────────────────────────
-    {
-      id:      'dados_empresa',
-      label:   'Os dados da empresa estão corretos e atualizados',
-      auto:    false, checked: false, obs: '',
-    },
-    {
-      id:      'jornada_ch',
-      label:   'A jornada e carga horária estão conforme a solicitação',
-      auto:    false, checked: false, obs: '',
-    },
-    {
-      id:      'bolsa_beneficios',
-      label:   'A bolsa e benefícios estão corretos (se aplicável)',
-      auto:    false, checked: false, obs: '',
-    },
-    {
-      id:          'seguro_acidentes',
-      label:       'O seguro contra acidentes pessoais está confirmado',
-      auto:        false, checked: false, obs: '',
-      bloqueante:  true,
-    },
-    {
-      id:      'ambiente_adequado',
-      label:   'O ambiente de trabalho é adequado para receber estagiário',
-      auto:    false, checked: false, obs: '',
-    },
-  ];
-}
-
-/**
- * Itens do Admin — dois deles são calculados automaticamente pelo sistema.
- * @param {Object} sol  Campos da solicitação: { dataNasc, dataInicio, nomeAgente }
- */
-function itensChecklistAdmin_(sol) {
-  var temAgente = !!(sol.nomeAgente && String(sol.nomeAgente).trim());
-  var idade     = calcularIdade_(sol.dataNasc, sol.dataInicio);
-  var atingiu16 = idade !== null && idade >= 16;
-  var menorDe18 = idade !== null && idade < 18;
-
-  return [
-    {
-      id:      'comprovante_matricula',
-      label:   'Comprovante de Matrícula enviado e atualizado',
-      auto:    false, checked: false, obs: '',
-    },
-    {
-      id:      'matricula_ativa',
-      label:   'Matrícula ativa e estudante frequente',
-      auto:    false, checked: false, obs: '',
-    },
-    {
-      id:      'frequencia_minima',
-      label:   'Frequência mínima atendida (≥75% global para EMI ou ≥75% em ao menos 1 componente curricular para cursos semestrais)',
-      auto:    false, checked: false, obs: '',
-    },
-    {
-      id:          'acordo_cooperacao',
-      label:       'Acordo de cooperação firmado com o agente de integração',
-      auto:        false,
-      condicional: true,
-      ativo:       temAgente,
-      checked:     !temAgente,
-      obs:         temAgente ? '' : 'Não se aplica — sem agente de integração',
-    },
-    {
-      id:      'idade_minima_16',
-      label:   'Idade mínima de 16 anos completos na data de início do estágio',
-      auto:    true,
-      checked: atingiu16,
-      valor:   idade !== null ? idade + ' anos na data de início' : 'Data de nascimento não informada',
-      obs:     '',
-    },
-    {
-      id:      'menor_18_flag',
-      label:   'Menor de 18 anos — exige autorização do responsável legal',
-      auto:    true,
-      flag:    true,
-      ativo:   menorDe18,
-      checked: !menorDe18,
-      valor:   menorDe18
-               ? 'Sim — solicitar Autorização do Responsável Legal ao estudante'
-               : 'Não se aplica',
-      obs:     '',
-    },
-  ];
+function _fmtDataCk_(v) {
+  if (!v) return '';
+  try {
+    var d = (v instanceof Date) ? v : new Date(v);
+    if (isNaN(d.getTime())) return String(v);
+    return Utilities.formatDate(d, Session.getScriptTimeZone(), 'dd/MM/yyyy');
+  } catch (e) { return String(v || ''); }
 }
 
 // ── Prazos ────────────────────────────────────────────────────────────────────
@@ -277,9 +194,27 @@ function calcularPrazoVencimento_(diasUteis) {
  * @param {string} idEstagio
  * @param {Object} sol  { dataNasc, dataInicio, nomeAgente, tokenOrientador }
  */
-function iniciarChecklist_(idEstagio, sol) {
+function iniciarChecklist_(idEstagio, opts) {
   var prazos          = obterPrazos_();
-  var tokenOrientador = (sol && sol.tokenOrientador) ? sol.tokenOrientador : Utilities.getUuid();
+  var tokenOrientador = (opts && opts.tokenOrientador) ? opts.tokenOrientador : Utilities.getUuid();
+
+  var solCompleto = _obterDadosSolicitacaoCompleto_(idEstagio);
+  var itensBase   = itensCamposSolicitacao_(solCompleto);
+
+  // Orientador recebe o aceite formal como 1º item
+  var itemAceite = {
+    id:       'aceite_orientacao',
+    label:    'Aceito formalmente a orientação deste estágio',
+    valor:    '',
+    sensivel: false,
+    isDoc:    false,
+    secao:    'aceite',
+    checked:  false,
+    obs:      '',
+    auto:     false,
+    obrigatorio: true,
+  };
+  var itensOrientador = [itemAceite].concat(itensBase);
 
   var checklist = {
     idEstagio:          idEstagio,
@@ -296,7 +231,7 @@ function iniciarChecklist_(idEstagio, sol) {
       prazoVencimento:   calcularPrazoVencimento_(prazos.checklist.orientador),
       lembretesEnviados: 0,
       token:             tokenOrientador,
-      itens:             itensChecklistOrientador_(),
+      itens:             itensOrientador,
     },
 
     // 2º ator — liberado após orientador aprovar
@@ -422,7 +357,7 @@ function salvarRespostaAtor_(idEstagio, ator, itens, decisao, obs, emailAtor, to
         prazoVencimento:   calcularPrazoVencimento_(prazos.checklist.supervisor),
         lembretesEnviados: 0,
         token:             tokenSupervisor,
-        itens:             itensChecklistSupervisor_(),
+        itens:             itensCamposSolicitacao_(solOri),
       };
       checklist.etapaAtiva = 'supervisor';
       try { _notificarSupervisorChecklist_(idEstagio, checklist); } catch (e) { logErro_('_notificarSupervisorChecklist_', e); }
@@ -437,11 +372,7 @@ function salvarRespostaAtor_(idEstagio, ator, itens, decisao, obs, emailAtor, to
         obs:               '',
         prazoVencimento:   calcularPrazoVencimento_(prazos.checklist.admin),
         lembretesEnviados: 0,
-        itens:             itensChecklistAdmin_({
-          dataNasc:   solAdm.dataNasc   || '',
-          dataInicio: solAdm.dataInicio || '',
-          nomeAgente: solAdm.nomeAgente || '',
-        }),
+        itens:             itensCamposSolicitacao_(solAdm),
       };
       checklist.etapaAtiva = 'admin';
       try { _notificarAdminNovoChecklist_(idEstagio, {}, checklist); } catch (e) { logErro_('_notificarAdminNovoChecklist_', e); }
