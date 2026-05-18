@@ -351,6 +351,16 @@
     .ck-locked-section{display:flex;align-items:center;gap:var(--space-2);font-size:var(--font-size-sm);color:var(--color-text-muted);font-style:italic;padding:var(--space-3) var(--space-4);width:100%;}
     .ck-doc-btn{display:inline-flex;align-items:center;gap:4px;font-size:var(--font-size-xs);font-weight:var(--font-weight-medium);color:var(--color-primary);text-decoration:none;background:var(--color-info-light);border:1px solid var(--color-info-border);border-radius:var(--radius-sm);padding:2px 8px;margin-top:var(--space-1);transition:background .1s;white-space:nowrap;}
     .ck-doc-btn:hover{background:var(--color-info-border);}
+    /* Extra (avulso) docs */
+    .ck-avulso-list{display:flex;flex-direction:column;gap:var(--space-2);width:100%;padding:var(--space-1) 0;}
+    .ck-avulso-item{display:flex;align-items:flex-start;gap:var(--space-3);padding:var(--space-3) var(--space-4);border:1px solid var(--color-border);border-radius:var(--radius-md);background:var(--color-bg);transition:background .1s;}
+    .ck-avulso-item:hover{background:var(--color-surface);}
+    .ck-avulso-cb{margin-top:2px;width:16px;height:16px;cursor:pointer;accent-color:var(--color-success);}
+    .ck-avulso-body{flex:1;min-width:0;}
+    .ck-avulso-titulo{font-size:var(--font-size-sm);font-weight:var(--font-weight-medium);color:var(--color-text);word-break:break-word;}
+    .ck-avulso-meta{font-size:var(--font-size-xs);color:var(--color-text-muted);margin-top:2px;}
+    .ck-avulso-revisado-label{font-size:var(--font-size-xs);color:var(--color-success);font-weight:var(--font-weight-medium);margin-left:var(--space-2);}
+    .ck-avulso-empty{font-size:var(--font-size-sm);color:var(--color-text-muted);font-style:italic;padding:var(--space-2) 0;}
     .ck-item-label-wrap{flex:1;display:flex;flex-direction:column;gap:3px;}
     .ck-prazo-inline{display:flex;align-items:center;gap:var(--space-3);padding:var(--space-3) var(--space-5);border-bottom:1px solid var(--color-border);font-size:var(--font-size-sm);color:var(--color-text-muted);margin-bottom:var(--space-3);}
     .ck-checklist-title{font-size:var(--font-size-sm);font-weight:var(--font-weight-semibold);color:var(--color-text);margin:var(--space-5) 0 var(--space-3);padding-bottom:var(--space-2);border-bottom:2px solid var(--color-border);}
@@ -906,10 +916,102 @@
       if (info.linkDocBol) dH += `<div class="ck-field">${ckDoc('Boletim',                  info.linkDocBol)}</div>`;
       if (info.driveUrl)   dH += `<div class="ck-field">${ckDoc('Pasta Drive do Estágio',   info.driveUrl)}</div>`;
       if (!dH) dH = '<div class="ck-locked-section">Documentos ainda não disponíveis (gerados após aprovação).</div>';
+      // Placeholder for extra (avulso) docs loaded asynchronously
+      dH += `<div class="ck-field ck-field-full" style="margin-top:var(--space-3)">
+        <span class="ck-field-label">Documentos Adicionais</span>
+        <div id="ck-docs-avulsos-container"><span class="ck-avulso-empty">Carregando…</span></div>
+      </div>`;
       html += ckSec('📎 Documentos', dH);
     }
 
     card.innerHTML = html;
+
+    // Carrega documentos avulsos de forma assíncrona (admin only)
+    if (ator === 'admin') {
+      const _idEst = info.idEstagio || new URLSearchParams(window.location.search).get('id') || '';
+      carregarDocsAvulsos(_idEst);
+    }
+  }
+
+  // ── Documentos Avulsos (admin) ────────────────────────────────
+  async function carregarDocsAvulsos(idEstagio) {
+    const container = document.getElementById('ck-docs-avulsos-container');
+    if (!container) return;
+
+    try {
+      const res  = await apiListarDocumentosAvulsos(idEstagio);
+      const docs = (res && res.documentos) ? res.documentos : [];
+
+      if (docs.length === 0) {
+        container.innerHTML = '<span class="ck-avulso-empty">Nenhum documento adicional enviado.</span>';
+        return;
+      }
+
+      const ul = document.createElement('div');
+      ul.className = 'ck-avulso-list';
+
+      docs.forEach(doc => {
+        const item = document.createElement('div');
+        item.className = 'ck-avulso-item';
+
+        const cbId = `ck-avulso-cb-${doc.id}`;
+        const dataStr = doc.timestamp
+          ? new Date(doc.timestamp).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' })
+          : '';
+
+        item.innerHTML = `
+          <input type="checkbox" class="ck-avulso-cb" id="${cbId}"
+            data-doc-id="${escapeHtml(doc.id)}" ${doc.revisadoAdmin ? 'checked' : ''}>
+          <div class="ck-avulso-body">
+            <div class="ck-avulso-titulo">${escapeHtml(doc.titulo)}
+              ${doc.revisadoAdmin ? '<span class="ck-avulso-revisado-label">✓ Revisado</span>' : ''}
+            </div>
+            <div class="ck-avulso-meta">
+              ${escapeHtml(doc.nomeArquivo)}${dataStr ? ' · ' + dataStr : ''}
+              ${doc.emailUploader ? ' · ' + escapeHtml(doc.emailUploader) : ''}
+            </div>
+            ${doc.url ? `<a href="${escapeHtml(doc.url)}" target="_blank" rel="noopener" class="ck-doc-btn">
+              <svg width="11" height="11" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clip-rule="evenodd"/></svg>
+              Abrir documento ↗
+            </a>` : ''}
+          </div>`;
+
+        // Toggle revisado ao clicar no checkbox
+        const cb = item.querySelector('.ck-avulso-cb');
+        cb.addEventListener('change', async () => {
+          cb.disabled = true;
+          try {
+            await apiMarcarDocumentoRevisado(idEstagio, doc.id, cb.checked, '');
+            // Atualiza o label inline
+            const tituloEl = item.querySelector('.ck-avulso-titulo');
+            const existingLabel = tituloEl.querySelector('.ck-avulso-revisado-label');
+            if (cb.checked) {
+              if (!existingLabel) {
+                const lbl = document.createElement('span');
+                lbl.className = 'ck-avulso-revisado-label';
+                lbl.textContent = '✓ Revisado';
+                tituloEl.appendChild(lbl);
+              }
+            } else {
+              if (existingLabel) existingLabel.remove();
+            }
+          } catch (err) {
+            cb.checked = !cb.checked; // reverte em caso de erro
+            console.error('Erro ao marcar documento:', err);
+          } finally {
+            cb.disabled = false;
+          }
+        });
+
+        ul.appendChild(item);
+      });
+
+      container.innerHTML = '';
+      container.appendChild(ul);
+    } catch (err) {
+      console.error('Erro ao carregar documentos avulsos:', err);
+      container.innerHTML = '<span class="ck-avulso-empty">Erro ao carregar documentos adicionais.</span>';
+    }
   }
 
   // ── Doc-map: item id → document key ──────────────────────────

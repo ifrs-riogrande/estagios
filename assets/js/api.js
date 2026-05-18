@@ -387,6 +387,31 @@ async function apiListarDocumentosAdmin() {
   return API.get('listarDocumentosAdmin', { authToken: getAccessToken() });
 }
 
+/**
+ * Lista documentos avulsos enviados pelo estudante (e revisados ou não pelo admin).
+ * Requer token Admin.
+ */
+async function apiListarDocumentosAvulsos(idEstagio) {
+  return API.get('listarDocumentosAvulsos', { authToken: getAccessToken(), idEstagio });
+}
+
+/**
+ * Marca (ou desmarca) um documento avulso como revisado pelo admin.
+ * @param {string}  idEstagio
+ * @param {string}  docId
+ * @param {boolean} revisado
+ * @param {string}  [obsAdmin]
+ */
+async function apiMarcarDocumentoRevisado(idEstagio, docId, revisado, obsAdmin = '') {
+  return API.post('marcarDocumentoRevisado', {
+    authToken: getAccessToken(),
+    idEstagio,
+    docId,
+    revisado,
+    obsAdmin,
+  });
+}
+
 /** Lista alunos cadastrados. */
 async function apiListarAlunosAdmin(filtros = {}) {
   return API.get('listarAlunosAdmin', { authToken: getAccessToken(), ...filtros });

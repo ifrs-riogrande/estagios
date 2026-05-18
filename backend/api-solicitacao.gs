@@ -130,10 +130,22 @@ var COL_ADENDO = {
 
 // ---------------------------------------------------------------------------
 // Roteamento
+// Nota: Code.gs é o roteador principal. Estas funções servem como fallback
+// caso o GAS carregue este arquivo por último na ordem alfabética.
 // ---------------------------------------------------------------------------
 
 function doGet(e) {
-  return jsonError_('Método não suportado.', 'METHOD_NOT_ALLOWED');
+  try {
+    var action = (e.parameter && e.parameter.action) || '';
+    if (action === 'verificarAceiteOrientador') return verificarAceiteOrientador_(e);
+    if (action === 'listarHistoricoEstagio')    return listarHistoricoEstagio_(e);
+    if (action === 'verificarIdEstagio')        return verificarIdEstagio_(e);
+    if (action === 'listarDocumentosAvulsos')   return listarDocumentosAvulsos_(e);
+    return jsonError_('Ação GET não reconhecida em solicitacao: ' + action, 'UNKNOWN_ACTION');
+  } catch (err) {
+    logErro_('api-solicitacao.doGet', err);
+    return jsonError_('Erro interno.', 'INTERNAL');
+  }
 }
 
 function doPost(e) {
@@ -147,10 +159,16 @@ function doPost(e) {
   try {
     var action = dados.action || '';
     switch (action) {
-      case 'solicitarEstagio':        return solicitarEstagio_(dados);
-      case 'enviarRelatorioParcial':  return enviarRelatorioParcial_(dados);
-      case 'enviarRelatorioFinal':    return enviarRelatorioFinal_(dados);
-      case 'enviarAdendo':            return enviarAdendo_(dados);
+      case 'solicitarEstagio':          return solicitarEstagio_(dados);
+      case 'enviarRelatorioParcial':    return enviarRelatorioParcial_(dados);
+      case 'enviarRelatorioFinal':      return enviarRelatorioFinal_(dados);
+      case 'enviarAdendo':              return enviarAdendo_(dados);
+      case 'enviarDocumentosAssinados': return enviarDocumentosAssinados_(dados);
+      case 'enviarDocumentoDG':         return enviarDocumentoDG_(dados);
+      case 'responderAceiteOrientador': return responderAceiteOrientador_(dados);
+      case 'trocarOrientador':          return trocarOrientador_(dados);
+      case 'uploadDocumentoEstagio':    return uploadDocumentoEstagio_(dados);
+      case 'marcarDocumentoRevisado':   return marcarDocumentoRevisado_(dados);
       default:
         return jsonError_('Ação não reconhecida.', 'UNKNOWN_ACTION');
     }
@@ -196,12 +214,13 @@ function solicitarEstagio_(dados) {
   var remuneracao    = sanitizar_(dados.remunerado, 5);
   var valorBolsa     = sanitizar_(dados.valorBolsa, 20);
   var valorTransp    = sanitizar_(dados.valorTransporte, 20);
-  var planoAtiv      = sanitizar_(dados.planoAtividades, 2000);
+  var planoAtiv      = sanitizar_(dados.atividadesPrevistas || dados.planoAtividades, 2000);
   var objetivos      = sanitizar_(dados.objetivos, 2000);
   var formando       = sanitizar_(dados.formando, 50).indexOf('Sim') === 0 ? 'Sim' : 'Não';
-  var docMat         = sanitizar_(dados.docMatricula, 200);
-  var docId          = sanitizar_(dados.docIdentidade, 200);
-  var docBol         = sanitizar_(dados.docBoletim, 200);
+  // docs de admissão: chegam como { nome, base64 } do frontend
+  var arqMat = (dados.docMatricula  && dados.docMatricula.base64)  ? dados.docMatricula  : null;
+  var arqId  = (dados.docIdentidade && dados.docIdentidade.base64) ? dados.docIdentidade : null;
+  var arqBol = (dados.docBoletim    && dados.docBoletim.base64)    ? dados.docBoletim    : null;
   // Curso e matrícula específicos deste estágio (podem diferir do curso principal do estudante)
   var cursoEstagio     = sanitizar_(dados.cursoEstagio     || dados.curso,     100) || estudante.curso;
   var matriculaEstagio = sanitizar_(dados.matriculaEstagio || dados.matricula, 20).replace(/\D/g, '') || estudante.matricula;
@@ -270,9 +289,54 @@ function solicitarEstagio_(dados) {
   // Gera ID único
   var idEstagio = gerarIdEstagio_();
 
-  // Nota: a pasta no Drive é criada somente quando o setor APROVAR a solicitação
-  // (api-admin.gs :: aprovarSolicitacao_ → criarPastaEstagioNova_).
-  // Não criamos pasta aqui para não gerar lixo caso a solicitação seja reprovada.
+  // Cria pasta no Drive imediatamente para armazenar os documentos de admissão.
+  // Estrutura: Estágios SGE / CPF / Matrícula / ID — Nome
+  // Mesmo que a solicitação seja reprovada depois, a pasta já existe e pode ser reutilizada.
+  var rootDriveName = (typeof CFG_ADMIN !== 'undefined' && CFG_ADMIN.DRIVE_ROOT_NAME)
+                      ? CFG_ADMIN.DRIVE_ROOT_NAME : 'Estágios SGE';
+  var driveUrlSol  = '';
+  var docMatLink   = '';
+  var docIdLink    = '';
+  var docBolLink   = '';
+
+  try {
+    var cpfFolder  = (estudante.cpf || 'SEM_CPF').replace(/\D/g, '') || 'SEM_CPF';
+    var matrFolder = matriculaEstagio || 'SEM_MATRICULA';
+    var nomeFolder = estudante.nome   || '';
+
+    var raizDrive  = obterOuCriarPasta_(null,       rootDriveName);
+    var pastaCpf   = obterOuCriarPasta_(raizDrive,  cpfFolder);
+    var pastaMatr  = obterOuCriarPasta_(pastaCpf,   matrFolder);
+    var pastaEst   = obterOuCriarPasta_(pastaMatr,  idEstagio + (nomeFolder ? ' — ' + nomeFolder : ''));
+    driveUrlSol    = pastaEst.getUrl();
+
+    // Sobe cada documento de admissão
+    var pastaAdm = obterOuCriarPasta_(pastaEst, 'Documentos Admissão');
+
+    var uploadArqAdm_ = function(arq) {
+      if (!arq || !arq.base64 || !arq.nome) return '';
+      try {
+        var ext  = String(arq.nome).split('.').pop().toLowerCase();
+        var mime = ext === 'pdf'  ? 'application/pdf'
+                 : ext === 'png'  ? 'image/png'
+                 : ext === 'jpg' || ext === 'jpeg' ? 'image/jpeg'
+                 : 'application/octet-stream';
+        var bytes = Utilities.base64Decode(arq.base64);
+        var blob  = Utilities.newBlob(bytes, mime, sanitizarNomeArquivo_(arq.nome));
+        var file  = pastaAdm.createFile(blob);
+        file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+        return file.getUrl();
+      } catch (eU) { logErro_('solicitarEstagio_.uploadAdm', eU); return ''; }
+    };
+
+    docMatLink = uploadArqAdm_(arqMat);
+    docIdLink  = uploadArqAdm_(arqId);
+    docBolLink = uploadArqAdm_(arqBol);
+
+  } catch (eDrive) {
+    logErro_('solicitarEstagio_.drive', eDrive);
+    // Drive falhou mas não bloqueia a submissão — docs ficam sem link
+  }
 
   // Monta linha
   var now  = new Date();
@@ -314,23 +378,32 @@ function solicitarEstagio_(dados) {
   linha[COL_SOL.CPF_RESP]           = cpfResp;
   linha[COL_SOL.TEL_RESP]           = telResp;
   linha[COL_SOL.NEE]                = estudante.nee || 'Não';
-  linha[COL_SOL.LINK_DOC_MAT]       = docMat;
-  linha[COL_SOL.LINK_DOC_ID]      = docId;
-  linha[COL_SOL.LINK_DOC_BOL]     = docBol;
-  // Status inicial: aguarda o orientador aceitar antes de ir para o checklist
-  linha[COL_SOL.STATUS]           = 'Aguardando aceite orientador';
-  linha[COL_SOL.OBS_SETOR]        = '';
-  linha[COL_SOL.MOTIVO_REPROVACAO]= '';
-  linha[COL_SOL.DRIVE_URL]        = '';
+  linha[COL_SOL.LINK_DOC_MAT]       = docMatLink;
+  linha[COL_SOL.LINK_DOC_ID]       = docIdLink;
+  linha[COL_SOL.LINK_DOC_BOL]      = docBolLink;
+  // Status inicial: checklist já inicia imediatamente com o orientador
+  linha[COL_SOL.STATUS]            = 'Em Checklist';
+  linha[COL_SOL.OBS_SETOR]         = '';
+  linha[COL_SOL.MOTIVO_REPROVACAO] = '';
+  linha[COL_SOL.DRIVE_URL]         = driveUrlSol;
+  // Token de acesso ao checklist do orientador (magic-link)
   var aceiteToken = Utilities.getUuid();
   linha[COL_SOL.TOKEN_ACEITE_ORI] = aceiteToken;
 
   sheet.appendRow(linha);
 
-  // ── NÃO inicia o checklist aqui — só após o orientador aceitar ──────────
+  // ── Inicia o checklist imediatamente (1º ator: orientador) ───────────────
+  try {
+    iniciarChecklist_(idEstagio, {
+      dataNasc:        estudante.dataNasc || '',
+      dataInicio:      dataInicio,
+      nomeAgente:      nomeAgente,
+      tokenOrientador: aceiteToken,
+    });
+  } catch (eCk) { logErro_('solicitarEstagio_.checklist', eCk); }
 
   // ── Notificações ─────────────────────────────────────────────────────────
-  // 1. Estudante: confirmação de envio, aguardando aceite
+  // Estudante: confirmação de envio (o orientador receberá e-mail separado via iniciarChecklist_)
   try {
     enviarEmailAguardandoAceiteEstudante_({
       nomeEstudante:  estudante.nome,
@@ -344,31 +417,9 @@ function solicitarEstagio_(dados) {
     });
   } catch (e) { logErro_('solicitarEstagio_.mailEstudante', e); }
 
-  // 2. Orientador: link de aceite/recusa
-  try {
-    enviarEmailAceiteOrientador_({
-      nomeOrientador:  nomeOrientador,
-      emailOrientador: emailOrientador,
-      nomeEstudante:   estudante.nome,
-      idEstagio:       idEstagio,
-      nomeEmpresa:     nomeEmpresa,
-      tipoEstagio:     tipoEstagio,
-      curso:           cursoEstagio,
-      turno:           turno,
-      semestre:        semestreAtual,
-      dataInicio:      formatarData_(dataInicio),
-      dataTermino:     formatarData_(dataTermino),
-      cargaHoraria:    cargaHor,
-      horario:         horario,
-      planoAtividades: planoAtiv,
-      objetivos:       objetivos,
-      token:           aceiteToken,
-    });
-  } catch (e) { logErro_('solicitarEstagio_.mailOrientador', e); }
-
   return jsonOk_({
     idEstagio: idEstagio,
-    mensagem:  'Solicitação enviada! O orientador ' + nomeOrientador + ' receberá um e-mail para aceitar a orientação. Você será notificado(a) assim que ele responder.',
+    mensagem:  'Solicitação enviada! O orientador ' + nomeOrientador + ' receberá um e-mail para revisar e validar o checklist. Você será notificado(a) assim que ele responder.',
   });
 }
 
@@ -597,6 +648,7 @@ function verificarAceiteOrientador_(e) {
   var token = (e.parameter && e.parameter.token) || '';
   if (!token) return jsonError_('Token não informado.', 'VALIDATION');
 
+  // Localiza o idEstagio pelo token na planilha
   var ss    = SpreadsheetApp.openById(CFG_SOL.SS_ID);
   var sheet = ss.getSheetByName(CFG_SOL.ABA_SOL);
   if (!sheet) return jsonError_('Planilha não configurada.', 'NOT_FOUND');
@@ -604,15 +656,25 @@ function verificarAceiteOrientador_(e) {
 
   for (var i = 1; i < dados.length; i++) {
     var tokenLinha = String(dados[i][COL_SOL.TOKEN_ACEITE_ORI] || '').trim();
-    if (tokenLinha !== token || tokenLinha === 'usado') continue;
+    if (tokenLinha !== token) continue;
 
-    var status = String(dados[i][COL_SOL.STATUS] || '').trim();
-    if (status !== 'Aguardando aceite orientador') {
-      return jsonError_('Este link já foi utilizado ou expirou.', 'EXPIRED');
+    var idEstagio = String(dados[i][COL_SOL.ID_ESTAGIO] || '');
+
+    // Valida contra o checklist (token deve estar pendente)
+    var ck = obterChecklist_(idEstagio);
+    if (!ck || !ck.orientador) {
+      return jsonError_('Checklist não encontrado.', 'NOT_FOUND');
+    }
+    if (ck.orientador.token !== token) {
+      return jsonError_('Token inválido.', 'INVALID_TOKEN');
+    }
+    if (ck.orientador.status !== 'pendente') {
+      return jsonError_('Este link já foi utilizado.', 'EXPIRED');
     }
 
+    // Retorna dados da solicitação + itens do checklist do orientador
     return jsonOk_({
-      idEstagio:       String(dados[i][COL_SOL.ID_ESTAGIO]       || ''),
+      idEstagio:       idEstagio,
       nomeEstudante:   String(dados[i][COL_SOL.NOME_ESTUDANTE]   || ''),
       curso:           String(dados[i][COL_SOL.CURSO]            || ''),
       turno:           String(dados[i][COL_SOL.TURNO]            || ''),
@@ -626,6 +688,9 @@ function verificarAceiteOrientador_(e) {
       planoAtividades: String(dados[i][COL_SOL.PLANO_ATIVIDADES] || ''),
       objetivos:       String(dados[i][COL_SOL.OBJETIVOS]        || ''),
       nomeOrientador:  String(dados[i][COL_SOL.NOME_ORIENTADOR]  || ''),
+      // Itens do checklist do orientador para renderização na página
+      checklistItens:     ck.orientador.itens || [],
+      prazoVencimento:    ck.orientador.prazoVencimento || '',
     });
   }
   return jsonError_('Link inválido ou expirado.', 'NOT_FOUND');
@@ -635,116 +700,39 @@ function verificarAceiteOrientador_(e) {
 // POST — Orientador responde ao aceite (aceito / recusado)
 // ---------------------------------------------------------------------------
 
+/**
+ * POST — Orientador responde ao checklist (aceite/recusa/aprovação).
+ * Delega para salvarRespostaAtor_ no api-checklist.gs.
+ *
+ * Body: { token, idEstagio, itens, decisao: 'aprovado'|'recusado'|'ajuste', obs }
+ */
 function responderAceiteOrientador_(body) {
-  var token    = String(body.token    || '').trim();
-  var resposta = String(body.resposta || '').trim(); // 'aceito' | 'recusado'
-  var obs      = sanitizar_(body.obs  || '', 500);
+  var token     = String(body.token     || '').trim();
+  var idEstagio = sanitizar_(body.idEstagio || '', 20);
+  var itens     = Array.isArray(body.itens) ? body.itens : [];
+  var decisao   = String(body.decisao   || '').trim();
+  var obs       = sanitizar_(body.obs   || '', 500);
 
-  if (!token)   return jsonError_('Token não informado.', 'VALIDATION');
-  if (resposta !== 'aceito' && resposta !== 'recusado') {
-    return jsonError_('Resposta inválida.', 'VALIDATION');
+  if (!token) return jsonError_('Token não informado.', 'VALIDATION');
+  if (!decisao) return jsonError_('Decisão não informada.', 'VALIDATION');
+
+  // Se idEstagio não veio no body, localiza pelo token na planilha
+  if (!idEstagio) {
+    var ss    = SpreadsheetApp.openById(CFG_SOL.SS_ID);
+    var sheet = ss.getSheetByName(CFG_SOL.ABA_SOL);
+    if (sheet) {
+      var dados = sheet.getDataRange().getValues();
+      for (var i = 1; i < dados.length; i++) {
+        if (String(dados[i][COL_SOL.TOKEN_ACEITE_ORI] || '') === token) {
+          idEstagio = String(dados[i][COL_SOL.ID_ESTAGIO] || '');
+          break;
+        }
+      }
+    }
+    if (!idEstagio) return jsonError_('Token não encontrado.', 'NOT_FOUND');
   }
 
-  var ss    = SpreadsheetApp.openById(CFG_SOL.SS_ID);
-  var sheet = ss.getSheetByName(CFG_SOL.ABA_SOL);
-  if (!sheet) return jsonError_('Planilha não configurada.', 'NOT_FOUND');
-  var dados = sheet.getDataRange().getValues();
-
-  for (var i = 1; i < dados.length; i++) {
-    var tokenLinha = String(dados[i][COL_SOL.TOKEN_ACEITE_ORI] || '').trim();
-    if (tokenLinha !== token || tokenLinha === 'usado') continue;
-
-    var status = String(dados[i][COL_SOL.STATUS] || '').trim();
-    if (status !== 'Aguardando aceite orientador') {
-      return jsonError_('Este link já foi utilizado.', 'EXPIRED');
-    }
-
-    // Extrai dados da linha para emails/checklist
-    var idEstagio       = String(dados[i][COL_SOL.ID_ESTAGIO]       || '');
-    var nomeEstudante   = String(dados[i][COL_SOL.NOME_ESTUDANTE]   || '');
-    var emailEstudante  = String(dados[i][COL_SOL.EMAIL_ESTUDANTE]  || '');
-    var nomeOrientador  = String(dados[i][COL_SOL.NOME_ORIENTADOR]  || '');
-    var emailOrientador = String(dados[i][COL_SOL.EMAIL_ORIENTADOR] || '');
-    var nomeEmpresa     = String(dados[i][COL_SOL.NOME_EMPRESA]     || '');
-    var nomeSupervisor  = String(dados[i][COL_SOL.NOME_SUPERVISOR]  || '');
-    var tipoEstagio     = String(dados[i][COL_SOL.TIPO_ESTAGIO]     || '');
-    var curso           = String(dados[i][COL_SOL.CURSO]            || '');
-    var matricula       = String(dados[i][COL_SOL.MATRICULA]        || '');
-    var dataInicio      = String(dados[i][COL_SOL.DATA_INICIO]      || '');
-    var dataTermino     = String(dados[i][COL_SOL.DATA_TERMINO]     || '');
-    var dataNasc        = String(dados[i][COL_SOL.DATA_NASC]        || '');
-    var nomeAgente      = String(dados[i][COL_SOL.NOME_AGENTE]      || '');
-
-    // Invalida token (uso único)
-    sheet.getRange(i + 1, COL_SOL.TOKEN_ACEITE_ORI + 1).setValue('usado');
-
-    if (resposta === 'aceito') {
-      sheet.getRange(i + 1, COL_SOL.STATUS + 1).setValue('Em Checklist');
-
-      // Inicia o fluxo de checklist agora
-      try {
-        iniciarChecklist_(idEstagio, {
-          dataNasc:   dataNasc,
-          dataInicio: dataInicio,
-          nomeAgente: nomeAgente,
-        });
-      } catch (ckErr) { logErro_('responderAceiteOrientador_.checklist', ckErr); }
-
-      // Email ao estudante: orientador aceitou
-      try {
-        enviarEmailRespostaAceiteEstudante_({
-          nomeEstudante:  nomeEstudante,
-          emailEstudante: emailEstudante,
-          idEstagio:      idEstagio,
-          nomeOrientador: nomeOrientador,
-          nomeEmpresa:    nomeEmpresa,
-          resposta:       'aceito',
-        });
-      } catch (e) { logErro_('responderAceiteOrientador_.mailEstAceito', e); }
-
-      // Notifica o setor (mesma função já existente)
-      try {
-        enviarEmailSolicitacaoRecebida_({
-          idEstagio:       idEstagio,
-          nomeEstudante:   nomeEstudante,
-          emailEstudante:  emailEstudante,
-          matricula:       matricula,
-          curso:           curso,
-          nomeEmpresa:     nomeEmpresa,
-          nomeSupervisor:  nomeSupervisor,
-          nomeOrientador:  nomeOrientador,
-          emailOrientador: emailOrientador,
-          tipoEstagio:     tipoEstagio,
-          dataInicio:      formatarData_(dataInicio),
-          dataTermino:     formatarData_(dataTermino),
-        });
-      } catch (e) { logErro_('responderAceiteOrientador_.mailSetor', e); }
-
-      return jsonOk_({ mensagem: 'Orientação aceita. O checklist de validação foi iniciado.' });
-
-    } else {
-      // Recusado
-      sheet.getRange(i + 1, COL_SOL.STATUS + 1).setValue('Aceite recusado');
-      if (obs) sheet.getRange(i + 1, COL_SOL.OBS_SETOR + 1).setValue('Motivo de recusa: ' + obs);
-
-      // Email ao estudante: orientador recusou
-      try {
-        enviarEmailRespostaAceiteEstudante_({
-          nomeEstudante:  nomeEstudante,
-          emailEstudante: emailEstudante,
-          idEstagio:      idEstagio,
-          nomeOrientador: nomeOrientador,
-          nomeEmpresa:    nomeEmpresa,
-          resposta:       'recusado',
-          obs:            obs,
-        });
-      } catch (e) { logErro_('responderAceiteOrientador_.mailEstRecusado', e); }
-
-      return jsonOk_({ mensagem: 'Orientação recusada. O estudante será notificado para escolher outro orientador.' });
-    }
-  }
-
-  return jsonError_('Link inválido ou expirado.', 'NOT_FOUND');
+  return salvarRespostaAtor_(idEstagio, 'orientador', itens, decisao, obs, null, token);
 }
 
 // ---------------------------------------------------------------------------
@@ -797,33 +785,68 @@ function trocarOrientador_(body) {
     // Atualiza planilha
     sheet.getRange(i + 1, COL_SOL.NOME_ORIENTADOR  + 1).setValue(nomeOrientador);
     sheet.getRange(i + 1, COL_SOL.EMAIL_ORIENTADOR + 1).setValue(emailOrientador);
-    sheet.getRange(i + 1, COL_SOL.STATUS           + 1).setValue('Aguardando aceite orientador');
+    sheet.getRange(i + 1, COL_SOL.STATUS           + 1).setValue('Em Checklist');
     sheet.getRange(i + 1, COL_SOL.OBS_SETOR        + 1).setValue('');
     sheet.getRange(i + 1, COL_SOL.TOKEN_ACEITE_ORI + 1).setValue(novoToken);
 
-    // Email para o novo orientador
+    // Reinicia a seção do orientador no checklist (mantém histórico das demais etapas)
     try {
-      enviarEmailAceiteOrientador_({
-        nomeOrientador:  nomeOrientador,
-        emailOrientador: emailOrientador,
-        nomeEstudante:   nomeEstudante,
+      var ck = obterChecklist_(idEstagio);
+      if (ck) {
+        var prazos = obterPrazos_();
+        ck.orientador = {
+          status:            'pendente',
+          data:              null,
+          obs:               '',
+          prazoVencimento:   calcularPrazoVencimento_(prazos.checklist.orientador),
+          lembretesEnviados: 0,
+          token:             novoToken,
+          itens:             itensChecklistOrientador_(),
+        };
+        ck.supervisor    = null;
+        ck.admin         = null;
+        ck.etapaAtiva    = 'orientador';
+        ck.statusGeral   = 'em_andamento';
+        salvarChecklist_(idEstagio, ck);
+        _atualizarStatusChecklistNaPlanilha_(idEstagio, ck);
+      } else {
+        // Checklist não existia — cria do zero
+        iniciarChecklist_(idEstagio, {
+          dataNasc:        String(dados[i][COL_SOL.DATA_NASC]  || ''),
+          dataInicio:      String(dados[i][COL_SOL.DATA_INICIO] || ''),
+          nomeAgente:      String(dados[i][COL_SOL.NOME_AGENTE] || ''),
+          tokenOrientador: novoToken,
+        });
+      }
+    } catch (eCk) { logErro_('trocarOrientador_.checklist', eCk); }
+
+    // Notifica o novo orientador via e-mail do checklist
+    try {
+      var urlChecklist = 'https://ifrs-riogrande.github.io/estagios/orientadores/aceite-orientacao.html'
+                       + '?token=' + encodeURIComponent(novoToken)
+                       + '&id='    + encodeURIComponent(idEstagio);
+      MAIL.enviarEmailChecklistOrientador({
         idEstagio:       idEstagio,
-        nomeEmpresa:     nomeEmpresa,
-        tipoEstagio:     tipoEstagio,
+        nomeEstudante:   nomeEstudante,
         curso:           curso,
         turno:           turno,
         semestre:        semestre,
+        nomeEmpresa:     nomeEmpresa,
+        tipoEstagio:     tipoEstagio,
         dataInicio:      formatarData_(dataInicio),
         dataTermino:     formatarData_(dataTermino),
         cargaHoraria:    cargaHor,
         horario:         horario,
         planoAtividades: planoAtiv,
         objetivos:       objetivos,
-        token:           novoToken,
+        nomeOrientador:  nomeOrientador,
+        emailOrientador: emailOrientador,
+        urlChecklist:    urlChecklist,
+        prazoVencimento: '',
       });
     } catch (e) { logErro_('trocarOrientador_.mail', e); }
 
-    return jsonOk_({ mensagem: 'Novo orientador selecionado. Aguardando aceite de ' + nomeOrientador + '.' });
+    return jsonOk_({ mensagem: 'Novo orientador selecionado. Aguardando validação de ' + nomeOrientador + '.' });
   }
 
   return jsonError_('Solicitação não encontrada.', 'NOT_FOUND');
@@ -1446,8 +1469,10 @@ function uploadDocumentoEstagio_(body) {
 
   // Busca Drive URL (e verifica propriedade para estudante)
   var driveUrlEstagio = '';
+  var cpfParaPasta = 'SEM_CPF', matrParaPasta = 'SEM_MATRICULA', nomeParaPasta = '';
   var sheetSol2 = ss2.getSheetByName(CFG_SOL.ABA_SOL);
   var donoBloqueado = (perfil === 'Estudante');
+  var rowIdxSol2 = -1;
   if (sheetSol2) {
     var dSol2 = sheetSol2.getDataRange().getValues();
     for (var ii = 1; ii < dSol2.length; ii++) {
@@ -1457,29 +1482,52 @@ function uploadDocumentoEstagio_(body) {
         if (emailEst2 !== emailUploader) continue;
       }
       driveUrlEstagio = String(dSol2[ii][COL_SOL.DRIVE_URL] || '');
-      donoBloqueado = false;
+      cpfParaPasta    = String(dSol2[ii][COL_SOL.CPF]           || 'SEM_CPF').replace(/\D/g, '') || 'SEM_CPF';
+      matrParaPasta   = String(dSol2[ii][COL_SOL.MATRICULA]      || 'SEM_MATRICULA');
+      nomeParaPasta   = String(dSol2[ii][COL_SOL.NOME_ESTUDANTE] || '');
+      rowIdxSol2      = ii;
+      donoBloqueado   = false;
       break;
     }
   }
   if (donoBloqueado) return jsonError_('Estágio não encontrado ou acesso negado.', 'FORBIDDEN');
 
-  // Salva no Drive
-  var linkArquivo = '';
+  // Obtém pasta de destino no Drive
+  // — Se o estágio já tem pasta (aprovado), usa ela.
+  // — Caso contrário, cria/encontra a estrutura padrão: Estágios SGE / CPF / Matrícula / ID.
+  var pastaEstagio = null;
   if (driveUrlEstagio) {
     try {
       var matchFolder = driveUrlEstagio.match(/folders\/([a-zA-Z0-9_-]+)/);
-      if (matchFolder) {
-        var pasta    = DriveApp.getFolderById(matchFolder[1]);
-        var subpasta = obterOuCriarPasta_(pasta, 'Documentos Avulsos');
-        var bytes    = Utilities.base64Decode(b64);
-        var blob     = Utilities.newBlob(bytes, 'application/pdf', nomeArquivo);
-        var file     = subpasta.createFile(blob);
-        file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-        linkArquivo  = file.getUrl();
+      if (matchFolder) pastaEstagio = DriveApp.getFolderById(matchFolder[1]);
+    } catch (eD) { logErro_('uploadDocumentoEstagio_.openFolder', eD); }
+  }
+  if (!pastaEstagio) {
+    try {
+      var rootName = (typeof CFG_ADMIN !== 'undefined' && CFG_ADMIN.DRIVE_ROOT_NAME)
+                     ? CFG_ADMIN.DRIVE_ROOT_NAME : 'Estágios SGE';
+      var raizP    = obterOuCriarPasta_(null, rootName);
+      var pastaCpf = obterOuCriarPasta_(raizP,    cpfParaPasta);
+      var pastaMatr= obterOuCriarPasta_(pastaCpf, matrParaPasta);
+      pastaEstagio = obterOuCriarPasta_(pastaMatr, idEstagio + (nomeParaPasta ? ' — ' + nomeParaPasta : ''));
+      // Persiste o URL na planilha para que próximas operações usem a pasta recém-criada
+      if (sheetSol2 && rowIdxSol2 > 0) {
+        sheetSol2.getRange(rowIdxSol2 + 1, COL_SOL.DRIVE_URL + 1).setValue(pastaEstagio.getUrl());
       }
-    } catch (eD) {
-      logErro_('uploadDocumentoEstagio_.drive', eD);
-    }
+    } catch (eC) { logErro_('uploadDocumentoEstagio_.createFolder', eC); }
+  }
+
+  // Salva o arquivo na subpasta "Documentos Avulsos"
+  var linkArquivo = '';
+  if (pastaEstagio) {
+    try {
+      var subpasta = obterOuCriarPasta_(pastaEstagio, 'Documentos Avulsos');
+      var bytes    = Utilities.base64Decode(b64);
+      var blob     = Utilities.newBlob(bytes, 'application/pdf', nomeArquivo);
+      var file     = subpasta.createFile(blob);
+      file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+      linkArquivo  = file.getUrl();
+    } catch (eU) { logErro_('uploadDocumentoEstagio_.upload', eU); }
   }
 
   // Registra na planilha
@@ -1493,6 +1541,27 @@ function uploadDocumentoEstagio_(body) {
   linhaDoc[COL_DOC.LINK_DRIVE]     = linkArquivo;
   linhaDoc[COL_DOC.NOME_ARQUIVO]   = nomeArquivo;
   sheetDoc2.appendRow(linhaDoc);
+
+  // Persiste metadados em PropertiesService para que o admin possa marcar revisão
+  try {
+    var docId    = Utilities.getUuid();
+    var propKey  = 'docs_avulsos_' + idEstagio;
+    var props    = PropertiesService.getScriptProperties();
+    var rawDocs  = props.getProperty(propKey);
+    var docsArr  = rawDocs ? JSON.parse(rawDocs) : [];
+    docsArr.push({
+      id:            docId,
+      titulo:        titulo,
+      nomeArquivo:   nomeArquivo,
+      url:           linkArquivo,
+      timestamp:     new Date().toISOString(),
+      emailUploader: emailUploader,
+      perfil:        perfil,
+      revisadoAdmin: false,
+      obsAdmin:      ''
+    });
+    props.setProperty(propKey, JSON.stringify(docsArr));
+  } catch (eProp) { logErro_('uploadDocumentoEstagio_.props', eProp); }
 
   return jsonOk_({ mensagem: 'Documento enviado com sucesso.', linkDrive: linkArquivo });
 }
@@ -1509,4 +1578,113 @@ function obterOuCriarAbaDocumentos_(ss) {
     sheet.getRange(1, 1, 1, cab.length).setValues([cab]).setFontWeight('bold');
   }
   return sheet;
+}
+
+// ---------------------------------------------------------------------------
+// listarDocumentosAvulsos_ — GET ?action=listarDocumentosAvulsos
+// ---------------------------------------------------------------------------
+
+/**
+ * Retorna os documentos avulsos de um estágio com o status de revisão do admin.
+ * Requer token de servidor/admin.
+ *
+ * Rota: GET ?action=listarDocumentosAvulsos&idEstagio=RG25-XXXX-XXXX&authToken=...
+ */
+function listarDocumentosAvulsos_(e) {
+  var authToken = (e.parameter && e.parameter.authToken) || '';
+  var idEstagio = (e.parameter && e.parameter.idEstagio) || '';
+
+  try { validarTokenServidor_(authToken); }
+  catch (e) { return jsonError_(e.message, 'AUTH_ERROR'); }
+
+  idEstagio = String(idEstagio).toUpperCase().trim();
+  if (!idEstagio.match(/^RG\d{2}-[A-Z0-9]{4}-[A-Z0-9]{4}$/)) {
+    return jsonError_('ID do estágio inválido.', 'VALIDATION');
+  }
+
+  try {
+    var propKey = 'docs_avulsos_' + idEstagio;
+    var raw     = PropertiesService.getScriptProperties().getProperty(propKey);
+    var docs    = raw ? JSON.parse(raw) : [];
+
+    // Fallback: se PropertiesService vazio, busca na planilha (documentos legados)
+    if (docs.length === 0) {
+      var ss3    = SpreadsheetApp.openById(CFG_SOL.SS_ID);
+      var shtDoc = ss3.getSheetByName(CFG_SOL.ABA_DOC);
+      if (shtDoc) {
+        var rows = shtDoc.getDataRange().getValues();
+        for (var i = 1; i < rows.length; i++) {
+          if (String(rows[i][COL_DOC.ID_ESTAGIO] || '') !== idEstagio) continue;
+          docs.push({
+            id:            'legacy_' + i,
+            titulo:        String(rows[i][COL_DOC.TITULO]         || ''),
+            nomeArquivo:   String(rows[i][COL_DOC.NOME_ARQUIVO]   || ''),
+            url:           String(rows[i][COL_DOC.LINK_DRIVE]     || ''),
+            timestamp:     rows[i][COL_DOC.TIMESTAMP]
+                             ? new Date(rows[i][COL_DOC.TIMESTAMP]).toISOString() : '',
+            emailUploader: String(rows[i][COL_DOC.EMAIL_UPLOADER] || ''),
+            perfil:        String(rows[i][COL_DOC.PERFIL]         || ''),
+            revisadoAdmin: false,
+            obsAdmin:      ''
+          });
+        }
+      }
+    }
+
+    return jsonOk_({ documentos: docs });
+  } catch (err) {
+    logErro_('listarDocumentosAvulsos_', err);
+    return jsonError_('Erro ao listar documentos.', 'INTERNAL');
+  }
+}
+
+// ---------------------------------------------------------------------------
+// marcarDocumentoRevisado_ — POST action=marcarDocumentoRevisado
+// ---------------------------------------------------------------------------
+
+/**
+ * Marca (ou desmarca) um documento avulso como revisado pelo admin.
+ * Requer token de servidor/admin.
+ *
+ * Body: { authToken, idEstagio, docId, revisado: bool, obsAdmin?: string }
+ */
+function marcarDocumentoRevisado_(body) {
+  try { validarTokenServidor_(body.authToken); }
+  catch (e) { return jsonError_(e.message, 'AUTH_ERROR'); }
+
+  var idEstagio = sanitizar_(body.idEstagio || '', 20).toUpperCase().trim();
+  if (!idEstagio.match(/^RG\d{2}-[A-Z0-9]{4}-[A-Z0-9]{4}$/)) {
+    return jsonError_('ID do estágio inválido.', 'VALIDATION');
+  }
+
+  var docId    = sanitizar_(String(body.docId || ''), 100).trim();
+  if (!docId) return jsonError_('docId é obrigatório.', 'VALIDATION');
+
+  var revisado = body.revisado === true || body.revisado === 'true';
+  var obsAdmin = sanitizar_(String(body.obsAdmin || ''), 300);
+
+  try {
+    var propKey = 'docs_avulsos_' + idEstagio;
+    var props   = PropertiesService.getScriptProperties();
+    var raw     = props.getProperty(propKey);
+    var docs    = raw ? JSON.parse(raw) : [];
+
+    var encontrado = false;
+    for (var i = 0; i < docs.length; i++) {
+      if (docs[i].id === docId) {
+        docs[i].revisadoAdmin = revisado;
+        docs[i].obsAdmin      = obsAdmin;
+        encontrado = true;
+        break;
+      }
+    }
+
+    if (!encontrado) return jsonError_('Documento não encontrado.', 'NOT_FOUND');
+
+    props.setProperty(propKey, JSON.stringify(docs));
+    return jsonOk_({ mensagem: 'Documento atualizado com sucesso.' });
+  } catch (err) {
+    logErro_('marcarDocumentoRevisado_', err);
+    return jsonError_('Erro ao atualizar documento.', 'INTERNAL');
+  }
 }
