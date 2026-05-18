@@ -144,6 +144,23 @@
     /* ── Estado de carregamento ── */
     .loading-state { text-align: center; padding: var(--space-16) var(--space-6); color: var(--color-text-muted); font-size: var(--font-size-sm); }
 
+    /* ── Upload de documentos avulsos ── */
+    .upload-area { border: 2px dashed var(--color-border); border-radius: var(--radius-md); padding: var(--space-8); text-align: center; cursor: pointer; transition: all .15s; background: var(--color-bg); }
+    .upload-area:hover, .upload-area.drag-over { border-color: var(--color-primary); background: var(--color-info-light); }
+    .upload-area input { display: none; }
+    .upload-area svg { width: 36px; height: 36px; margin: 0 auto var(--space-2); color: var(--color-text-muted); }
+    .upload-area p { font-size: var(--font-size-sm); color: var(--color-text-muted); margin-bottom: var(--space-1); }
+    .upload-area small { font-size: var(--font-size-xs); color: var(--color-text-light); }
+    .file-selected { display: none; align-items: center; gap: var(--space-2); padding: var(--space-2) var(--space-3); background: var(--color-success-light); border-radius: var(--radius-md); font-size: var(--font-size-sm); color: var(--color-success); margin-top: var(--space-2); }
+    .file-selected.show { display: flex; }
+
+    /* ── Docs avulsos list ── */
+    .avulso-list { display: flex; flex-direction: column; gap: var(--space-3); margin-bottom: var(--space-4); }
+    .avulso-item { background: var(--color-bg); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: var(--space-3) var(--space-4); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--space-3); }
+    .avulso-item-info { flex: 1; }
+    .avulso-item-title { font-size: var(--font-size-sm); font-weight: 600; }
+    .avulso-item-meta { font-size: var(--font-size-xs); color: var(--color-text-muted); margin-top: 2px; }
+
     /* ── Hero subtítulo ── */
     #hero-sub { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; margin-top: 4px; }
     #hero-sub .hero-sep { opacity: .4; }
@@ -255,6 +272,8 @@
     let _validacaoFinal = [];
     let _fluxoDigital   = [];
     let _adendos        = [];
+    let _docsAvulsos    = [];
+    let _arquivoAvulso  = null;
     let _sensivelVisivel = false;
 
     /* ─── Init ─── */
@@ -274,11 +293,12 @@
 
       try {
         const token = getAccessToken();
-        const [estList, docData, adendoData, digitalRaw] = await Promise.all([
+        const [estList, docData, adendoData, digitalRaw, historicoData] = await Promise.all([
           API.get('listarSolicitacoesAdmin', { authToken: token }),
           API.get('listarDocumentosAdmin',   { authToken: token }),
           API.get('listarAdendosAdmin',       { authToken: token }),
           API.get('listarFluxosPendentesEtapa', { etapa: 6 }).catch(() => []),
+          apiListarHistoricoEstagio(_id).catch(() => null),
         ]);
 
         const lista = Array.isArray(estList) ? estList : (estList.solicitacoes || []);
@@ -291,6 +311,7 @@
         _fluxoDigital   = (Array.isArray(digitalRaw) ? digitalRaw : []).filter(d => d.idEstagio === _id);
         const adLista   = Array.isArray(adendoData) ? adendoData : (adendoData.adendos || []);
         _adendos        = adLista.filter(a => a.idEstagio === _id);
+        _docsAvulsos    = (historicoData && historicoData.documentos) || [];
 
         renderHero();
         renderDados();
@@ -458,28 +479,126 @@
 
     /* ─── Aba: Documentos ─── */
     function renderDocumentos() {
-      const total = _docsEnviados.length + _aguardandoDG.length + _validacaoFinal.length + _fluxoDigital.length;
-      document.getElementById('cnt-docs').textContent = total > 0 ? String(total) : '';
+      const totalFluxo = _docsEnviados.length + _aguardandoDG.length + _validacaoFinal.length + _fluxoDigital.length;
+      const totalGeral = totalFluxo + _docsAvulsos.length;
+      document.getElementById('cnt-docs').textContent = totalGeral > 0 ? String(totalGeral) : '';
 
       const c = document.getElementById('content-documentos');
-
-      if (total === 0) {
-        c.innerHTML = `
-          <div class="empty-state">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg>
-            <p>Não há documentos em análise para este estágio.</p>
-          </div>`;
-        return;
-      }
-
       let html = '';
 
-      _docsEnviados.forEach((s, idx) => { html += buildDocCard(s, 'docs-enviados', 'd' + idx); });
-      _aguardandoDG.forEach((s, idx) => { html += buildDocCard(s, 'aguardando-dg', 'g' + idx); });
-      _validacaoFinal.forEach((s, idx) => { html += buildDocCard(s, 'validacao-final', 'v' + idx); });
-      _fluxoDigital.forEach((item, idx) => { html += buildDocCardDigital(item, idx); });
+      if (totalFluxo === 0) {
+        html += `
+          <div class="empty-state" style="padding:var(--space-8) var(--space-6)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg>
+            <p>Nenhum documento do fluxo de aprovação para este estágio.</p>
+          </div>`;
+      } else {
+        _docsEnviados.forEach((s, idx)  => { html += buildDocCard(s, 'docs-enviados',  'd' + idx); });
+        _aguardandoDG.forEach((s, idx)  => { html += buildDocCard(s, 'aguardando-dg',  'g' + idx); });
+        _validacaoFinal.forEach((s, idx)=> { html += buildDocCard(s, 'validacao-final', 'v' + idx); });
+        _fluxoDigital.forEach((item, idx)=>{ html += buildDocCardDigital(item, idx); });
+      }
+
+      // ── Documentos Avulsos ── (sempre visível)
+      html += buildDocAvulsosSection();
 
       c.innerHTML = html;
+      initAdminUploadAvulso();
+    }
+
+    function buildDocAvulsosSection() {
+      let listaHtml = '';
+      if (_docsAvulsos.length) {
+        listaHtml = `<div class="avulso-list">` +
+          _docsAvulsos.map(d => `
+            <div class="avulso-item">
+              <div class="avulso-item-info">
+                <div class="avulso-item-title">${escapeHtml(d.titulo||'—')}</div>
+                <div class="avulso-item-meta">
+                  ${escapeHtml(d.data||'—')} · Por: ${escapeHtml(d.perfil==='Admin'?'Setor de Estágios':'Estudante')}
+                  ${d.nomeArquivo ? ' · ' + escapeHtml(d.nomeArquivo) : ''}
+                </div>
+              </div>
+              ${d.linkDrive ? `<a href="${escapeHtml(d.linkDrive)}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">Baixar ↗</a>` : ''}
+            </div>`).join('') +
+        `</div>`;
+      } else {
+        listaHtml = `<p style="font-size:var(--font-size-sm);color:var(--color-text-muted);margin-bottom:var(--space-4)">Nenhum documento avulso enviado ainda.</p>`;
+      }
+
+      return `
+        <div style="margin-top:var(--space-6);border-top:1px solid var(--color-border);padding-top:var(--space-6)">
+          <h3 style="font-size:var(--font-size-md);font-weight:600;margin-bottom:var(--space-4)">Documentos Avulsos</h3>
+          ${listaHtml}
+
+          <!-- Upload -->
+          <div style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:var(--space-5)">
+            <h4 style="font-size:var(--font-size-sm);font-weight:600;margin-bottom:var(--space-4)">Enviar documento para este estágio</h4>
+            <div id="fb-avulso-admin"></div>
+            <div class="form-group">
+              <label class="form-label" for="avulso-admin-titulo">Título / Descrição <span style="color:var(--color-error)">*</span></label>
+              <input type="text" id="avulso-admin-titulo" class="form-control" placeholder="Ex: Carta de confirmação, Declaração de estágio…">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Arquivo PDF <span style="color:var(--color-error)">*</span></label>
+              <div class="upload-area" id="drop-avulso-admin" onclick="document.getElementById('upload-avulso-admin').click()">
+                <input type="file" id="upload-avulso-admin" accept=".pdf">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m6.75 12H9m1.5-12H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg>
+                <p>Clique ou arraste o arquivo PDF aqui</p><small>Apenas PDF — máx. 10 MB</small>
+              </div>
+              <div class="file-selected" id="file-avulso-admin-info"></div>
+            </div>
+            <button class="btn btn-primary btn-sm" id="btn-avulso-admin" onclick="enviarDocumentoAvulsoAdmin(this)">Enviar Documento</button>
+          </div>
+        </div>`;
+    }
+
+    function initAdminUploadAvulso() {
+      const input = document.getElementById('upload-avulso-admin');
+      if (!input) return;
+      input.addEventListener('change', () => {
+        const file = input.files[0];
+        if (!file) return;
+        if (file.type !== 'application/pdf') { showToast('Apenas arquivos PDF são aceitos.', 'error'); input.value = ''; return; }
+        if (file.size > 10 * 1024 * 1024) { showToast('Arquivo muito grande. Máximo: 10 MB.', 'error'); input.value = ''; return; }
+        _arquivoAvulso = file;
+        const info = document.getElementById('file-avulso-admin-info');
+        if (info) { info.innerHTML = `✓ ${escapeHtml(file.name)} (${(file.size/1024).toFixed(1)} KB)`; info.classList.add('show'); }
+      });
+      const drop = document.getElementById('drop-avulso-admin');
+      if (!drop) return;
+      drop.addEventListener('dragover',  e => { e.preventDefault(); drop.classList.add('drag-over'); });
+      drop.addEventListener('dragleave', ()  => drop.classList.remove('drag-over'));
+      drop.addEventListener('drop', e => {
+        e.preventDefault(); drop.classList.remove('drag-over');
+        const file = e.dataTransfer.files[0];
+        if (file) { input.files = e.dataTransfer.files; input.dispatchEvent(new Event('change')); }
+      });
+    }
+
+    async function enviarDocumentoAvulsoAdmin(btn) {
+      const titulo = document.getElementById('avulso-admin-titulo')?.value.trim();
+      const file   = _arquivoAvulso;
+      const fbId   = 'fb-avulso-admin';
+      if (!titulo || !file) {
+        const el = document.getElementById(fbId);
+        if (el) { el.innerHTML = `<div class="form-feedback form-feedback--error" style="margin-bottom:var(--space-3)"><strong>Campos obrigatórios</strong> — informe o título e selecione um arquivo PDF.</div>`; }
+        return;
+      }
+      btn.disabled = true; btn.classList.add('is-loading');
+      const fbEl = document.getElementById(fbId);
+      if (fbEl) fbEl.innerHTML = '';
+      try {
+        await apiUploadDocumentoEstagio(_id, titulo, file);
+        _arquivoAvulso = null;
+        showToast('Documento enviado com sucesso!', 'success');
+        // Recarrega aba de documentos
+        await carregarTudo();
+        mudarAba('documentos');
+      } catch (err) {
+        if (fbEl) fbEl.innerHTML = `<div class="form-feedback form-feedback--error" style="margin-bottom:var(--space-3)"><strong>Erro ao enviar:</strong> ${escapeHtml(err.message)}</div>`;
+        btn.disabled = false; btn.classList.remove('is-loading');
+      }
     }
 
     function buildDocCard(s, aba, uid) {

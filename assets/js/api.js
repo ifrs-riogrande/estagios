@@ -343,6 +343,36 @@ async function apiListarEstagiosCoordenador() {
   return API.get('listarEstagiosCoordenador', { authToken: getAccessToken() });
 }
 
+/**
+ * Retorna histórico completo de um estágio:
+ * relatórios parciais, relatório final, adendos e documentos avulsos.
+ * Aceita token de estudante ou de servidor/admin.
+ */
+async function apiListarHistoricoEstagio(idEstagio) {
+  return API.get('listarHistoricoEstagio', { authToken: getAccessToken(), idEstagio });
+}
+
+/**
+ * Faz upload de um documento avulso (PDF) para a pasta do estágio.
+ * @param {string} idEstagio
+ * @param {string} titulo      Descrição livre do documento
+ * @param {File}   fileObj     Objeto File da Web API
+ */
+async function apiUploadDocumentoEstagio(idEstagio, titulo, fileObj) {
+  const base64 = await new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload  = () => resolve(r.result.split(',')[1]);
+    r.onerror = reject;
+    r.readAsDataURL(fileObj);
+  });
+  return API.post('uploadDocumentoEstagio', {
+    authToken: getAccessToken(),
+    idEstagio,
+    titulo,
+    arquivo: { nome: fileObj.name, base64 },
+  });
+}
+
 // ─────────────────────────────────────────
 //  ADMIN — chamadas restritas ao setor
 // ─────────────────────────────────────────

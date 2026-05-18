@@ -48,9 +48,10 @@ var GET_ROUTES = {
   // Agentes
   'listarAgentes':           doGetAgentes,
 
-  // Solicitações (estudante)
+  // Solicitações (estudante + admin)
   'verificarIdEstagio':         doGetSolicitacao,
   'verificarAceiteOrientador':  doGetSolicitacao,
+  'listarHistoricoEstagio':     doGetSolicitacao,
 
   // Admin
   'listarSolicitacoesAdmin':  doGetAdmin,
@@ -115,6 +116,7 @@ var POST_ROUTES = {
   'enviarDocumentoDG':         doPostSolicitacao,
   'responderAceiteOrientador': doPostSolicitacao,
   'trocarOrientador':          doPostSolicitacao,
+  'uploadDocumentoEstagio':    doPostSolicitacao,
 
   // Agentes (pÃºblico)
   'cadastrarAgente':           doPostAgentes,
@@ -257,7 +259,8 @@ function doPostServidores(e) {
 
 function doGetSolicitacao(e) {
   var action = (e.parameter && e.parameter.action) || '';
-  if (action === 'verificarAceiteOrientador') return verificarAceiteOrientador_(e);
+  if (action === 'verificarAceiteOrientador')  return verificarAceiteOrientador_(e);
+  if (action === 'listarHistoricoEstagio')      return listarHistoricoEstagio_(e);
   return verificarIdEstagio_(e);
 }
 
@@ -273,6 +276,7 @@ function doPostSolicitacao(e) {
     case 'enviarDocumentoDG':          return enviarDocumentoDG_(body);
     case 'responderAceiteOrientador':  return responderAceiteOrientador_(body);
     case 'trocarOrientador':           return trocarOrientador_(body);
+    case 'uploadDocumentoEstagio':     return uploadDocumentoEstagio_(body);
     default: return jsonError_('Ação não implementada: ' + action, 'NOT_IMPLEMENTED');
   }
 }

@@ -19,6 +19,7 @@ var CFG_SOL = {
   ABA_PARC:      'Relatórios Parciais',
   ABA_FINAL:     'Relatórios Finais',
   ABA_ADENDO:    'Adendos',
+  ABA_DOC:       'Documentos',
 };
 
 /**
@@ -100,6 +101,17 @@ var COL_FINAL = {
   AVAL_ORIENTADOR:       8,
   RECOMENDARIA:          9,
   CONSIDERACOES:         10,
+};
+
+/** Colunas da aba Documentos Avulsos (base 0). */
+var COL_DOC = {
+  TIMESTAMP:      0,
+  ID_ESTAGIO:     1,
+  EMAIL_UPLOADER: 2,
+  PERFIL:         3,  // 'Estudante' | 'Admin'
+  TITULO:         4,
+  LINK_DRIVE:     5,
+  NOME_ARQUIVO:   6,
 };
 
 /** Colunas da aba Adendos (base 0). */
@@ -922,18 +934,44 @@ function listarMeusEstagios_(e) {
       if (String(r[COL_SOL.EMAIL_ESTUDANTE] || '').trim().toLowerCase() !== email) continue;
 
       lista.push({
-        id:                String(r[COL_SOL.ID_ESTAGIO]        || ''),
-        status:            String(r[COL_SOL.STATUS]             || 'Pendente'),
-        tipoEstagio:       String(r[COL_SOL.TIPO_ESTAGIO]       || ''),
-        empresa:           String(r[COL_SOL.NOME_EMPRESA]       || ''),
-        curso:             String(r[COL_SOL.CURSO]              || ''),
-        nomeOrientador:    String(r[COL_SOL.NOME_ORIENTADOR]    || ''),
-        dataInicio:        formatarData_(r[COL_SOL.DATA_INICIO]),
-        dataTermino:       formatarData_(r[COL_SOL.DATA_TERMINO]),
-        cargaHorariaSemanal: String(r[COL_SOL.CARGA_HOR]       || ''),
-        driveUrl:          String(r[COL_SOL.DRIVE_URL]          || ''),
-        motivoReprovacao:  String(r[COL_SOL.MOTIVO_REPROVACAO]  || ''),
-        observacaoSetor:   String(r[COL_SOL.OBS_SETOR]          || ''),
+        // ── Identificação ──
+        id:                   String(r[COL_SOL.ID_ESTAGIO]        || ''),
+        status:               String(r[COL_SOL.STATUS]             || 'Pendente'),
+        // ── Estágio ──
+        tipoEstagio:          String(r[COL_SOL.TIPO_ESTAGIO]       || ''),
+        empresa:              String(r[COL_SOL.NOME_EMPRESA]       || ''),
+        cnpjEmpresa:          String(r[COL_SOL.CNPJ_EMPRESA]       || ''),
+        nomeSupervisor:       String(r[COL_SOL.NOME_SUPERVISOR]    || ''),
+        emailSupervisor:      String(r[COL_SOL.EMAIL_SUPERVISOR]   || ''),
+        nomeAgente:           String(r[COL_SOL.NOME_AGENTE]        || ''),
+        nomeOrientador:       String(r[COL_SOL.NOME_ORIENTADOR]    || ''),
+        dataInicio:           formatarData_(r[COL_SOL.DATA_INICIO]),
+        dataTermino:          formatarData_(r[COL_SOL.DATA_TERMINO]),
+        cargaHorariaSemanal:  String(r[COL_SOL.CARGA_HOR]          || ''),
+        horario:              String(r[COL_SOL.HORARIO]             || ''),
+        remuneracao:          String(r[COL_SOL.REMUNERACAO]         || ''),
+        valorBolsa:           String(r[COL_SOL.VALOR_BOLSA]         || ''),
+        valorTransporte:      String(r[COL_SOL.VALOR_TRANSPORTE]    || ''),
+        planoAtividades:      String(r[COL_SOL.PLANO_ATIVIDADES]    || ''),
+        // ── Documentos de admissão ──
+        linkDocMatricula:     String(r[COL_SOL.LINK_DOC_MAT]        || ''),
+        linkDocIdentidade:    String(r[COL_SOL.LINK_DOC_ID]         || ''),
+        linkDocBoletim:       String(r[COL_SOL.LINK_DOC_BOL]        || ''),
+        driveUrl:             String(r[COL_SOL.DRIVE_URL]           || ''),
+        // ── Dados do estudante ──
+        cpf:                  String(r[COL_SOL.CPF]                 || ''),
+        dataNasc:             formatarData_(r[COL_SOL.DATA_NASC]),
+        telefone:             String(r[COL_SOL.TELEFONE]            || ''),
+        curso:                String(r[COL_SOL.CURSO]               || ''),
+        turno:                String(r[COL_SOL.TURNO]               || ''),
+        semestreAtual:        String(r[COL_SOL.SEMESTRE_SOL]        || ''),
+        formando:             String(r[COL_SOL.FORMANDO]            || ''),
+        nomeResponsavel:      String(r[COL_SOL.NOME_RESP]           || ''),
+        cpfResponsavel:       String(r[COL_SOL.CPF_RESP]            || ''),
+        telResponsavel:       String(r[COL_SOL.TEL_RESP]            || ''),
+        // ── Status / Observações ──
+        motivoReprovacao:     String(r[COL_SOL.MOTIVO_REPROVACAO]   || ''),
+        observacaoSetor:      String(r[COL_SOL.OBS_SETOR]           || ''),
       });
     }
 
@@ -1213,4 +1251,262 @@ function enviarEmailDocDGRecebido_(dados) {
                     'do estágio ' + dados.idEstagio + ' (' + dados.nomeEstudante + ').\n\n' +
                     'Acesse o painel administrativo para realizar a validação final e ativar o estágio.';
   MailApp.sendEmail({ to: adminEmails.join(','), subject: assunto, body: corpo });
+}
+
+// ---------------------------------------------------------------------------
+// GET — Histórico completo de um estágio (relatórios, adendos, docs avulsos)
+// ---------------------------------------------------------------------------
+
+/**
+ * Retorna relatórios parciais, relatório final, adendos e documentos avulsos
+ * de um estágio. Aceita token de estudante (verifica propriedade) ou de
+ * servidor/admin (acesso livre a qualquer estágio).
+ *
+ * Rota: GET ?action=listarHistoricoEstagio&idEstagio=RG25-XXXX-XXXX&authToken=...
+ */
+function listarHistoricoEstagio_(e) {
+  var authToken = e.parameter && e.parameter.authToken;
+  var idEstagio = sanitizar_((e.parameter && e.parameter.idEstagio) || '', 20).toUpperCase().trim();
+
+  if (!idEstagio) return jsonError_('ID do estágio é obrigatório.', 'VALIDATION');
+
+  // Detecta perfil pelo token
+  var emailValidado, isAdmin = false;
+  try {
+    var infoEst = validarTokenEstudante_(authToken);
+    emailValidado = resolverEmailPrimario_(infoEst.email.toLowerCase());
+  } catch (e1) {
+    try {
+      var infoSrv = validarTokenServidor_(authToken);
+      emailValidado = infoSrv.email.toLowerCase().trim();
+      isAdmin = true;
+    } catch (e2) {
+      return jsonError_('Token inválido.', 'AUTH_ERROR');
+    }
+  }
+
+  var ss = SpreadsheetApp.openById(CFG_SOL.SS_ID);
+
+  // Verifica propriedade para estudante
+  if (!isAdmin) {
+    var sheetSolChk = ss.getSheetByName(CFG_SOL.ABA_SOL);
+    var temAcesso = false;
+    if (sheetSolChk) {
+      var dSolChk = sheetSolChk.getDataRange().getValues();
+      for (var i = 1; i < dSolChk.length; i++) {
+        if (String(dSolChk[i][COL_SOL.ID_ESTAGIO] || '') === idEstagio &&
+            String(dSolChk[i][COL_SOL.EMAIL_ESTUDANTE] || '').toLowerCase().trim() === emailValidado) {
+          temAcesso = true; break;
+        }
+      }
+    }
+    if (!temAcesso) return jsonError_('Estágio não encontrado ou acesso negado.', 'FORBIDDEN');
+  }
+
+  // ── Relatórios Parciais ──
+  var relatoriosParciais = [];
+  var sheetParc = ss.getSheetByName(CFG_SOL.ABA_PARC);
+  if (sheetParc) {
+    var dParc = sheetParc.getDataRange().getValues();
+    for (var j = 1; j < dParc.length; j++) {
+      if (String(dParc[j][COL_PARC.ID_ESTAGIO] || '') !== idEstagio) continue;
+      relatoriosParciais.push({
+        data:       dParc[j][COL_PARC.TIMESTAMP]
+                      ? Utilities.formatDate(new Date(dParc[j][COL_PARC.TIMESTAMP]),
+                          Session.getScriptTimeZone(), 'dd/MM/yyyy HH:mm')
+                      : '',
+        periodoRef: String(dParc[j][COL_PARC.PERIODO_REF] || ''),
+        avaliacao:  String(dParc[j][COL_PARC.AVALIACAO]   || ''),
+        atividades: String(dParc[j][COL_PARC.ATIVIDADES]  || ''),
+      });
+    }
+  }
+
+  // ── Relatório Final ──
+  var relatorioFinal = null;
+  var sheetFinal = ss.getSheetByName(CFG_SOL.ABA_FINAL);
+  if (sheetFinal) {
+    var dFinal = sheetFinal.getDataRange().getValues();
+    for (var k = 1; k < dFinal.length; k++) {
+      if (String(dFinal[k][COL_FINAL.ID_ESTAGIO] || '') !== idEstagio) continue;
+      relatorioFinal = {
+        data:             dFinal[k][COL_FINAL.TIMESTAMP]
+                            ? Utilities.formatDate(new Date(dFinal[k][COL_FINAL.TIMESTAMP]),
+                                Session.getScriptTimeZone(), 'dd/MM/yyyy HH:mm')
+                            : '',
+        dataEncerramento: normalizarDataISO_(dFinal[k][COL_FINAL.DATA_ENCERRAMENTO]),
+        avalConcedente:   String(dFinal[k][COL_FINAL.AVAL_CONCEDENTE] || ''),
+        avalOrientador:   String(dFinal[k][COL_FINAL.AVAL_ORIENTADOR] || ''),
+        recomendaria:     String(dFinal[k][COL_FINAL.RECOMENDARIA]    || ''),
+        resumo:           String(dFinal[k][COL_FINAL.RESUMO]          || ''),
+      };
+      break;
+    }
+  }
+
+  // ── Adendos ──
+  var adendos = [];
+  var sheetAdendo = ss.getSheetByName(CFG_SOL.ABA_ADENDO);
+  if (sheetAdendo) {
+    var dAdendo = sheetAdendo.getDataRange().getValues();
+    for (var l = 1; l < dAdendo.length; l++) {
+      if (String(dAdendo[l][COL_ADENDO.ID_ESTAGIO] || '') !== idEstagio) continue;
+      adendos.push({
+        data:         dAdendo[l][COL_ADENDO.TIMESTAMP]
+                        ? Utilities.formatDate(new Date(dAdendo[l][COL_ADENDO.TIMESTAMP]),
+                            Session.getScriptTimeZone(), 'dd/MM/yyyy HH:mm')
+                        : '',
+        tipoAdendo:   String(dAdendo[l][COL_ADENDO.TIPO_ADENDO]    || ''),
+        justificativa: String(dAdendo[l][COL_ADENDO.JUSTIFICATIVA] || ''),
+        status:       String(dAdendo[l][COL_ADENDO.STATUS]         || 'Pendente'),
+      });
+    }
+  }
+
+  // ── Documentos Avulsos ──
+  var documentos = [];
+  var sheetDoc = ss.getSheetByName(CFG_SOL.ABA_DOC);
+  if (sheetDoc) {
+    var dDoc = sheetDoc.getDataRange().getValues();
+    for (var m = 1; m < dDoc.length; m++) {
+      if (String(dDoc[m][COL_DOC.ID_ESTAGIO] || '') !== idEstagio) continue;
+      documentos.push({
+        data:          dDoc[m][COL_DOC.TIMESTAMP]
+                         ? Utilities.formatDate(new Date(dDoc[m][COL_DOC.TIMESTAMP]),
+                             Session.getScriptTimeZone(), 'dd/MM/yyyy HH:mm')
+                         : '',
+        emailUploader: String(dDoc[m][COL_DOC.EMAIL_UPLOADER] || ''),
+        perfil:        String(dDoc[m][COL_DOC.PERFIL]         || ''),
+        titulo:        String(dDoc[m][COL_DOC.TITULO]         || ''),
+        linkDrive:     String(dDoc[m][COL_DOC.LINK_DRIVE]     || ''),
+        nomeArquivo:   String(dDoc[m][COL_DOC.NOME_ARQUIVO]   || ''),
+      });
+    }
+  }
+
+  return jsonOk_({
+    relatoriosParciais: relatoriosParciais,
+    relatorioFinal:     relatorioFinal,
+    adendos:            adendos,
+    documentos:         documentos,
+  });
+}
+
+// ---------------------------------------------------------------------------
+// POST — Upload de documento avulso (estudante ou admin)
+// ---------------------------------------------------------------------------
+
+/**
+ * Recebe um PDF em base64, salva na subpasta "Documentos Avulsos" dentro da
+ * pasta do estágio no Drive e registra na aba Documentos da planilha.
+ *
+ * Body: { idEstagio, authToken, titulo, arquivo: { nome, base64 } }
+ */
+function uploadDocumentoEstagio_(body) {
+  if (!checkRateLimit_('uploadDocumentoEstagio')) {
+    return jsonError_('Muitas requisições. Aguarde um momento.', 'RATE_LIMIT');
+  }
+
+  // Detecta perfil pelo token
+  var emailUploader, perfil;
+  try {
+    var infoEst2 = validarTokenEstudante_(body.authToken);
+    emailUploader = resolverEmailPrimario_(infoEst2.email.toLowerCase());
+    perfil = 'Estudante';
+  } catch (e1) {
+    try {
+      var infoSrv2 = validarTokenServidor_(body.authToken);
+      emailUploader = infoSrv2.email.toLowerCase().trim();
+      perfil = 'Admin';
+    } catch (e2) {
+      return jsonError_('Token inválido.', 'AUTH_ERROR');
+    }
+  }
+
+  var idEstagio = sanitizar_(body.idEstagio || '', 20).toUpperCase().trim();
+  if (!idEstagio.match(/^RG\d{2}-[A-Z0-9]{4}-[A-Z0-9]{4}$/)) {
+    return jsonError_('ID do estágio inválido.', 'VALIDATION');
+  }
+
+  var titulo = sanitizar_(body.titulo || '', 200);
+  if (!titulo) return jsonError_('Título do documento é obrigatório.', 'VALIDATION');
+
+  var arquivo = body.arquivo;
+  if (!arquivo || !arquivo.base64 || !arquivo.nome) {
+    return jsonError_('Arquivo é obrigatório.', 'VALIDATION');
+  }
+
+  var nomeArquivo = sanitizarNomeArquivo_(arquivo.nome);
+  var b64 = arquivo.base64;
+  if (b64.length > 14000000) {
+    return jsonError_('Arquivo muito grande. Máximo: 10 MB.', 'VALIDATION');
+  }
+
+  var ss2 = SpreadsheetApp.openById(CFG_SOL.SS_ID);
+
+  // Busca Drive URL (e verifica propriedade para estudante)
+  var driveUrlEstagio = '';
+  var sheetSol2 = ss2.getSheetByName(CFG_SOL.ABA_SOL);
+  var donoBloqueado = (perfil === 'Estudante');
+  if (sheetSol2) {
+    var dSol2 = sheetSol2.getDataRange().getValues();
+    for (var ii = 1; ii < dSol2.length; ii++) {
+      if (String(dSol2[ii][COL_SOL.ID_ESTAGIO] || '') !== idEstagio) continue;
+      if (perfil === 'Estudante') {
+        var emailEst2 = String(dSol2[ii][COL_SOL.EMAIL_ESTUDANTE] || '').toLowerCase().trim();
+        if (emailEst2 !== emailUploader) continue;
+      }
+      driveUrlEstagio = String(dSol2[ii][COL_SOL.DRIVE_URL] || '');
+      donoBloqueado = false;
+      break;
+    }
+  }
+  if (donoBloqueado) return jsonError_('Estágio não encontrado ou acesso negado.', 'FORBIDDEN');
+
+  // Salva no Drive
+  var linkArquivo = '';
+  if (driveUrlEstagio) {
+    try {
+      var matchFolder = driveUrlEstagio.match(/folders\/([a-zA-Z0-9_-]+)/);
+      if (matchFolder) {
+        var pasta    = DriveApp.getFolderById(matchFolder[1]);
+        var subpasta = obterOuCriarPasta_(pasta, 'Documentos Avulsos');
+        var bytes    = Utilities.base64Decode(b64);
+        var blob     = Utilities.newBlob(bytes, 'application/pdf', nomeArquivo);
+        var file     = subpasta.createFile(blob);
+        file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+        linkArquivo  = file.getUrl();
+      }
+    } catch (eD) {
+      logErro_('uploadDocumentoEstagio_.drive', eD);
+    }
+  }
+
+  // Registra na planilha
+  var sheetDoc2 = obterOuCriarAbaDocumentos_(ss2);
+  var linhaDoc  = [];
+  linhaDoc[COL_DOC.TIMESTAMP]      = new Date();
+  linhaDoc[COL_DOC.ID_ESTAGIO]     = idEstagio;
+  linhaDoc[COL_DOC.EMAIL_UPLOADER] = emailUploader;
+  linhaDoc[COL_DOC.PERFIL]         = perfil;
+  linhaDoc[COL_DOC.TITULO]         = titulo;
+  linhaDoc[COL_DOC.LINK_DRIVE]     = linkArquivo;
+  linhaDoc[COL_DOC.NOME_ARQUIVO]   = nomeArquivo;
+  sheetDoc2.appendRow(linhaDoc);
+
+  return jsonOk_({ mensagem: 'Documento enviado com sucesso.', linkDrive: linkArquivo });
+}
+
+// ---------------------------------------------------------------------------
+// Helper — obtém ou cria aba Documentos
+// ---------------------------------------------------------------------------
+
+function obterOuCriarAbaDocumentos_(ss) {
+  var sheet = ss.getSheetByName(CFG_SOL.ABA_DOC);
+  if (!sheet) {
+    sheet = ss.insertSheet(CFG_SOL.ABA_DOC);
+    var cab = ['Timestamp','ID Estágio','Email Uploader','Perfil','Título','Link Drive','Nome Arquivo'];
+    sheet.getRange(1, 1, 1, cab.length).setValues([cab]).setFontWeight('bold');
+  }
+  return sheet;
 }
