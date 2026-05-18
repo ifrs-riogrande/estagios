@@ -1059,12 +1059,25 @@
         atividadesPrevistas:document.getElementById('atividades-prev').value.trim(),
         nomeAgente:         document.getElementById('agente').options[document.getElementById('agente').selectedIndex]?.text || '',
         agente:             document.getElementById('agente').value,
-        // Arquivos: informamos apenas os nomes — o upload binário é feito via link Drive gerado pelo GAS
-        nomeComprovanteMatricula: document.getElementById('comprovante-matricula').files[0]?.name || '',
-        nomeDocIdentidade:        document.getElementById('doc-identidade').files[0]?.name || '',
-        nomeBoletim:              document.getElementById('boletim').files[0]?.name || '',
         declaracoes: 'Todas aceitas',
       };
+
+      // Lê arquivos de admissão como base64 e adiciona ao payload
+      const lerArquivoBase64_ = (file) => new Promise((resolve) => {
+        if (!file) { resolve(null); return; }
+        const r = new FileReader();
+        r.onload  = () => resolve({ nome: file.name, base64: r.result.split(',')[1] });
+        r.onerror = () => resolve(null);
+        r.readAsDataURL(file);
+      });
+      const [arqMat, arqId, arqBol] = await Promise.all([
+        lerArquivoBase64_(document.getElementById('comprovante-matricula').files[0]),
+        lerArquivoBase64_(document.getElementById('doc-identidade').files[0]),
+        lerArquivoBase64_(document.getElementById('boletim').files[0]),
+      ]);
+      if (arqMat) dados.docMatricula  = arqMat;
+      if (arqId)  dados.docIdentidade = arqId;
+      if (arqBol) dados.docBoletim    = arqBol;
 
       await submitWithFeedback(
         () => apiSolicitarEstagio(dados),
