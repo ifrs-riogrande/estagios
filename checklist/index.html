@@ -506,26 +506,22 @@
 
   // ── Constantes ────────────────────────────────────────────────
   const LABELS_ATORES = {
-    admin:       'Setor de Estágios',
-    orientador:  'Orientador(a)',
-    coordenador: 'Coordenador(a) de Curso',
-    empresa:     'Empresa Concedente',
-    supervisor:  'Supervisor(a) na Empresa',
+    admin:      'Setor de Estágios',
+    orientador: 'Orientador(a) de Estágio',
+    supervisor: 'Supervisor(a) na Empresa',
   };
 
   const BADGE_COLORS = {
-    admin:       'var(--color-primary)',
-    orientador:  'var(--color-secondary)',
-    coordenador: 'var(--color-secondary)',
-    empresa:     'var(--color-accent)',
-    supervisor:  'var(--color-accent)',
+    admin:      'var(--color-primary)',
+    orientador: 'var(--color-secondary)',
+    supervisor: 'var(--color-accent)',
   };
 
   // ── Estado ────────────────────────────────────────────────────
   let checklist = null;
-  let meuAtor   = null;  // 'admin' | 'orientador' | 'coordenador' | 'empresa' | 'supervisor'
+  let meuAtor   = null;  // 'admin' | 'orientador' | 'supervisor'
   let meuEmail  = null;
-  let meuToken  = null;  // token para acesso sem Google (empresa / supervisor)
+  let meuToken  = null;  // token para acesso sem Google (supervisor)
 
   // ── Inicialização ─────────────────────────────────────────────
   document.addEventListener('DOMContentLoaded', () => {
@@ -538,14 +534,14 @@
       return;
     }
 
-    // Acesso por magic-link (empresa / supervisor sem conta Google)
+    // Acesso por magic-link (supervisor sem conta Google)
     if (token) {
       meuToken = token;
       carregarChecklistComToken(id, token);
       return;
     }
 
-    // Acesso por Google OAuth (admin, orientador, coordenador)
+    // Acesso por Google OAuth (admin)
     const ok = requireExternalAuth(
       window.location.href,
       'Checklist de Estágio — IFRS Campus Rio Grande',
@@ -592,7 +588,7 @@
 
     // Compara com e-mails dos atores
     if (ck._emailAtores) {
-      const atores = ['orientador', 'coordenador', 'empresa', 'supervisor'];
+      const atores = ['orientador', 'supervisor'];
       for (const ator of atores) {
         const e = (ck._emailAtores[ator] || '').toLowerCase();
         if (e && e === emailLower) return ator;

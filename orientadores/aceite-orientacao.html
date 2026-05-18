@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Aceite de Orientação — Central de Estágios IFRS</title>
+  <title>Checklist de Orientação — Central de Estágios IFRS</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
@@ -16,6 +16,7 @@
     #painel-info,
     #painel-confirmacao { display: none; }
 
+    /* ── Dados da solicitação ── */
     .sol-card {
       background: var(--color-surface);
       border: 1px solid var(--color-border);
@@ -34,15 +35,63 @@
       padding-bottom: var(--space-2); border-bottom: 1px solid var(--color-border);
       margin-top: var(--space-2); }
 
-    .aceite-actions { display: flex; gap: var(--space-4); flex-wrap: wrap; margin-top: var(--space-6); }
-    .btn-aceitar { background: #16a34a; color: #fff; border: none; }
-    .btn-aceitar:hover { background: #15803d; }
-    .btn-recusar { background: #dc2626; color: #fff; border: none; }
-    .btn-recusar:hover { background: #b91c1c; }
+    /* ── Checklist ── */
+    .ck-section { margin-top: var(--space-6); }
+    .ck-section-title {
+      font-size: var(--font-size-sm); font-weight: 600;
+      color: var(--color-text-muted); text-transform: uppercase; letter-spacing: .06em;
+      padding-bottom: var(--space-2); border-bottom: 2px solid var(--color-primary);
+      margin-bottom: var(--space-4);
+    }
+    .ck-item {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      padding: var(--space-4);
+      margin-bottom: var(--space-3);
+      transition: border-color .15s;
+    }
+    .ck-item--aceite {
+      background: #eff6ff;
+      border-color: #93c5fd;
+      border-width: 2px;
+    }
+    .ck-item--checked  { border-color: var(--color-success-border); background: var(--color-success-light); }
+    .ck-item--recusado { border-color: var(--color-danger-border,#fca5a5); background: #fff5f5; }
 
-    .recusa-area { display: none; margin-top: var(--space-5);
-      padding: var(--space-5); background: #fff5f5; border: 1px solid #fecaca; border-radius: var(--radius-lg); }
+    .ck-item-header { display: flex; align-items: flex-start; gap: var(--space-3); }
+    .ck-checkbox { width: 20px; height: 20px; flex-shrink: 0; margin-top: 2px; cursor: pointer; }
+    .ck-label { font-size: var(--font-size-sm); line-height: 1.5; cursor: pointer; flex: 1; }
+    .ck-obs-toggle { font-size: var(--font-size-xs); color: var(--color-primary); cursor: pointer;
+      margin-top: var(--space-1); display: inline-block; }
+    .ck-obs-area { display: none; margin-top: var(--space-2); }
+    .ck-obs-area textarea { width: 100%; font-size: var(--font-size-sm); }
+
+    /* ── Aceite item (primeiro) ── */
+    .aceite-pergunta { font-size: var(--font-size-base); font-weight: 600; color: var(--color-text); margin-bottom: var(--space-4); }
+    .aceite-btns { display: flex; gap: var(--space-3); flex-wrap: wrap; }
+    .btn-sim  { background: #16a34a; color: #fff; border: 2px solid #16a34a; }
+    .btn-sim:hover  { background: #15803d; }
+    .btn-sim.active { box-shadow: 0 0 0 3px #bbf7d0; }
+    .btn-nao  { background: #dc2626; color: #fff; border: 2px solid #dc2626; }
+    .btn-nao:hover  { background: #b91c1c; }
+    .btn-nao.active { box-shadow: 0 0 0 3px #fecaca; }
+    .btn-sim.inactive, .btn-nao.inactive { opacity: .45; }
+
+    /* ── Seção de recusa ── */
+    .recusa-area {
+      display: none; margin-top: var(--space-5);
+      padding: var(--space-5); background: #fff5f5;
+      border: 1px solid #fecaca; border-radius: var(--radius-lg);
+    }
+
+    /* ── Itens do checklist (exibidos após aceite) ── */
+    #checklist-itens { display: none; margin-top: var(--space-6); }
+
     .confirmacao-icon { font-size: 56px; text-align: center; display: block; margin-bottom: var(--space-4); }
+    .badge-ator { display: inline-block; font-size: var(--font-size-xs); font-weight: 600;
+      padding: 2px 10px; border-radius: 9999px; background: #dbeafe; color: #1d4ed8;
+      text-transform: uppercase; letter-spacing: .05em; margin-bottom: var(--space-3); }
   </style>
 </head>
 <body>
@@ -66,8 +115,8 @@
       <div class="form-wrapper">
 
         <div class="form-page-header">
-          <h1>Aceite de Orientação</h1>
-          <p>Um(a) estudante selecionou você como orientador(a) de estágio. Revise os dados e confirme sua resposta.</p>
+          <h1>Checklist de Orientação</h1>
+          <p>Revise as informações do estágio e responda o checklist de orientação e conformidade com o curso.</p>
         </div>
 
         <!-- Carregando -->
@@ -87,49 +136,90 @@
           </p>
         </div>
 
-        <!-- Dados da solicitação + botões -->
+        <!-- Dados + checklist -->
         <div id="painel-info">
+
+          <span class="badge-ator">Orientador(a) de Estágio</span>
 
           <div class="alert alert-info" style="margin-bottom:var(--space-5);">
             <div class="alert-content">
-              Revise os dados abaixo e clique em <strong>Aceitar</strong> para confirmar a orientação,
-              ou em <strong>Recusar</strong> caso não possa assumir esta orientação.
+              Revise as informações abaixo, confirme se aceita a orientação e responda
+              todos os itens do checklist. Sua resposta é necessária para dar andamento
+              ao processo de validação do estágio.
             </div>
           </div>
 
+          <!-- Dados da solicitação -->
           <div class="sol-card">
             <div class="sol-grid" id="sol-content"></div>
           </div>
 
-          <div id="feedback-aceite" class="form-feedback" role="status" aria-live="polite"></div>
+          <!-- Feedback global -->
+          <div id="feedback-ck" class="form-feedback" role="status" aria-live="polite"></div>
 
-          <div class="aceite-actions">
-            <button type="button" id="btn-aceitar" class="btn btn-lg btn-aceitar" onclick="responder('aceito')">
-              <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
-              </svg>
-              Aceitar orientação
-            </button>
-            <button type="button" id="btn-recusar" class="btn btn-lg btn-recusar" onclick="mostrarRecusa()">
-              <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
-              </svg>
-              Recusar
-            </button>
+          <!-- ── Aceite de orientação ── -->
+          <div class="ck-section">
+            <div class="ck-section-title">Aceite de Orientação</div>
+
+            <div class="ck-item ck-item--aceite" id="item-aceite">
+              <p class="aceite-pergunta">Aceito assumir a orientação deste estágio?</p>
+              <div class="aceite-btns">
+                <button type="button" id="btn-sim" class="btn btn-lg btn-sim" onclick="selecionarAceite(true)">
+                  <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" style="vertical-align:middle;margin-right:4px;">
+                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                  </svg>
+                  Sim, aceito orientar
+                </button>
+                <button type="button" id="btn-nao" class="btn btn-lg btn-nao" onclick="selecionarAceite(false)">
+                  <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" style="vertical-align:middle;margin-right:4px;">
+                    <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                  </svg>
+                  Não posso orientar
+                </button>
+              </div>
+
+              <!-- Área de recusa -->
+              <div class="recusa-area" id="recusa-area">
+                <p style="font-weight:600;margin-bottom:var(--space-3);">Motivo da recusa</p>
+                <div class="form-group">
+                  <textarea id="motivo-recusa" class="form-control" rows="4"
+                    placeholder="Ex.: Sobrecarga de orientandos, área incompatível com minha formação, etc."
+                    maxlength="500"></textarea>
+                  <p class="form-hint">Opcional — será informado ao estudante para orientar a escolha de outro orientador.</p>
+                </div>
+                <div class="form-actions form-actions--between" style="margin-top:var(--space-4);">
+                  <button type="button" class="btn btn-ghost" onclick="cancelarRecusa()">Cancelar</button>
+                  <button type="button" id="btn-confirmar-recusa" class="btn btn-nao btn-lg" onclick="confirmarRecusa()">
+                    Confirmar recusa
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
 
-          <!-- Área de recusa -->
-          <div class="recusa-area" id="recusa-area">
-            <div class="form-group">
-              <label class="form-label" for="motivo-recusa">Motivo da recusa <span style="font-weight:400;color:var(--color-text-muted);">(opcional — será enviado ao estudante)</span></label>
-              <textarea id="motivo-recusa" class="form-control" rows="4"
-                placeholder="Ex.: Sobrecarga de orientandos, área incompatível com minha formação, etc."
+          <!-- ── Itens do checklist (exibidos após aceite) ── -->
+          <div id="checklist-itens">
+            <div class="ck-section" id="secao-orientador" style="display:none;">
+              <div class="ck-section-title">Como Orientador(a)</div>
+              <div id="itens-orientador"></div>
+            </div>
+
+            <div class="ck-section" id="secao-coordenador" style="display:none;">
+              <div class="ck-section-title">Como Coordenador(a) de Curso</div>
+              <div id="itens-coordenador"></div>
+            </div>
+
+            <!-- Observação geral -->
+            <div class="form-group" style="margin-top:var(--space-5);">
+              <label class="form-label" for="obs-geral">Observações gerais <span style="font-weight:400;color:var(--color-text-muted);">(opcional)</span></label>
+              <textarea id="obs-geral" class="form-control" rows="3"
+                placeholder="Alguma observação sobre a solicitação ou o estágio?"
                 maxlength="500"></textarea>
             </div>
-            <div class="form-actions form-actions--between" style="margin-top:var(--space-4);">
-              <button type="button" class="btn btn-ghost" onclick="cancelarRecusa()">Cancelar</button>
-              <button type="button" id="btn-confirmar-recusa" class="btn btn-recusar" onclick="responder('recusado')">
-                Confirmar recusa
+
+            <div class="form-actions" style="margin-top:var(--space-6);">
+              <button type="button" id="btn-submeter" class="btn btn-primary btn-lg" onclick="submeterChecklist()">
+                Confirmar e enviar checklist
               </button>
             </div>
           </div>
@@ -141,7 +231,7 @@
           <div style="text-align:center;padding:var(--space-8) 0;">
             <span class="confirmacao-icon" id="conf-icon"></span>
             <h2 id="conf-titulo" style="margin-bottom:var(--space-3);"></h2>
-            <p id="conf-msg" style="color:var(--color-text-muted);max-width:400px;margin:0 auto;"></p>
+            <p id="conf-msg" style="color:var(--color-text-muted);max-width:420px;margin:0 auto;"></p>
           </div>
         </div>
 
@@ -165,19 +255,22 @@
   <script>
     'use strict';
 
-    var tokenAtual    = '';
-    var respostaInicial = ''; // 'aceito' | 'recusado' se veio pela URL
+    var _token      = '';
+    var _idEstagio  = '';
+    var _itensRaw   = [];   // itens vindos do backend (sem aceite_orientacao)
+    var _aceitou    = null; // true | false | null
+
+    // IDs dos itens por seção (após remover aceite_orientacao que é tratado separadamente)
+    var IDS_ORIENTADOR  = ['dados_orientador','coerencia_ppc','qualidade_pedagogica','compatibilidade','formacao_area','disponibilidade_ch'];
+    var IDS_COORDENADOR = ['conformidade_curso','etapa_adequada','carga_horaria_curso'];
 
     // ── Inicialização ──────────────────────────────────────────────────────────
     document.addEventListener('DOMContentLoaded', function () {
-      var params = new URLSearchParams(window.location.search);
-      tokenAtual     = params.get('token') || '';
-      respostaInicial= params.get('r')     || '';   // pré-resposta via link do e-mail
+      var params   = new URLSearchParams(window.location.search);
+      _token      = params.get('token') || '';
+      _idEstagio  = params.get('id')    || '';
 
-      if (!tokenAtual) {
-        mostrarErro('Link inválido — token não encontrado na URL.');
-        return;
-      }
+      if (!_token) { mostrarErro('Link inválido — token não encontrado na URL.'); return; }
 
       mostrarPainel('painel-carregando');
       carregarSolicitacao();
@@ -198,40 +291,36 @@
     // ── Carrega dados ─────────────────────────────────────────────────────────
     async function carregarSolicitacao() {
       try {
-        var dados = await apiVerificarAceiteOrientador(tokenAtual);
-        renderizarSolicitacao(dados);
-        mostrarPainel('painel-info');
+        var dados = await apiVerificarAceiteOrientador(_token);
+        _idEstagio = dados.idEstagio || _idEstagio;
 
-        // Se a resposta já veio pelo link (botão do e-mail), pré-preenche
-        if (respostaInicial === 'aceito') {
-          setTimeout(function() { responder('aceito'); }, 300);
-        } else if (respostaInicial === 'recusado') {
-          setTimeout(function() { mostrarRecusa(); }, 300);
-        }
+        renderizarSolicitacao(dados);
+
+        // Guarda itens do checklist (sem o primeiro item aceite_orientacao)
+        _itensRaw = (dados.checklistItens || []).filter(function(it) { return it.id !== 'aceite_orientacao'; });
+        renderizarItensChecklist(_itensRaw);
+
+        mostrarPainel('painel-info');
       } catch (err) {
         var msg = err.message || '';
-        if (msg.toLowerCase().includes('expirad') || msg.toLowerCase().includes('utilizado')) {
-          mostrarErro('Este link já foi utilizado ou expirou. Cada link de aceite é de uso único.');
-        } else if (msg.toLowerCase().includes('inválido') || msg.toLowerCase().includes('invalido') || msg.toLowerCase().includes('not_found')) {
-          mostrarErro('Link inválido. Verifique se copiou o endereço corretamente.');
-        } else {
-          mostrarErro('Erro ao carregar solicitação: ' + msg);
-        }
+        if (/expir|utiliz/i.test(msg))       mostrarErro('Este link já foi utilizado ou expirou. Cada link é de uso único.');
+        else if (/inv[áa]lid|not_found/i.test(msg)) mostrarErro('Link inválido. Verifique se copiou o endereço corretamente.');
+        else                                  mostrarErro('Erro ao carregar solicitação: ' + msg);
       }
     }
 
-    // ── Renderiza dados ────────────────────────────────────────────────────────
+    // ── Renderiza dados da solicitação ─────────────────────────────────────────
     function renderizarSolicitacao(d) {
       var v = function(val) {
-        return val ? '<p class="sol-value">' + escapeHtml(String(val)) + '</p>'
-                   : '<p class="sol-value" style="color:var(--color-text-muted);font-style:italic;">Não informado</p>';
+        return val
+          ? '<p class="sol-value">' + escapeHtml(String(val)) + '</p>'
+          : '<p class="sol-value" style="color:var(--color-text-muted);font-style:italic;">Não informado</p>';
       };
-
       document.getElementById('sol-content').innerHTML =
         '<div class="sol-divider">Estudante</div>'
         + '<div class="sol-full"><span class="sol-label">Nome</span>' + v(d.nomeEstudante) + '</div>'
         + '<div><span class="sol-label">Curso</span>' + v(d.curso) + '</div>'
-        + '<div><span class="sol-label">Turno / Semestre</span>' + v((d.turno || '') + (d.semestre ? ' · ' + d.semestre + 'º sem.' : '')) + '</div>'
+        + '<div><span class="sol-label">Turno / Semestre</span>' + v((d.turno||'') + (d.semestre ? ' · ' + d.semestre + 'º sem.' : '')) + '</div>'
 
         + '<div class="sol-divider">Empresa e Tipo</div>'
         + '<div><span class="sol-label">Empresa concedente</span>' + v(d.nomeEmpresa) + '</div>'
@@ -243,7 +332,7 @@
         + '<div><span class="sol-label">Carga horária</span>' + v(d.cargaHoraria) + '</div>'
         + '<div><span class="sol-label">Horário</span>' + v(d.horario) + '</div>'
 
-        + '<div class="sol-divider">Plano</div>'
+        + '<div class="sol-divider">Plano de Estágio</div>'
         + '<div class="sol-full"><span class="sol-label">Objetivos</span>' + v(d.objetivos) + '</div>'
         + '<div class="sol-full"><span class="sol-label">Plano de atividades</span>' + v(d.planoAtividades) + '</div>'
 
@@ -251,54 +340,187 @@
         + '<div class="sol-full"><span class="sol-label">Você</span>' + v(d.nomeOrientador) + '</div>';
     }
 
-    // ── Recusa ────────────────────────────────────────────────────────────────
-    function mostrarRecusa() {
-      document.getElementById('recusa-area').style.display = 'block';
-      document.getElementById('btn-aceitar').disabled = true;
-      document.getElementById('btn-recusar').disabled = true;
-      document.getElementById('motivo-recusa').focus();
+    // ── Renderiza itens do checklist ───────────────────────────────────────────
+    function renderizarItensChecklist(itens) {
+      var oriItens  = itens.filter(function(it) { return IDS_ORIENTADOR.indexOf(it.id)  !== -1; });
+      var coordItens= itens.filter(function(it) { return IDS_COORDENADOR.indexOf(it.id) !== -1; });
+
+      if (oriItens.length)  { renderGrupo('itens-orientador',  oriItens);  document.getElementById('secao-orientador').style.display  = 'block'; }
+      if (coordItens.length){ renderGrupo('itens-coordenador', coordItens);document.getElementById('secao-coordenador').style.display = 'block'; }
     }
+
+    function renderGrupo(containerId, itens) {
+      var html = '';
+      itens.forEach(function(item, idx) {
+        html += renderItem(item, idx);
+      });
+      document.getElementById(containerId).innerHTML = html;
+    }
+
+    function renderItem(item, idx) {
+      var ckId  = 'ck-' + item.id;
+      var obsId = 'obs-' + item.id;
+      return '<div class="ck-item" id="item-' + item.id + '">'
+        +   '<div class="ck-item-header">'
+        +     '<input type="checkbox" class="ck-checkbox" id="' + ckId + '"'
+        +       ' data-id="' + item.id + '"'
+        +       (item.checked ? ' checked' : '')
+        +       ' onchange="atualizarItem(\'' + item.id + '\')">'
+        +     '<label class="ck-label" for="' + ckId + '">' + escapeHtml(item.label) + '</label>'
+        +   '</div>'
+        +   '<span class="ck-obs-toggle" onclick="toggleObs(\'' + obsId + '\')">+ Adicionar observação</span>'
+        +   '<div class="ck-obs-area" id="' + obsId + '">'
+        +     '<textarea class="form-control" rows="2" maxlength="300" placeholder="Observação (opcional)..."'
+        +       ' data-obs-id="' + item.id + '">' + escapeHtml(item.obs || '') + '</textarea>'
+        +   '</div>'
+        + '</div>';
+    }
+
+    function toggleObs(obsId) {
+      var el = document.getElementById(obsId);
+      if (!el) return;
+      var aberto = el.style.display === 'block';
+      el.style.display = aberto ? 'none' : 'block';
+    }
+
+    function atualizarItem(id) {
+      var el   = document.getElementById('item-' + id);
+      var ckEl = document.getElementById('ck-' + id);
+      if (!el || !ckEl) return;
+      if (ckEl.checked) {
+        el.classList.add('ck-item--checked');
+      } else {
+        el.classList.remove('ck-item--checked');
+      }
+    }
+
+    // ── Aceite de orientação ──────────────────────────────────────────────────
+    function selecionarAceite(aceita) {
+      _aceitou = aceita;
+      var btnSim = document.getElementById('btn-sim');
+      var btnNao = document.getElementById('btn-nao');
+
+      if (aceita) {
+        btnSim.classList.add('active');    btnSim.classList.remove('inactive');
+        btnNao.classList.add('inactive');  btnNao.classList.remove('active');
+        // Oculta recusa, mostra checklist
+        document.getElementById('recusa-area').style.display   = 'none';
+        document.getElementById('checklist-itens').style.display = 'block';
+        document.getElementById('item-aceite').classList.add('ck-item--checked');
+        document.getElementById('item-aceite').classList.remove('ck-item--recusado');
+      } else {
+        btnNao.classList.add('active');    btnNao.classList.remove('inactive');
+        btnSim.classList.add('inactive');  btnSim.classList.remove('active');
+        // Mostra área de recusa, oculta checklist
+        document.getElementById('recusa-area').style.display    = 'block';
+        document.getElementById('checklist-itens').style.display = 'none';
+        document.getElementById('item-aceite').classList.add('ck-item--recusado');
+        document.getElementById('item-aceite').classList.remove('ck-item--checked');
+        document.getElementById('motivo-recusa').focus();
+      }
+    }
+
     function cancelarRecusa() {
-      document.getElementById('recusa-area').style.display = 'none';
-      document.getElementById('btn-aceitar').disabled = false;
-      document.getElementById('btn-recusar').disabled = false;
+      _aceitou = null;
+      var btnSim = document.getElementById('btn-sim');
+      var btnNao = document.getElementById('btn-nao');
+      btnSim.classList.remove('active','inactive');
+      btnNao.classList.remove('active','inactive');
+      document.getElementById('recusa-area').style.display    = 'none';
+      document.getElementById('checklist-itens').style.display = 'none';
+      document.getElementById('item-aceite').classList.remove('ck-item--checked','ck-item--recusado');
     }
 
-    // ── Enviar resposta ───────────────────────────────────────────────────────
-    async function responder(tipo) {
-      hideFormFeedback('feedback-aceite');
-
-      var obs = tipo === 'recusado'
-        ? (document.getElementById('motivo-recusa') && document.getElementById('motivo-recusa').value.trim())
-        : '';
-
-      var btnId = tipo === 'aceito' ? 'btn-aceitar' : 'btn-confirmar-recusa';
-      var btn   = document.getElementById(btnId);
-      if (btn) { btn.disabled = true; btn.textContent = 'Processando...'; }
-      document.getElementById('btn-aceitar').disabled = true;
-      document.getElementById('btn-recusar').disabled = true;
+    // ── Confirmar recusa ──────────────────────────────────────────────────────
+    async function confirmarRecusa() {
+      hideFormFeedback('feedback-ck');
+      var motivo = document.getElementById('motivo-recusa').value.trim();
+      var btn    = document.getElementById('btn-confirmar-recusa');
+      btn.disabled    = true;
+      btn.textContent = 'Enviando...';
 
       try {
-        await apiResponderAceiteOrientador({ token: tokenAtual, resposta: tipo, obs: obs });
-
-        // Confirmação
-        var conf   = document.getElementById('painel-confirmacao');
-        var aceito = tipo === 'aceito';
-        document.getElementById('conf-icon').textContent  = aceito ? '✅' : '❌';
-        document.getElementById('conf-titulo').textContent = aceito
-          ? 'Orientação aceita com sucesso!'
-          : 'Orientação recusada.';
-        document.getElementById('conf-msg').textContent = aceito
-          ? 'O estudante foi notificado e o processo de validação foi iniciado. Obrigado!'
-          : 'O estudante foi notificado e poderá escolher outro(a) orientador(a). Obrigado pela transparência.';
-        mostrarPainel('painel-confirmacao');
-
+        await apiResponderAceiteOrientador({
+          token:      _token,
+          idEstagio:  _idEstagio,
+          itens:      [],
+          decisao:    'recusado',
+          obs:        motivo,
+        });
+        mostrarConfirmacao(false);
       } catch (err) {
-        if (btn) { btn.disabled = false; btn.textContent = tipo === 'aceito' ? 'Aceitar orientação' : 'Confirmar recusa'; }
-        document.getElementById('btn-aceitar').disabled = false;
-        document.getElementById('btn-recusar').disabled = false;
-        showFormFeedback('feedback-aceite', err.message || 'Erro ao processar resposta. Tente novamente.', 'error');
+        btn.disabled    = false;
+        btn.textContent = 'Confirmar recusa';
+        showFormFeedback('feedback-ck', 'error', 'Erro ao enviar recusa', err.message || 'Tente novamente.');
       }
+    }
+
+    // ── Submeter checklist completo ───────────────────────────────────────────
+    async function submeterChecklist() {
+      hideFormFeedback('feedback-ck');
+
+      if (_aceitou !== true) {
+        showFormFeedback('feedback-ck', 'error', 'Atenção', 'Selecione "Sim, aceito orientar" antes de submeter o checklist.');
+        return;
+      }
+
+      // Coleta todos os itens preenchidos
+      var itensEnviados = [];
+
+      // Item aceite_orientacao (forçado true pois _aceitou === true)
+      itensEnviados.push({ id: 'aceite_orientacao', checked: true, obs: '' });
+
+      // Demais itens
+      _itensRaw.forEach(function(item) {
+        var ckEl  = document.getElementById('ck-' + item.id);
+        var obsEl = document.querySelector('[data-obs-id="' + item.id + '"]');
+        itensEnviados.push({
+          id:      item.id,
+          checked: ckEl ? ckEl.checked : false,
+          obs:     obsEl ? obsEl.value.trim() : '',
+        });
+      });
+
+      // Valida: todos os itens obrigatórios marcados
+      var naoMarcados = itensEnviados.filter(function(it) { return it.id !== 'aceite_orientacao' && !it.checked; });
+      if (naoMarcados.length > 0) {
+        showFormFeedback('feedback-ck', 'error', 'Atenção',
+          'Todos os itens do checklist devem ser marcados para prosseguir. '
+          + naoMarcados.length + ' item(ns) pendente(s). Se houver algum impedimento, utilize o campo de observação e entre em contato com o setor.');
+        return;
+      }
+
+      var obs = document.getElementById('obs-geral').value.trim();
+      var btn = document.getElementById('btn-submeter');
+      btn.disabled    = true;
+      btn.textContent = 'Enviando...';
+
+      try {
+        await apiResponderAceiteOrientador({
+          token:      _token,
+          idEstagio:  _idEstagio,
+          itens:      itensEnviados,
+          decisao:    'aprovado',
+          obs:        obs,
+        });
+        mostrarConfirmacao(true);
+      } catch (err) {
+        btn.disabled    = false;
+        btn.textContent = 'Confirmar e enviar checklist';
+        showFormFeedback('feedback-ck', 'error', 'Erro ao enviar', err.message || 'Tente novamente.');
+      }
+    }
+
+    // ── Confirmação final ─────────────────────────────────────────────────────
+    function mostrarConfirmacao(aceito) {
+      document.getElementById('conf-icon').textContent  = aceito ? '✅' : '❌';
+      document.getElementById('conf-titulo').textContent = aceito
+        ? 'Checklist enviado com sucesso!'
+        : 'Orientação recusada.';
+      document.getElementById('conf-msg').textContent = aceito
+        ? 'Obrigado! O processo avançou para o supervisor, que receberá um e-mail para continuar a validação.'
+        : 'O estudante foi notificado e poderá escolher outro(a) orientador(a). Obrigado pela transparência.';
+      mostrarPainel('painel-confirmacao');
     }
   </script>
 </body>
