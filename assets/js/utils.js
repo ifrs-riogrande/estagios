@@ -391,6 +391,22 @@ function escapeHtml(text) {
   return div.innerHTML;
 }
 
+/**
+ * Valida uma URL para uso seguro em atributos href.
+ * Bloqueia protocolos perigosos (javascript:, vbscript:, data:, etc.).
+ * Permite apenas http://, https:// e mailto:.
+ *
+ * @param {string} url - URL a validar
+ * @returns {string} URL original se segura, ou '' se não permitida
+ */
+function safeUrl(url) {
+  if (!url) return '';
+  const s = String(url).trim().replace(/\s/g, '');
+  if (/^https?:\/\//i.test(s)) return s;
+  if (/^mailto:/i.test(s))     return s;
+  return '';
+}
+
 // ─────────────────────────────────────────
 //  DATA / HORA
 // ─────────────────────────────────────────

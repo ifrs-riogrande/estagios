@@ -169,8 +169,8 @@
           + (a.email ? '<dt style="color:var(--gray-500);">E-mail</dt><dd style="margin:0;"><a href="mailto:' + escapeHtml(a.email) + '" class="link">' + escapeHtml(a.email) + '</a></dd>' : '')
           + (a.periodoConvenio ? '<dt style="color:var(--gray-500);white-space:nowrap;">Vigência</dt><dd style="margin:0;">' + escapeHtml(a.periodoConvenio) + '</dd>' : '')
           + '</dl>'
-          + (a.site ? '<div style="margin-top:var(--space-3);padding-top:var(--space-3);border-top:1px solid var(--gray-200);">'
-          + '<a href="' + escapeHtml(a.site) + '" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm">Acessar site</a>'
+          + (a.site && safeUrl(a.site) ? '<div style="margin-top:var(--space-3);padding-top:var(--space-3);border-top:1px solid var(--gray-200);">'
+          + '<a href="' + escapeHtml(safeUrl(a.site)) + '" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm">Acessar site</a>'
           + '</div>' : '')
           + '</div>';
       }).join('');

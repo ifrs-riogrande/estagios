@@ -255,7 +255,7 @@
           </div>
           <div>
             <div class="detail-label">Site</div>
-            <div class="detail-value">${a.site ? `<a href="${escapeHtml(a.site)}" target="_blank" rel="noopener">${escapeHtml(a.site)}</a>` : '—'}</div>
+            <div class="detail-value">${a.site && safeUrl(a.site) ? `<a href="${escapeHtml(safeUrl(a.site))}" target="_blank" rel="noopener">${escapeHtml(a.site)}</a>` : escapeHtml(a.site||'—')}</div>
           </div>
           <div>
             <div class="detail-label">Nº do Edital</div>
@@ -265,7 +265,7 @@
             <div class="detail-label">Vigência do Convênio</div>
             <div class="detail-value">${escapeHtml(a.periodo||'—')}</div>
           </div>
-          ${a.linkEdital ? `<div class="full"><div class="detail-label">Link do Edital</div><div class="detail-value"><a href="${escapeHtml(a.linkEdital)}" target="_blank" rel="noopener">${escapeHtml(a.linkEdital)}</a></div></div>` : ''}
+          ${a.linkEdital && safeUrl(a.linkEdital) ? `<div class="full"><div class="detail-label">Link do Edital</div><div class="detail-value"><a href="${escapeHtml(safeUrl(a.linkEdital))}" target="_blank" rel="noopener">${escapeHtml(a.linkEdital)}</a></div></div>` : ''}
           ${a.obs ? `<div class="full"><div class="detail-label">Observações</div><div class="detail-value">${escapeHtml(a.obs)}</div></div>` : ''}
           <div>
             <div class="detail-label">Status</div>

@@ -244,7 +244,7 @@
           <div class="detail-item detail-full"><label>Endereço</label><p>${escapeHtml(e.endereco||'—')}${e.bairro?', '+escapeHtml(e.bairro):''} — ${escapeHtml(e.municipio||'')}/${escapeHtml(e.uf||'')} ${escapeHtml(e.cep||'')}</p></div>
           <div class="detail-item"><label>Telefone</label><p>${escapeHtml(e.telefone||'—')}</p></div>
           <div class="detail-item"><label>E-mail</label><p>${escapeHtml(e.email||'—')}</p></div>
-          <div class="detail-item detail-full"><label>Site</label><p>${e.site ? `<a href="${escapeHtml(e.site)}" target="_blank" rel="noopener">${escapeHtml(e.site)}</a>` : '—'}</p></div>
+          <div class="detail-item detail-full"><label>Site</label><p>${e.site && safeUrl(e.site) ? `<a href="${escapeHtml(safeUrl(e.site))}" target="_blank" rel="noopener">${escapeHtml(e.site)}</a>` : escapeHtml(e.site||'—')}</p></div>
           <div class="detail-item"><label>Representante</label><p>${escapeHtml(e.nomeRepresentante||'—')}</p></div>
           <div class="detail-item"><label>Cargo</label><p>${escapeHtml(e.cargoRepresentante||'—')}</p></div>
           <div class="detail-item"><label>E-mail Rep.</label><p>${escapeHtml(e.emailRep||'—')}</p></div>

@@ -320,6 +320,25 @@ async function apiDashboard() {
 }
 
 // ─────────────────────────────────────────
+//  SERVIDORES — orientadores e coordenadores
+// ─────────────────────────────────────────
+
+/** Lista estágios do orientador autenticado. */
+async function apiListarMeusOrientandos() {
+  return API.get('listarMeusOrientandos', { authToken: getAccessToken() });
+}
+
+/** Obtém perfil do orientador autenticado. */
+async function apiObterMeuCadastroOrientador() {
+  return API.get('obterMeuCadastroOrientador', { authToken: getAccessToken() });
+}
+
+/** Obtém perfil do coordenador autenticado. */
+async function apiObterMeuCadastroCoordenador() {
+  return API.get('obterMeuCadastroCoordenador', { authToken: getAccessToken() });
+}
+
+// ─────────────────────────────────────────
 //  ADMIN — chamadas restritas ao setor
 // ─────────────────────────────────────────
 

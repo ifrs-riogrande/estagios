@@ -532,7 +532,7 @@
       return `
         <div class="action-card" style="background:var(--color-info-light);border-color:var(--color-info-border)">
           <h2>Status: ${escapeHtml(s.status)}</h2>
-          <p>${msg}</p>
+          <p>${escapeHtml(msg)}</p>
         </div>`;
     }
 

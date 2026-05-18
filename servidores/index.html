@@ -42,7 +42,7 @@
     </section>
 
     <div class="container" style="padding-top:var(--space-8);padding-bottom:var(--space-12);">
-      <div class="hub-grid hub-grid--2col" style="max-width:720px;">
+      <div class="hub-grid hub-grid--2col" style="max-width:720px;padding-bottom:var(--space-2);">
 
         <!-- Perfil Orientador -->
         <a href="perfil-orientador.html" class="hub-card">
@@ -77,6 +77,23 @@
           </div>
         </a>
 
+        <!-- Meus Orientandos -->
+        <a href="meus-orientandos.html" class="hub-card" id="card-orientandos">
+          <div class="hub-card-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
+              <circle cx="9" cy="7" r="4"/>
+              <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/>
+            </svg>
+          </div>
+          <div class="hub-card-body">
+            <h2>Meus Orientandos <span id="badge-orientandos" style="display:none;background:var(--color-warning,#f59e0b);color:#fff;font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;vertical-align:middle;margin-left:6px;"></span></h2>
+            <p>Acompanhe os estágios sob sua orientação: status, documentos e prazo de cada orientando.</p>
+          </div>
+          <div class="hub-card-arrow" aria-hidden="true">
+            <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/></svg>
+          </div>
+        </a>
 
       </div>
     </div>
@@ -98,7 +115,17 @@
   <script>
     'use strict';
     document.addEventListener('DOMContentLoaded', function () {
-      requireStaffAuth();
+      if (!requireStaffAuth()) return;
+      // Tenta carregar badge de orientandos com aceite pendente
+      apiListarMeusOrientandos().then(function (data) {
+        var lista = Array.isArray(data) ? data : (data.orientandos || []);
+        var pendentes = lista.filter(function (s) { return s.status === 'Aguardando Aceite Orientador'; }).length;
+        if (pendentes > 0) {
+          var badge = document.getElementById('badge-orientandos');
+          badge.textContent = pendentes + ' pendente' + (pendentes > 1 ? 's' : '');
+          badge.style.display = 'inline-flex';
+        }
+      }).catch(function () { /* silencioso — usuário pode não ser orientador */ });
     });
   </script>
 </body>

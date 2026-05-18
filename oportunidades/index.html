@@ -323,8 +323,8 @@
           else prazoTexto = 'Prazo: ' + formatDate(o.prazo) + ' (' + diasRestantes + ' dias)';
         }
 
-        const candidaturaBtn = o.linkCandidatura
-          ? '<a href="' + escapeHtml(o.linkCandidatura) + '" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-sm">Candidatar-se</a>'
+        const candidaturaBtn = (o.linkCandidatura && safeUrl(o.linkCandidatura))
+          ? '<a href="' + escapeHtml(safeUrl(o.linkCandidatura)) + '" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-sm">Candidatar-se</a>'
           : (o.contatoCandidatura
               ? '<a href="mailto:' + escapeHtml(o.contatoCandidatura) + '" class="btn btn-primary btn-sm">Candidatar-se</a>'
               : '');

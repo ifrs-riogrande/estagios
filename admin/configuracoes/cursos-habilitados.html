@@ -214,7 +214,7 @@
       function mostrarErro(msg) {
         if (fb) {
           fb.style.display = 'block';
-          fb.innerHTML = '<div class="alert alert-danger"><div class="alert-content"><strong>Erro ao salvar:</strong> ' + msg + '</div></div>';
+          fb.innerHTML = '<div class="alert alert-danger"><div class="alert-content"><strong>Erro ao salvar:</strong> ' + escapeHtml(msg) + '</div></div>';
         } else {
           alert('Erro ao salvar: ' + msg);
         }

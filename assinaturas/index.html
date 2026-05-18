@@ -1055,7 +1055,7 @@
     document.getElementById('ass-loading').hidden = true;
     const el = document.getElementById('ass-error');
     el.hidden = false;
-    el.innerHTML = `<div class="alert alert-error" role="alert"><strong>Erro:</strong> ${msg}</div>`;
+    el.innerHTML = `<div class="alert alert-error" role="alert"><strong>Erro:</strong> ${escapeHtml(msg)}</div>`;
   }
 
   function mostrarToast(msg, tipo) {
