@@ -397,14 +397,8 @@ var MAIL = (function () {
     // dados: { idEstagio, nomeEstudante, labelAtor, prazoVencimento, email, pageUrl, numeroEtapa }
     var pageUrl = dados.pageUrl || (BASE_URL + '/assinaturas/?id=' + encodeURIComponent(dados.idEstagio));
     var corpo = '<p>Olá!</p>'
-      + '<p>É a sua vez de assinar o Termo de Compromisso de Estágio (TCE) '
-      + 'utilizando sua conta <strong>gov.br</strong>. Acesse o link abaixo para:</p>'
-      + '<ol style="line-height:2.2;padding-left:20px;">'
-      + '<li>Baixar o TCE atual.</li>'
-      + '<li>Acessar <a href="https://assinador.iti.br" style="color:#1d4ed8;">assinador.iti.br</a> '
-      + 'e assinar com gov.br.</li>'
-      + '<li>Enviar o PDF assinado de volta.</li>'
-      + '</ol>'
+      + '<p>É a sua vez de assinar o Termo de Compromisso de Estágio (TCE). '
+      + 'Acesse a página pelo botão abaixo para visualizar, baixar e enviar o documento assinado.</p>'
       + campo_('ID do estágio', dados.idEstagio)
       + campo_('Estudante', dados.nomeEstudante)
       + campo_('Sua etapa', 'Etapa ' + dados.numeroEtapa + '/8 — ' + dados.labelAtor)
@@ -413,10 +407,8 @@ var MAIL = (function () {
       + '<a href="' + pageUrl + '" style="display:inline-block;background:#1d4ed8;color:#fff;'
       + 'padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:600;">🖊 Acessar e Assinar TCE</a>'
       + '</p>'
-      + '<p style="font-size:13px;color:#6b7280;margin-top:16px;">'
-      + 'Dúvidas sobre assinatura gov.br: '
-      + '<a href="https://www.gov.br/governodigital/pt-br/assinatura-eletronica" style="color:#6b7280;">'
-      + 'gov.br/assinatura-eletronica</a></p>';
+      + '<p style="font-size:13px;color:#6b7280;margin-top:12px;">'
+      + 'Se o botão não funcionar, acesse: <a href="' + pageUrl + '" style="color:#6b7280;">' + pageUrl + '</a></p>';
     enviar_(dados.email,
       '[SGE] Assine o TCE (etapa ' + dados.numeroEtapa + '/8) — ' + dados.idEstagio,
       htmlBase_('Assinatura do TCE — ' + dados.labelAtor, corpo));
