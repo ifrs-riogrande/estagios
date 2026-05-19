@@ -759,9 +759,6 @@
     const chipCls     = s => s === 'aprovado' ? 'proc-ator-chip--done' : s === 'ajuste' ? 'proc-ator-chip--warn' : 'proc-ator-chip--pending';
     const chipIcon    = s => s === 'aprovado' ? '✓ ' : s === 'ajuste' ? '⚠ ' : '◦ ';
 
-    const ATOR_LABELS = { orientador:'Orientador', coordenador:'Coordenador', empresa:'Empresa', supervisor:'Supervisor' };
-    const paralelos   = ['orientador','coordenador','empresa','supervisor'];
-
     let steps = '';
 
     /* 1 — Solicitação recebida */
@@ -773,11 +770,14 @@
       </div></div>`;
 
     /* 2 — Aceite do orientador */
+    const aOri = hist.orientador || {};
+    const oriFez = aOri.status === 'aprovado' || aOri.status === 'ajuste';
     steps += `<div class="proc-step">
-      <div class="proc-dot proc-dot--done">✓</div>
+      <div class="proc-dot ${oriFez ? dotCls(aOri.status) : (hist.etapaAtiva === 'orientador' ? 'proc-dot--active' : 'proc-dot--pending')}">${dotIcon(aOri.status,'2')}</div>
       <div class="proc-step-body">
-        <div class="proc-step-label">Orientador aceitou a orientação</div>
-        <div class="proc-step-meta">${escapeHtml(info.nomeOrientador||'')}${hist.criacao ? ' · '+fmtDH(hist.criacao) : ''}</div>
+        <div class="proc-step-label">Orientador(a) de Estágio</div>
+        <div class="proc-step-meta">${escapeHtml(info.nomeOrientador||'')}${oriFez && aOri.data ? ' · '+fmtDH(aOri.data) : (hist.criacao ? ' · '+fmtDH(hist.criacao) : '')}</div>
+        ${oriFez ? `<div class="proc-atores"><span class="proc-ator-chip ${chipCls(aOri.status)}">${chipIcon(aOri.status)}${statusLabel(aOri.status)}</span></div>` : ''}
       </div></div>`;
 
     /* 3 — Setor de Estágios (admin) */
@@ -790,21 +790,16 @@
         <div class="proc-step-meta">${adminFez ? statusLabel(aAdmin.status)+(aAdmin.data ? ' · '+fmtDH(aAdmin.data) : '') : 'Em verificação…'}</div>
       </div></div>`;
 
-    /* 4 — Verificação paralela */
-    const etapaParalela  = hist.etapaAtiva === 'paralelo' || hist.etapaAtiva === 'concluido';
-    const todosAprovados = etapaParalela && paralelos.every(a => hist[a] && hist[a].status === 'aprovado');
-    const chips = etapaParalela
-      ? paralelos.map(a => {
-          const st = hist[a] ? hist[a].status : '';
-          return `<span class="proc-ator-chip ${chipCls(st)}">${chipIcon(st)}${ATOR_LABELS[a]}</span>`;
-        }).join('')
-      : paralelos.map(a => `<span class="proc-ator-chip proc-ator-chip--pending">◦ ${ATOR_LABELS[a]}</span>`).join('');
-
+    /* 4 — Supervisor */
+    const aSup = hist.supervisor || {};
+    const supFez = aSup.status === 'aprovado' || aSup.status === 'ajuste';
+    const supAtivo = hist.etapaAtiva === 'paralelo' || hist.etapaAtiva === 'supervisor' || hist.etapaAtiva === 'concluido';
     steps += `<div class="proc-step">
-      <div class="proc-dot ${todosAprovados ? 'proc-dot--done' : etapaParalela ? 'proc-dot--active' : 'proc-dot--pending'}">${dotIcon(todosAprovados ? 'aprovado' : '','4')}</div>
+      <div class="proc-dot ${supFez ? dotCls(aSup.status) : (supAtivo ? 'proc-dot--active' : 'proc-dot--pending')}">${dotIcon(aSup.status,'4')}</div>
       <div class="proc-step-body">
-        <div class="proc-step-label">Verificação dos atores</div>
-        <div class="proc-atores">${chips}</div>
+        <div class="proc-step-label">Supervisor(a) na Empresa</div>
+        <div class="proc-step-meta">${escapeHtml(info.nomeSupervisor||'')}${supFez && aSup.data ? ' · '+fmtDH(aSup.data) : (!supAtivo ? ' · Aguardando liberação' : ' · Em verificação…')}</div>
+        ${supFez ? `<div class="proc-atores"><span class="proc-ator-chip ${chipCls(aSup.status)}">${chipIcon(aSup.status)}${statusLabel(aSup.status)}</span></div>` : ''}
       </div></div>`;
 
     /* 5 — Assinaturas + ativação */
