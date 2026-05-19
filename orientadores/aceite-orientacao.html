@@ -353,39 +353,31 @@
         + '<div class="sol-full"><span class="sol-label">Você</span>' + v(d.nomeOrientador) + '</div>';
     }
 
-    // ── Renderiza itens do checklist ───────────────────────────────────────────
+    // ── Renderiza itens do checklist (somente documentos) ─────────────────────
     function renderizarItensChecklist(itens) {
       var container = document.getElementById('ck-campos-list');
       container.innerHTML = '';
 
-      // Agrupa por seção mantendo a ordem de aparecimento
-      var grupos = {};
-      var ordemSecoes = [];
-      itens.forEach(function(item) {
-        var sec = item.secao || 'geral';
-        if (!grupos[sec]) { grupos[sec] = []; ordemSecoes.push(sec); }
-        grupos[sec].push(item);
+      var docItens = itens.filter(function(item) { return item.isDoc; });
+
+      if (docItens.length === 0) {
+        container.innerHTML = '<p style="color:var(--color-text-muted);font-style:italic;font-size:var(--font-size-sm);">Nenhum documento enviado pelo estudante.</p>';
+        return;
+      }
+
+      var groupEl = document.createElement('div');
+      groupEl.className = 'ck-secao-group';
+
+      var headerEl = document.createElement('div');
+      headerEl.className = 'ck-secao-header';
+      headerEl.textContent = '📎 Documentos';
+      groupEl.appendChild(headerEl);
+
+      docItens.forEach(function(item) {
+        groupEl.appendChild(renderCampoItem(item));
       });
 
-      ordemSecoes.forEach(function(sec) {
-        var titulo = CK_SECOES[sec];
-        if (!titulo) return;
-        var itensSec = grupos[sec];
-
-        var groupEl = document.createElement('div');
-        groupEl.className = 'ck-secao-group';
-
-        var headerEl = document.createElement('div');
-        headerEl.className = 'ck-secao-header';
-        headerEl.textContent = titulo;
-        groupEl.appendChild(headerEl);
-
-        itensSec.forEach(function(item) {
-          groupEl.appendChild(renderCampoItem(item));
-        });
-
-        container.appendChild(groupEl);
-      });
+      container.appendChild(groupEl);
     }
 
     function renderCampoItem(item) {
@@ -536,19 +528,19 @@
       // Item aceite_orientacao (forçado true pois _aceitou === true)
       itensEnviados.push({ id: 'aceite_orientacao', checked: true, obs: '' });
 
-      // Demais itens (sensíveis não têm checkbox — consideram-se marcados)
+      // Demais itens (somente docs têm checkbox; demais são auto-marcados)
       _itensRaw.forEach(function(item) {
-        var ckEl = document.getElementById('ck-' + item.id);
+        var ckEl = item.isDoc ? document.getElementById('ck-' + item.id) : null;
         itensEnviados.push({
           id:      item.id,
-          checked: item.sensivel ? true : (ckEl ? ckEl.checked : false),
+          checked: item.isDoc ? (ckEl ? ckEl.checked : false) : true,
           obs:     '',
         });
       });
 
-      // Valida: todos os itens não-sensíveis devem estar marcados
+      // Valida: todos os documentos devem estar marcados
       var naoMarcados = _itensRaw.filter(function(item) {
-        if (item.sensivel) return false;
+        if (!item.isDoc) return false;
         var ckEl = document.getElementById('ck-' + item.id);
         return !ckEl || !ckEl.checked;
       });

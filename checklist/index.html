@@ -717,7 +717,7 @@
     renderizarInfoCard(ator, secao);
     const tituloEl = document.getElementById('ck-checklist-title');
     tituloEl.hidden = false;
-    tituloEl.textContent = '✅ Verificação Campo a Campo';
+    tituloEl.textContent = '📎 Documentos para Verificação';
 
     // Itens
     const itens = secao ? secao.itens : [];
@@ -930,68 +930,44 @@
     documentos:  '📎 Documentos',
   };
 
-  // ── Itens ─────────────────────────────────────────────────────
+  // ── Itens (somente documentos têm checkbox) ───────────────────
   function renderizarItens(itens) {
-    const lista = document.getElementById('ck-items-list');
+    const lista    = document.getElementById('ck-items-list');
+    const tituloEl = document.getElementById('ck-checklist-title');
     lista.innerHTML = '';
     lista.className = 'ck-items-list';
 
-    if (!itens || itens.length === 0) {
-      lista.innerHTML = '<p style="color:var(--color-text-muted);text-align:center;padding:var(--space-6) 0;">Nenhum item encontrado.</p>';
+    // Somente itens de documento
+    const docItens = (itens || [])
+      .map((item, idx) => ({ item, idx }))
+      .filter(({ item }) => item.isDoc);
+
+    // Sem documentos (ex: supervisor) — oculta seção inteira
+    if (docItens.length === 0) {
+      lista.hidden   = true;
+      tituloEl.hidden = true;
+      document.getElementById('ck-progress-bar').hidden = true;
       return;
     }
 
-    const isSupervisor = meuAtor === 'supervisor';
-    const isAdmin      = meuAtor === 'admin';
+    lista.hidden    = false;
+    tituloEl.hidden = false;
 
-    // Supervisor: skip doc items
-    const visiveis = itens.map((item, idx) => ({ item, idx }))
-      .filter(({ item }) => !(isSupervisor && item.isDoc));
+    const isAdmin = meuAtor === 'admin';
 
-    // Group by section preserving order
-    const grupos = {};
-    const ordemSecoes = [];
-    visiveis.forEach(({ item, idx }) => {
-      const s = item.secao || 'geral';
-      if (!grupos[s]) { grupos[s] = []; ordemSecoes.push(s); }
-      grupos[s].push({ item, idx });
+    const groupEl = document.createElement('div');
+    groupEl.className = 'ck-secao-group';
+
+    const hdr = document.createElement('div');
+    hdr.className = 'ck-secao-header';
+    hdr.textContent = '📎 Documentos';
+    groupEl.appendChild(hdr);
+
+    docItens.forEach(({ item, idx }) => {
+      groupEl.appendChild(criarCampoItemEl(item, idx, isAdmin));
     });
 
-    // Render sections
-    ordemSecoes.forEach(secao => {
-      const grupo = grupos[secao];
-      if (!grupo || !grupo.length) return;
-
-      const groupEl = document.createElement('div');
-      groupEl.className = 'ck-secao-group';
-
-      const hdr = document.createElement('div');
-      hdr.className = 'ck-secao-header';
-      hdr.textContent = CK_SECOES[secao] || secao;
-      groupEl.appendChild(hdr);
-
-      grupo.forEach(({ item, idx }) => {
-        groupEl.appendChild(criarCampoItemEl(item, idx, isAdmin));
-      });
-
-      lista.appendChild(groupEl);
-    });
-
-    // Admin toggle for sensitive data
-    if (isAdmin) {
-      const btn = document.createElement('button');
-      btn.className = 'ck-toggle-sensivel';
-      btn.type = 'button';
-      btn.innerHTML = '👁 Ocultar dados sensíveis';
-      btn.dataset.oculto = 'false';
-      btn.addEventListener('click', () => {
-        const oculto = btn.dataset.oculto === 'true';
-        lista.classList.toggle('ck-sensivel-oculto', !oculto);
-        btn.dataset.oculto = String(!oculto);
-        btn.innerHTML = !oculto ? '👁 Mostrar dados sensíveis' : '👁 Ocultar dados sensíveis';
-      });
-      lista.insertBefore(btn, lista.firstChild);
-    }
+    lista.appendChild(groupEl);
   }
 
   function criarCampoItemEl(item, idx, isAdmin) {
@@ -1078,7 +1054,9 @@
 
     return secao.itens.map((item, idx) => {
       const cb = lista ? lista.querySelector(`.ck-field-cb[data-idx="${idx}"]`) : null;
-      return { ...item, checked: cb ? cb.checked : item.checked };
+      // Itens sem checkbox (não-doc) são considerados automaticamente marcados
+      const checked = cb ? cb.checked : (!item.isDoc ? true : item.checked);
+      return { ...item, checked };
     });
   }
 
