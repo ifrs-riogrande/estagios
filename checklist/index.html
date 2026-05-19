@@ -854,8 +854,8 @@
     html += `<div><span class="sol-label">Tipo de estágio</span>${v(info.tipoEstagio)}</div>`;
 
     html += `<div class="sol-divider">Período</div>`;
-    html += `<div><span class="sol-label">Início</span>${v(info.dataInicio)}</div>`;
-    html += `<div><span class="sol-label">Término</span>${v(info.dataTermino)}</div>`;
+    html += `<div><span class="sol-label">Início</span>${v(formatarData(info.dataInicio))}</div>`;
+    html += `<div><span class="sol-label">Término</span>${v(formatarData(info.dataTermino))}</div>`;
     html += `<div><span class="sol-label">Carga horária</span>${v(info.cargaHoraria)}</div>`;
     html += `<div><span class="sol-label">Horário</span>${v(info.horario)}</div>`;
 
