@@ -404,6 +404,15 @@
     .proc-ator-chip--warn   {background:var(--color-warning-light);color:var(--color-warning);border-color:var(--color-warning-border);}
     .proc-ator-chip--pending{background:var(--color-bg);color:var(--color-text-muted);border-color:var(--color-border);}
 
+    /* ── Dados da solicitação ── */
+    .sol-card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: var(--space-6); margin-bottom: var(--space-5); }
+    .sol-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4) var(--space-8); }
+    @media (max-width: 600px) { .sol-grid { grid-template-columns: 1fr; } }
+    .sol-full  { grid-column: 1 / -1; }
+    .sol-label { font-size: var(--font-size-xs); color: var(--color-text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: .05em; display: block; margin-bottom: 3px; }
+    .sol-value { font-size: var(--font-size-base); color: var(--color-text); word-break: break-word; margin: 0 0 var(--space-3); }
+    .sol-divider { grid-column: 1/-1; font-size: var(--font-size-sm); font-weight: 600; color: var(--color-text-muted); text-transform: uppercase; letter-spacing: .06em; padding-bottom: var(--space-2); border-bottom: 1px solid var(--color-border); margin-top: var(--space-2); }
+
     /* ── Utilitários ───────────────────────── */
     .visually-hidden { clip: rect(0 0 0 0); clip-path: inset(50%); height: 1px; overflow: hidden; position: absolute; white-space: nowrap; width: 1px; }
     .text-center { text-align: center; }
@@ -811,23 +820,52 @@
     el.hidden = false;
   }
 
-  // ── Info card (minimal — dados completos estão nos itens abaixo) ──────────
+  // ── Info card com dados completos da solicitação ─────────────
   function renderizarInfoCard(ator, secao) {
     const card  = document.getElementById('ck-info-card');
     const info  = checklist._infoSolicitacao || {};
     const prazo = secao ? secao.prazoVencimento : null;
+
+    const v = val => val
+      ? `<p class="sol-value">${escapeHtml(String(val))}</p>`
+      : `<p class="sol-value" style="color:var(--color-text-muted);font-style:italic;">Não informado</p>`;
 
     let html = '';
 
     // Prazo badge
     if (prazo) {
       const cls = prazoClass(prazo);
-      html += `<div style="margin-bottom:var(--space-4)">
+      html += `<div style="margin-bottom:var(--space-5)">
         <span class="ck-prazo-badge ck-prazo-badge--${cls}">
           ${prazoIcon(cls)} Prazo: ${formatarData(prazo)}
         </span>
       </div>`;
     }
+
+    // Dados da solicitação
+    html += `<div class="sol-card"><div class="sol-grid">`;
+    html += `<div class="sol-divider">Estudante</div>`;
+    html += `<div class="sol-full"><span class="sol-label">Nome</span>${v(info.nomeEstudante)}</div>`;
+    html += `<div><span class="sol-label">Curso</span>${v(info.curso)}</div>`;
+    html += `<div><span class="sol-label">Turno / Semestre</span>${v((info.turno||'') + (info.semestre ? ' · ' + info.semestre + 'º sem.' : ''))}</div>`;
+
+    html += `<div class="sol-divider">Empresa e Tipo</div>`;
+    html += `<div><span class="sol-label">Empresa concedente</span>${v(info.nomeEmpresa)}</div>`;
+    html += `<div><span class="sol-label">Tipo de estágio</span>${v(info.tipoEstagio)}</div>`;
+
+    html += `<div class="sol-divider">Período</div>`;
+    html += `<div><span class="sol-label">Início</span>${v(info.dataInicio)}</div>`;
+    html += `<div><span class="sol-label">Término</span>${v(info.dataTermino)}</div>`;
+    html += `<div><span class="sol-label">Carga horária</span>${v(info.cargaHoraria)}</div>`;
+    html += `<div><span class="sol-label">Horário</span>${v(info.horario)}</div>`;
+
+    html += `<div class="sol-divider">Plano de Estágio</div>`;
+    html += `<div class="sol-full"><span class="sol-label">Plano de atividades</span>${v(info.planoAtividades)}</div>`;
+
+    html += `<div class="sol-divider">Orientador selecionado</div>`;
+    html += `<div class="sol-full"><span class="sol-label">Orientador(a)</span>${v(info.nomeOrientador)}</div>`;
+
+    html += `</div></div>`;
 
     card.innerHTML = html;
 
@@ -930,21 +968,24 @@
     documentos:  '📎 Documentos',
   };
 
-  // ── Itens (somente documentos têm checkbox) ───────────────────
+  // ── Itens (somente documentos têm checkbox; supervisor não vê docs) ─────────
   function renderizarItens(itens) {
     const lista    = document.getElementById('ck-items-list');
     const tituloEl = document.getElementById('ck-checklist-title');
     lista.innerHTML = '';
     lista.className = 'ck-items-list';
 
-    // Somente itens de documento
-    const docItens = (itens || [])
+    // Supervisor não vê documentos
+    const isSupervisor = meuAtor === 'supervisor';
+
+    // Somente itens de documento (e não supervisor)
+    const docItens = isSupervisor ? [] : (itens || [])
       .map((item, idx) => ({ item, idx }))
       .filter(({ item }) => item.isDoc);
 
-    // Sem documentos (ex: supervisor) — oculta seção inteira
+    // Sem documentos — oculta seção inteira
     if (docItens.length === 0) {
-      lista.hidden   = true;
+      lista.hidden    = true;
       tituloEl.hidden = true;
       document.getElementById('ck-progress-bar').hidden = true;
       return;
