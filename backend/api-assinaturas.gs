@@ -95,6 +95,7 @@ function iniciarFluxoAssinaturas_(idEstagio) {
       label:           def.label,
       tipo:            def.tipo,
       email:           emails[def.ator] || '',
+      token:           Utilities.getUuid(),
       status:          idx === 0 ? ASS_STATUS.AGUARDANDO : ASS_STATUS.PENDENTE,
       prazoVencimento: idx === 0 ? calcularPrazoVencimento_(prazos.assinaturas[def.ator]) : null,
       lembretesEnviados: 0,
@@ -455,7 +456,6 @@ function _gerarPdfTCEInicial_(idEstagio, sol, pastaId) {
         .getAs(MimeType.PDF)
         .setName('TCE_' + idEstagio + '_v0_original.pdf');
     var arquivo = DriveApp.getFolderById(pastaId).createFile(pdfBlob);
-    arquivo.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
 
     // Apaga o Google Doc temporário
     DriveApp.getFileById(docId).setTrashed(true);
@@ -704,14 +704,9 @@ function _obterEmailCoordenadorPorCurso_(curso) {
 function notificarAtorAssinatura_(idEstagio, etapa, sol, fluxo) {
   if (!etapa || !etapa.email) return;
 
-  // Obtém URL do PDF mais recente: última etapa concluída ou PDF original
-  var pdfUrl = (fluxo && fluxo.pdfOriginalUrl) ? fluxo.pdfOriginalUrl : '';
-  if (fluxo && fluxo.etapas) {
-    for (var i = etapa.numero - 2; i >= 0; i--) {
-      var et = fluxo.etapas[i];
-      if (et && et.driveUrl) { pdfUrl = et.driveUrl; break; }
-    }
-  }
+  // URL da página com magic-link token (sem links diretos ao Drive)
+  var pageUrl = BASE_URL + '/assinaturas/?id=' + encodeURIComponent(idEstagio)
+                + '&token=' + encodeURIComponent(etapa.token || '');
 
   if (etapa.tipo === 'govbr') {
     MAIL.enviarEmailAssinaturaGovBr({
@@ -720,7 +715,7 @@ function notificarAtorAssinatura_(idEstagio, etapa, sol, fluxo) {
       labelAtor:       etapa.label,
       prazoVencimento: etapa.prazoVencimento || '',
       email:           etapa.email,
-      driveUrl:        pdfUrl,
+      pageUrl:         pageUrl,
       numeroEtapa:     etapa.numero,
     });
   } else {
@@ -730,6 +725,7 @@ function notificarAtorAssinatura_(idEstagio, etapa, sol, fluxo) {
       labelAtor:       etapa.label,
       prazoVencimento: etapa.prazoVencimento || '',
       email:           etapa.email,
+      pageUrl:         pageUrl,
       numeroEtapa:     etapa.numero,
     });
   }
@@ -761,10 +757,18 @@ function enviarPdfFinalParaTodos_(idEstagio, fluxo, driveUrl) {
     }
   }
 
+  // Monta mapa token por ator para links individuais
+  var tokenPorAtor = {};
+  if (fluxo && fluxo.etapas) {
+    fluxo.etapas.forEach(function(et) {
+      if (et.ator && et.token) tokenPorAtor[et.ator] = et.token;
+    });
+  }
+
   MAIL.enviarEmailPdfFinalAssinaturas({
     idEstagio:     idEstagio,
     nomeEstudante: sol.nomeEstudante || '',
-    driveUrl:      urlFinal,
+    tokenPorAtor:  tokenPorAtor,
     destinatarios: destinatarios,
   });
 }
@@ -781,7 +785,7 @@ function enviarPdfFinalParaTodos_(idEstagio, fluxo, driveUrl) {
  * @param {string} emailAtor    E-mail do ator que está enviando (auditoria + validação)
  * @returns {Object} jsonOk_ / jsonError_
  */
-function uploadPdfAssinado_(idEstagio, numeroEtapa, pdfBase64, emailAtor) {
+function uploadPdfAssinado_(idEstagio, numeroEtapa, pdfBase64, token) {
   if (!idEstagio || !numeroEtapa || !pdfBase64) {
     return jsonError_('Parâmetros obrigatórios: idEstagio, numeroEtapa, pdfBase64.', 'MISSING_PARAM');
   }
@@ -789,27 +793,25 @@ function uploadPdfAssinado_(idEstagio, numeroEtapa, pdfBase64, emailAtor) {
   var fluxo = obterFluxoAssinaturas_(idEstagio);
   if (!fluxo) return jsonError_('Fluxo de assinaturas não encontrado.', 'NOT_FOUND');
 
+  // Valida pelo token
+  var etapaDoToken = _validarTokenFluxo_(fluxo, token);
+  if (!etapaDoToken) return jsonError_('Token inválido ou não autorizado.', 'AUTH_ERROR');
+
   var etapa = fluxo.etapas[numeroEtapa - 1];
   if (!etapa)                                 return jsonError_('Etapa inválida: ' + numeroEtapa, 'INVALID');
+  if (etapa.numero !== etapaDoToken.numero)   return jsonError_('Token não corresponde a esta etapa.', 'AUTH_ERROR');
   if (etapa.status !== ASS_STATUS.AGUARDANDO) return jsonError_('Etapa não está aguardando ação.', 'INVALID_STATE');
 
-  // Valida e-mail do ator (etapas internas aceitam apenas o Admin)
-  if (etapa.email && emailAtor
-      && String(etapa.email).toLowerCase() !== String(emailAtor).toLowerCase()) {
-    return jsonError_('E-mail não autorizado para esta etapa.', 'AUTH_ERROR');
-  }
-
-  // Decodifica e salva o PDF no Drive
+  // Decodifica e salva o PDF no Drive (privado)
   try {
     var pdfBytes = Utilities.base64Decode(pdfBase64);
     var nomePdf  = 'TCE_' + idEstagio + '_v' + numeroEtapa + '_' + etapa.ator + '.pdf';
     var blob     = Utilities.newBlob(pdfBytes, MimeType.PDF, nomePdf);
     var pasta    = DriveApp.getFolderById(fluxo.drivePastaId);
     var arquivo  = pasta.createFile(blob);
-    arquivo.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
     var driveUrl = arquivo.getUrl();
 
-    return concluirEtapaAssinatura_(idEstagio, numeroEtapa, driveUrl, emailAtor);
+    return concluirEtapaAssinatura_(idEstagio, numeroEtapa, driveUrl, etapa.email || token);
   } catch (e) {
     logErro_('uploadPdfAssinado_', e);
     return jsonError_('Falha ao salvar PDF no Drive: ' + e.message, 'DRIVE_ERROR');
@@ -873,6 +875,24 @@ function listarFluxosPendentesEtapa_(numEtapa) {
   }
 }
 
+/** Encontra a etapa do fluxo que corresponde ao token. Retorna null se não encontrar. */
+function _validarTokenFluxo_(fluxo, token) {
+  if (!token || !fluxo || !fluxo.etapas) return null;
+  for (var i = 0; i < fluxo.etapas.length; i++) {
+    if (fluxo.etapas[i].token === token) return fluxo.etapas[i];
+  }
+  return null;
+}
+
+/** Extrai o ID de arquivo do Drive a partir de uma URL do Drive. */
+function _extrairFileIdDoUrl_(url) {
+  if (!url) return null;
+  var m = String(url).match(/\/d\/([a-zA-Z0-9_-]{10,})/);
+  if (m) return m[1];
+  m = String(url).match(/[?&]id=([a-zA-Z0-9_-]{10,})/);
+  return m ? m[1] : null;
+}
+
 // ── Handlers GET / POST ───────────────────────────────────────────────────────
 
 function doGetAssinaturas(e) {
@@ -887,21 +907,95 @@ function doGetAssinaturas(e) {
       return jsonOk_(listarFluxosPendentesEtapa_(numEt));
     }
 
-    case 'obterFluxoAssinaturas':
+    case 'obterFluxoAssinaturas': {
       if (!id) return jsonError_('Parâmetro id obrigatório.', 'MISSING_PARAM');
       var fluxo = obterFluxoAssinaturas_(id);
       if (!fluxo) return jsonError_('Fluxo não encontrado.', 'NOT_FOUND');
+
+      // Detecta ator pelo token
+      var token = (e.parameter && e.parameter.token) || '';
+      var meuAtor = null;
+      if (token) {
+        var etapaToken = _validarTokenFluxo_(fluxo, token);
+        if (!etapaToken) return jsonError_('Token inválido.', 'AUTH_ERROR');
+        meuAtor = etapaToken.ator;
+      }
+
+      // Sanitiza: remove tokens e driveUrls internos do response
+      var fluxoPublico = JSON.parse(JSON.stringify(fluxo));
+      fluxoPublico.etapas = fluxoPublico.etapas.map(function(et) {
+        return {
+          numero:          et.numero,
+          ator:            et.ator,
+          label:           et.label,
+          tipo:            et.tipo,
+          email:           et.email,
+          status:          et.status,
+          prazoVencimento: et.prazoVencimento,
+          data:            et.data,
+          versao:          et.versao,
+          obs:             et.obs,
+          temPdf:          !!(et.driveUrl),
+          // token e driveUrl nunca expostos
+        };
+      });
+      delete fluxoPublico.pdfOriginalUrl;
+      fluxoPublico.temPdfOriginal = !!(fluxo.pdfOriginalUrl);
+      if (meuAtor) fluxoPublico._meuAtor = meuAtor;
+
       try {
         var solInfo = _obterDadosSolicitacaoCompleto_(id);
-        fluxo._infoSolicitacao = {
+        fluxoPublico._infoSolicitacao = {
           nomeEstudante: solInfo.nomeEstudante || '',
           nomeEmpresa:   solInfo.nomeEmpresa   || '',
           curso:         solInfo.curso         || '',
           dataInicio:    solInfo.dataInicio    || '',
           dataTermino:   solInfo.dataTermino   || '',
         };
-      } catch (e) { /* não bloqueia */ }
-      return jsonOk_(fluxo);
+      } catch (_e) { /* não bloqueia */ }
+
+      return jsonOk_(fluxoPublico);
+    }
+
+    case 'baixarPdfAssinatura': {
+      if (!id) return jsonError_('Parâmetro id obrigatório.', 'MISSING_PARAM');
+      var token = (e.parameter && e.parameter.token) || '';
+      if (!token) return jsonError_('Parâmetro token obrigatório.', 'MISSING_PARAM');
+
+      var fluxo = obterFluxoAssinaturas_(id);
+      if (!fluxo) return jsonError_('Fluxo não encontrado.', 'NOT_FOUND');
+
+      var etapaDoToken = _validarTokenFluxo_(fluxo, token);
+      if (!etapaDoToken) return jsonError_('Token inválido.', 'AUTH_ERROR');
+
+      // Etapa específica solicitada (opcional) — para download histórico pelo admin
+      var etapaParam = e.parameter && e.parameter.etapa ? parseInt(e.parameter.etapa, 10) : 0;
+
+      var fileId = null;
+      if (etapaParam > 0 && etapaParam <= fluxo.etapas.length) {
+        // PDF de etapa específica
+        var etSpec = fluxo.etapas[etapaParam - 1];
+        if (etSpec && etSpec.driveUrl) fileId = _extrairFileIdDoUrl_(etSpec.driveUrl);
+      } else {
+        // PDF mais recente antes da etapa do token (ou o original)
+        for (var j = etapaDoToken.numero - 2; j >= 0; j--) {
+          var etJ = fluxo.etapas[j];
+          if (etJ && etJ.driveUrl) { fileId = _extrairFileIdDoUrl_(etJ.driveUrl); break; }
+        }
+        if (!fileId) fileId = _extrairFileIdDoUrl_(fluxo.pdfOriginalUrl);
+      }
+
+      if (!fileId) return jsonError_('Nenhum PDF disponível para esta etapa.', 'NOT_FOUND');
+
+      try {
+        var file  = DriveApp.getFileById(fileId);
+        var bytes = file.getBlob().getBytes();
+        return jsonOk_({ base64: Utilities.base64Encode(bytes), nome: file.getName() });
+      } catch (errDrive) {
+        logErro_('baixarPdfAssinatura', errDrive);
+        return jsonError_('Erro ao acessar arquivo: ' + errDrive.message, 'DRIVE_ERROR');
+      }
+    }
 
     default:
       return jsonError_('Ação GET desconhecida: ' + action, 'UNKNOWN_ACTION');
@@ -914,13 +1008,25 @@ function doPostAssinaturas(e) {
 
   switch (action) {
     case 'uploadPdfAssinado':
-      return uploadPdfAssinado_(body.idEstagio, body.numeroEtapa, body.pdfBase64, body.emailAtor);
+      return uploadPdfAssinado_(body.idEstagio, body.numeroEtapa, body.pdfBase64, body.token);
 
-    case 'concluirEtapa':
-      return concluirEtapaAssinatura_(body.idEstagio, body.numeroEtapa, body.driveUrl || null, body.emailAtor);
+    case 'concluirEtapa': {
+      // Valida token antes de concluir
+      var fluxoCon = obterFluxoAssinaturas_(body.idEstagio);
+      if (!fluxoCon) return jsonError_('Fluxo não encontrado.', 'NOT_FOUND');
+      var etaTk = _validarTokenFluxo_(fluxoCon, body.token);
+      if (!etaTk) return jsonError_('Token inválido.', 'AUTH_ERROR');
+      return concluirEtapaAssinatura_(body.idEstagio, body.numeroEtapa, body.driveUrl || null, etaTk.email || body.token);
+    }
 
-    case 'rejeitarEtapa':
-      return rejeitarEtapaAssinatura_(body.idEstagio, body.numeroEtapa, body.motivo, body.retornoParaEtapa, body.emailAdmin);
+    case 'rejeitarEtapa': {
+      // Valida token antes de rejeitar
+      var fluxoRej = obterFluxoAssinaturas_(body.idEstagio);
+      if (!fluxoRej) return jsonError_('Fluxo não encontrado.', 'NOT_FOUND');
+      var etaRej = _validarTokenFluxo_(fluxoRej, body.token);
+      if (!etaRej) return jsonError_('Token inválido.', 'AUTH_ERROR');
+      return rejeitarEtapaAssinatura_(body.idEstagio, body.numeroEtapa, body.motivo, body.retornoParaEtapa, etaRej.email || body.token);
+    }
 
     default:
       return jsonError_('Ação POST desconhecida: ' + action, 'UNKNOWN_ACTION');

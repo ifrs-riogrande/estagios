@@ -448,6 +448,7 @@
   let fluxo    = null;
   let meuAtor  = null;   // identificador da etapa onde o usuário age
   let meuEmail = null;
+  let meuToken = null;   // magic-link token (substitui OAuth para não-admin)
   let pdfFile  = null;   // arquivo selecionado para upload
 
   const TIPO_BADGE = {
@@ -457,27 +458,38 @@
 
   // ── Init ─────────────────────────────────────────────────────
   document.addEventListener('DOMContentLoaded', () => {
-    const ok = requireAssinaturasAuth(window.location.href);
-    if (!ok) return;
-
-    meuEmail = getCurrentUserEmail();
-
     const params = new URLSearchParams(window.location.search);
-    const id = params.get('id');
+    const id    = params.get('id');
+    const token = params.get('token');
+
     if (!id) {
       mostrarErro('Parâmetro <code>id</code> não encontrado na URL.');
       return;
     }
 
-    carregarFluxo(id);
+    if (token) {
+      // Magic-link: sem necessidade de OAuth
+      meuToken = token;
+      carregarFluxo(id, token);
+      return;
+    }
+
+    // Sem token: requer OAuth (acesso direto por admin)
+    const ok = requireAssinaturasAuth(window.location.href);
+    if (!ok) return;
+    meuEmail = getCurrentUserEmail();
+    carregarFluxo(id, null);
   });
 
   // ── Carregar dados ────────────────────────────────────────────
-  async function carregarFluxo(id) {
+  async function carregarFluxo(id, token) {
     try {
-      const data = await API.get('obterFluxoAssinaturas', { id });
+      const params = { id };
+      if (token) params.token = token;
+      const data = await API.get('obterFluxoAssinaturas', params);
       fluxo = data;
-      meuAtor = detectarAtor(meuEmail, fluxo);
+      // _meuAtor vem do backend (quando token) ou detecta por email (OAuth)
+      meuAtor = data._meuAtor || (meuEmail ? detectarAtor(meuEmail, fluxo) : null);
       renderizar();
     } catch (err) {
       mostrarErro(err.message || 'Não foi possível carregar o fluxo.');
@@ -569,13 +581,13 @@
         <span class="ass-info-value">${escapeHtml(val)}</span>
       </div>`;
     });
-    if (fluxo.pdfOriginalUrl) {
+    if (fluxo.temPdfOriginal && meuToken) {
       html += `<div class="ass-info-item">
         <span class="ass-info-label">TCE original</span>
-        <a href="${escapeHtml(fluxo.pdfOriginalUrl)}" target="_blank" rel="noopener" class="tl-pdf-link">
+        <button type="button" onclick="downloadPdf()" class="tl-pdf-link" style="background:none;border:none;padding:0;cursor:pointer;">
           <svg width="12" height="12" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7.414A2 2 0 0015.414 6L12 2.586A2 2 0 0010.586 2H6zm5 6a1 1 0 10-2 0v3.586l-1.293-1.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V8z" clip-rule="evenodd"/></svg>
           Baixar PDF
-        </a>
+        </button>
       </div>`;
     }
     card.innerHTML = html || '<span style="color:var(--color-text-muted);font-size:var(--font-size-sm)">Informações do estágio não disponíveis.</span>';
@@ -676,19 +688,18 @@
           </div>
         </div>
 
-        ${pdfAtual ? `
-          <div style="margin-bottom:var(--space-4);">
-            <a href="${escapeHtml(pdfAtual)}" target="_blank" rel="noopener" class="btn btn-secondary">
-              <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
-                <path fill-rule="evenodd" d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7.414A2 2 0 0015.414 6L12 2.586A2 2 0 0010.586 2H6zm5 6a1 1 0 10-2 0v3.586l-1.293-1.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V8z" clip-rule="evenodd"/>
-              </svg>
-              Baixar PDF para assinar
-            </a>
-            <a href="https://assinador.iti.br" target="_blank" rel="noopener"
-               class="btn btn-ghost" style="margin-left:var(--space-2);">
-              Abrir assinador.iti.br ↗
-            </a>
-          </div>` : ''}
+        <div style="margin-bottom:var(--space-4);">
+          <button type="button" class="btn btn-secondary" onclick="downloadPdf()">
+            <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7.414A2 2 0 0015.414 6L12 2.586A2 2 0 0010.586 2H6zm5 6a1 1 0 10-2 0v3.586l-1.293-1.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V8z" clip-rule="evenodd"/>
+            </svg>
+            Baixar PDF para assinar
+          </button>
+          <a href="https://assinador.iti.br" target="_blank" rel="noopener"
+             class="btn btn-ghost" style="margin-left:var(--space-2);">
+            Abrir assinador.iti.br ↗
+          </a>
+        </div>
 
         <div class="upload-zone" id="upload-zone">
           <input type="file" id="pdf-input" accept="application/pdf" aria-label="Selecionar PDF assinado">
@@ -759,15 +770,14 @@
           ? 'Verifique o documento final assinado por todas as partes. Upload do PDF compilado é opcional.'
           : 'Revise o documento e aprove ou rejeite para retornar a uma etapa anterior.'}</p>
 
-        ${pdfAtual ? `
-          <div style="margin-bottom:var(--space-4);">
-            <a href="${escapeHtml(pdfAtual)}" target="_blank" rel="noopener" class="btn btn-secondary">
-              <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
-                <path fill-rule="evenodd" d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7.414A2 2 0 0015.414 6L12 2.586A2 2 0 0010.586 2H6zm5 6a1 1 0 10-2 0v3.586l-1.293-1.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V8z" clip-rule="evenodd"/>
-              </svg>
-              Ver PDF atual
-            </a>
-          </div>` : ''}
+        <div style="margin-bottom:var(--space-4);">
+          <button type="button" class="btn btn-secondary" onclick="downloadPdf()">
+            <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7.414A2 2 0 0015.414 6L12 2.586A2 2 0 0010.586 2H6zm5 6a1 1 0 10-2 0v3.586l-1.293-1.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V8z" clip-rule="evenodd"/>
+            </svg>
+            Baixar PDF atual
+          </button>
+        </div>
 
         ${ehFinal ? `
           <div style="margin-bottom:var(--space-4);">
@@ -864,11 +874,11 @@
       const id = new URLSearchParams(window.location.search).get('id');
 
       await API.post('uploadPdfAssinado', {
-        action:       'uploadPdfAssinado',
-        idEstagio:    id,
-        numeroEtapa:  etapa.numero,
-        pdfBase64:    base64,
-        emailAtor:    meuEmail,
+        action:      'uploadPdfAssinado',
+        idEstagio:   id,
+        numeroEtapa: etapa.numero,
+        pdfBase64:   base64,
+        token:       meuToken,
       });
 
       mostrarSucesso('PDF enviado com sucesso! A próxima etapa foi notificada.');
@@ -897,7 +907,7 @@
           idEstagio:   id,
           numeroEtapa: etapa.numero,
           pdfBase64:   base64,
-          emailAtor:   meuEmail,
+          token:       meuToken,
         });
       } else {
         await API.post('concluirEtapa', {
@@ -905,7 +915,7 @@
           idEstagio:   id,
           numeroEtapa: etapa.numero,
           driveUrl:    null,
-          emailAtor:   meuEmail,
+          token:       meuToken,
         });
       }
 
@@ -935,12 +945,12 @@
     try {
       const id = new URLSearchParams(window.location.search).get('id');
       await API.post('rejeitarEtapa', {
-        action:          'rejeitarEtapa',
-        idEstagio:       id,
-        numeroEtapa:     etapa.numero,
-        motivo:          motivo,
+        action:           'rejeitarEtapa',
+        idEstagio:        id,
+        numeroEtapa:      etapa.numero,
+        motivo:           motivo,
         retornoParaEtapa: retorno,
-        emailAdmin:      meuEmail,
+        token:            meuToken,
       });
 
       mostrarToast('Rejeição registrada. O ator da etapa ' + retorno + ' foi notificado.', 'success');
@@ -972,7 +982,8 @@
       const [badgeCls, badgeText] = badges[etapa.status] || ['pendente', etapa.status];
 
       const tipoBadge = TIPO_BADGE[etapa.tipo] || TIPO_BADGE.interno;
-      const pdfUrl    = etapa.driveUrl;
+      const pdfUrl    = null; // Drive URLs são privados — download via backend
+      const temPdf    = !!(etapa.temPdf);
       const dataStr   = etapa.data ? formatarDataHora(etapa.data) : null;
       const prazoStr  = etapa.prazoVencimento && etapa.status === 'aguardando'
                         ? 'Prazo: ' + formatarData(etapa.prazoVencimento) : null;
@@ -986,14 +997,14 @@
             <span class="tl-status-badge tl-status-badge--${badgeCls}">${badgeText}</span>
             <span style="font-size:var(--font-size-xs);font-weight:600;padding:2px 6px;border-radius:3px;background:${tipoBadge.bg};color:${tipoBadge.color};">${tipoBadge.text}</span>
           </div>
-          ${(dataStr || prazoStr || pdfUrl) ? `
+          ${(dataStr || prazoStr || temPdf || etapa.obs) ? `
           <div class="tl-card-meta">
             ${dataStr  ? `<span>📅 ${dataStr}</span>` : ''}
             ${prazoStr ? `<span>⏰ ${prazoStr}</span>` : ''}
-            ${pdfUrl   ? `<a href="${escapeHtml(pdfUrl)}" target="_blank" rel="noopener" class="tl-pdf-link">
+            ${temPdf && meuToken ? `<button type="button" onclick="downloadPdf(${etapa.numero})" class="tl-pdf-link" style="background:none;border:none;padding:0;cursor:pointer;">
               <svg width="12" height="12" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7.414A2 2 0 0015.414 6L12 2.586A2 2 0 0010.586 2H6zm5 6a1 1 0 10-2 0v3.586l-1.293-1.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V8z" clip-rule="evenodd"/></svg>
-              Ver PDF
-            </a>` : ''}
+              Baixar PDF
+            </button>` : ''}
             ${etapa.obs ? `<span title="${escapeHtml(etapa.obs)}">📝 Obs: ${escapeHtml(etapa.obs.substring(0,50))}${etapa.obs.length>50?'…':''}</span>` : ''}
           </div>` : ''}
         </div>`;
@@ -1035,6 +1046,33 @@
       reader.onerror = reject;
       reader.readAsDataURL(file);
     });
+  }
+
+  // ── Download de PDF via backend (Drive privado) ───────────────
+  async function downloadPdf(etapaNumero) {
+    const id = new URLSearchParams(window.location.search).get('id');
+    const token = meuToken;
+    if (!token) { mostrarToast('Token não disponível para download.', 'warning'); return; }
+    try {
+      const params = { id, token };
+      if (etapaNumero) params.etapa = etapaNumero;
+      const data = await API.get('baixarPdfAssinatura', params);
+      if (!data || !data.base64) throw new Error('PDF não disponível.');
+      const bytes = atob(data.base64);
+      const arr   = new Uint8Array(bytes.length);
+      for (let i = 0; i < bytes.length; i++) arr[i] = bytes.charCodeAt(i);
+      const blob  = new Blob([arr], { type: 'application/pdf' });
+      const url   = URL.createObjectURL(blob);
+      const a     = document.createElement('a');
+      a.href      = url;
+      a.download  = data.nome || ('TCE_' + id + '.pdf');
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      mostrarToast('Erro ao baixar PDF: ' + (err.message || 'tente novamente.'), 'error');
+    }
   }
 
   function mostrarSucesso(msg) {

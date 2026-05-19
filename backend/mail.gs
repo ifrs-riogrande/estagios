@@ -49,6 +49,15 @@ var MAIL = (function () {
     return '<p class="label">' + label + '</p><p class="value">' + (valor || '—') + '</p>';
   }
 
+  function escapeHtmlMail_(str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
   function enviar_(para, assunto, htmlBody, cc) {
     var opts = { htmlBody: htmlBody, name: SISTEMA_NOME };
     if (cc) opts.cc = cc;
@@ -321,8 +330,11 @@ var MAIL = (function () {
   }
 
   function enviarEmailChecklistAtor(dados) {
-    // dados: { idEstagio, nomeEstudante, curso, nomeEmpresa, labelAtor, prazoVencimento, email }
-    var urlChecklist = BASE_URL + '/checklist/?id=' + encodeURIComponent(dados.idEstagio);
+    // dados: { idEstagio, nomeEstudante, curso, nomeEmpresa, labelAtor, prazoVencimento, email,
+    //          urlChecklist (opcional — já inclui token para supervisor via magic-link) }
+    // Usa urlChecklist passada pelo caller (inclui token). Fallback sem token (para OAuth).
+    var urlChecklist = dados.urlChecklist
+                     || (BASE_URL + '/checklist/?id=' + encodeURIComponent(dados.idEstagio));
     var corpo = '<p>Olá!</p>'
       + '<p>O checklist da solicitação de estágio abaixo foi liberado para sua análise. '
       + 'Por favor, acesse o sistema e responda até a data limite.</p>'
@@ -358,8 +370,10 @@ var MAIL = (function () {
   }
 
   function enviarEmailLembreteChecklist(dados) {
-    // dados: { idEstagio, nomeEstudante, labelAtor, prazoVencimento, email }
-    var urlChecklist = BASE_URL + '/checklist/?id=' + encodeURIComponent(dados.idEstagio);
+    // dados: { idEstagio, nomeEstudante, labelAtor, prazoVencimento, email,
+    //          urlChecklist (opcional — inclui token para supervisor) }
+    var urlChecklist = dados.urlChecklist
+                     || (BASE_URL + '/checklist/?id=' + encodeURIComponent(dados.idEstagio));
     var corpo = '<p>Olá!</p>'
       + '<p>Este é um lembrete: o prazo para sua resposta no checklist de estágio vence em '
       + '<strong>2 dias úteis</strong>.</p>'
@@ -380,28 +394,24 @@ var MAIL = (function () {
   // --------------------------------------------------------------------------
 
   function enviarEmailAssinaturaGovBr(dados) {
-    // dados: { idEstagio, nomeEstudante, labelAtor, prazoVencimento, email, driveUrl, numeroEtapa }
-    var urlSistema = BASE_URL + '/assinaturas/?id=' + encodeURIComponent(dados.idEstagio);
-    var pdfUrl     = dados.driveUrl || urlSistema;
+    // dados: { idEstagio, nomeEstudante, labelAtor, prazoVencimento, email, pageUrl, numeroEtapa }
+    var pageUrl = dados.pageUrl || (BASE_URL + '/assinaturas/?id=' + encodeURIComponent(dados.idEstagio));
     var corpo = '<p>Olá!</p>'
       + '<p>É a sua vez de assinar o Termo de Compromisso de Estágio (TCE) '
-      + 'utilizando sua conta <strong>gov.br</strong>. Siga os passos abaixo:</p>'
+      + 'utilizando sua conta <strong>gov.br</strong>. Acesse o link abaixo para:</p>'
       + '<ol style="line-height:2.2;padding-left:20px;">'
-      + '<li>Baixe o TCE pelo link abaixo.</li>'
-      + '<li>Acesse <a href="https://assinador.iti.br" style="color:#1d4ed8;">assinador.iti.br</a> '
-      + 'e faça login com sua conta gov.br.</li>'
-      + '<li>Carregue e assine o documento.</li>'
-      + '<li>Volte ao sistema e envie o arquivo assinado.</li>'
+      + '<li>Baixar o TCE atual.</li>'
+      + '<li>Acessar <a href="https://assinador.iti.br" style="color:#1d4ed8;">assinador.iti.br</a> '
+      + 'e assinar com gov.br.</li>'
+      + '<li>Enviar o PDF assinado de volta.</li>'
       + '</ol>'
       + campo_('ID do estágio', dados.idEstagio)
       + campo_('Estudante', dados.nomeEstudante)
       + campo_('Sua etapa', 'Etapa ' + dados.numeroEtapa + '/8 — ' + dados.labelAtor)
       + campo_('Prazo limite', dados.prazoVencimento)
       + '<p style="margin-top:24px;">'
-      + '<a href="' + pdfUrl + '" style="display:inline-block;background:#4b5563;color:#fff;'
-      + 'padding:10px 20px;border-radius:6px;text-decoration:none;font-weight:600;margin-right:8px;">⬇ Baixar TCE</a>'
-      + '<a href="' + urlSistema + '" style="display:inline-block;background:#1d4ed8;color:#fff;'
-      + 'padding:10px 20px;border-radius:6px;text-decoration:none;font-weight:600;">📤 Enviar Assinado</a>'
+      + '<a href="' + pageUrl + '" style="display:inline-block;background:#1d4ed8;color:#fff;'
+      + 'padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:600;">🖊 Acessar e Assinar TCE</a>'
       + '</p>'
       + '<p style="font-size:13px;color:#6b7280;margin-top:16px;">'
       + 'Dúvidas sobre assinatura gov.br: '
@@ -413,8 +423,8 @@ var MAIL = (function () {
   }
 
   function enviarEmailAssinaturaInterno(dados) {
-    // dados: { idEstagio, nomeEstudante, labelAtor, prazoVencimento, email, numeroEtapa }
-    var urlSistema = BASE_URL + '/assinaturas/?id=' + encodeURIComponent(dados.idEstagio);
+    // dados: { idEstagio, nomeEstudante, labelAtor, prazoVencimento, email, pageUrl, numeroEtapa }
+    var pageUrl = dados.pageUrl || (BASE_URL + '/assinaturas/?id=' + encodeURIComponent(dados.idEstagio));
     var corpo = '<p>Olá!</p>'
       + '<p>O fluxo de assinaturas do TCE chegou à sua etapa. '
       + 'Por favor, revise o documento e registre sua decisão no sistema.</p>'
@@ -423,7 +433,7 @@ var MAIL = (function () {
       + campo_('Sua etapa', 'Etapa ' + dados.numeroEtapa + '/8 — ' + dados.labelAtor)
       + campo_('Prazo limite', dados.prazoVencimento)
       + '<p style="margin-top:24px;">'
-      + '<a href="' + urlSistema + '" style="display:inline-block;background:#1d4ed8;color:#fff;'
+      + '<a href="' + pageUrl + '" style="display:inline-block;background:#1d4ed8;color:#fff;'
       + 'padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:600;">'
       + 'Acessar Fluxo de Assinaturas</a></p>';
     enviar_(dados.email,
@@ -453,22 +463,27 @@ var MAIL = (function () {
   }
 
   function enviarEmailPdfFinalAssinaturas(dados) {
-    // dados: { idEstagio, nomeEstudante, driveUrl, destinatarios: [{email, nome}] }
-    var corpo = '<p>O processo de assinatura do Termo de Compromisso de Estágio foi concluído com sucesso! 🎉</p>'
-      + '<p>O TCE está totalmente assinado e o estágio está oficialmente ativo.</p>'
-      + campo_('ID do estágio', dados.idEstagio)
-      + campo_('Estudante', dados.nomeEstudante)
-      + '<p style="margin-top:24px;">'
-      + '<a href="' + (dados.driveUrl || '#') + '" style="display:inline-block;background:#16a34a;color:#fff;'
-      + 'padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:600;">⬇ Acessar TCE Final</a></p>'
-      + '<p style="font-size:13px;color:#6b7280;margin-top:16px;">'
-      + 'Guarde este documento — ele é o comprovante oficial do seu estágio.</p>';
-    var emails = (dados.destinatarios || []).map(function (d) { return d.email; }).filter(Boolean);
-    if (!emails.length) return;
-    enviar_(emails[0],
-      '[SGE] TCE assinado — estágio ativo! — ' + dados.idEstagio,
-      htmlBase_('TCE Concluído — Estágio Ativo ✓', corpo),
-      emails.length > 1 ? emails.slice(1).join(',') : undefined);
+    // dados: { idEstagio, nomeEstudante, tokenPorAtor, destinatarios: [{email, nome, ator}] }
+    var baseUrl = BASE_URL + '/assinaturas/?id=' + encodeURIComponent(dados.idEstagio);
+    dados.destinatarios.forEach(function(dest) {
+      var pageUrl = dest.ator && dados.tokenPorAtor && dados.tokenPorAtor[dest.ator]
+        ? baseUrl + '&token=' + encodeURIComponent(dados.tokenPorAtor[dest.ator])
+        : baseUrl;
+      var corpo = '<p>Olá, ' + escapeHtmlMail_(dest.nome) + '!</p>'
+        + '<p>O processo de assinatura do Termo de Compromisso de Estágio foi concluído com sucesso! 🎉</p>'
+        + '<p>O TCE está totalmente assinado e o estágio está oficialmente ativo.</p>'
+        + campo_('ID do estágio', dados.idEstagio)
+        + campo_('Estudante', dados.nomeEstudante)
+        + '<p style="margin-top:24px;">'
+        + '<a href="' + pageUrl + '" style="display:inline-block;background:#16a34a;color:#fff;'
+        + 'padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:600;">'
+        + '📄 Acessar TCE Assinado</a></p>'
+        + '<p style="font-size:13px;color:#6b7280;margin-top:16px;">'
+        + 'O documento pode ser baixado diretamente na página acima.</p>';
+      enviar_(dest.email,
+        '[SGE] TCE assinado — Estágio ' + dados.idEstagio + ' — ' + escapeHtmlMail_(dados.nomeEstudante),
+        htmlBase_('TCE Concluído — Estágio Ativo', corpo));
+    });
   }
 
   // --------------------------------------------------------------------------
@@ -498,7 +513,8 @@ var MAIL = (function () {
     enviarEmailAssinaturaInterno:        enviarEmailAssinaturaInterno,
     enviarEmailLembreteAssinatura:       enviarEmailLembreteAssinatura,
     enviarEmailPdfFinalAssinaturas:      enviarEmailPdfFinalAssinaturas,
-    // Aceite orientador
+    // Checklist orientador (novo fluxo) + compatibilidade aceite antigo
+    enviarEmailChecklistOrientador:      enviarEmailChecklistOrientador,
     enviarEmailAceiteOrientador:         enviarEmailAceiteOrientador,
     enviarEmailAguardandoAceiteEstudante:enviarEmailAguardandoAceiteEstudante,
     enviarEmailRespostaAceiteEstudante:  enviarEmailRespostaAceiteEstudante,
@@ -508,19 +524,27 @@ var MAIL = (function () {
   // Aceite de orientação
   // --------------------------------------------------------------------------
 
-  /** E-mail para o ORIENTADOR com botões Aceitar / Recusar. */
-  function enviarEmailAceiteOrientador(dados) {
-    var BASE_URL = 'https://ifrs-riogrande.github.io/estagios/orientadores/aceite-orientacao.html';
-    var linkAceite  = BASE_URL + '?token=' + dados.token + '&r=aceito';
-    var linkRecusa  = BASE_URL + '?token=' + dados.token + '&r=recusado';
+  /**
+   * E-mail para o ORIENTADOR com link único para revisão e checklist.
+   * NÃO contém botões diretos de aceite/recusa — o orientador deve acessar
+   * a página, revisar as informações e responder pelo checklist.
+   *
+   * dados: { idEstagio, nomeOrientador, emailOrientador, nomeEstudante,
+   *          curso, turno, semestre, nomeEmpresa, tipoEstagio,
+   *          dataInicio, dataTermino, cargaHoraria, horario,
+   *          planoAtividades, objetivos, urlChecklist, prazoVencimento }
+   */
+  function enviarEmailChecklistOrientador(dados) {
+    var urlChecklist = dados.urlChecklist || '';
 
     var corpo =
       '<p>Olá, <strong>' + dados.nomeOrientador + '</strong>,</p>'
-      + '<p>O(a) estudante <strong>' + dados.nomeEstudante + '</strong> selecionou você como orientador(a) de estágio. '
-      + 'Por favor, confirme se você aceita assumir a orientação desta solicitação.</p>'
+      + '<p>O(a) estudante <strong>' + dados.nomeEstudante + '</strong> selecionou você como orientador(a) '
+      + 'de estágio. Por favor, acesse o link abaixo para <strong>revisar as informações</strong> '
+      + 'e responder o checklist de orientação.</p>'
 
       + '<table style="border-collapse:collapse;width:100%;margin:16px 0;">'
-      + '<tr><td style="padding:8px 0;color:#6b7280;font-size:12px;text-transform:uppercase;letter-spacing:.04em;">Estudante</td>'
+      + '<tr><td style="padding:8px 0;color:#6b7280;font-size:12px;text-transform:uppercase;letter-spacing:.04em;width:140px;">Estudante</td>'
       +    '<td style="padding:8px 0;font-weight:600;">' + dados.nomeEstudante + ' — ' + dados.curso + (dados.turno ? ' (' + dados.turno + ')' : '') + '</td></tr>'
       + '<tr><td style="padding:8px 0;color:#6b7280;font-size:12px;text-transform:uppercase;">Empresa</td>'
       +    '<td style="padding:8px 0;font-weight:600;">' + dados.nomeEmpresa + '</td></tr>'
@@ -530,26 +554,38 @@ var MAIL = (function () {
       +    '<td style="padding:8px 0;">' + dados.dataInicio + ' a ' + dados.dataTermino + '</td></tr>'
       + '<tr><td style="padding:8px 0;color:#6b7280;font-size:12px;text-transform:uppercase;">Carga horária</td>'
       +    '<td style="padding:8px 0;">' + dados.cargaHoraria + '</td></tr>'
+      + (dados.prazoVencimento ? '<tr><td style="padding:8px 0;color:#6b7280;font-size:12px;text-transform:uppercase;">Prazo limite</td>'
+      +    '<td style="padding:8px 0;color:#dc2626;font-weight:600;">' + dados.prazoVencimento + '</td></tr>' : '')
       + '</table>'
 
-      + '<p style="color:#374151;"><strong>Plano de atividades:</strong><br>' + (dados.planoAtividades || '—') + '</p>'
+      + (dados.planoAtividades
+          ? '<p style="color:#374151;margin-top:4px;"><strong>Plano de atividades:</strong><br>'
+            + dados.planoAtividades + '</p>'
+          : '')
 
-      + '<p style="margin-top:28px;font-weight:600;">Clique em uma das opções abaixo:</p>'
-      + '<table><tr>'
-      + '<td style="padding-right:12px;">'
-      +   '<a href="' + linkAceite + '" style="display:inline-block;padding:12px 24px;background:#16a34a;color:#fff;text-decoration:none;border-radius:6px;font-weight:600;font-size:15px;">✓ Aceitar orientação</a>'
-      + '</td>'
-      + '<td>'
-      +   '<a href="' + linkRecusa + '" style="display:inline-block;padding:12px 24px;background:#dc2626;color:#fff;text-decoration:none;border-radius:6px;font-weight:600;font-size:15px;">✗ Recusar</a>'
-      + '</td>'
-      + '</tr></table>'
+      + '<p style="margin-top:28px;">'
+      + '<a href="' + urlChecklist + '" style="display:inline-block;padding:14px 28px;background:#1d4ed8;'
+      + 'color:#fff;text-decoration:none;border-radius:6px;font-weight:600;font-size:15px;">'
+      + 'Revisar e responder checklist →</a></p>'
 
-      + '<p style="margin-top:24px;font-size:13px;color:#6b7280;">Se os botões não funcionarem, copie e acesse o link:<br>'
-      + '<a href="' + BASE_URL + '?token=' + dados.token + '" style="color:#1d4ed8;">' + BASE_URL + '?token=' + dados.token + '</a></p>';
+      + '<p style="margin-top:16px;font-size:13px;color:#6b7280;">'
+      + 'Se o botão não funcionar, copie e acesse o link:<br>'
+      + '<a href="' + urlChecklist + '" style="color:#6b7280;">' + urlChecklist + '</a></p>'
+
+      + '<p style="margin-top:16px;font-size:13px;color:#6b7280;">'
+      + 'Dúvidas: <a href="mailto:' + SETOR_EMAIL + '">' + SETOR_EMAIL + '</a></p>';
 
     enviar_(dados.emailOrientador,
-      '[IFRS Estágios] Solicitação de orientação — ' + dados.nomeEstudante + ' (' + dados.idEstagio + ')',
-      htmlBase_('Solicitação de Orientação', corpo));
+      '[IFRS Estágios] Checklist de orientação aguardando sua resposta — ' + dados.nomeEstudante + ' (' + dados.idEstagio + ')',
+      htmlBase_('Checklist de Orientação', corpo));
+  }
+
+  // Mantido para compatibilidade com chamadas antigas (não mais usado no novo fluxo)
+  function enviarEmailAceiteOrientador(dados) {
+    enviarEmailChecklistOrientador(Object.assign({}, dados, {
+      urlChecklist: 'https://ifrs-riogrande.github.io/estagios/orientadores/aceite-orientacao.html'
+                  + '?token=' + (dados.token || '') + '&id=' + (dados.idEstagio || ''),
+    }));
   }
 
   /** E-mail para o ESTUDANTE: solicitação enviada, aguardando aceite do orientador. */
@@ -628,7 +664,8 @@ function enviarEmailAssinaturaGovBr_(d)          { return MAIL.enviarEmailAssina
 function enviarEmailAssinaturaInterno_(d)        { return MAIL.enviarEmailAssinaturaInterno(d); }
 function enviarEmailLembreteAssinatura_(d)       { return MAIL.enviarEmailLembreteAssinatura(d); }
 function enviarEmailPdfFinalAssinaturas_(d)      { return MAIL.enviarEmailPdfFinalAssinaturas(d); }
-// Aceite orientador
-function enviarEmailAceiteOrientador_(d)              { return MAIL.enviarEmailAceiteOrientador(d); }
+// Checklist orientador + aceite (compatibilidade)
+function enviarEmailChecklistOrientador_(d)            { return MAIL.enviarEmailChecklistOrientador(d); }
+function enviarEmailAceiteOrientador_(d)               { return MAIL.enviarEmailAceiteOrientador(d); }
 function enviarEmailAguardandoAceiteEstudante_(d)      { return MAIL.enviarEmailAguardandoAceiteEstudante(d); }
 function enviarEmailRespostaAceiteEstudante_(d)        { return MAIL.enviarEmailRespostaAceiteEstudante(d); }
