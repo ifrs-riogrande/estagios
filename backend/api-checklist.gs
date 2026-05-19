@@ -827,6 +827,8 @@ function doGetChecklist(e) {
         emailEstudante:  String(solDados.emailEstudante  || ''),
         matricula:       String(solDados.matricula       || ''),
         curso:           String(solDados.curso           || ''),
+        turno:           String(solDados.turno           || ''),
+        semestre:        String(solDados.semestre        || ''),
         nomeEmpresa:     String(solDados.nomeEmpresa     || ''),
         cnpjEmpresa:     String(solDados.cnpjEmpresa     || ''),
         nomeSupervisor:  String(solDados.nomeSupervisor  || ''),
