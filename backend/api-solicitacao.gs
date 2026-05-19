@@ -215,7 +215,6 @@ function solicitarEstagio_(dados) {
   var valorBolsa     = sanitizar_(dados.valorBolsa, 20);
   var valorTransp    = sanitizar_(dados.valorTransporte, 20);
   var planoAtiv      = sanitizar_(dados.atividadesPrevistas || dados.planoAtividades, 2000);
-  var objetivos      = sanitizar_(dados.objetivos, 2000);
   var formando       = sanitizar_(dados.formando, 50).indexOf('Sim') === 0 ? 'Sim' : 'Não';
   // docs de admissão: chegam como { nome, base64 } do frontend
   var arqMat = (dados.docMatricula  && dados.docMatricula.base64)  ? dados.docMatricula  : null;
@@ -272,9 +271,6 @@ function solicitarEstagio_(dados) {
   if (!dataInicio)     return jsonError_('Data de início é obrigatória.', 'VALIDATION');
   if (!dataTermino)    return jsonError_('Data de término é obrigatória.', 'VALIDATION');
   if (!cargaHor)       return jsonError_('Carga horária é obrigatória.', 'VALIDATION');
-  if (!objetivos || objetivos.length < 20)
-    return jsonError_('Objetivos do estágio são obrigatórios (mínimo 20 caracteres).', 'VALIDATION');
-
   // Data início deve ser >= hoje + 7 dias
   var hoje    = new Date(); hoje.setHours(0, 0, 0, 0);
   var minInicio = new Date(hoje.getTime() + 7 * 86400000);
@@ -369,7 +365,7 @@ function solicitarEstagio_(dados) {
   linha[COL_SOL.VALOR_BOLSA]      = valorBolsa;
   linha[COL_SOL.VALOR_TRANSPORTE] = valorTransp;
   linha[COL_SOL.PLANO_ATIVIDADES] = planoAtiv;
-  linha[COL_SOL.OBJETIVOS]        = objetivos;
+  linha[COL_SOL.OBJETIVOS]        = '';
   linha[COL_SOL.FORMANDO]         = formando;
   linha[COL_SOL.TURNO]              = turno;
   linha[COL_SOL.SEMESTRE_SOL]       = semestreAtual;
@@ -686,7 +682,6 @@ function verificarAceiteOrientador_(e) {
       cargaHoraria:    String(dados[i][COL_SOL.CARGA_HOR]        || ''),
       horario:         String(dados[i][COL_SOL.HORARIO]          || ''),
       planoAtividades: String(dados[i][COL_SOL.PLANO_ATIVIDADES] || ''),
-      objetivos:       String(dados[i][COL_SOL.OBJETIVOS]        || ''),
       nomeOrientador:  String(dados[i][COL_SOL.NOME_ORIENTADOR]  || ''),
       // Itens do checklist do orientador para renderização na página
       checklistItens:     ck.orientador.itens || [],
@@ -780,7 +775,6 @@ function trocarOrientador_(body) {
     var cargaHor        = String(dados[i][COL_SOL.CARGA_HOR]        || '');
     var horario         = String(dados[i][COL_SOL.HORARIO]          || '');
     var planoAtiv       = String(dados[i][COL_SOL.PLANO_ATIVIDADES] || '');
-    var objetivos       = String(dados[i][COL_SOL.OBJETIVOS]        || '');
 
     // Atualiza planilha
     sheet.getRange(i + 1, COL_SOL.NOME_ORIENTADOR  + 1).setValue(nomeOrientador);
@@ -794,6 +788,12 @@ function trocarOrientador_(body) {
       var ck = obterChecklist_(idEstagio);
       if (ck) {
         var prazos = obterPrazos_();
+        var solTroca      = _obterDadosSolicitacaoCompleto_(idEstagio);
+        var itemAceiteTroca = {
+          id: 'aceite_orientacao', label: 'Aceito formalmente a orientação deste estágio',
+          valor: '', sensivel: false, isDoc: false, secao: 'aceite',
+          checked: false, obs: '', auto: false, obrigatorio: true,
+        };
         ck.orientador = {
           status:            'pendente',
           data:              null,
@@ -801,7 +801,7 @@ function trocarOrientador_(body) {
           prazoVencimento:   calcularPrazoVencimento_(prazos.checklist.orientador),
           lembretesEnviados: 0,
           token:             novoToken,
-          itens:             itensChecklistOrientador_(),
+          itens:             [itemAceiteTroca].concat(itensCamposSolicitacao_(solTroca)),
         };
         ck.supervisor    = null;
         ck.admin         = null;
@@ -838,7 +838,6 @@ function trocarOrientador_(body) {
         cargaHoraria:    cargaHor,
         horario:         horario,
         planoAtividades: planoAtiv,
-        objetivos:       objetivos,
         nomeOrientador:  nomeOrientador,
         emailOrientador: emailOrientador,
         urlChecklist:    urlChecklist,

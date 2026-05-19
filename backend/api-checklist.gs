@@ -74,7 +74,6 @@ function itensCamposSolicitacao_(sol) {
                         && String(sol.valorBolsa) !== '0');
   var temTransp    = !!(sol.valorTransporte && String(sol.valorTransporte).trim()
                         && String(sol.valorTransporte) !== '0');
-  var temObjetivos = !!(sol.objetivos       && String(sol.objetivos).trim());
 
   // ── Dados do Estudante ─────────────────────────────────────────────────────
   add('nome_estudante',  'Nome',                   sol.nomeEstudante,  { secao: 'estudante' });
@@ -108,7 +107,6 @@ function itensCamposSolicitacao_(sol) {
 
   // ── Plano de Atividades ────────────────────────────────────────────────────
   add('plano_atividades', 'Plano de Atividades', sol.planoAtividades, { secao: 'plano' });
-  if (temObjetivos) add('objetivos', 'Objetivos', sol.objetivos, { secao: 'plano' });
 
   // ── Responsável Legal (menores de 18) ──────────────────────────────────────
   if (temResp) {
@@ -585,7 +583,6 @@ function _notificarOrientadorNovoChecklist_(idEstagio, checklist) {
     cargaHoraria:    sol.cargaHoraria    || '',
     horario:         sol.horario         || '',
     planoAtividades: sol.planoAtividades || '',
-    objetivos:       sol.objetivos       || '',
     nomeOrientador:  sol.nomeOrientador  || '',
     emailOrientador: sol.emailOrientador || '',
     urlChecklist:    urlChecklist,
@@ -842,7 +839,6 @@ function doGetChecklist(e) {
         remuneracao:     String(solDados.remuneracao     || ''),
         valorBolsa:      String(solDados.valorBolsa      || ''),
         planoAtividades: String(solDados.planoAtividades || ''),
-        objetivos:       String(solDados.objetivos       || ''),
         nomeAgente:      String(solDados.nomeAgente      || ''),
         linkDocMat:      String(solDados.linkDocMat      || ''),
         linkDocId:       String(solDados.linkDocId       || ''),

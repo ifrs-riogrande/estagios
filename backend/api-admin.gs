@@ -257,6 +257,9 @@ function listarSolicitacoesAdmin_() {
       observacaoSetor:  String(r[COL.OBSERVACAO_SETOR] || ''),
       motivoReprovacao: String(r[COL.MOTIVO_REPROVACAO] || ''),
       driveUrl:         String(r[COL.DRIVE_URL] || ''),
+      linkDocMatricula: String(r[COL.LINK_DOC_MAT] || ''),
+      linkDocIdentidade:String(r[COL.LINK_DOC_ID]  || ''),
+      linkDocBoletim:   String(r[COL.LINK_DOC_BOL]  || ''),
       dataSolicitacao:  formatarData_(r[COL.TIMESTAMP]),
     });
   }
@@ -1113,7 +1116,6 @@ function montarVariaveis_(r) {
   vars['{{VALOR_BOLSA}}']           = String(r[COL.VALOR_BOLSA]       || '');
   vars['{{VALOR_TRANSPORTE}}']      = String(r[COL.VALOR_TRANSPORTE]  || '');
   vars['{{PLANO_ATIVIDADES}}']      = String(r[COL.PLANO_ATIVIDADES]  || '');
-  vars['{{OBJETIVOS}}']             = String(r[COL.OBJETIVOS]          || '');
   vars['{{FORMANDO}}']              = String(r[COL.FORMANDO]           || '');
   vars['{{NEE}}']                   = String(r[COL.NEE]                || 'Não');
   vars['{{TURNO}}']                 = String(r[COL.TURNO]              || '');  // da solicitação

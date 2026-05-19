@@ -424,11 +424,6 @@
               <span id="dias-horarios-error" class="form-error hidden" role="alert"></span>
             </div>
             <div class="form-group">
-              <label class="form-label required" for="objetivos">Objetivos do estágio</label>
-              <textarea id="objetivos" name="objetivos" class="form-control" rows="3" required aria-required="true" placeholder="Descreva os principais objetivos de aprendizado do estágio." aria-describedby="objetivos-error"></textarea>
-              <span id="objetivos-error" class="form-error hidden" role="alert"></span>
-            </div>
-            <div class="form-group">
               <label class="form-label required" for="atividades-prev">Atividades previstas</label>
               <textarea id="atividades-prev" name="atividadesPrevistas" class="form-control" rows="3" required aria-required="true" placeholder="Liste as atividades que serão desenvolvidas durante o estágio." aria-describedby="atividades-prev-error"></textarea>
               <span id="atividades-prev-error" class="form-error hidden" role="alert"></span>
@@ -994,7 +989,6 @@
       }
       if (!document.getElementById('area-setor').value.trim()) fail('area-setor', 'Informe a área/setor do estágio.');
       if (!document.getElementById('dias-horarios-value').value.trim()) fail('dias-horarios', 'Adicione ao menos um dia de estágio com horários válidos.');
-      if (!document.getElementById('objetivos').value.trim())  fail('objetivos', 'Descreva os objetivos do estágio.');
       if (!document.getElementById('atividades-prev').value.trim()) fail('atividades-prev', 'Descreva as atividades previstas.');
       if (!document.getElementById('agente').value)            fail('agente', 'Informe se há agente de integração.');
 
@@ -1055,7 +1049,6 @@
         cargaHoraria:       document.getElementById('carga-horaria').value,
         diasHorarios:       document.getElementById('dias-horarios-value').value.trim(),
         areaSetor:          document.getElementById('area-setor').value.trim(),
-        objetivos:          document.getElementById('objetivos').value.trim(),
         atividadesPrevistas:document.getElementById('atividades-prev').value.trim(),
         nomeAgente:         document.getElementById('agente').options[document.getElementById('agente').selectedIndex]?.text || '',
         agente:             document.getElementById('agente').value,

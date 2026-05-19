@@ -74,10 +74,12 @@ function iniciarFluxoAssinaturas_(idEstagio) {
   var pdfInicial = _gerarPdfTCEInicial_(idEstagio, sol, pasta.getId());
 
   // Mapa de e-mails dos atores
+  // empresa   → representante legal (EMAIL_REP na tabela Empresas, via CNPJ)
+  // supervisor → E-mail Setor na tabela Supervisores (mesmo critério do checklist)
   var emails = {
     estudante:      sol.emailEstudante      || '',
-    empresa:        sol.emailEmpresa        || '',
-    supervisor:     sol.emailSupervisor     || '',
+    empresa:        _obterEmailRepEmpresa_(sol.cnpjEmpresa, sol.emailEmpresa),
+    supervisor:     _obterEmailSetorSupervisor_(sol.nomeSupervisor, sol.emailSupervisor),
     orientador:     sol.emailOrientador     || '',
     coordenador:    sol.emailCoordenador    || '',
     centralRevisao: 'estagios@riogrande.ifrs.edu.br',
@@ -398,8 +400,8 @@ function _gerarPdfTCEInicial_(idEstagio, sol, pastaId) {
     }
 
     // ── 4. Plano de Atividades ────────────────────────────────────────────────
-    sec('4. PLANO DE ATIVIDADES / OBJETIVOS');
-    body.appendParagraph(sol.planoAtividades || sol.objetivos || '—')
+    sec('4. PLANO DE ATIVIDADES');
+    body.appendParagraph(sol.planoAtividades || '—')
         .setSpacingBefore(2).setSpacingAfter(4)
         .editAsText().setFontSize(10);
 
@@ -622,7 +624,6 @@ function _obterDadosSolicitacaoCompleto_(idEstagio) {
           valorBolsa:      r[COL_SOL.VALOR_BOLSA]          || '',
           valorTransporte: r[COL_SOL.VALOR_TRANSPORTE]     || '',
           planoAtividades: r[COL_SOL.PLANO_ATIVIDADES]     || '',
-          objetivos:       r[COL_SOL.OBJETIVOS]            || '',
           // ── Documentos ────────────────────────────────────────────────────
           linkDocMat:      r[COL_SOL.LINK_DOC_MAT]         || '',
           linkDocId:       r[COL_SOL.LINK_DOC_ID]          || '',
@@ -638,6 +639,36 @@ function _obterDadosSolicitacaoCompleto_(idEstagio) {
     logErro_('_obterDadosSolicitacaoCompleto_', e);
     return {};
   }
+}
+
+/**
+ * Busca o e-mail do representante da empresa na aba "Empresas" pelo CNPJ.
+ * Retorna EMAIL_REP (e-mail do representante legal) como destino das notificações.
+ * Fallback: valor já armazenado na solicitação (emailEmpresa / emailInstEstagio).
+ *
+ * @param {string} cnpjEmpresa  CNPJ (com ou sem máscara)
+ * @param {string} fallback     E-mail alternativo se não encontrar
+ * @return {string}
+ */
+function _obterEmailRepEmpresa_(cnpjEmpresa, fallback) {
+  try {
+    var sheet = SpreadsheetApp.openById(SS_ID).getSheetByName('Empresas');
+    if (!sheet) return fallback || '';
+    var cnpjNorm = String(cnpjEmpresa || '').replace(/\D/g, '').trim();
+    if (!cnpjNorm) return fallback || '';
+    var dados = sheet.getDataRange().getValues();
+    for (var i = 1; i < dados.length; i++) {
+      var status = String(dados[i][COL_EMP.STATUS] || '').trim();
+      if (status === 'Excluído') continue;
+      var cnpjRow = String(dados[i][COL_EMP.CNPJ] || '').replace(/\D/g, '').trim();
+      if (cnpjRow !== cnpjNorm) continue;
+      var emailRep = String(dados[i][COL_EMP.EMAIL_REP] || '').trim();
+      if (emailRep) return emailRep;
+    }
+  } catch (e) {
+    logErro_('_obterEmailRepEmpresa_', e);
+  }
+  return fallback || '';
 }
 
 /** Busca e-mail do coordenador ativo de um curso. */
@@ -714,12 +745,12 @@ function notificarAtorAssinatura_(idEstagio, etapa, sol, fluxo) {
 function enviarPdfFinalParaTodos_(idEstagio, fluxo, driveUrl) {
   var sol = _obterDadosSolicitacaoCompleto_(idEstagio);
   var destinatarios = [
-    { email: sol.emailEstudante,               nome: sol.nomeEstudante  || 'Estudante'       },
-    { email: sol.emailEmpresa,                 nome: sol.nomeEmpresa    || 'Empresa'          },
-    { email: sol.emailSupervisor,              nome: sol.nomeSupervisor || 'Supervisor'       },
-    { email: sol.emailOrientador,              nome: sol.nomeOrientador || 'Orientador'       },
-    { email: sol.emailCoordenador,             nome: 'Coordenador'                            },
-    { email: 'estagios@riogrande.ifrs.edu.br', nome: 'Setor de Estágios'                     },
+    { email: sol.emailEstudante,                                                           nome: sol.nomeEstudante  || 'Estudante'  },
+    { email: _obterEmailRepEmpresa_(sol.cnpjEmpresa, sol.emailEmpresa),                   nome: sol.nomeEmpresa    || 'Empresa'    },
+    { email: _obterEmailSetorSupervisor_(sol.nomeSupervisor, sol.emailSupervisor),         nome: sol.nomeSupervisor || 'Supervisor' },
+    { email: sol.emailOrientador,                                                          nome: sol.nomeOrientador || 'Orientador' },
+    { email: sol.emailCoordenador,                                                         nome: 'Coordenador'                      },
+    { email: 'estagios@riogrande.ifrs.edu.br',                                            nome: 'Setor de Estágios'                },
   ].filter(function (d) { return !!(d.email && String(d.email).indexOf('@') > 0); });
 
   // URL final: preferência para arquivo enviado pela Central; fallback para último PDF do fluxo
