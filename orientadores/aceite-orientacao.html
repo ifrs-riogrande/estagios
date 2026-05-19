@@ -88,6 +88,22 @@
     /* ── Itens do checklist (exibidos após aceite) ── */
     #checklist-itens { display: none; margin-top: var(--space-6); }
 
+    /* ── Campo por campo ── */
+    .ck-secao-group{margin-bottom:var(--space-3);}
+    .ck-secao-header{font-size:var(--font-size-xs);font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--color-text-muted);padding:var(--space-3) var(--space-5);background:var(--color-bg);border:1px solid var(--color-border);border-bottom:none;border-radius:var(--radius-lg) var(--radius-lg) 0 0;}
+    .ck-field-item{display:flex;align-items:flex-start;gap:var(--space-3);padding:var(--space-3) var(--space-4) var(--space-3) var(--space-5);border:1px solid var(--color-border);border-top:none;background:var(--color-surface);transition:background .1s;}
+    .ck-field-item:last-child{border-radius:0 0 var(--radius-lg) var(--radius-lg);}
+    .ck-field-item:hover{background:var(--color-bg);}
+    .ck-field-cb{margin-top:3px;width:16px;height:16px;cursor:pointer;flex-shrink:0;accent-color:var(--color-success);}
+    .ck-field-cb-spacer{width:16px;height:16px;flex-shrink:0;margin-top:3px;}
+    .ck-field-item-body{flex:1;min-width:0;}
+    .ck-field-item-label{font-size:var(--font-size-xs);font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--color-text-muted);display:flex;align-items:center;gap:var(--space-2);margin-bottom:3px;flex-wrap:wrap;}
+    .ck-field-item-valor{font-size:var(--font-size-sm);font-weight:500;color:var(--color-text);white-space:pre-wrap;word-break:break-word;}
+    .ck-field-sensivel-badge{font-size:10px;font-weight:500;color:var(--color-text-muted);background:var(--color-bg);border:1px solid var(--color-border);border-radius:var(--radius-sm);padding:1px 5px;text-transform:none;letter-spacing:0;}
+    .ck-field-mask{font-family:monospace;color:var(--color-text-muted);letter-spacing:2px;}
+    .ck-doc-btn{display:inline-flex;align-items:center;gap:4px;font-size:var(--font-size-xs);font-weight:500;color:var(--color-primary);text-decoration:none;background:var(--color-info-light);border:1px solid var(--color-info-border);border-radius:var(--radius-sm);padding:2px 8px;margin-top:var(--space-1);}
+    .ck-doc-btn:hover{background:var(--color-info-border);}
+
     .confirmacao-icon { font-size: 56px; text-align: center; display: block; margin-bottom: var(--space-4); }
     .badge-ator { display: inline-block; font-size: var(--font-size-xs); font-weight: 600;
       padding: 2px 10px; border-radius: 9999px; background: #dbeafe; color: #1d4ed8;
@@ -199,15 +215,7 @@
 
           <!-- ── Itens do checklist (exibidos após aceite) ── -->
           <div id="checklist-itens">
-            <div class="ck-section" id="secao-orientador" style="display:none;">
-              <div class="ck-section-title">Como Orientador(a)</div>
-              <div id="itens-orientador"></div>
-            </div>
-
-            <div class="ck-section" id="secao-coordenador" style="display:none;">
-              <div class="ck-section-title">Como Coordenador(a) de Curso</div>
-              <div id="itens-coordenador"></div>
-            </div>
+            <div id="ck-campos-list" style="margin-bottom:var(--space-4);"></div>
 
             <!-- Observação geral -->
             <div class="form-group" style="margin-top:var(--space-5);">
@@ -260,9 +268,15 @@
     var _itensRaw   = [];   // itens vindos do backend (sem aceite_orientacao)
     var _aceitou    = null; // true | false | null
 
-    // IDs dos itens por seção (após remover aceite_orientacao que é tratado separadamente)
-    var IDS_ORIENTADOR  = ['dados_orientador','coerencia_ppc','qualidade_pedagogica','compatibilidade','formacao_area','disponibilidade_ch'];
-    var IDS_COORDENADOR = ['conformidade_curso','etapa_adequada','carga_horaria_curso'];
+    // Mapa de seções para exibição
+    var CK_SECOES = {
+      estudante:   '👤 Dados do Estudante',
+      estagio:     '🏢 Dados do Estágio',
+      agente:      '🤝 Agente de Integração',
+      plano:       '📝 Plano de Atividades',
+      responsavel: '👪 Responsável Legal',
+      documentos:  '📎 Documentos',
+    };
 
     // ── Inicialização ──────────────────────────────────────────────────────────
     document.addEventListener('DOMContentLoaded', function () {
@@ -341,56 +355,109 @@
 
     // ── Renderiza itens do checklist ───────────────────────────────────────────
     function renderizarItensChecklist(itens) {
-      var oriItens  = itens.filter(function(it) { return IDS_ORIENTADOR.indexOf(it.id)  !== -1; });
-      var coordItens= itens.filter(function(it) { return IDS_COORDENADOR.indexOf(it.id) !== -1; });
+      var container = document.getElementById('ck-campos-list');
+      container.innerHTML = '';
 
-      if (oriItens.length)  { renderGrupo('itens-orientador',  oriItens);  document.getElementById('secao-orientador').style.display  = 'block'; }
-      if (coordItens.length){ renderGrupo('itens-coordenador', coordItens);document.getElementById('secao-coordenador').style.display = 'block'; }
-    }
-
-    function renderGrupo(containerId, itens) {
-      var html = '';
-      itens.forEach(function(item, idx) {
-        html += renderItem(item, idx);
+      // Agrupa por seção mantendo a ordem de aparecimento
+      var grupos = {};
+      var ordemSecoes = [];
+      itens.forEach(function(item) {
+        var sec = item.secao || 'geral';
+        if (!grupos[sec]) { grupos[sec] = []; ordemSecoes.push(sec); }
+        grupos[sec].push(item);
       });
-      document.getElementById(containerId).innerHTML = html;
+
+      ordemSecoes.forEach(function(sec) {
+        var titulo = CK_SECOES[sec];
+        if (!titulo) return;
+        var itensSec = grupos[sec];
+
+        var groupEl = document.createElement('div');
+        groupEl.className = 'ck-secao-group';
+
+        var headerEl = document.createElement('div');
+        headerEl.className = 'ck-secao-header';
+        headerEl.textContent = titulo;
+        groupEl.appendChild(headerEl);
+
+        itensSec.forEach(function(item) {
+          groupEl.appendChild(renderCampoItem(item));
+        });
+
+        container.appendChild(groupEl);
+      });
     }
 
-    function renderItem(item, idx) {
-      var ckId  = 'ck-' + item.id;
-      var obsId = 'obs-' + item.id;
-      return '<div class="ck-item" id="item-' + item.id + '">'
-        +   '<div class="ck-item-header">'
-        +     '<input type="checkbox" class="ck-checkbox" id="' + ckId + '"'
-        +       ' data-id="' + item.id + '"'
-        +       (item.checked ? ' checked' : '')
-        +       ' onchange="atualizarItem(\'' + item.id + '\')">'
-        +     '<label class="ck-label" for="' + ckId + '">' + escapeHtml(item.label) + '</label>'
-        +   '</div>'
-        +   '<span class="ck-obs-toggle" onclick="toggleObs(\'' + obsId + '\')">+ Adicionar observação</span>'
-        +   '<div class="ck-obs-area" id="' + obsId + '">'
-        +     '<textarea class="form-control" rows="2" maxlength="300" placeholder="Observação (opcional)..."'
-        +       ' data-obs-id="' + item.id + '">' + escapeHtml(item.obs || '') + '</textarea>'
-        +   '</div>'
-        + '</div>';
-    }
+    function renderCampoItem(item) {
+      var el = document.createElement('div');
+      el.className = 'ck-field-item';
 
-    function toggleObs(obsId) {
-      var el = document.getElementById(obsId);
-      if (!el) return;
-      var aberto = el.style.display === 'block';
-      el.style.display = aberto ? 'none' : 'block';
-    }
-
-    function atualizarItem(id) {
-      var el   = document.getElementById('item-' + id);
-      var ckEl = document.getElementById('ck-' + id);
-      if (!el || !ckEl) return;
-      if (ckEl.checked) {
-        el.classList.add('ck-item--checked');
+      // Checkbox ou espaçador para sensíveis
+      if (item.sensivel) {
+        var spacer = document.createElement('div');
+        spacer.className = 'ck-field-cb-spacer';
+        el.appendChild(spacer);
       } else {
-        el.classList.remove('ck-item--checked');
+        var cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.className = 'ck-field-cb';
+        cb.id = 'ck-' + item.id;
+        cb.dataset.id = item.id;
+        if (item.checked) cb.checked = true;
+        cb.addEventListener('change', function() {
+          el.style.background = this.checked ? 'var(--color-success-light, #f0fdf4)' : '';
+        });
+        el.appendChild(cb);
       }
+
+      // Corpo
+      var body = document.createElement('div');
+      body.className = 'ck-field-item-body';
+
+      // Rótulo
+      var labelEl = document.createElement('div');
+      labelEl.className = 'ck-field-item-label';
+      labelEl.textContent = item.label;
+      if (item.sensivel) {
+        var badge = document.createElement('span');
+        badge.className = 'ck-field-sensivel-badge';
+        badge.textContent = '🔒 Dado sensível';
+        labelEl.appendChild(badge);
+      }
+      body.appendChild(labelEl);
+
+      // Valor
+      var valorEl = document.createElement('div');
+      valorEl.className = 'ck-field-item-valor';
+
+      if (item.isDoc) {
+        if (item.valor && item.valor !== '') {
+          var link = document.createElement('a');
+          link.href = item.valor;
+          link.target = '_blank';
+          link.rel = 'noopener noreferrer';
+          link.className = 'ck-doc-btn';
+          link.textContent = '📎 Abrir documento';
+          valorEl.appendChild(link);
+        } else {
+          valorEl.innerHTML = '<span style="color:var(--color-text-muted);font-style:italic;">Não enviado</span>';
+        }
+      } else if (item.sensivel) {
+        var maskSpan = document.createElement('span');
+        maskSpan.className = 'ck-field-mask';
+        maskSpan.textContent = '•••••';
+        valorEl.appendChild(maskSpan);
+      } else {
+        if (item.valor && item.valor !== '') {
+          valorEl.textContent = item.valor;
+        } else {
+          valorEl.innerHTML = '<span style="color:var(--color-text-muted);font-style:italic;">Não informado</span>';
+        }
+      }
+
+      body.appendChild(valorEl);
+      el.appendChild(body);
+      return el;
     }
 
     // ── Aceite de orientação ──────────────────────────────────────────────────
@@ -469,19 +536,22 @@
       // Item aceite_orientacao (forçado true pois _aceitou === true)
       itensEnviados.push({ id: 'aceite_orientacao', checked: true, obs: '' });
 
-      // Demais itens
+      // Demais itens (sensíveis não têm checkbox — consideram-se marcados)
       _itensRaw.forEach(function(item) {
-        var ckEl  = document.getElementById('ck-' + item.id);
-        var obsEl = document.querySelector('[data-obs-id="' + item.id + '"]');
+        var ckEl = document.getElementById('ck-' + item.id);
         itensEnviados.push({
           id:      item.id,
-          checked: ckEl ? ckEl.checked : false,
-          obs:     obsEl ? obsEl.value.trim() : '',
+          checked: item.sensivel ? true : (ckEl ? ckEl.checked : false),
+          obs:     '',
         });
       });
 
-      // Valida: todos os itens obrigatórios marcados
-      var naoMarcados = itensEnviados.filter(function(it) { return it.id !== 'aceite_orientacao' && !it.checked; });
+      // Valida: todos os itens não-sensíveis devem estar marcados
+      var naoMarcados = _itensRaw.filter(function(item) {
+        if (item.sensivel) return false;
+        var ckEl = document.getElementById('ck-' + item.id);
+        return !ckEl || !ckEl.checked;
+      });
       if (naoMarcados.length > 0) {
         showFormFeedback('feedback-ck', 'error', 'Atenção',
           'Todos os itens do checklist devem ser marcados para prosseguir. '
