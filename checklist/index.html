@@ -769,7 +769,7 @@
         <div class="proc-step-meta">${escapeHtml(info.nomeEstudante||'')}${info.nomeEmpresa ? ' · '+escapeHtml(info.nomeEmpresa) : ''}</div>
       </div></div>`;
 
-    /* 2 — Aceite do orientador */
+    /* 2 — Orientador(a) de Estágio */
     const aOri = hist.orientador || {};
     const oriFez = aOri.status === 'aprovado' || aOri.status === 'ajuste';
     steps += `<div class="proc-step">
@@ -780,26 +780,27 @@
         ${oriFez ? `<div class="proc-atores"><span class="proc-ator-chip ${chipCls(aOri.status)}">${chipIcon(aOri.status)}${statusLabel(aOri.status)}</span></div>` : ''}
       </div></div>`;
 
-    /* 3 — Setor de Estágios (admin) */
-    const aAdmin = hist.admin || {};
-    const adminFez = aAdmin.status === 'aprovado' || aAdmin.status === 'ajuste';
-    steps += `<div class="proc-step">
-      <div class="proc-dot ${adminFez ? dotCls(aAdmin.status) : (hist.etapaAtiva === 'admin' ? 'proc-dot--active' : 'proc-dot--pending')}">${dotIcon(aAdmin.status,'3')}</div>
-      <div class="proc-step-body">
-        <div class="proc-step-label">Setor de Estágios</div>
-        <div class="proc-step-meta">${adminFez ? statusLabel(aAdmin.status)+(aAdmin.data ? ' · '+fmtDH(aAdmin.data) : '') : 'Em verificação…'}</div>
-      </div></div>`;
-
-    /* 4 — Supervisor */
+    /* 3 — Supervisor(a) na Empresa */
     const aSup = hist.supervisor || {};
     const supFez = aSup.status === 'aprovado' || aSup.status === 'ajuste';
-    const supAtivo = hist.etapaAtiva === 'paralelo' || hist.etapaAtiva === 'supervisor' || hist.etapaAtiva === 'concluido';
+    const supAtivo = hist.etapaAtiva === 'supervisor';
     steps += `<div class="proc-step">
-      <div class="proc-dot ${supFez ? dotCls(aSup.status) : (supAtivo ? 'proc-dot--active' : 'proc-dot--pending')}">${dotIcon(aSup.status,'4')}</div>
+      <div class="proc-dot ${supFez ? dotCls(aSup.status) : (supAtivo ? 'proc-dot--active' : 'proc-dot--pending')}">${dotIcon(aSup.status,'3')}</div>
       <div class="proc-step-body">
         <div class="proc-step-label">Supervisor(a) na Empresa</div>
-        <div class="proc-step-meta">${escapeHtml(info.nomeSupervisor||'')}${supFez && aSup.data ? ' · '+fmtDH(aSup.data) : (!supAtivo ? ' · Aguardando liberação' : ' · Em verificação…')}</div>
+        <div class="proc-step-meta">${escapeHtml(info.nomeSupervisor||'')}${supFez && aSup.data ? ' · '+fmtDH(aSup.data) : (supAtivo ? ' · Em verificação…' : (!oriFez ? ' · Aguardando orientador' : ' · Aguardando liberação'))}</div>
         ${supFez ? `<div class="proc-atores"><span class="proc-ator-chip ${chipCls(aSup.status)}">${chipIcon(aSup.status)}${statusLabel(aSup.status)}</span></div>` : ''}
+      </div></div>`;
+
+    /* 4 — Setor de Estágios (Admin) */
+    const aAdmin = hist.admin || {};
+    const adminFez = aAdmin.status === 'aprovado' || aAdmin.status === 'ajuste';
+    const adminAtivo = hist.etapaAtiva === 'admin';
+    steps += `<div class="proc-step">
+      <div class="proc-dot ${adminFez ? dotCls(aAdmin.status) : (adminAtivo ? 'proc-dot--active' : 'proc-dot--pending')}">${dotIcon(aAdmin.status,'4')}</div>
+      <div class="proc-step-body">
+        <div class="proc-step-label">Setor de Estágios</div>
+        <div class="proc-step-meta">${adminFez ? statusLabel(aAdmin.status)+(aAdmin.data ? ' · '+fmtDH(aAdmin.data) : '') : (adminAtivo ? 'Em verificação…' : 'Aguardando etapas anteriores')}</div>
       </div></div>`;
 
     /* 5 — Assinaturas + ativação */
