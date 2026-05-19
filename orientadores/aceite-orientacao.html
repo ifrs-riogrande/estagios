@@ -226,8 +226,17 @@
             </div>
 
             <div class="form-actions" style="margin-top:var(--space-6);">
-              <button type="button" id="btn-submeter" class="btn btn-primary btn-lg" onclick="submeterChecklist()">
-                Confirmar e enviar checklist
+              <button type="button" id="btn-ajuste" class="btn btn-warning btn-lg" onclick="submeterChecklist('ajuste')">
+                <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" style="vertical-align:middle;margin-right:4px;">
+                  <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                </svg>
+                Devolver para ajustes
+              </button>
+              <button type="button" id="btn-submeter" class="btn btn-success btn-lg" onclick="submeterChecklist('aprovado')">
+                <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" style="vertical-align:middle;margin-right:4px;">
+                  <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                </svg>
+                Confirmar e enviar
               </button>
             </div>
           </div>
@@ -514,7 +523,8 @@
     }
 
     // ── Submeter checklist completo ───────────────────────────────────────────
-    async function submeterChecklist() {
+    async function submeterChecklist(decisao) {
+      decisao = decisao || 'aprovado';
       hideFormFeedback('feedback-ck');
 
       if (_aceitou !== true) {
@@ -538,49 +548,65 @@
         });
       });
 
-      // Valida: todos os documentos devem estar marcados
-      var naoMarcados = _itensRaw.filter(function(item) {
-        if (!item.isDoc) return false;
-        var ckEl = document.getElementById('ck-' + item.id);
-        return !ckEl || !ckEl.checked;
-      });
-      if (naoMarcados.length > 0) {
-        showFormFeedback('feedback-ck', 'error', 'Atenção',
-          'Todos os itens do checklist devem ser marcados para prosseguir. '
-          + naoMarcados.length + ' item(ns) pendente(s). Se houver algum impedimento, utilize o campo de observação e entre em contato com o setor.');
-        return;
+      // Valida: todos os documentos devem estar marcados (só ao confirmar)
+      if (decisao === 'aprovado') {
+        var naoMarcados = _itensRaw.filter(function(item) {
+          if (!item.isDoc) return false;
+          var ckEl = document.getElementById('ck-' + item.id);
+          return !ckEl || !ckEl.checked;
+        });
+        if (naoMarcados.length > 0) {
+          showFormFeedback('feedback-ck', 'error', 'Atenção',
+            'Confira todos os documentos antes de confirmar. '
+            + naoMarcados.length + ' documento(s) pendente(s).');
+          return;
+        }
       }
 
       var obs = document.getElementById('obs-geral').value.trim();
-      var btn = document.getElementById('btn-submeter');
-      btn.disabled    = true;
-      btn.textContent = 'Enviando...';
+      var btnSubmeter = document.getElementById('btn-submeter');
+      var btnAjuste   = document.getElementById('btn-ajuste');
+      btnSubmeter.disabled = true;
+      btnAjuste.disabled   = true;
+      btnSubmeter.textContent = 'Enviando...';
 
       try {
         await apiResponderAceiteOrientador({
           token:      _token,
           idEstagio:  _idEstagio,
           itens:      itensEnviados,
-          decisao:    'aprovado',
+          decisao:    decisao,
           obs:        obs,
         });
-        mostrarConfirmacao(true);
+        mostrarConfirmacao(decisao === 'aprovado' ? true : decisao);
       } catch (err) {
-        btn.disabled    = false;
-        btn.textContent = 'Confirmar e enviar checklist';
+        btnSubmeter.disabled = false;
+        btnAjuste.disabled   = false;
+        btnSubmeter.textContent = 'Confirmar e enviar';
         showFormFeedback('feedback-ck', 'error', 'Erro ao enviar', err.message || 'Tente novamente.');
       }
     }
 
     // ── Confirmação final ─────────────────────────────────────────────────────
+    // aceito: true = aprovado, false = recusado, 'ajuste' = devolvido para ajuste
     function mostrarConfirmacao(aceito) {
-      document.getElementById('conf-icon').textContent  = aceito ? '✅' : '❌';
-      document.getElementById('conf-titulo').textContent = aceito
-        ? 'Checklist enviado com sucesso!'
-        : 'Orientação recusada.';
-      document.getElementById('conf-msg').textContent = aceito
-        ? 'Obrigado! O processo avançou para o supervisor, que receberá um e-mail para continuar a validação.'
-        : 'O estudante foi notificado e poderá escolher outro(a) orientador(a). Obrigado pela transparência.';
+      var icon, titulo, msg;
+      if (aceito === true) {
+        icon   = '✅';
+        titulo = 'Checklist enviado com sucesso!';
+        msg    = 'Obrigado! O processo avançou para o supervisor, que receberá um e-mail para continuar a validação.';
+      } else if (aceito === 'ajuste') {
+        icon   = '⚠️';
+        titulo = 'Devolução para ajustes registrada.';
+        msg    = 'O setor de estágios foi notificado sobre a necessidade de ajustes.';
+      } else {
+        icon   = '❌';
+        titulo = 'Orientação recusada.';
+        msg    = 'O estudante foi notificado e poderá escolher outro(a) orientador(a). Obrigado pela transparência.';
+      }
+      document.getElementById('conf-icon').textContent   = icon;
+      document.getElementById('conf-titulo').textContent = titulo;
+      document.getElementById('conf-msg').textContent    = msg;
       mostrarPainel('painel-confirmacao');
     }
   </script>

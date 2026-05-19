@@ -83,6 +83,32 @@
   text-decoration: none;
 }
 
+/* Success — verde */
+.btn-success {
+  background-color: #16a34a;
+  border-color: #16a34a;
+  color: #FFFFFF;
+}
+.btn-success:hover {
+  background-color: #15803d;
+  border-color: #15803d;
+  color: #FFFFFF;
+  text-decoration: none;
+}
+
+/* Warning — laranja */
+.btn-warning {
+  background-color: #d97706;
+  border-color: #d97706;
+  color: #FFFFFF;
+}
+.btn-warning:hover {
+  background-color: #b45309;
+  border-color: #b45309;
+  color: #FFFFFF;
+  text-decoration: none;
+}
+
 /* Ghost — sem borda visível */
 .btn-ghost {
   background-color: transparent;
