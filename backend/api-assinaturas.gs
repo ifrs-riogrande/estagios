@@ -1089,10 +1089,18 @@ function doPostAssinaturas(e) {
       // Se o e-mail estava vazio (falha na criação do fluxo), resolve agora e salva
       if (!etaAtiva.email) {
         var emailResolvido = _resolverEmailAtor_(etaAtiva.ator, solRenv);
-        if (!emailResolvido) return jsonError_(
-          'E-mail do ator "' + etaAtiva.label + '" não encontrado. Verifique o cadastro do coordenador para o curso: ' + (solRenv.curso || '(não identificado)'),
-          'EMAIL_NOT_FOUND'
-        );
+        if (!emailResolvido) {
+          var dicaDiag = {
+            coordenador:    'Verifique se há coordenador Ativo cadastrado para o curso "' + (solRenv.curso || '?') + '" na aba Coordenadores da planilha.',
+            direcao:        'Verifique se há um Diretor Geral com Status "Ativo" na aba "Diretor Geral" da planilha SGE.',
+            empresa:        'Verifique o e-mail do representante legal da empresa na aba Empresas.',
+            supervisor:     'Verifique o e-mail do supervisor na aba Supervisores.',
+          };
+          return jsonError_(
+            'E-mail do ator "' + etaAtiva.label + '" não encontrado. ' + (dicaDiag[etaAtiva.ator] || 'Verifique o cadastro deste ator na planilha SGE.'),
+            'EMAIL_NOT_FOUND'
+          );
+        }
         etaAtiva.email = emailResolvido;
         salvarFluxoAssinaturas_(body.idEstagio, fluxoRenv);
       }
