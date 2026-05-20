@@ -675,19 +675,38 @@ function _obterEmailRepEmpresa_(cnpjEmpresa, fallback) {
 /** Busca e-mail do coordenador ativo de um curso. */
 function _obterEmailCoordenadorPorCurso_(curso) {
   try {
-    if (!curso) return '';
+    if (!curso) {
+      logErro_('_obterEmailCoordenadorPorCurso_', new Error('Curso vazio'));
+      return '';
+    }
     var sheet = SpreadsheetApp.openById(SS_ID).getSheetByName('Coordenadores');
-    if (!sheet) return '';
-    var dados = sheet.getDataRange().getValues();
-    // Cabeçalho: CPF | Matrícula SIAPE | Nome | E-mail | Telefone | Titulação | Curso | Timestamp | Status
+    if (!sheet) {
+      logErro_('_obterEmailCoordenadorPorCurso_', new Error('Aba Coordenadores não encontrada'));
+      return '';
+    }
+    var dados  = sheet.getDataRange().getValues();
+    var cursoN = String(curso).trim().toLowerCase();
+    // 1ª passagem — correspondência exata de curso + status Ativo
     for (var i = 1; i < dados.length; i++) {
-      if (String(dados[i][6]).trim().toLowerCase() === String(curso).trim().toLowerCase()
-          && String(dados[i][8]).toLowerCase() === 'ativo') {
-        return dados[i][3]; // E-mail
+      var cursoRow  = String(dados[i][COL_COORD.CURSO]  || '').trim().toLowerCase();
+      var statusRow = String(dados[i][COL_COORD.STATUS] || '').trim().toLowerCase();
+      var emailRow  = String(dados[i][COL_COORD.EMAIL]  || '').trim();
+      if (cursoRow === cursoN && statusRow === 'ativo' && emailRow) return emailRow;
+    }
+    // 2ª passagem — correspondência parcial (curso contém ou é contido)
+    for (var j = 1; j < dados.length; j++) {
+      var cRow2 = String(dados[j][COL_COORD.CURSO]  || '').trim().toLowerCase();
+      var sRow2 = String(dados[j][COL_COORD.STATUS] || '').trim().toLowerCase();
+      var eRow2 = String(dados[j][COL_COORD.EMAIL]  || '').trim();
+      if (sRow2 === 'ativo' && eRow2
+          && (cRow2.indexOf(cursoN) !== -1 || cursoN.indexOf(cRow2) !== -1)) {
+        return eRow2;
       }
     }
+    logErro_('_obterEmailCoordenadorPorCurso_', new Error('Nenhum coordenador ativo para o curso: "' + curso + '"'));
     return '';
   } catch (e) {
+    logErro_('_obterEmailCoordenadorPorCurso_', e);
     return '';
   }
 }
@@ -703,7 +722,13 @@ function _obterEmailCoordenadorPorCurso_(curso) {
  * @param {Object} fluxo   Estado atual do fluxo (para pegar URL do PDF mais recente)
  */
 function notificarAtorAssinatura_(idEstagio, etapa, sol, fluxo) {
-  if (!etapa || !etapa.email) return;
+  if (!etapa) return;
+  if (!etapa.email) {
+    logErro_('notificarAtorAssinatura_', new Error(
+      'E-mail vazio para o ator "' + (etapa.ator || etapa.label) + '" (etapa ' + etapa.numero + ') — estágio ' + idEstagio
+    ));
+    return;
+  }
 
   // URL da página com magic-link token (sem links diretos ao Drive)
   var pageUrl = BASE_URL + '/assinaturas/?id=' + encodeURIComponent(idEstagio)
