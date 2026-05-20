@@ -1029,6 +1029,26 @@ function doPostAssinaturas(e) {
       return rejeitarEtapaAssinatura_(body.idEstagio, body.numeroEtapa, body.motivo, body.retornoParaEtapa, etaRej.email || body.token);
     }
 
+    case 'reenviarNotificacaoAssinatura': {
+      // Exclusivo para admin autenticado via OAuth
+      if (!estaAutenticado_()) return jsonError_('Não autenticado.', 'AUTH_ERROR');
+      if (!body.idEstagio) return jsonError_('Parâmetro idEstagio obrigatório.', 'MISSING_PARAM');
+      var fluxoRenv = obterFluxoAssinaturas_(body.idEstagio);
+      if (!fluxoRenv) return jsonError_('Fluxo de assinaturas não encontrado.', 'NOT_FOUND');
+      var etaAtiva = null;
+      for (var k = 0; k < fluxoRenv.etapas.length; k++) {
+        if (fluxoRenv.etapas[k].status === ASS_STATUS.AGUARDANDO) { etaAtiva = fluxoRenv.etapas[k]; break; }
+      }
+      if (!etaAtiva) return jsonError_('Nenhuma etapa aguardando ação no momento.', 'INVALID_STATE');
+      try {
+        var solRenv = _obterDadosSolicitacaoCompleto_(body.idEstagio);
+        notificarAtorAssinatura_(body.idEstagio, etaAtiva, solRenv, fluxoRenv);
+      } catch (e) {
+        return jsonError_('Erro ao reenviar notificação: ' + e.message, 'SEND_ERROR');
+      }
+      return jsonOk_({ reenviado: true, etapa: etaAtiva.numero, label: etaAtiva.label, email: etaAtiva.email });
+    }
+
     default:
       return jsonError_('Ação POST desconhecida: ' + action, 'UNKNOWN_ACTION');
   }

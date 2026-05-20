@@ -82,6 +82,7 @@ var GET_ROUTES = {
   // Assinaturas
   'obterFluxoAssinaturas':        doGetAssinaturas,
   'listarFluxosPendentesEtapa':   doGetAssinaturas,
+  'baixarPdfAssinatura':          doGetAssinaturas,
 
 };
 
@@ -170,9 +171,10 @@ var POST_ROUTES = {
   'salvarPrazos':              doPostChecklist,
 
   // Assinaturas
-  'concluirEtapa':             doPostAssinaturas,
-  'rejeitarEtapa':             doPostAssinaturas,
-  'uploadPdfAssinado':         doPostAssinaturas,
+  'concluirEtapa':                    doPostAssinaturas,
+  'rejeitarEtapa':                    doPostAssinaturas,
+  'uploadPdfAssinado':                doPostAssinaturas,
+  'reenviarNotificacaoAssinatura':    doPostAssinaturas,
 };
 
 // â”€â”€ Ponto de entrada GET â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
