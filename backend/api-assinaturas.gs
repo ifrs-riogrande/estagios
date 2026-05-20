@@ -74,19 +74,11 @@ function iniciarFluxoAssinaturas_(idEstagio) {
   // Gera o PDF inicial do TCE (não assinado) e salva no Drive
   var pdfInicial = _gerarPdfTCEInicial_(idEstagio, sol, pasta.getId());
 
-  // Mapa de e-mails dos atores
-  // empresa   → representante legal (EMAIL_REP na tabela Empresas, via CNPJ)
-  // supervisor → E-mail Setor na tabela Supervisores (mesmo critério do checklist)
-  var emails = {
-    estudante:      sol.emailEstudante      || '',
-    empresa:        _obterEmailRepEmpresa_(sol.cnpjEmpresa, sol.emailEmpresa),
-    supervisor:     _obterEmailSetorSupervisor_(sol.nomeSupervisor, sol.emailSupervisor),
-    orientador:     sol.emailOrientador     || '',
-    coordenador:    sol.emailCoordenador    || '',
-    centralRevisao: 'estagios@riogrande.ifrs.edu.br',
-    direcao:        _obterEmailDirecao_()   || '',
-    centralFinal:   'estagios@riogrande.ifrs.edu.br',
-  };
+  // Mapa de e-mails dos atores — usando _resolverEmailAtor_ como fonte única
+  var emails = {};
+  ETAPAS_DEF.forEach(function(def) {
+    emails[def.ator] = _resolverEmailAtor_(def.ator, sol);
+  });
 
   // Monta o array de etapas
   var etapas = ETAPAS_DEF.map(function (def, idx) {
@@ -711,6 +703,30 @@ function _obterEmailCoordenadorPorCurso_(curso) {
   }
 }
 
+// ── Resolução de e-mails por ator ────────────────────────────────────────────
+
+/**
+ * Retorna o e-mail correto para um ator do fluxo.
+ * Usado tanto na criação do fluxo quanto no reenvio (caso o e-mail tenha ficado vazio).
+ *
+ * @param {string} ator  Nome do ator (estudante, empresa, supervisor, orientador, coordenador, …)
+ * @param {Object} sol   Dados completos da solicitação
+ * @return {string}
+ */
+function _resolverEmailAtor_(ator, sol) {
+  switch (ator) {
+    case 'estudante':      return sol.emailEstudante  || '';
+    case 'empresa':        return _obterEmailRepEmpresa_(sol.cnpjEmpresa, sol.emailEmpresa);
+    case 'supervisor':     return _obterEmailSetorSupervisor_(sol.nomeSupervisor, sol.emailSupervisor);
+    case 'orientador':     return sol.emailOrientador || '';
+    case 'coordenador':    return _obterEmailCoordenadorPorCurso_(sol.curso);
+    case 'centralRevisao': return 'estagios@riogrande.ifrs.edu.br';
+    case 'direcao':        return _obterEmailDirecao_() || '';
+    case 'centralFinal':   return 'estagios@riogrande.ifrs.edu.br';
+    default:               return '';
+  }
+}
+
 // ── Notificações de E-mail ────────────────────────────────────────────────────
 
 /**
@@ -1065,8 +1081,18 @@ function doPostAssinaturas(e) {
         if (fluxoRenv.etapas[k].status === ASS_STATUS.AGUARDANDO) { etaAtiva = fluxoRenv.etapas[k]; break; }
       }
       if (!etaAtiva) return jsonError_('Nenhuma etapa aguardando ação no momento.', 'INVALID_STATE');
+      var solRenv = _obterDadosSolicitacaoCompleto_(body.idEstagio);
+      // Se o e-mail estava vazio (falha na criação do fluxo), resolve agora e salva
+      if (!etaAtiva.email) {
+        var emailResolvido = _resolverEmailAtor_(etaAtiva.ator, solRenv);
+        if (!emailResolvido) return jsonError_(
+          'E-mail do ator "' + etaAtiva.label + '" não encontrado. Verifique o cadastro do coordenador para o curso: ' + (solRenv.curso || '(não identificado)'),
+          'EMAIL_NOT_FOUND'
+        );
+        etaAtiva.email = emailResolvido;
+        salvarFluxoAssinaturas_(body.idEstagio, fluxoRenv);
+      }
       try {
-        var solRenv = _obterDadosSolicitacaoCompleto_(body.idEstagio);
         notificarAtorAssinatura_(body.idEstagio, etaAtiva, solRenv, fluxoRenv);
       } catch (e) {
         return jsonError_('Erro ao reenviar notificação: ' + e.message, 'SEND_ERROR');
