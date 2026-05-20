@@ -344,8 +344,8 @@ var MAIL = (function () {
       + campo_('Empresa', dados.nomeEmpresa)
       + campo_('Prazo para revisão', dados.prazoAdmin)
       + '<p style="margin-top:24px;">'
-      + '<a href="' + BASE_URL + '/admin/" style="display:inline-block;background:#1d4ed8;color:#fff;'
-      + 'padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:600;">Acessar Painel Admin</a></p>';
+      + '<a href="' + BASE_URL + '/admin/estagio.html?id=' + encodeURIComponent(dados.idEstagio) + '" style="display:inline-block;background:#1d4ed8;color:#fff;'
+      + 'padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:600;">Ver Estágio no Admin</a></p>';
     enviar_(SETOR_EMAIL,
       '[SGE] Novo checklist aguardando revisão — ' + dados.idEstagio,
       htmlBase_('Checklist Pendente — Admin', corpo));
