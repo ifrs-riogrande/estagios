@@ -49,6 +49,15 @@ var MAIL = (function () {
     return '<p class="label">' + label + '</p><p class="value">' + (valor || '—') + '</p>';
   }
 
+  function formatarDataBR_(valor) {
+    if (!valor) return valor || '';
+    var s = String(valor);
+    // ISO: YYYY-MM-DD → DD/MM/YYYY
+    var m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (m) return m[3] + '/' + m[2] + '/' + m[1];
+    return s;
+  }
+
   function escapeHtmlMail_(str) {
     if (!str) return '';
     return String(str)
@@ -58,14 +67,27 @@ var MAIL = (function () {
       .replace(/"/g, '&quot;');
   }
 
+  /**
+   * Converte pares surrogados UTF-16 (emojis e chars fora do BMP) em entidades
+   * HTML numéricas (&#NNNNN;), evitando corrupção no envio via GmailApp.
+   */
+  function encodeEmoji_(s) {
+    if (!s) return '';
+    return String(s).replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, function (par) {
+      var cp = (par.charCodeAt(0) - 0xD800) * 0x400 + par.charCodeAt(1) - 0xDC00 + 0x10000;
+      return '&#' + cp + ';';
+    });
+  }
+
   function enviar_(para, assunto, htmlBody, cc) {
-    var opts = { htmlBody: htmlBody, name: SISTEMA_NOME };
+    var corpo = encodeEmoji_(htmlBody);
+    var opts  = { htmlBody: corpo, name: SISTEMA_NOME };
     if (cc) opts.cc = cc;
     try {
       GmailApp.sendEmail(para, assunto, '', opts);
     } catch (e) {
       // Fallback para MailApp se GmailApp falhar
-      try { MailApp.sendEmail({ to: para, subject: assunto, htmlBody: htmlBody, name: SISTEMA_NOME }); } catch (e2) { /* silencioso */ }
+      try { MailApp.sendEmail({ to: para, subject: assunto, htmlBody: corpo, name: SISTEMA_NOME }); } catch (e2) { /* silencioso */ }
     }
   }
 
@@ -563,17 +585,12 @@ var MAIL = (function () {
       + '<tr><td style="padding:8px 0;color:#6b7280;font-size:12px;text-transform:uppercase;">Tipo</td>'
       +    '<td style="padding:8px 0;">' + dados.tipoEstagio + '</td></tr>'
       + '<tr><td style="padding:8px 0;color:#6b7280;font-size:12px;text-transform:uppercase;">Período</td>'
-      +    '<td style="padding:8px 0;">' + dados.dataInicio + ' a ' + dados.dataTermino + '</td></tr>'
+      +    '<td style="padding:8px 0;">' + formatarDataBR_(dados.dataInicio) + ' a ' + formatarDataBR_(dados.dataTermino) + '</td></tr>'
       + '<tr><td style="padding:8px 0;color:#6b7280;font-size:12px;text-transform:uppercase;">Carga horária</td>'
       +    '<td style="padding:8px 0;">' + dados.cargaHoraria + '</td></tr>'
       + (dados.prazoVencimento ? '<tr><td style="padding:8px 0;color:#6b7280;font-size:12px;text-transform:uppercase;">Prazo limite</td>'
-      +    '<td style="padding:8px 0;color:#dc2626;font-weight:600;">' + dados.prazoVencimento + '</td></tr>' : '')
+      +    '<td style="padding:8px 0;color:#dc2626;font-weight:600;">' + formatarDataBR_(dados.prazoVencimento) + '</td></tr>' : '')
       + '</table>'
-
-      + (dados.planoAtividades
-          ? '<p style="color:#374151;margin-top:4px;"><strong>Plano de atividades:</strong><br>'
-            + dados.planoAtividades + '</p>'
-          : '')
 
       + '<p style="margin-top:28px;">'
       + '<a href="' + urlChecklist + '" style="display:inline-block;padding:14px 28px;background:#1d4ed8;'

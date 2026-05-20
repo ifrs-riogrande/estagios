@@ -1072,14 +1072,24 @@
       if (arqId)  dados.docIdentidade = arqId;
       if (arqBol) dados.docBoletim    = arqBol;
 
+      let _enviado = false;
       await submitWithFeedback(
         () => apiSolicitarEstagio(dados),
         btnEnviar,
         'form-feedback',
         'Solicitação enviada com sucesso!',
         'Sua solicitação foi recebida. Você receberá instruções sobre o envio dos documentos físicos e os próximos passos por e-mail.',
-        () => { form.querySelectorAll('input,select,textarea,button').forEach(el => el.disabled = true); }
+        () => {
+          _enviado = true;
+          form.querySelectorAll('input,select,textarea,button').forEach(el => el.disabled = true);
+        }
       );
+      // submitWithFeedback re-enables the button in finally; keep disabled permanently after success
+      if (_enviado) {
+        btnEnviar.disabled = true;
+        btnEnviar.style.cursor = 'not-allowed';
+        btnEnviar.style.opacity = '0.5';
+      }
     });
 
     document.getElementById('btn-limpar')?.addEventListener('click', function () {

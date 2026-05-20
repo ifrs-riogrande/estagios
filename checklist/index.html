@@ -497,6 +497,10 @@
           <!-- Lista de itens -->
           <div class="ck-items-list" id="ck-items-list" role="list" aria-label="Itens do checklist"></div>
 
+          <!-- Aviso inline de docs pendentes — acima de obs-geral -->
+          <div id="ck-docs-warning" hidden
+            style="background:var(--color-warning-light);border:1px solid var(--color-warning-border);border-radius:var(--radius-md);padding:var(--space-3) var(--space-4);font-size:var(--font-size-sm);color:var(--color-warning);font-weight:var(--font-weight-medium);margin-bottom:var(--space-4);"></div>
+
           <!-- Observação geral -->
           <div class="ck-obs-geral">
             <label for="ck-obs-geral">
@@ -738,6 +742,15 @@
     // Botões
     document.getElementById('btn-aprovar').addEventListener('click', () => enviarResposta('aprovado'));
     document.getElementById('btn-ajuste').addEventListener('click',  () => enviarResposta('ajuste'));
+
+    // Obs-geral: bloqueia "Confirmar e enviar" enquanto houver texto
+    document.getElementById('ck-obs-geral').addEventListener('input', function () {
+      const temObs = this.value.trim().length > 0;
+      const btn = document.getElementById('btn-aprovar');
+      btn.disabled         = temObs;
+      btn.style.opacity    = temObs ? '0.5' : '';
+      btn.style.cursor     = temObs ? 'not-allowed' : '';
+    });
   }
 
   // ── Movimentações do processo ─────────────────────────────────
@@ -997,7 +1010,7 @@
 
     const hdr = document.createElement('div');
     hdr.className = 'ck-secao-header';
-    hdr.textContent = '📎 Documentos';
+    hdr.textContent = 'VALIDAÇÃO DOS Documentos';
     groupEl.appendChild(hdr);
 
     docItens.forEach(({ item, idx }) => {
@@ -1033,7 +1046,7 @@
       valorHtml = item.valor
         ? `<a href="${escapeHtml(item.valor)}" target="_blank" rel="noopener" class="ck-doc-btn">
              <svg width="11" height="11" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clip-rule="evenodd"/></svg>
-             Abrir documento ↗
+             📎 Abrir documento
            </a>`
         : `<span class="ck-field-item-valor" style="color:var(--color-text-muted);font-style:italic;">Não enviado</span>`;
     } else if (isSensivel && !isAdmin) {
@@ -1045,10 +1058,14 @@
     const sensiBadge = isSensivel
       ? `<span class="ck-field-sensivel-badge">🔒 Dado sensível</span>` : '';
 
+    const labelText = isDoc
+      ? 'VERIFIQUE O ' + escapeHtml(item.label) + ' EM ANEXO'
+      : escapeHtml(item.label);
+
     el.innerHTML = `
       ${cbHtml}
       <div class="ck-field-item-body">
-        <div class="ck-field-item-label">${escapeHtml(item.label)}${sensiBadge}</div>
+        <div class="ck-field-item-label">${labelText}${sensiBadge}</div>
         ${valorHtml}
       </div>`;
 
@@ -1081,6 +1098,10 @@
     document.getElementById('ck-progress-fill').style.width = pct + '%';
     document.getElementById('ck-progress-track').setAttribute('aria-valuenow', pct);
     document.getElementById('ck-progress-label').textContent = `${marcados} / ${total} itens`;
+    if (marcados === total) {
+      const warn = document.getElementById('ck-docs-warning');
+      if (warn) warn.hidden = true;
+    }
   }
 
   // ── Coletar itens do DOM ──────────────────────────────────────
@@ -1111,11 +1132,18 @@
       const lista     = document.getElementById('ck-items-list');
       const unchecked = lista.querySelectorAll('.ck-field-cb:not(:checked)');
       if (unchecked.length > 0) {
-        mostrarToast('Marque todos os itens antes de Aprovar.', 'warning');
+        const warn = document.getElementById('ck-docs-warning');
+        if (warn) {
+          warn.hidden      = false;
+          warn.textContent = `⚠ Atenção: Confira todos os documentos antes de confirmar. ${unchecked.length} documento(s) pendente(s).`;
+          warn.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
         unchecked[0].closest('.ck-field-item').scrollIntoView({ behavior: 'smooth', block: 'center' });
-        unchecked[0].focus();
         return;
       }
+      // Tudo marcado — esconde aviso se estava visível
+      const warn = document.getElementById('ck-docs-warning');
+      if (warn) warn.hidden = true;
     }
 
     // Desabilita botões durante envio

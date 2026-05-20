@@ -27,9 +27,13 @@ var DRIVE = (function () {
    * @returns {GoogleAppsScript.Drive.Folder}
    */
   function obterOuCriarPasta(pastaRaiz, nomePasta) {
-    var iter = pastaRaiz.getFoldersByName(nomePasta);
+    var iter = pastaRaiz
+      ? pastaRaiz.getFoldersByName(nomePasta)
+      : DriveApp.getFoldersByName(nomePasta);
     if (iter.hasNext()) return iter.next();
-    return pastaRaiz.createFolder(nomePasta);
+    return pastaRaiz
+      ? pastaRaiz.createFolder(nomePasta)
+      : DriveApp.createFolder(nomePasta);
   }
 
   /**
