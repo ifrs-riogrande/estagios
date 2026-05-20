@@ -1030,8 +1030,8 @@ function doPostAssinaturas(e) {
     }
 
     case 'reenviarNotificacaoAssinatura': {
-      // Exclusivo para admin autenticado via OAuth
-      if (!estaAutenticado_()) return jsonError_('Não autenticado.', 'AUTH_ERROR');
+      // Exclusivo para admin autenticado
+      try { validarTokenAdmin_(body.authToken); } catch(eAuth) { return jsonError_('Não autorizado: ' + eAuth.message, 'AUTH_ERROR'); }
       if (!body.idEstagio) return jsonError_('Parâmetro idEstagio obrigatório.', 'MISSING_PARAM');
       var fluxoRenv = obterFluxoAssinaturas_(body.idEstagio);
       if (!fluxoRenv) return jsonError_('Fluxo de assinaturas não encontrado.', 'NOT_FOUND');
