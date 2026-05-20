@@ -29,6 +29,7 @@
 
 // ── Constantes ────────────────────────────────────────────────────────────────
 
+var BASE_URL          = 'https://ifrs-riogrande.github.io/estagios';
 var ASSINATURAS_SHEET = 'Fluxo TCE';
 // SS_ID já declarado em api-checklist.gs
 
