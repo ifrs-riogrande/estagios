@@ -141,6 +141,7 @@ function doGetAdmin(e) {
       case 'listarAdendosAdmin':       return listarAdendosAdmin_();
       case 'listarAgentesAdmin':       return listarAgentesAdmin_();
       case 'listarTodosCursos':        return listarTodosCursos_();
+      case 'obterDiretorGeral':        return jsonOk_(obterDadosDiretorGeralAdmin_());
       default: return jsonError_('Ação GET não reconhecida: ' + action, 'UNKNOWN_ACTION');
     }
   } catch (err) {
@@ -198,6 +199,8 @@ function doPostAdmin(e) {
       case 'salvarConfigCursos':     return salvarConfigCursos_(body);
       case 'salvarCurso':            return salvarCurso_(body);
       case 'deletarCurso':           return deletarCurso_(body);
+      // Diretor Geral
+      case 'salvarDiretorGeral':     return salvarDiretorGeral_(body);
       default: return jsonError_('Ação POST não reconhecida: ' + action, 'UNKNOWN_ACTION');
     }
   } catch (err) {
@@ -1323,6 +1326,70 @@ function obterDadosDiretorGeral_() {
     }
     return null;
   } catch(e) { return null; }
+}
+
+/** Retorna os dados do Diretor Geral para o painel admin (todos os campos). */
+function obterDadosDiretorGeralAdmin_() {
+  try {
+    var sh = _obterOuCriarAbaDG_();
+    var dados = sh.getDataRange().getValues();
+    for (var i = 1; i < dados.length; i++) {
+      if (String(dados[i][4]||'').trim() === 'Ativo') {
+        return {
+          nome:   String(dados[i][0]||''),
+          siape:  String(dados[i][1]||''),
+          cpf:    String(dados[i][2]||''),
+          email:  String(dados[i][3]||''),
+          status: String(dados[i][4]||''),
+        };
+      }
+    }
+    return { nome:'', siape:'', cpf:'', email:'', status:'' };
+  } catch(e) {
+    logErro_('obterDadosDiretorGeralAdmin_', e);
+    return { nome:'', siape:'', cpf:'', email:'', status:'' };
+  }
+}
+
+/**
+ * Salva (substitui) os dados do Diretor Geral na planilha.
+ * Mantém apenas um registro Ativo — os demais ficam Inativo.
+ */
+function salvarDiretorGeral_(body) {
+  var nome  = sanitizar_(body.nome,  100);
+  var siape = sanitizar_(body.siape,  20);
+  var cpf   = sanitizar_(body.cpf,    20);
+  var email = sanitizar_(body.email, 200);
+  if (!nome || !email) return jsonError_('Nome e e-mail são obrigatórios.', 'VALIDATION');
+
+  var sh    = _obterOuCriarAbaDG_();
+  var dados = sh.getDataRange().getValues();
+  var found = false;
+
+  // Atualiza linha Ativo existente
+  for (var i = 1; i < dados.length; i++) {
+    if (String(dados[i][4]||'').trim() === 'Ativo') {
+      sh.getRange(i + 1, 1, 1, 5).setValues([[nome, siape, cpf, email, 'Ativo']]);
+      found = true;
+      break;
+    }
+  }
+  // Insere nova linha se não havia nenhuma Ativo
+  if (!found) {
+    sh.appendRow([nome, siape, cpf, email, 'Ativo']);
+  }
+
+  return jsonOk_({ mensagem: 'Dados do Diretor Geral salvos com sucesso.' });
+}
+
+function _obterOuCriarAbaDG_() {
+  var ss = SpreadsheetApp.openById(CFG_ADMIN.SS_ID);
+  var sh = ss.getSheetByName('Diretor Geral');
+  if (!sh) {
+    sh = ss.insertSheet('Diretor Geral');
+    sh.getRange(1, 1, 1, 5).setValues([['Nome', 'SIAPE', 'CPF', 'E-mail', 'Status']]);
+  }
+  return sh;
 }
 
 function enviarEmailAprovacao_(r, driveUrl) {

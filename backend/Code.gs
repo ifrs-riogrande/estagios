@@ -74,6 +74,7 @@ var GET_ROUTES = {
 
   // Cursos â€" admin
   'listarTodosCursos':       doGetAdmin,
+  'obterDiretorGeral':       doGetAdmin,
 
   // Checklist
   'obterChecklist':          doGetChecklist,
@@ -127,6 +128,7 @@ var POST_ROUTES = {
 
   // ConfiguraÃ§Ãµes (admin)
   'salvarConfigCursos':        doPostAdmin,
+  'salvarDiretorGeral':        doPostAdmin,
   'salvarCurso':               doPostAdmin,
   'deletarCurso':              doPostAdmin,
 

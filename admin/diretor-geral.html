@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Diretor Geral — Admin · Central de Estágios IFRS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/base.css">
+  <link rel="stylesheet" href="../assets/css/components.css">
+  <link rel="stylesheet" href="../assets/css/layout.css">
+  <style>
+    .dg-card {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-8);
+      max-width: 600px;
+    }
+    .dg-card h2 {
+      font-size: var(--font-size-lg);
+      font-weight: var(--font-weight-semibold);
+      margin-bottom: var(--space-6);
+    }
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-4);
+    }
+    @media (max-width: 520px) { .form-row { grid-template-columns: 1fr; } }
+    .form-group { display: flex; flex-direction: column; gap: var(--space-1); margin-bottom: var(--space-4); }
+    .form-group label { font-size: var(--font-size-xs); font-weight: 500; color: var(--color-text-muted); text-transform: uppercase; letter-spacing: .04em; }
+    .form-group input {
+      padding: var(--space-2) var(--space-3);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      font-size: var(--font-size-sm);
+      font-family: inherit;
+      color: var(--color-text);
+      background: var(--color-bg);
+      transition: border-color .15s;
+    }
+    .form-group input:focus { outline: none; border-color: var(--color-primary); }
+    .info-badge {
+      display: flex; align-items: flex-start; gap: var(--space-3);
+      background: var(--color-info-light); border: 1px solid var(--color-info-border, #bfdbfe);
+      border-radius: var(--radius-md); padding: var(--space-4);
+      font-size: var(--font-size-sm); color: var(--color-info);
+      margin-bottom: var(--space-6);
+    }
+    .info-badge svg { flex-shrink: 0; margin-top: 2px; }
+    .status-active {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: var(--font-size-sm); color: var(--color-success); font-weight: 500;
+    }
+    .status-active::before { content:''; display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--color-success); }
+    .status-none {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: var(--font-size-sm); color: var(--color-text-muted);
+    }
+    .status-none::before { content:''; display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--color-text-light); }
+    .form-actions { display: flex; gap: var(--space-3); align-items: center; margin-top: var(--space-2); }
+    .loading-state { text-align:center; padding: var(--space-12); color: var(--color-text-muted); }
+  </style>
+</head>
+<body>
+  <header id="app-header">
+    <div class="container">
+      <div class="header-inner">
+        <a href="../index.html" class="header-brand">
+          <div class="header-logo-fallback" aria-hidden="true">IFRS</div>
+          <div class="header-brand-text">
+            <span class="header-brand-name">Central de Estágios</span>
+            <span class="header-brand-sub">IFRS Campus Rio Grande</span>
+          </div>
+        </a>
+        <div style="display:flex;align-items:center;gap:var(--space-3);">
+          <div id="header-user-area"></div>
+          <a href="cadastros.html" class="back-link">
+            <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd"/></svg>
+            Cadastros
+          </a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main id="main-content">
+    <section class="page-hero">
+      <div class="container">
+        <h1>Diretor Geral</h1>
+        <p>Dados do Diretor Geral usados no fluxo de assinaturas do TCE.</p>
+      </div>
+    </section>
+
+    <div class="container" style="padding-top:var(--space-8);padding-bottom:var(--space-12);">
+      <div id="estado-carregando" class="loading-state">Carregando…</div>
+
+      <div id="conteudo" style="display:none">
+        <div class="dg-card">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-6);">
+            <h2 style="margin:0">Cadastro Atual</h2>
+            <span id="status-badge"></span>
+          </div>
+
+          <div class="info-badge">
+            <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/></svg>
+            <span>O e-mail cadastrado aqui será utilizado para envio do TCE na etapa de assinatura do Diretor Geral (etapa 7/8).</span>
+          </div>
+
+          <form id="form-dg" onsubmit="salvar(event)">
+            <div class="form-group">
+              <label for="dg-nome">Nome completo *</label>
+              <input id="dg-nome" type="text" required placeholder="Nome do Diretor Geral" autocomplete="off">
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="dg-siape">SIAPE</label>
+                <input id="dg-siape" type="text" placeholder="1234567" autocomplete="off">
+              </div>
+              <div class="form-group">
+                <label for="dg-cpf">CPF</label>
+                <input id="dg-cpf" type="text" placeholder="000.000.000-00" autocomplete="off">
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="dg-email">E-mail institucional *</label>
+              <input id="dg-email" type="email" required placeholder="diretor@riogrande.ifrs.edu.br" autocomplete="off">
+            </div>
+            <div class="form-actions">
+              <button type="submit" class="btn btn-primary" id="btn-salvar">Salvar</button>
+              <span id="feedback" style="font-size:var(--font-size-sm);color:var(--color-text-muted)"></span>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer id="app-footer">
+    <div class="container">
+      <div class="footer-inner">
+        <span class="footer-copy">&copy; <script>document.write(new Date().getFullYear())</script> Central de Estágios — IFRS Campus Rio Grande</span>
+        <nav class="footer-links"><a href="mailto:estagios@riogrande.ifrs.edu.br">estagios@riogrande.ifrs.edu.br</a></nav>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://accounts.google.com/gsi/client" async></script>
+  <script src="../assets/js/utils.js"></script>
+  <script src="../assets/js/auth.js"></script>
+  <script src="../assets/js/api.js"></script>
+  <script>
+    'use strict';
+
+    document.addEventListener('DOMContentLoaded', async function () {
+      if (!requireAdminAuth()) return;
+      await carregar();
+    });
+
+    async function carregar() {
+      try {
+        const token = getAccessToken();
+        const data  = await API.get('obterDiretorGeral', { authToken: token });
+        document.getElementById('dg-nome').value  = data.nome  || '';
+        document.getElementById('dg-siape').value = data.siape || '';
+        document.getElementById('dg-cpf').value   = data.cpf   || '';
+        document.getElementById('dg-email').value = data.email || '';
+        const badge = document.getElementById('status-badge');
+        if (data.nome) {
+          badge.innerHTML = '<span class="status-active">Ativo</span>';
+        } else {
+          badge.innerHTML = '<span class="status-none">Não cadastrado</span>';
+        }
+      } catch (err) {
+        showToast('Erro ao carregar: ' + err.message, 'error');
+      } finally {
+        document.getElementById('estado-carregando').style.display = 'none';
+        document.getElementById('conteudo').style.display = '';
+      }
+    }
+
+    async function salvar(e) {
+      e.preventDefault();
+      const btn  = document.getElementById('btn-salvar');
+      const feed = document.getElementById('feedback');
+      btn.disabled  = true;
+      btn.textContent = 'Salvando…';
+      feed.textContent = '';
+      try {
+        await API.post('salvarDiretorGeral', {
+          authToken: getAccessToken(),
+          nome:  document.getElementById('dg-nome').value.trim(),
+          siape: document.getElementById('dg-siape').value.trim(),
+          cpf:   document.getElementById('dg-cpf').value.trim(),
+          email: document.getElementById('dg-email').value.trim(),
+        });
+        document.getElementById('status-badge').innerHTML = '<span class="status-active">Ativo</span>';
+        feed.style.color = 'var(--color-success)';
+        feed.textContent = '✓ Salvo com sucesso';
+        setTimeout(() => { feed.textContent = ''; }, 4000);
+      } catch (err) {
+        feed.style.color = 'var(--color-error)';
+        feed.textContent = 'Erro: ' + err.message;
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Salvar';
+      }
+    }
+
+    function showToast(msg, type) {
+      const el = document.createElement('div');
+      el.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:9999;max-width:360px;padding:12px 16px;border-radius:8px;font-size:14px;box-shadow:0 4px 16px rgba(0,0,0,.15)';
+      el.style.background = type === 'success' ? 'var(--color-success-light)' : 'var(--color-error-light)';
+      el.style.color = type === 'success' ? 'var(--color-success)' : 'var(--color-error)';
+      el.style.border = `1px solid ${type === 'success' ? 'var(--color-success-border)' : 'var(--color-error-border)'}`;
+      el.textContent = msg;
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 5000);
+    }
+  </script>
+</body>
+</html>
