@@ -164,6 +164,10 @@ function concluirEtapaAssinatura_(idEstagio, numeroEtapa, driveUrl, emailAtor) {
     // Notifica o próximo ator
     try {
       var solProx = _obterDadosSolicitacaoCompleto_(idEstagio);
+      // Re-resolve e-mail se estava vazio no momento da criação do fluxo
+      if (!proxEtapa.email) {
+        proxEtapa.email = _resolverEmailAtor_(proxEtapa.ator, solProx);
+      }
       notificarAtorAssinatura_(idEstagio, proxEtapa, solProx, fluxo);
     } catch (e) { logErro_('concluirEtapaAssinatura_.notificarProx', e); }
   }
