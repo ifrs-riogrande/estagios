@@ -663,6 +663,39 @@
     }
   }
 
+  // ── Busca rejeição mais recente que retornou para esta etapa ─────
+  function obterRejeicaoParaEtapa(numeroEtapa) {
+    if (!fluxo.historicoRejeicoes || !fluxo.historicoRejeicoes.length) return null;
+    // Retorna a mais recente (última do array) que apontou para esta etapa
+    const rejeicoes = fluxo.historicoRejeicoes.filter(r => r.retornoParaEtapa === numeroEtapa);
+    return rejeicoes.length ? rejeicoes[rejeicoes.length - 1] : null;
+  }
+
+  function bannerRejeicao(etapa) {
+    const rej = obterRejeicaoParaEtapa(etapa.numero);
+    if (!rej) return '';
+    return `
+      <div style="background:var(--color-error-light);border:1px solid var(--color-error-border);
+                  border-radius:var(--radius-md);padding:var(--space-4) var(--space-5);
+                  margin-bottom:var(--space-5);">
+        <div style="display:flex;align-items:center;gap:var(--space-2);margin-bottom:var(--space-2);">
+          <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" style="color:var(--color-error);flex-shrink:0;">
+            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+          </svg>
+          <strong style="font-size:var(--font-size-sm);color:var(--color-error);">
+            Sua etapa foi devolvida para correção
+          </strong>
+        </div>
+        <p style="font-size:var(--font-size-sm);color:var(--color-text);margin:0 0 var(--space-1);">
+          <strong>Motivo:</strong> ${escapeHtml(rej.motivo || 'Não informado')}
+        </p>
+        <p style="font-size:var(--font-size-xs);color:var(--color-text-muted);margin:0;">
+          Rejeitado por ${escapeHtml(rej.label)} em ${formatarDataHora(rej.data)}.
+          Por favor corrija e reenvie o documento.
+        </p>
+      </div>`;
+  }
+
   // ── Painel gov.br ─────────────────────────────────────────────
   function renderizarPainelGovBr(panel, etapa) {
     // URL do PDF atual (último PDF assinado ou o original)
@@ -671,6 +704,7 @@
     panel.innerHTML = `
       <div class="action-panel">
         <h3>Sua vez — Etapa ${etapa.numero}: ${escapeHtml(etapa.label)}</h3>
+        ${bannerRejeicao(etapa)}
         <p>Baixe o PDF atual, assine com o <strong>gov.br</strong> e envie a versão assinada abaixo.</p>
 
         <div class="govbr-steps">
@@ -766,6 +800,7 @@
     panel.innerHTML = `
       <div class="action-panel">
         <h3>Etapa ${etapa.numero}: ${escapeHtml(etapa.label)}</h3>
+        ${bannerRejeicao(etapa)}
         <p>${ehFinal
           ? 'Verifique o documento final assinado por todas as partes. Upload do PDF compilado é opcional.'
           : 'Revise o documento e aprove ou rejeite para retornar a uma etapa anterior.'}</p>

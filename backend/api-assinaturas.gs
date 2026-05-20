@@ -754,6 +754,13 @@ function notificarAtorAssinatura_(idEstagio, etapa, sol, fluxo) {
   var pageUrl = BASE_URL + '/assinaturas/?id=' + encodeURIComponent(idEstagio)
                 + '&token=' + encodeURIComponent(etapa.token || '');
 
+  // Verifica se esta notificação é fruto de uma rejeição (para incluir motivo no e-mail)
+  var motivoRejeicao = null;
+  if (fluxo && fluxo.historicoRejeicoes && fluxo.historicoRejeicoes.length) {
+    var rejeicoes = fluxo.historicoRejeicoes.filter(function(r) { return r.retornoParaEtapa === etapa.numero; });
+    if (rejeicoes.length) motivoRejeicao = rejeicoes[rejeicoes.length - 1].motivo || null;
+  }
+
   if (etapa.tipo === 'govbr') {
     MAIL.enviarEmailAssinaturaGovBr({
       idEstagio:       idEstagio,
@@ -763,6 +770,7 @@ function notificarAtorAssinatura_(idEstagio, etapa, sol, fluxo) {
       email:           etapa.email,
       pageUrl:         pageUrl,
       numeroEtapa:     etapa.numero,
+      motivoRejeicao:  motivoRejeicao,
     });
   } else {
     MAIL.enviarEmailAssinaturaInterno({
@@ -773,6 +781,7 @@ function notificarAtorAssinatura_(idEstagio, etapa, sol, fluxo) {
       email:           etapa.email,
       pageUrl:         pageUrl,
       numeroEtapa:     etapa.numero,
+      motivoRejeicao:  motivoRejeicao,
     });
   }
 }

@@ -394,11 +394,21 @@ var MAIL = (function () {
   // --------------------------------------------------------------------------
 
   function enviarEmailAssinaturaGovBr(dados) {
-    // dados: { idEstagio, nomeEstudante, labelAtor, prazoVencimento, email, pageUrl, numeroEtapa }
+    // dados: { idEstagio, nomeEstudante, labelAtor, prazoVencimento, email, pageUrl, numeroEtapa, motivoRejeicao? }
     var pageUrl = dados.pageUrl || (BASE_URL + '/assinaturas/?id=' + encodeURIComponent(dados.idEstagio));
+    var blocoRejeicao = dados.motivoRejeicao
+      ? '<div style="background:#fef2f2;border-left:4px solid #ef4444;padding:12px 16px;border-radius:4px;margin-bottom:16px;">'
+        + '<p style="margin:0 0 4px;font-weight:600;color:#dc2626;">⚠️ Sua etapa foi devolvida para correção</p>'
+        + '<p style="margin:0;font-size:13px;color:#374151;"><strong>Motivo:</strong> ' + escapeHtmlMail_(dados.motivoRejeicao) + '</p>'
+        + '</div>'
+      : '';
     var corpo = '<p>Olá!</p>'
-      + '<p>É a sua vez de assinar o Termo de Compromisso de Estágio (TCE). '
-      + 'Acesse a página pelo botão abaixo para visualizar, baixar e enviar o documento assinado.</p>'
+      + (dados.motivoRejeicao
+          ? '<p>Sua etapa no fluxo de assinaturas do TCE foi <strong>devolvida para correção</strong>. '
+            + 'Acesse a página, verifique o motivo e reenvie o documento corrigido.</p>'
+          : '<p>É a sua vez de assinar o Termo de Compromisso de Estágio (TCE). '
+            + 'Acesse a página pelo botão abaixo para visualizar, baixar e enviar o documento assinado.</p>')
+      + blocoRejeicao
       + campo_('ID do estágio', dados.idEstagio)
       + campo_('Estudante', dados.nomeEstudante)
       + campo_('Sua etapa', 'Etapa ' + dados.numeroEtapa + '/8 — ' + dados.labelAtor)
@@ -415,11 +425,21 @@ var MAIL = (function () {
   }
 
   function enviarEmailAssinaturaInterno(dados) {
-    // dados: { idEstagio, nomeEstudante, labelAtor, prazoVencimento, email, pageUrl, numeroEtapa }
+    // dados: { idEstagio, nomeEstudante, labelAtor, prazoVencimento, email, pageUrl, numeroEtapa, motivoRejeicao? }
     var pageUrl = dados.pageUrl || (BASE_URL + '/assinaturas/?id=' + encodeURIComponent(dados.idEstagio));
+    var blocoRejeicao = dados.motivoRejeicao
+      ? '<div style="background:#fef2f2;border-left:4px solid #ef4444;padding:12px 16px;border-radius:4px;margin-bottom:16px;">'
+        + '<p style="margin:0 0 4px;font-weight:600;color:#dc2626;">⚠️ Etapa devolvida para correção</p>'
+        + '<p style="margin:0;font-size:13px;color:#374151;"><strong>Motivo:</strong> ' + escapeHtmlMail_(dados.motivoRejeicao) + '</p>'
+        + '</div>'
+      : '';
     var corpo = '<p>Olá!</p>'
-      + '<p>O fluxo de assinaturas do TCE chegou à sua etapa. '
-      + 'Por favor, revise o documento e registre sua decisão no sistema.</p>'
+      + (dados.motivoRejeicao
+          ? '<p>A etapa do fluxo de assinaturas foi <strong>devolvida para correção</strong>. '
+            + 'Por favor acesse o sistema e tome a devida providência.</p>'
+          : '<p>O fluxo de assinaturas do TCE chegou à sua etapa. '
+            + 'Por favor, revise o documento e registre sua decisão no sistema.</p>')
+      + blocoRejeicao
       + campo_('ID do estágio', dados.idEstagio)
       + campo_('Estudante', dados.nomeEstudante)
       + campo_('Sua etapa', 'Etapa ' + dados.numeroEtapa + '/8 — ' + dados.labelAtor)
