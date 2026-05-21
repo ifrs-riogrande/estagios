@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Configurações do TCE — Admin · Central de Estágios IFRS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../assets/css/base.css">
+  <link rel="stylesheet" href="../../assets/css/components.css">
+  <link rel="stylesheet" href="../../assets/css/layout.css">
+  <style>
+    .config-card {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-8);
+      max-width: 640px;
+      margin-bottom: var(--space-6);
+    }
+    .config-card h2 {
+      font-size: var(--font-size-base);
+      font-weight: var(--font-weight-semibold);
+      margin: 0 0 var(--space-5);
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      color: var(--color-text);
+    }
+    .config-card h2 svg { color: var(--color-primary); flex-shrink: 0; }
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-1);
+      margin-bottom: var(--space-4);
+    }
+    .form-group:last-child { margin-bottom: 0; }
+    .form-group label {
+      font-size: var(--font-size-xs);
+      font-weight: 500;
+      color: var(--color-text-muted);
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+    .form-group input[type="text"] {
+      padding: var(--space-2) var(--space-3);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      font-size: var(--font-size-sm);
+      font-family: inherit;
+      color: var(--color-text);
+      background: var(--color-bg);
+      transition: border-color .15s;
+      width: 100%;
+    }
+    .form-group input[type="text"]:focus {
+      outline: none;
+      border-color: var(--color-primary);
+    }
+    .form-help {
+      font-size: var(--font-size-xs);
+      color: var(--color-text-muted);
+      margin-top: 2px;
+    }
+    .form-actions {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      margin-top: var(--space-6);
+    }
+    .info-badge {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--space-3);
+      background: var(--color-info-light);
+      border: 1px solid var(--color-info-border, #bfdbfe);
+      border-radius: var(--radius-md);
+      padding: var(--space-4);
+      font-size: var(--font-size-sm);
+      color: var(--color-info);
+      margin-bottom: var(--space-6);
+      max-width: 640px;
+    }
+    .info-badge svg { flex-shrink: 0; margin-top: 2px; }
+    .preview-apolice {
+      font-size: var(--font-size-sm);
+      color: var(--color-text-muted);
+      font-style: italic;
+      margin-top: var(--space-2);
+      padding: var(--space-2) var(--space-3);
+      background: var(--color-bg);
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--color-border);
+    }
+    .loading-state { text-align: center; padding: var(--space-12); color: var(--color-text-muted); }
+  </style>
+</head>
+<body>
+  <header id="app-header">
+    <div class="container">
+      <div class="header-inner">
+        <a href="../../index.html" class="header-brand">
+          <div class="header-logo-fallback" aria-hidden="true">IFRS</div>
+          <div class="header-brand-text">
+            <span class="header-brand-name">Central de Estágios</span>
+            <span class="header-brand-sub">IFRS Campus Rio Grande</span>
+          </div>
+        </a>
+        <div style="display:flex;align-items:center;gap:var(--space-3);">
+          <div id="header-user-area"></div>
+          <a href="../configuracoes.html" class="back-link">
+            <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd"/></svg>
+            Configurações
+          </a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main id="main-content">
+    <section class="page-hero">
+      <div class="container">
+        <h1>Configurações do TCE</h1>
+        <p>Gerencie a apólice de seguro e o logo institucional que aparecem no Termo de Compromisso de Estágio.</p>
+      </div>
+    </section>
+
+    <div class="container" style="padding-top:var(--space-8);padding-bottom:var(--space-12);">
+
+      <div id="estado-carregando" class="loading-state">Carregando…</div>
+
+      <div id="conteudo" style="display:none">
+
+        <div class="info-badge">
+          <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/></svg>
+          <span>As alterações valem para todos os TCEs gerados a partir do próximo fluxo de assinaturas iniciado.</span>
+        </div>
+
+        <div id="fb-geral"></div>
+
+        <!-- ── Apólice de Seguro ── -->
+        <div class="config-card">
+          <h2>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
+            Apólice de Seguro (Cláusula 6ª)
+          </h2>
+
+          <div class="form-group">
+            <label for="apolice-num">Número da Apólice</label>
+            <input type="text" id="apolice-num" placeholder="Ex.: 080.00982.00820">
+            <span class="form-help">Apenas o número, sem o prefixo "Apólice nº".</span>
+          </div>
+
+          <div class="form-group">
+            <label for="apolice-seg">Nome da Seguradora</label>
+            <input type="text" id="apolice-seg" placeholder="Ex.: SEGUROS SURA S/A">
+          </div>
+
+          <div class="preview-apolice" id="preview-apolice">
+            Pré-visualização: <span id="preview-txt">—</span>
+          </div>
+
+          <div class="form-actions">
+            <button type="button" class="btn btn-primary" onclick="salvarApolice(this)">Salvar Apólice</button>
+          </div>
+        </div>
+
+        <!-- ── Logo Institucional ── -->
+        <div class="config-card">
+          <h2>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+              <circle cx="8.5" cy="8.5" r="1.5"/>
+              <polyline points="21 15 16 10 5 21"/>
+            </svg>
+            Logo no Cabeçalho do TCE
+          </h2>
+
+          <div class="form-group">
+            <label for="logo-drive-id">ID do arquivo no Google Drive</label>
+            <input type="text" id="logo-drive-id" placeholder="Ex.: 1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms">
+            <span class="form-help">
+              Abra o arquivo de imagem no Google Drive, copie o ID da URL
+              (<code>drive.google.com/file/d/<strong>[ID AQUI]</strong>/view</code>) e cole acima.
+              O arquivo deve ser <strong>acessível pelo script</strong> (mesmo Google Drive da conta do GAS).
+              Tamanho recomendado: 200×200 px. Deixe em branco para ocultar o logo.
+            </span>
+          </div>
+
+          <div class="form-actions">
+            <button type="button" class="btn btn-primary" onclick="salvarLogo(this)">Salvar Logo</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <footer id="app-footer">
+    <div class="container">
+      <div class="footer-inner">
+        <span class="footer-copy">&copy; <script>document.write(new Date().getFullYear())</script> Central de Estágios — IFRS Campus Rio Grande</span>
+        <nav class="footer-links"><a href="mailto:estagios@riogrande.ifrs.edu.br">estagios@riogrande.ifrs.edu.br</a></nav>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://accounts.google.com/gsi/client" async></script>
+  <script src="../../assets/js/utils.js"></script>
+  <script src="../../assets/js/auth.js"></script>
+  <script src="../../assets/js/api.js"></script>
+  <script>
+    'use strict';
+
+    document.addEventListener('DOMContentLoaded', async function () {
+      if (!requireAdminAuth()) return;
+      await carregarConfig();
+
+      // Pré-visualização ao digitar
+      ['apolice-num', 'apolice-seg'].forEach(id => {
+        document.getElementById(id).addEventListener('input', atualizarPreview);
+      });
+    });
+
+    async function carregarConfig() {
+      try {
+        const cfg = await API.get('obterConfigTCE', { authToken: getAccessToken() });
+        document.getElementById('apolice-num').value  = cfg.apoliceNum  || '';
+        document.getElementById('apolice-seg').value  = cfg.apoliceSeg  || '';
+        document.getElementById('logo-drive-id').value = cfg.logoDriveId || '';
+        atualizarPreview();
+        document.getElementById('estado-carregando').style.display = 'none';
+        document.getElementById('conteudo').style.display = '';
+      } catch (err) {
+        document.getElementById('estado-carregando').textContent = 'Erro ao carregar: ' + err.message;
+      }
+    }
+
+    function atualizarPreview() {
+      const num = document.getElementById('apolice-num').value.trim();
+      const seg = document.getElementById('apolice-seg').value.trim();
+      const txt = (num || seg)
+        ? 'Apólice nº ' + (num || '—') + ', ' + (seg || '—')
+        : '—';
+      document.getElementById('preview-txt').textContent = txt;
+    }
+
+    async function salvarApolice(btn) {
+      const num = document.getElementById('apolice-num').value.trim();
+      const seg = document.getElementById('apolice-seg').value.trim();
+      if (!num || !seg) {
+        showFeedback('Preencha o número da apólice e o nome da seguradora.', 'error');
+        return;
+      }
+      btn.disabled = true;
+      btn.classList.add('is-loading');
+      clearFeedback();
+      try {
+        const res = await API.post('salvarConfigTCE', {
+          authToken: getAccessToken(),
+          apoliceNum: num,
+          apoliceSeg: seg,
+        });
+        showFeedback(res.mensagem || 'Apólice salva com sucesso!', 'success');
+        atualizarPreview();
+      } catch (err) {
+        showFeedback('Erro: ' + err.message, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.classList.remove('is-loading');
+      }
+    }
+
+    async function salvarLogo(btn) {
+      const logoId = document.getElementById('logo-drive-id').value.trim();
+      btn.disabled = true;
+      btn.classList.add('is-loading');
+      clearFeedback();
+      try {
+        const res = await API.post('salvarConfigTCE', {
+          authToken: getAccessToken(),
+          logoDriveId: logoId,
+        });
+        showFeedback(res.mensagem || (logoId ? 'Logo salvo com sucesso!' : 'Logo removido do cabeçalho.'), 'success');
+      } catch (err) {
+        showFeedback('Erro: ' + err.message, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.classList.remove('is-loading');
+      }
+    }
+
+    function showFeedback(msg, type) {
+      const el = document.getElementById('fb-geral');
+      el.innerHTML = `<div class="form-feedback form-feedback--${type === 'success' ? 'success' : 'error'}"
+        style="margin-bottom:var(--space-4)">${escapeHtml(msg)}</div>`;
+      el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+    function clearFeedback() {
+      document.getElementById('fb-geral').innerHTML = '';
+    }
+  </script>
+</body>
+</html>

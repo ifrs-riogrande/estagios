@@ -72,9 +72,10 @@ var GET_ROUTES = {
   'obterConfigCursos':       doGetPublicConfig,
   'listarCursos':            doGetPublicConfig,
 
-  // Cursos â€" admin
+  // Cursos + TCE config — admin
   'listarTodosCursos':       doGetAdmin,
   'obterDiretorGeral':       doGetAdmin,
+  'obterConfigTCE':          doGetAdmin,
 
   // Checklist
   'obterChecklist':          doGetChecklist,
@@ -128,6 +129,7 @@ var POST_ROUTES = {
 
   // ConfiguraÃ§Ãµes (admin)
   'salvarConfigCursos':        doPostAdmin,
+  'salvarConfigTCE':           doPostAdmin,
   'salvarDiretorGeral':        doPostAdmin,
   'salvarCurso':               doPostAdmin,
   'deletarCurso':              doPostAdmin,

@@ -142,6 +142,7 @@ function doGetAdmin(e) {
       case 'listarAgentesAdmin':       return listarAgentesAdmin_();
       case 'listarTodosCursos':        return listarTodosCursos_();
       case 'obterDiretorGeral':        return jsonOk_(obterDadosDiretorGeralAdmin_());
+      case 'obterConfigTCE':           return obterConfigTCE_();
       default: return jsonError_('Ação GET não reconhecida: ' + action, 'UNKNOWN_ACTION');
     }
   } catch (err) {
@@ -199,6 +200,7 @@ function doPostAdmin(e) {
       case 'salvarConfigCursos':     return salvarConfigCursos_(body);
       case 'salvarCurso':            return salvarCurso_(body);
       case 'deletarCurso':           return deletarCurso_(body);
+      case 'salvarConfigTCE':        return salvarConfigTCE_(body);
       // Diretor Geral
       case 'salvarDiretorGeral':     return salvarDiretorGeral_(body);
       default: return jsonError_('Ação POST não reconhecida: ' + action, 'UNKNOWN_ACTION');
@@ -1988,6 +1990,47 @@ function salvarConfigCursos_(body) {
   };
   PropertiesService.getScriptProperties().setProperty('config_cursos', JSON.stringify(config));
   return jsonOk_({ mensagem: 'Configuração salva com sucesso!' });
+}
+
+// ---------------------------------------------------------------------------
+// GET — Configuração do TCE (admin)
+// ---------------------------------------------------------------------------
+
+/**
+ * Retorna as configurações do TCE: apólice e logo.
+ */
+function obterConfigTCE_() {
+  try {
+    var props = PropertiesService.getScriptProperties();
+    return jsonOk_({
+      apoliceNum:    props.getProperty('config_apolice_num') || '080.00982.00820',
+      apoliceSeg:    props.getProperty('config_apolice_seg') || 'SEGUROS SURA S/A',
+      logoDriveId:   props.getProperty('config_logo_drive_id') || '',
+    });
+  } catch (e) {
+    logErro_('obterConfigTCE_', e);
+    return jsonError_('Erro ao obter configurações do TCE: ' + e.message, 'INTERNAL');
+  }
+}
+
+// ---------------------------------------------------------------------------
+// POST — Salvar configuração do TCE (admin)
+// ---------------------------------------------------------------------------
+
+function salvarConfigTCE_(body) {
+  if (!checkRateLimit_('salvarConfigTCE', 10)) {
+    return jsonError_('Muitas requisições. Aguarde um momento.', 'RATE_LIMIT');
+  }
+  try {
+    var props = PropertiesService.getScriptProperties();
+    if (body.apoliceNum !== undefined) props.setProperty('config_apolice_num', sanitizar_(body.apoliceNum, 100));
+    if (body.apoliceSeg !== undefined) props.setProperty('config_apolice_seg', sanitizar_(body.apoliceSeg, 200));
+    if (body.logoDriveId !== undefined) props.setProperty('config_logo_drive_id', sanitizar_(body.logoDriveId, 100));
+    return jsonOk_({ mensagem: 'Configurações do TCE salvas com sucesso!' });
+  } catch (e) {
+    logErro_('salvarConfigTCE_', e);
+    return jsonError_('Erro ao salvar configurações: ' + e.message, 'INTERNAL');
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────

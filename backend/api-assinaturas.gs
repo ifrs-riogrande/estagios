@@ -278,192 +278,556 @@ function _criarPastaAssinaturas_(idEstagio) {
   }
 }
 
+// ── Helpers TCE: configurações do sistema ────────────────────────────────
+
 /**
- * Gera o PDF inicial do TCE com os dados da solicitação.
- * Cria um Google Doc estruturado e exporta como PDF.
+ * Retorna a string completa da apólice de seguro configurada pelo admin.
+ * Fallback para os valores padrão do IFRS caso não configurado.
+ */
+function _obterApoliceSeguro_() {
+  try {
+    var props = PropertiesService.getScriptProperties();
+    var num   = props.getProperty('config_apolice_num') || '080.00982.00820';
+    var seg   = props.getProperty('config_apolice_seg') || 'SEGUROS SURA S/A';
+    return 'Apólice nº ' + num + ', ' + seg;
+  } catch (e) {
+    return 'Apólice nº 080.00982.00820, SEGUROS SURA S/A';
+  }
+}
+
+/**
+ * Retorna o Blob do logo configurado pelo admin (armazenado no Drive).
+ * Retorna null se não configurado ou em caso de erro.
+ */
+function _obterLogoCabecalho_() {
+  try {
+    var logoId = PropertiesService.getScriptProperties().getProperty('config_logo_drive_id');
+    if (!logoId) return null;
+    return DriveApp.getFileById(logoId.trim()).getBlob();
+  } catch (e) {
+    logErro_('_obterLogoCabecalho_', e);
+    return null;
+  }
+}
+
+// ── Helpers TCE: dados complementares ────────────────────────────────────────
+
+function _obterDadosEmpresaTCE_(cnpj) {
+  try {
+    var sheet = SpreadsheetApp.openById(SS_ID).getSheetByName('Empresas');
+    if (!sheet) return {};
+    var dados = sheet.getDataRange().getValues();
+    var cnpjN = String(cnpj || '').replace(/\D/g, '');
+    for (var i = 1; i < dados.length; i++) {
+      if (String(dados[i][COL_EMP.CNPJ] || '').replace(/\D/g, '') !== cnpjN) continue;
+      return {
+        endereco:     String(dados[i][COL_EMP.ENDERECO]      || ''),
+        bairro:       String(dados[i][COL_EMP.BAIRRO]        || ''),
+        municipio:    String(dados[i][COL_EMP.MUNICIPIO]     || ''),
+        uf:           String(dados[i][COL_EMP.UF]            || ''),
+        cep:          String(dados[i][COL_EMP.CEP]           || ''),
+        telEmpresa:   String(dados[i][COL_EMP.TEL_EMPRESA]   || ''),
+        emailEmpresa: String(dados[i][COL_EMP.EMAIL_EMPRESA] || ''),
+        nomeRep:      String(dados[i][COL_EMP.NOME_REP]      || ''),
+        cargoRep:     String(dados[i][COL_EMP.CARGO_REP]     || ''),
+        cpfRep:       String(dados[i][COL_EMP.CPF_REP]       || ''),
+      };
+    }
+  } catch (e) { logErro_('_obterDadosEmpresaTCE_', e); }
+  return {};
+}
+
+function _obterDadosSupervisorTCE_(nomeSupervisor) {
+  try {
+    var sheet = SpreadsheetApp.openById(SS_ID).getSheetByName('Supervisores');
+    if (!sheet) return {};
+    var dados = sheet.getDataRange().getValues();
+    var nomeN = String(nomeSupervisor || '').trim().toLowerCase();
+    for (var i = 1; i < dados.length; i++) {
+      if (String(dados[i][COL_SUP.NOME] || '').trim().toLowerCase() !== nomeN) continue;
+      return {
+        setor:    String(dados[i][COL_SUP.SETOR]    || ''),
+        telefone: String(dados[i][COL_SUP.TEL_SUP]  || dados[i][COL_SUP.TEL_SETOR] || ''),
+      };
+    }
+  } catch (e) { logErro_('_obterDadosSupervisorTCE_', e); }
+  return {};
+}
+
+function _obterTelOrientadorTCE_(nomeOrientador) {
+  try {
+    var sheet = SpreadsheetApp.openById(SS_ID).getSheetByName('Orientadores');
+    if (!sheet) return '';
+    var dados = sheet.getDataRange().getValues();
+    var nomeN = String(nomeOrientador || '').trim().toLowerCase();
+    for (var i = 1; i < dados.length; i++) {
+      if (String(dados[i][COL_ORI.NOME] || '').trim().toLowerCase() !== nomeN) continue;
+      return String(dados[i][COL_ORI.TEL] || '');
+    }
+  } catch (e) { logErro_('_obterTelOrientadorTCE_', e); }
+  return '';
+}
+
+function _obterEndEstudanteTCE_(cpf) {
+  try {
+    var sheet = SpreadsheetApp.openById(SS_ID).getSheetByName('Estudantes');
+    if (!sheet) return {};
+    var dados = sheet.getDataRange().getValues();
+    var cpfN = String(cpf || '').replace(/\D/g, '');
+    for (var i = 1; i < dados.length; i++) {
+      if (String(dados[i][COL_EST.CPF] || '').replace(/\D/g, '') !== cpfN) continue;
+      return {
+        endereco: String(dados[i][COL_EST.ENDERECO] || ''),
+        bairro:   String(dados[i][COL_EST.BAIRRO]   || ''),
+        cep:      String(dados[i][COL_EST.CEP]       || ''),
+        cidade:   String(dados[i][COL_EST.CIDADE]    || ''),
+        uf:       String(dados[i][COL_EST.UF]        || ''),
+      };
+    }
+  } catch (e) { logErro_('_obterEndEstudanteTCE_', e); }
+  return {};
+}
+
+/**
+ * Gera o PDF inicial do TCE com os dados completos da solicitação.
+ * Reproduz fielmente o modelo oficial IFRS (14 cláusulas, blocos de dados formatados).
+ * Adapta título, Cláusula 1ª, bolsa e §1º da Cláusula 9ª conforme o tipo de estágio.
  *
  * @param {string} idEstagio
- * @param {Object} sol   Dados completos da solicitação (de _obterDadosSolicitacaoCompleto_)
+ * @param {Object} sol   Dados da solicitação (de _obterDadosSolicitacaoCompleto_)
  * @param {string} pastaId  ID da pasta no Drive onde salvar o arquivo
  * @returns {DriveFile|null}
  */
 function _gerarPdfTCEInicial_(idEstagio, sol, pastaId) {
   var docId = null;
   try {
+    var isObrig  = !/não/i.test(String(sol.tipoEstagio || ''));
+    var tipoNome = isObrig ? 'OBRIGATÓRIO' : 'NÃO OBRIGATÓRIO';
+
+    // Dados complementares buscados nos cadastros
+    var emp    = _obterDadosEmpresaTCE_(sol.cnpjEmpresa);
+    var sup    = _obterDadosSupervisorTCE_(sol.nomeSupervisor);
+    var oriTel = _obterTelOrientadorTCE_(sol.nomeOrientador);
+    var estEnd = _obterEndEstudanteTCE_(sol.cpf);
+
     var doc  = DocumentApp.create('TCE_' + idEstagio + '_rascunho_temp');
     docId    = doc.getId();
     var body = doc.getBody();
     body.clear();
-    body.setMarginTop(50).setMarginBottom(50)
-        .setMarginLeft(60).setMarginRight(60);
+    // Margens: topo/base 2 cm, esquerda/direita 2,5 cm (em pontos: 1 pt ≈ 1,33 px; 1 cm ≈ 28 pt)
+    body.setMarginTop(56).setMarginBottom(56).setMarginLeft(72).setMarginRight(72);
 
-    // ── Cabeçalho ────────────────────────────────────────────────────────────
-    var hdr = doc.addHeader();
-    hdr.appendParagraph('MINISTÉRIO DA EDUCAÇÃO')
-       .setAlignment(DocumentApp.HorizontalAlignment.CENTER)
-       .editAsText().setFontSize(8);
-    hdr.appendParagraph('INSTITUTO FEDERAL DE EDUCAÇÃO, CIÊNCIA E TECNOLOGIA DO RIO GRANDE DO SUL')
-       .setAlignment(DocumentApp.HorizontalAlignment.CENTER)
-       .editAsText().setFontSize(9).setBold(true);
-    hdr.appendParagraph('Campus Rio Grande — Coordenadoria de Estágios')
-       .setAlignment(DocumentApp.HorizontalAlignment.CENTER)
-       .editAsText().setFontSize(8);
+    // ── Helpers de formatação internos ──────────────────────────────────────
 
-    // ── Título ────────────────────────────────────────────────────────────────
-    body.appendParagraph('TERMO DE COMPROMISSO DE ESTÁGIO')
-        .setAlignment(DocumentApp.HorizontalAlignment.CENTER)
-        .setSpacingBefore(8).setSpacingAfter(4)
-        .editAsText().setFontSize(14).setBold(true);
+    /**
+     * Parágrafo "Label: Valor" com label em negrito.
+     * @param {string} lbl   Texto do rótulo (sem os ": ")
+     * @param {string} val   Valor a exibir (fallback "—")
+     * @param {number} [indent]  Indentação em pontos
+     */
+    function kv(lbl, val, indent) {
+      var v   = (val !== undefined && val !== null && String(val).trim()) ? String(val) : '—';
+      var txt = lbl + ': ' + v;
+      var p   = body.appendParagraph(txt);
+      p.setSpacingBefore(1).setSpacingAfter(1);
+      if (indent) p.setIndentStart(indent);
+      var t = p.editAsText();
+      t.setFontFamily('Arial').setFontSize(10);
+      t.setBold(true,  0, lbl.length);            // negrito no rótulo + ":"
+      t.setBold(false, lbl.length + 2, txt.length - 1); // normal no valor
+      return p;
+    }
 
-    body.appendParagraph('Estágio ' + (sol.tipoEstagio || '') + ' — ' + (sol.curso || ''))
-        .setAlignment(DocumentApp.HorizontalAlignment.CENTER)
-        .setSpacingAfter(10)
-        .editAsText().setFontSize(11).setItalic(true);
+    /**
+     * Linha com vários pares "Label: Valor" separados por espaços.
+     * @param {Array<[string,string]>} pares  Ex.: [['Cidade','Rio Grande'],['Estado','RS']]
+     */
+    function kvRow(pares) {
+      var partes = pares.map(function(p) { return p[0] + ': ' + (p[1] || '—'); });
+      var txt = partes.join('     ');
+      var p = body.appendParagraph(txt);
+      p.setSpacingBefore(1).setSpacingAfter(1);
+      var t = p.editAsText();
+      t.setFontFamily('Arial').setFontSize(10);
+      var pos = 0;
+      partes.forEach(function(parte, i) {
+        var lblLen = pares[i][0].length;
+        t.setBold(true,  pos, pos + lblLen);
+        if (parte.length > lblLen + 2) t.setBold(false, pos + lblLen + 2, pos + parte.length - 1);
+        pos += parte.length + (i < partes.length - 1 ? 5 : 0);
+      });
+      return p;
+    }
 
-    body.appendParagraph('Identificação: ' + idEstagio
-        + '   ·   Emitido em: ' + _formatarDataBr_(new Date()))
-        .setSpacingAfter(6)
-        .editAsText().setFontSize(9);
-
-    body.appendHorizontalRule();
-
-    // ── Helpers internos ──────────────────────────────────────────────────────
+    /** Cabeçalho de seção: negrito + linha horizontal */
     function sec(titulo) {
       var p = body.appendParagraph(titulo);
-      p.setSpacingBefore(14).setSpacingAfter(4);
-      p.editAsText().setFontSize(11).setBold(true);
-    }
-    function kv(label, valor) {
-      var p = body.appendParagraph(label + ': ' + (valor || '—'));
-      p.setSpacingBefore(1).setSpacingAfter(1);
-      p.editAsText().setFontSize(10);
-    }
-    function assinatura(nome, papel) {
-      body.appendParagraph('')
-          .setSpacingBefore(20);
-      body.appendParagraph('___________________________________')
-          .setSpacingAfter(0)
-          .editAsText().setFontSize(10);
-      var pNome = body.appendParagraph(nome || '—');
-      pNome.setSpacingAfter(0);
-      pNome.editAsText().setFontSize(10).setBold(true);
-      body.appendParagraph(papel)
-          .setSpacingAfter(0)
-          .editAsText().setFontSize(9).setItalic(true);
-      body.appendParagraph('Data: _____ / _____ / _________')
-          .setSpacingAfter(2)
-          .editAsText().setFontSize(9);
+      p.setSpacingBefore(10).setSpacingAfter(3);
+      p.editAsText().setFontFamily('Arial').setFontSize(10).setBold(true);
+      body.appendHorizontalRule();
+      return p;
     }
 
-    // ── 1. Dados do Estudante ─────────────────────────────────────────────────
-    sec('1. DADOS DO ESTUDANTE');
-    kv('Nome completo',     sol.nomeEstudante);
-    kv('Matrícula',         sol.matricula);
-    kv('Curso',             sol.curso);
-    kv('Turno / Semestre',  (sol.turno || '—') + ' / ' + (sol.semestre || '—'));
-    kv('CPF',               _formatarCpf_(sol.cpf));
-    kv('Data de nascimento',_formatarDataBr_(sol.dataNasc));
-    kv('Telefone',          sol.telefone);
-    kv('E-mail',            sol.emailEstudante);
+    /** Parágrafo normal */
+    function txt(texto, opts) {
+      opts = opts || {};
+      var p = body.appendParagraph(texto || '');
+      p.setSpacingBefore(opts.before !== undefined ? opts.before : 2);
+      p.setSpacingAfter( opts.after  !== undefined ? opts.after  : 2);
+      if (opts.indent)  p.setIndentStart(opts.indent);
+      if (opts.center)  p.setAlignment(DocumentApp.HorizontalAlignment.CENTER);
+      var t = p.editAsText();
+      t.setFontFamily('Arial').setFontSize(opts.size || 10);
+      if (opts.bold)    t.setBold(true);
+      if (opts.italic)  t.setItalic(true);
+      return p;
+    }
+
+    /**
+     * Cláusula numerada: "CLÁUSULA Xª – texto"
+     * @param {string} num  Ex.: '1ª', '2ª'
+     * @param {string} texto
+     */
+    function cla(num, texto) {
+      var lbl = 'CLÁUSULA ' + num + '– ';
+      var full = lbl + texto;
+      var p = body.appendParagraph(full);
+      p.setSpacingBefore(7).setSpacingAfter(2);
+      var t = p.editAsText();
+      t.setFontFamily('Arial').setFontSize(10);
+      t.setBold(true,  0, lbl.length - 1);
+      t.setBold(false, lbl.length, full.length - 1);
+      return p;
+    }
+
+    /** Sub-item de cláusula: "a) texto" com indentação */
+    function sub(letra, texto) {
+      var lbl  = letra + ')';
+      var full = lbl + ' ' + texto;
+      var p = body.appendParagraph(full);
+      p.setSpacingBefore(2).setSpacingAfter(2).setIndentStart(28);
+      var t = p.editAsText();
+      t.setFontFamily('Arial').setFontSize(10);
+      t.setBold(true,  0, lbl.length - 1);
+      t.setBold(false, lbl.length + 1, full.length - 1);
+      return p;
+    }
+
+    /** Parágrafo legal: "§ Nº texto" com indentação */
+    function par(numOrd, texto) {
+      var full = '§ ' + numOrd + ' ' + texto;
+      var p = body.appendParagraph(full);
+      p.setSpacingBefore(2).setSpacingAfter(2).setIndentStart(28);
+      p.editAsText().setFontFamily('Arial').setFontSize(10).setBold(false);
+      return p;
+    }
+
+    /** Linha de assinatura (centralizada, com espaço generoso para assinatura digital) */
+    function assin(nome, papel, complemento) {
+      body.appendParagraph('').setSpacingBefore(28).setSpacingAfter(0); // +25% vs 22 pt
+      txt('_______________________________________', { before:0, after:0, center:true });
+      txt(nome || '—', { before:0, after:0, bold:true, center:true });
+      txt(papel || '',  { before:0, after:0, center:true });
+      if (complemento) txt(complemento, { before:0, after:2, italic:true, center:true });
+    }
+
+    // ── CABEÇALHO (Header) ────────────────────────────────────────────────────
+    var hdr = doc.addHeader();
+
+    // Logo centralizado (se configurado pelo admin)
+    var _logoBlob = _obterLogoCabecalho_();
+    if (_logoBlob) {
+      var hLogoP = hdr.appendParagraph('');
+      hLogoP.setAlignment(DocumentApp.HorizontalAlignment.CENTER);
+      hLogoP.setSpacingBefore(0).setSpacingAfter(3);
+      try { hLogoP.insertInlineImage(0, _logoBlob).setWidth(54).setHeight(54); } catch (_) {}
+    }
+
+    var hP1 = hdr.appendParagraph('MINISTÉRIO DA EDUCAÇÃO');
+    hP1.setAlignment(DocumentApp.HorizontalAlignment.CENTER);
+    hP1.setSpacingBefore(0).setSpacingAfter(1);
+    hP1.editAsText().setFontFamily('Arial').setFontSize(8);
+    var hP2 = hdr.appendParagraph('INSTITUTO FEDERAL DE EDUCAÇÃO, CIÊNCIA E TECNOLOGIA DO RIO GRANDE DO SUL');
+    hP2.setAlignment(DocumentApp.HorizontalAlignment.CENTER);
+    hP2.setSpacingBefore(1).setSpacingAfter(1);
+    hP2.editAsText().setFontFamily('Arial').setFontSize(9).setBold(true);
+    var hP3 = hdr.appendParagraph('Campus Rio Grande');
+    hP3.setAlignment(DocumentApp.HorizontalAlignment.CENTER);
+    hP3.setSpacingBefore(1).setSpacingAfter(10); // espaço entre cabeçalho e corpo
+    hP3.editAsText().setFontFamily('Arial').setFontSize(8);
+
+    // ── TÍTULO ────────────────────────────────────────────────────────────────
+    var pTitulo = body.appendParagraph('TERMO DE COMPROMISSO DE ESTÁGIO ' + tipoNome);
+    pTitulo.setAlignment(DocumentApp.HorizontalAlignment.CENTER);
+    pTitulo.setSpacingBefore(4).setSpacingAfter(8);
+    pTitulo.editAsText().setFontFamily('Arial').setFontSize(13).setBold(true);
+
+    // ── ABERTURA ──────────────────────────────────────────────────────────────
+    txt(
+      'As partes abaixo qualificadas celebram entre si este TERMO DE COMPROMISSO DE ESTÁGIO ' + tipoNome +
+      ', nos termos da Lei nº 11.788, de 25 de setembro de 2008, Lei nº 9.394, de 20 de ' +
+      'dezembro de 1996 e no que couber, da Lei nº 8.666, de 21 de junho de 1993, e demais ' +
+      'disposições aplicáveis, mediante as seguintes cláusulas e condições:',
+      { before:0, after:8 }
+    );
+
+    // ── 1. DADOS DO IFRS ─────────────────────────────────────────────────────
+    sec('DADOS DO IFRS – CAMPUS RIO GRANDE');
+    kv('CNPJ', '10.637.926/0005-70');
+    kv('Endereço', 'Rua Engenheiro Alfredo Huch, nº 475, Bairro Centro');
+    kvRow([['Cidade', 'Rio Grande'], ['Estado', 'RS'], ['Telefone', '(53) 3233-8681']]);
+    kvRow([['Representante Legal', 'Carlos Fernandes Júnior'], ['Cargo', 'Diretor Geral do Campus Rio Grande']]);
+    kv('Professor Orientador', sol.nomeOrientador || '');
+    kvRow([['Telefone', oriTel || ''], ['E-mail', sol.emailOrientador || '']]);
+
+    // ── 2. DADOS DA CONCEDENTE ───────────────────────────────────────────────
+    sec('DADOS DA CONCEDENTE');
+    kv('Razão Social', sol.nomeEmpresa || '');
+    kv('CNPJ', _formatarCnpj_(sol.cnpjEmpresa));
+    kv('Endereço', [emp.endereco, emp.bairro].filter(Boolean).join(', '));
+    kvRow([['Cidade', emp.municipio || ''], ['Estado', emp.uf || '']]);
+    kvRow([['Telefone', emp.telEmpresa || ''], ['E-mail', emp.emailEmpresa || '']]);
+    kv('Representante Legal', emp.nomeRep || '');
+    kvRow([['Cargo', emp.cargoRep || ''], ['CPF', _formatarCpf_(emp.cpfRep)]]);
+    kv('Nome do supervisor do Estágio', sol.nomeSupervisor || '');
+    kv('Setor em que ocorrerá o estágio', sup.setor || '');
+    kvRow([['Telefone', sup.telefone || ''], ['E-mail', sol.emailSupervisor || '']]);
+
+    // ── 3. DADOS DO ESTAGIÁRIO ────────────────────────────────────────────────
+    sec('DADOS DO ESTAGIÁRIO');
+    kv('Nome completo', sol.nomeEstudante || '');
+    kv('Matrícula nº', sol.matricula || '');
+    kv('Data de Nascimento', _formatarDataBr_(sol.dataNasc));
+    kv('Endereço', [estEnd.endereco, estEnd.bairro].filter(Boolean).join(', '));
+    kvRow([['CEP', estEnd.cep || ''], ['Cidade', estEnd.cidade || ''], ['Estado', estEnd.uf || '']]);
+    kvRow([['Telefone Residencial', '—'], ['Tel. Celular', sol.telefone || '']]);
+    kv('Curso – modalidade', sol.curso || '');
+    kv('E-mail', sol.emailEstudante || '');
+    kv('Nome completo do responsável ou representante (se menor de 18 anos)', sol.nomeResp || '—');
+
+    body.appendParagraph('').setSpacingBefore(6).setSpacingAfter(6);
+
+    // ── CLÁUSULAS ─────────────────────────────────────────────────────────────
+    var tipoMenc = isObrig ? 'estágio obrigatório' : 'estágio não obrigatório';
+
+    cla('1ª–', 'Este instrumento tem por objetivo formalizar as condições básicas para a realização de ' +
+        tipoMenc + ' e particularizar a relação jurídica especial existente entre o ESTUDANTE, a INSTITUIÇÃO ' +
+        'CONCEDENTE e a INSTITUIÇÃO DE ENSINO.');
+
+    cla('2ª–', 'O estágio, como ato educativo supervisionado visa ao desenvolvimento de competências ' +
+        'próprias da atividade profissional e à contextualização curricular, objetivando o desenvolvimento do ' +
+        'estagiário para a vida cidadã e para o trabalho, fazendo parte do projeto pedagógico do curso e da Lei ' +
+        'de Diretrizes e Bases da Educação Nacional nº 9.394 de 20 de dezembro de 1996.');
+
+    cla('3ª–', 'O estágio não cria vínculo empregatício de qualquer natureza entre as partes ' +
+        'envolvidas, desde que observado o cumprimento da Lei.');
+
+    // Cláusula 4ª — com os dados do estágio
+    cla('4ª–', 'Em comum acordo as partes convencionam e estabelecem:');
+
+    // 4a) Horários, vigência e atividades
+    var p4a = body.appendParagraph('a) HORÁRIOS, VIGÊNCIA DO ESTÁGIO E DESCRIÇÃO DAS ATIVIDADES:');
+    p4a.setSpacingBefore(4).setSpacingAfter(2).setIndentStart(20);
+    p4a.editAsText().setFontFamily('Arial').setFontSize(10).setBold(true);
+
+    kv('Dias da Semana e Horários do estágio', sol.horario || '', 32);
+    kv('Carga Horária Semanal',                sol.cargaHoraria || '', 32);
+    kv('Início de Estágio',                    _formatarDataBr_(sol.dataInicio), 32);
+    kv('Fim do Estágio',                       _formatarDataBr_(sol.dataTermino), 32);
+    kv('Descrição das Atividades',             sol.planoAtividades || '', 32);
+
+    // 4b) Bolsa
+    var p4b = body.appendParagraph('b) BOLSA AUXÍLIO E OUTROS BENEFÍCIOS:');
+    p4b.setSpacingBefore(4).setSpacingAfter(2).setIndentStart(20);
+    p4b.editAsText().setFontFamily('Arial').setFontSize(10).setBold(true);
+
+    if (isObrig) {
+      txt('No estágio obrigatório, o pagamento de bolsa e auxílio-transporte é opcional, podendo ser ' +
+          'oferecido pela concedente.', { before:2, after:2, indent:32 });
+      var temBolsa = sol.valorBolsa && String(sol.valorBolsa).trim() && String(sol.valorBolsa) !== '0';
+      var temTransp = sol.valorTransporte && String(sol.valorTransporte).trim() && String(sol.valorTransporte) !== '0';
+      if (temBolsa)  kv('Bolsa', 'R$ ' + sol.valorBolsa, 32);
+      if (temTransp) kv('Auxílio-transporte', 'R$ ' + sol.valorTransporte, 32);
+      if (!temBolsa && !temTransp) txt('Não se aplica nesta modalidade.', { before:2, after:2, indent:32, italic:true });
+    } else {
+      txt('No estágio não obrigatório, a bolsa e o auxílio-transporte são obrigatórios.', { before:2, after:2, indent:32 });
+      kv('Bolsa', 'R$ ' + (sol.valorBolsa || '—'), 32);
+      kv('Auxílio-transporte', 'R$ ' + (sol.valorTransporte || '—'), 32);
+    }
+    if (sol.outroAux) kv('Outro auxílio', sol.outroAux, 32);
+
+    // 4c) Carga horária e atividades — referência ao plano
+    var p4c = body.appendParagraph('c) CARGA HORÁRIA E ATIVIDADES DO ESTÁGIO:');
+    p4c.setSpacingBefore(4).setSpacingAfter(2).setIndentStart(20);
+    p4c.editAsText().setFontFamily('Arial').setFontSize(10).setBold(true);
+    txt('A carga horária e as atividades desenvolvidas durante o estágio deverão estar em conformidade ' +
+        'com o plano de atividades.', { before:2, after:2, indent:32 });
+
+    // 4d) Adendo contratual
+    var p4d = body.appendParagraph('d) ADENDO CONTRATUAL:');
+    p4d.setSpacingBefore(4).setSpacingAfter(2).setIndentStart(20);
+    p4d.editAsText().setFontFamily('Arial').setFontSize(10).setBold(true);
+    txt('Havendo interesse das partes envolvidas na prorrogação do contrato, deverá ser formalizado ' +
+        'um adendo ao contrato vigente.', { before:2, after:2, indent:32 });
+
+    cla('5ª–', 'A jornada de atividade em estágio deverá compatibilizar-se com o horário ' +
+        'acadêmico do estagiário e com o horário da CONCEDENTE.');
+    par('Único', 'Nos períodos de férias escolares, a jornada será estabelecida de comum acordo entre ' +
+        'o estagiário e a CONCEDENTE.');
+
+    cla('6ª–', 'Conforme expressa previsão contida no Art. 9º, inciso IV, da Lei ' +
+        'nº 11.788/08 combinado com o parágrafo único do mesmo artigo, o (a) estudante-estagiário (a) ' +
+        'está segurado (a) contra acidentes pessoais, pela ' + _obterApoliceSeguro_() + '.');
+
+    cla('7ª–', 'O IFRS – CAMPUS RIO GRANDE deverá comprometer-se a:');
+    sub('a', 'celebrar, com cada aluno, este TERMO DE COMPROMISSO DE ESTÁGIO, zelando por seu cumprimento; ' +
+        'reorientando o estagiário para outro local em caso de descumprimento destas normas;');
+    sub('b', 'gerenciar os CONVÊNIOS e os TERMOS DE COMPROMISSO DE ESTÁGIO, organizando a documentação ' +
+        'relacionada aos estágios, encaminhando aos interessados as vias respectivas e mantendo arquivada ' +
+        'uma via no IFRS – CAMPUS RIO GRANDE;');
+    sub('c', 'dispor sobre programação, orientação, supervisão e avaliação dos estágios;');
+    sub('d', 'indicar um professor orientador da área a ser desenvolvida no estágio, como responsável pelo ' +
+        'acompanhamento e avaliação das atividades do estagiário;');
+    sub('e', 'prestar informações acerca da vida acadêmica do estagiário.');
+
+    cla('8ª–', 'Cabe ao ORIENTADOR de estágio do IFRS – CAMPUS RIO GRANDE:');
+    sub('a', 'cumprir o papel de orientar o estagiário e avaliar seu aprendizado;');
+    sub('b', 'avaliar, quando possível, as instalações da CONCEDENTE e sua adequação à formação cultural ' +
+        'e profissional do educando;');
+    sub('c', 'manter contatos regulares com o SUPERVISOR de estágio da CONCEDENTE;');
+    sub('d', 'Estabelecer junto à Concedente, o Plano de Atividades do Estagiário, que consubstancie as ' +
+        'condições e requisitos suficientes de adequação à formação profissional deste.');
+
+    cla('9ª–', 'A CONCEDENTE deverá comprometer-se a:');
+    sub('a', 'solicitar ao IFRS – CAMPUS RIO GRANDE a quantidade necessária de estagiários nos cursos ' +
+        'de seu interesse;');
+    sub('b', 'selecionar e indicar alunos candidatos à vaga de estágio, podendo adotar critérios e meios ' +
+        'para aferir conhecimentos e aptidões;');
+    sub('c', 'celebrar, com cada estagiário, este TERMO DE COMPROMISSO DE ESTÁGIO, zelando por seu cumprimento;');
+    sub('d', 'indicar funcionário de seu quadro de pessoal, com formação ou experiência profissional na área ' +
+        'de conhecimento desenvolvida no curso do estagiário, para orientar e supervisionar até 10 (dez) ' +
+        'estagiários simultaneamente;');
+    sub('e', 'oferecer condições para que os estagiários sejam supervisionados por servidores do IFRS – ' +
+        'CAMPUS RIO GRANDE;');
+    sub('f', 'ofertar instalações que tenham condições de proporcionar ao educando atividades de aprendizagem ' +
+        'social, profissional e cultural;');
+    sub('g', 'aplicar a legislação relacionada à saúde e segurança no trabalho;');
+    sub('h', 'efetuar o controle da assiduidade dos estagiários;');
+    sub('i', 'conceder ou não ao estagiário, enquanto perdurar o estágio, a importância mensal, a título de ' +
+        'bolsa, conforme o valor estipulado neste TERMO DE COMPROMISSO DE ESTÁGIO;');
+    sub('j', 'autorizar o início do estágio somente após a assinatura, pelas partes envolvidas, deste ' +
+        'TERMO DE COMPROMISSO DE ESTÁGIO;');
+    sub('k', 'não alterar as atividades do estagiário sem prévia comunicação e anuência do IFRS – ' +
+        'CAMPUS RIO GRANDE;');
+    sub('l', 'manter à disposição da fiscalização documentos que comprovem a relação de estágio;');
+    sub('m', 'emitir documentos comprobatórios do estágio;');
+    sub('n', 'Proporcionar ao estagiário as condições para o exercício das atividades práticas compatíveis ' +
+        'com seu Plano de Atividades.');
+    if (isObrig) {
+      par('1º', 'No caso de estágio obrigatório, a responsabilidade pela contratação do seguro, poderá ' +
+          'alternativamente, ser assumida pelo IFRS – CAMPUS RIO GRANDE.');
+    }
+    par('2º', 'É assegurado ao estagiário, sempre que o estágio tenha duração igual ou superior a 01 ' +
+        '(um) ano, período de recesso de 30 (trinta) dias, a ser gozado preferencialmente durante suas férias ' +
+        'escolares. Este recesso deverá ser remunerado quando o estagiário receber bolsa ou outra forma de ' +
+        'contraprestação. Os dias de recesso previstos neste parágrafo serão concedidos de maneira proporcional, ' +
+        'nos casos de o estágio ter duração inferior a 01 (um) ano.');
+
+    cla('10ª–', 'Cabe ao SUPERVISOR de estágio da CONCEDENTE:');
+    sub('a', 'orientar o estagiário acerca das atividades a serem desenvolvidas;');
+    sub('b', 'orientar o estagiário sobre aspectos comportamentais e normas da CONCEDENTE, inclusive no que ' +
+        'se refere à postura e vestuário adequados;');
+    sub('c', 'acompanhar profissionalmente o estagiário, de modo especial no que se refere à verificação da ' +
+        'existência de correlação entre as atividades desenvolvidas pelo mesmo e as exigidas pelo IFRS – ' +
+        'CAMPUS RIO GRANDE;');
+    sub('d', 'avaliar o desempenho do estagiário;');
+    sub('e', 'manter contatos regulares com o ORIENTADOR de estágio do IFRS – CAMPUS RIO GRANDE;');
+    sub('f', 'estimular a produção de novos conhecimentos, bem como a reflexão crítica quando da análise de ' +
+        'situações, visando o aprendizado da atuação profissional do estagiário;');
+    sub('g', 'Enviar à instituição de ensino, com periodicidade não superior a 06 (seis) meses o relatório ' +
+        'de atividades, com vista obrigatória ao estagiário;');
+    sub('h', 'comunicar ao IFRS – CAMPUS RIO GRANDE sobre a eventual alteração de SUPERVISOR de ' +
+        'estágio na CONCEDENTE.');
+
+    cla('11ª–', 'O ESTAGIÁRIO deverá comprometer-se a:');
+    sub('a', 'zelar pelo cumprimento deste TERMO DE COMPROMISSO DE ESTÁGIO;');
+    sub('b', 'cumprir com empenho a programação de estágio;');
+    sub('c', 'cumprir as normas de trabalho estabelecidas pela CONCEDENTE, com responsabilidade, empenho e ' +
+        'atenção, especialmente aquelas que resguardam sigilo às informações a que tenha acesso em decorrência ' +
+        'do estágio;');
+    sub('d', 'informar quando suas atividades de estágio estiverem em desacordo com as atividades descritas ' +
+        'neste TERMO DE COMPROMISSO DE ESTÁGIO ou com seu curso de formação;');
+    sub('e', 'utilizar os equipamentos de proteção individual e coletiva fornecidos pela CONCEDENTE;');
+    sub('f', 'responder por perdas e danos consequentes da inobservância das normas internas da CONCEDENTE ' +
+        'ou das constantes do presente TERMO DE COMPROMISSO DE ESTÁGIO;');
+    sub('g', 'ser pontual, assíduo e responsável;');
+    sub('h', 'Preencher o relatório de atividades e entregá-lo na Instituição de Ensino na periodicidade ' +
+        'máxima a cada 06 (seis) meses ou ao término do estágio;');
+    sub('i', 'portar-se com urbanidade, respeito e cordialidade;');
+    sub('j', 'zelar pelos equipamentos e bens em geral da CONCEDENTE;');
+    sub('k', 'racionalizar o uso do material da CONCEDENTE, evitando desperdícios;');
+    sub('l', 'procurar elevar sempre o nome do IFRS – CAMPUS RIO GRANDE;');
+    sub('m', 'procurar os responsáveis pelo seu estágio sempre que necessário.');
+
+    cla('12ª–', 'Este TERMO DE COMPROMISSO DE ESTÁGIO poderá ser alterado, ou prorrogado, mediante ' +
+        'TERMO ADITIVO; ou rescindido, de comum acordo entre as partes, ou unilateralmente, mediante ' +
+        'notificação escrita, com antecedência mínima de 05 (cinco) dias.');
+
+    cla('13ª–', 'Os casos omissos serão resolvidos conjuntamente pela CONCEDENTE e pelo ' +
+        'IFRS – CAMPUS RIO GRANDE.');
+
+    cla('14ª–', 'Fica eleito o foro da Justiça Federal de RIO GRANDE/RS como competente para ' +
+        'dirimir qualquer questão proveniente deste TERMO DE COMPROMISSO DE ESTÁGIO, eventualmente não ' +
+        'resolvida no âmbito administrativo.');
+
+    // ── FECHAMENTO ────────────────────────────────────────────────────────────
+    txt('Assim, por estarem de comum acordo, as partes envolvidas assinam o presente Termo de Compromisso, ' +
+        'em 03 (três) vias de igual teor e forma.', { before:10, after:8 });
+    // Data de geração real por extenso em português, fuso horário de Brasília
+    var _hojeDate  = new Date();
+    var _mesesPt   = ['janeiro','fevereiro','março','abril','maio','junho','julho',
+                      'agosto','setembro','outubro','novembro','dezembro'];
+    var _diaNum    = parseInt(Utilities.formatDate(_hojeDate, 'America/Sao_Paulo', 'd'), 10);
+    var _mesNum    = parseInt(Utilities.formatDate(_hojeDate, 'America/Sao_Paulo', 'M'), 10) - 1;
+    var _anoNum    = Utilities.formatDate(_hojeDate, 'America/Sao_Paulo', 'yyyy');
+    var _dataTCE   = 'Rio Grande, ' + _diaNum + ' de ' + _mesesPt[_mesNum] + ' de ' + _anoNum + '.';
+    txt(_dataTCE, { before:4, after:20 });
+
+    // ── ASSINATURAS ───────────────────────────────────────────────────────────
+    assin('Representante',                            'CONCEDENTE',         null);
+    assin('DIRETOR-GERAL DO IFRS – CAMPUS RIO GRANDE','INSTITUIÇÃO DE ENSINO', null);
     if (sol.nomeResp) {
-      kv('Responsável legal',
-         sol.nomeResp
-         + (sol.cpfResp ? ' — CPF: ' + _formatarCpf_(sol.cpfResp) : '')
-         + (sol.telResp ? ' — Fone: ' + sol.telResp : ''));
+      // Estagiário menor de idade: responsável legal assina no lugar do estagiário
+      assin(sol.nomeResp,
+            'RESPONSÁVEL LEGAL DO(A) ESTAGIÁRIO(A) ' + (sol.nomeEstudante || '').toUpperCase(),
+            'CPF: ' + _formatarCpf_(sol.cpfResp));
+    } else {
+      // Estagiário maior de idade: assina por si mesmo
+      assin(sol.nomeEstudante || 'ESTAGIÁRIO(A)', 'ESTAGIÁRIO(A)', null);
     }
 
-    // ── 2. Empresa Concedente ────────────────────────────────────────────────
-    sec('2. EMPRESA CONCEDENTE');
-    kv('Razão social',         sol.nomeEmpresa);
-    kv('CNPJ',                 _formatarCnpj_(sol.cnpjEmpresa));
-    kv('Supervisor(a)',        sol.nomeSupervisor);
-    kv('E-mail do supervisor', sol.emailSupervisor);
-    if (sol.nomeAgente) {
-      kv('Agente de integração', sol.nomeAgente);
-    }
-
-    // ── 3. Dados do Estágio ──────────────────────────────────────────────────
-    sec('3. DADOS DO ESTÁGIO');
-    kv('Tipo de estágio',  sol.tipoEstagio);
-    kv('Data de início',   _formatarDataBr_(sol.dataInicio));
-    kv('Data de término',  _formatarDataBr_(sol.dataTermino));
-    kv('Carga horária',    sol.cargaHoraria);
-    kv('Horários / dias',  sol.horario);
-    kv('Remunerado',       sol.remuneracao === 'Sim' ? 'Sim' : 'Não');
-    if (sol.remuneracao === 'Sim' && sol.valorBolsa) {
-      kv('Valor da bolsa',       'R$ ' + sol.valorBolsa);
-    }
-    if (sol.valorTransporte) {
-      kv('Auxílio-transporte',   'R$ ' + sol.valorTransporte);
-    }
-
-    // ── 4. Plano de Atividades ────────────────────────────────────────────────
-    sec('4. PLANO DE ATIVIDADES');
-    body.appendParagraph(sol.planoAtividades || '—')
-        .setSpacingBefore(2).setSpacingAfter(4)
-        .editAsText().setFontSize(10);
-
-    // ── 5. Orientação Acadêmica ──────────────────────────────────────────────
-    sec('5. ORIENTAÇÃO ACADÊMICA');
-    kv('Orientador(a)', sol.nomeOrientador);
-    kv('E-mail',        sol.emailOrientador);
-
-    // ── 6. Disposições Legais ────────────────────────────────────────────────
-    sec('6. DISPOSIÇÕES LEGAIS');
-    [
-      'O estágio é regido pela Lei nº 11.788/2008 e pelas normas internas do IFRS Campus Rio Grande.',
-      'O estágio não cria vínculo empregatício de qualquer natureza, conforme art. 3º da Lei nº 11.788/2008.',
-      'O estudante deverá cumprir as atividades descritas no plano de atividades e zelar pelo bom nome da instituição.',
-      'Qualquer alteração das condições previstas neste Termo deverá ser formalizada mediante adendo assinado pelas partes.',
-      'O descumprimento das obrigações aqui estabelecidas poderá ensejar o encerramento imediato do estágio.',
-    ].forEach(function (cl, i) {
-      var p = body.appendParagraph((i + 1) + '. ' + cl);
-      p.setSpacingBefore(2).setSpacingAfter(2);
-      p.editAsText().setFontSize(10);
-    });
-
-    // ── 7. Assinaturas ────────────────────────────────────────────────────────
-    sec('7. ASSINATURAS');
-    body.appendParagraph(
-        'As partes declaram ter lido e concordado com os termos acima, '
-        + 'firmando o presente instrumento na data de suas respectivas assinaturas.')
-        .setSpacingAfter(8)
-        .editAsText().setFontSize(10);
-
-    assinatura(sol.nomeEstudante,  'Estudante');
-    assinatura(sol.nomeEmpresa,    'Empresa Concedente');
-    assinatura(sol.nomeSupervisor, 'Supervisor(a) na Empresa');
-    assinatura(sol.nomeOrientador, 'Orientador(a) de Estágio');
-    assinatura('Coordenador(a) de Curso', sol.curso || '');
-    assinatura('Central de Estágios', 'IFRS Campus Rio Grande');
-    assinatura('Direção-Geral',       'IFRS Campus Rio Grande');
-
-    // ── Rodapé ────────────────────────────────────────────────────────────────
+    // ── RODAPÉ ────────────────────────────────────────────────────────────────
     var ftr = doc.addFooter();
-    ftr.appendParagraph(
-        'SGE · IFRS Campus Rio Grande · Emitido automaticamente em '
-        + _formatarDataBr_(new Date()) + ' · ID: ' + idEstagio)
-       .setAlignment(DocumentApp.HorizontalAlignment.CENTER)
-       .editAsText().setFontSize(7).setItalic(true);
+    var fP  = ftr.appendParagraph(
+      'SGE · IFRS Campus Rio Grande · Emitido automaticamente em ' +
+      _formatarDataBr_(new Date()) + ' · ID: ' + idEstagio
+    );
+    fP.setAlignment(DocumentApp.HorizontalAlignment.CENTER);
+    fP.editAsText().setFontFamily('Arial').setFontSize(7).setItalic(true);
 
     doc.saveAndClose();
 
-    // ── Exportar como PDF ─────────────────────────────────────────────────────
+    // ── EXPORTAR COMO PDF ─────────────────────────────────────────────────────
     var pdfBlob = DriveApp.getFileById(docId)
         .getAs(MimeType.PDF)
         .setName('TCE_' + idEstagio + '_v0_original.pdf');
     var arquivo = DriveApp.getFolderById(pastaId).createFile(pdfBlob);
-
-    // Apaga o Google Doc temporário
     DriveApp.getFileById(docId).setTrashed(true);
-
     return arquivo;
 
   } catch (e) {
     logErro_('_gerarPdfTCEInicial_', e);
-    if (docId) {
-      try { DriveApp.getFileById(docId).setTrashed(true); } catch (_) {}
-    }
+    if (docId) { try { DriveApp.getFileById(docId).setTrashed(true); } catch (_) {} }
     return null;
   }
 }
