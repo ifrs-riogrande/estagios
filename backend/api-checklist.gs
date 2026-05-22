@@ -1449,8 +1449,8 @@ function gerarPdfChecklist_(idEstagio, checklist) {
     p.setSpacingBefore(1).setSpacingAfter(1);
     var t = p.editAsText();
     t.setFontFamily('Arial').setFontSize(10);
-    t.setBold(true,  0, label.length);
-    t.setBold(false, label.length + 2, txt.length - 1);
+    t.setBold(0, label.length, true);
+    if (txt.length - 1 > label.length + 2) t.setBold(label.length + 2, txt.length - 1, false);
   };
 
   var _secao = function (titulo) {
@@ -1515,9 +1515,9 @@ function gerarPdfChecklist_(idEstagio, checklist) {
   var _blocoAssinatura = function (titulo, sig) {
     body.appendParagraph('');
     var titP = body.appendParagraph(titulo);
-    titP.getChild(0).setBold(true).setForegroundColor(PRETO);
+    titP.editAsText().setFontFamily('Arial').setFontSize(10).setBold(true);
     if (!sig || !sig.nome) {
-      body.appendParagraph('(não registrada)').getChild(0).setForegroundColor(CINZA).setItalic(true);
+      body.appendParagraph('(não registrada)').editAsText().setFontFamily('Arial').setFontSize(10).setItalic(true);
       return;
     }
     _linha('Nome', sig.nome);
@@ -1568,15 +1568,15 @@ function gerarPdfChecklist_(idEstagio, checklist) {
 
   // URL sempre presente (como fallback ou complemento ao QR)
   var validLabel = body.appendParagraph('🔗 Link de validação:');
-  validLabel.getChild(0).setFontSize(9).setBold(true).setForegroundColor(PRETO);
+  validLabel.editAsText().setFontFamily('Arial').setFontSize(9).setBold(true);
   var validPar = body.appendParagraph(urlValidacao);
-  validPar.getChild(0).setFontSize(9).setForegroundColor(CINZA);
+  validPar.editAsText().setFontFamily('Arial').setFontSize(9);
 
   var rodapeFinal = body.appendParagraph(
     'Documento gerado automaticamente pelo SGE — IFRS Campus Rio Grande · '
     + Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'dd/MM/yyyy HH:mm:ss')
   );
-  rodapeFinal.getChild(0).setFontSize(8).setForegroundColor(CINZA).setItalic(true);
+  rodapeFinal.editAsText().setFontFamily('Arial').setFontSize(8).setItalic(true);
   rodapeFinal.setAlignment(DocumentApp.HorizontalAlignment.CENTER);
 
   doc.saveAndClose();
