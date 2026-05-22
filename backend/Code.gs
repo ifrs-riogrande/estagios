@@ -80,6 +80,7 @@ var GET_ROUTES = {
   // Checklist
   'obterChecklist':          doGetChecklist,
   'obterPrazos':             doGetChecklist,
+  'validarChecklist':        doGetChecklist,  // público — sem auth
 
   // Assinaturas
   'obterFluxoAssinaturas':        doGetAssinaturas,
@@ -120,6 +121,7 @@ var POST_ROUTES = {
   'responderAceiteOrientador': doPostSolicitacao,
   'trocarOrientador':          doPostSolicitacao,
   'uploadDocumentoEstagio':    doPostSolicitacao,
+  'marcarDocumentoRevisado':   doPostSolicitacao,
 
   // Agentes (pÃºblico)
   'cadastrarAgente':           doPostAgentes,

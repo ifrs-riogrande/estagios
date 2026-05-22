@@ -2,14 +2,17 @@
  * api-checklist.gs — Fluxo de Checklist de Solicitações de Estágio
  * SGE — Sistema de Gestão de Estágios · IFRS Campus Rio Grande
  *
- * Fluxo (3 atores, sequencial):
- *   1. Orientador (1º) — Aceite de orientação + itens pedagógicos + papel de coordenador
+ * Fluxo (4 atores, sequencial):
+ *   0. Estagiário — Assina eletronicamente ao submeter a solicitação
+ *   1. Orientador (1º) — Aceite de orientação + itens pedagógicos
  *      → acessa via aceite-orientacao.html (magic-link por token)
  *   2. Supervisor  (2º) — Itens de supervisão + verificação da empresa
  *      → acessa via checklist/index.html (magic-link por token)
- *   3. Admin/Setor (3º) — Revisão administrativa final
+ *   3. Coordenador (3º) — Ciência da coordenação de curso
+ *      → acessa via checklist/index.html (magic-link por token)
+ *   4. Admin/Setor (4º) — Revisão administrativa final
  *      → acessa via painel admin (Google OAuth)
- *   Todos aprovados → fluxo de assinaturas inicia automaticamente
+ *   Todos aprovados → gera PDF do checklist + fluxo de assinaturas TCE inicia
  *
  * Armazenamento:
  *   PropertiesService  →  "checklist_[idEstagio]"  (estado completo em JSON)
@@ -145,9 +148,10 @@ function obterPrazos_() {
   } catch (e) { /* usa defaults */ }
   return {
     checklist: {
-      orientador: 5,
-      supervisor: 5,
-      admin:      3,
+      orientador:  5,
+      supervisor:  5,
+      coordenador: 5,
+      admin:       3,
     },
     assinaturas: {
       estudante:      5,
@@ -211,12 +215,26 @@ function iniciarChecklist_(idEstagio, opts) {
   };
   var itensOrientador = [itemAceite].concat(itensBase);
 
+  // Assinatura do estagiário (registrada imediatamente ao submeter a solicitação)
+  var assinaturaEstudante = (opts && opts.assinaturaEstudante)
+    ? opts.assinaturaEstudante
+    : {
+        nome:         String(solCompleto.nomeEstudante  || ''),
+        cpf:          String(solCompleto.cpf            || ''),
+        email:        String(solCompleto.emailEstudante || ''),
+        dataHora:     new Date().toISOString(),
+        aceitouTermo: true,
+      };
+
   var checklist = {
-    idEstagio:          idEstagio,
-    statusGeral:        CK_STATUS.EM_ANDAMENTO,
-    etapaAtiva:         'orientador',
-    timestampCriacao:   new Date().toISOString(),
-    timestampConclusao: null,
+    idEstagio:           idEstagio,
+    statusGeral:         CK_STATUS.EM_ANDAMENTO,
+    etapaAtiva:          'orientador',
+    timestampCriacao:    new Date().toISOString(),
+    timestampConclusao:  null,
+
+    // Assinatura do estagiário — registrada na criação
+    assinaturaEstudante: assinaturaEstudante,
 
     // 1º ator — liberado imediatamente com token magic-link
     orientador: {
@@ -227,12 +245,16 @@ function iniciarChecklist_(idEstagio, opts) {
       lembretesEnviados: 0,
       token:             tokenOrientador,
       itens:             itensOrientador,
+      assinatura:        null,
     },
 
     // 2º ator — liberado após orientador aprovar
     supervisor: null,
 
     // 3º ator — liberado após supervisor aprovar
+    coordenador: null,
+
+    // 4º ator — liberado após coordenador aprovar
     admin: null,
   };
 
@@ -255,7 +277,7 @@ function iniciarChecklist_(idEstagio, opts) {
  * @param {string} token      Token magic-link (validação; pode ser null para OAuth)
  */
 function salvarRespostaAtor_(idEstagio, ator, itens, decisao, obs, emailAtor, token) {
-  var atoresValidos = ['orientador', 'supervisor'];
+  var atoresValidos = ['orientador', 'supervisor', 'coordenador'];
   if (atoresValidos.indexOf(ator) === -1) return jsonError_('Ator inválido: ' + ator, 'INVALID');
 
   var checklist = obterChecklist_(idEstagio);
@@ -317,11 +339,18 @@ function salvarRespostaAtor_(idEstagio, ator, itens, decisao, obs, emailAtor, to
   }
 
   // ── Salva resposta normal (aprovado | ajuste) ───────────────────────────
+  var agora = new Date().toISOString();
   checklist[ator].itens    = itens;
   checklist[ator].status   = decisao;
   checklist[ator].obs      = sanitizar_(obs, 500);
-  checklist[ator].data     = new Date().toISOString();
+  checklist[ator].data     = agora;
   if (emailAtor) checklist[ator].emailAtor = emailAtor;
+
+  // Registra assinatura eletrônica ao aprovar
+  if (decisao === CK_STATUS.APROVADO) {
+    var solParaAssin = _obterDadosSolicitacaoCompleto_(idEstagio);
+    checklist[ator].assinatura = _buildAssinaturaAtor_(ator, solParaAssin, agora);
+  }
 
   if (decisao === CK_STATUS.AJUSTE) {
     try { _notificarAdminAjusteChecklist_(idEstagio, ator, obs); } catch (e) { logErro_('_notificarAdminAjusteChecklist_', e); }
@@ -353,13 +382,32 @@ function salvarRespostaAtor_(idEstagio, ator, itens, decisao, obs, emailAtor, to
         lembretesEnviados: 0,
         token:             tokenSupervisor,
         itens:             itensCamposSolicitacao_(solOri),
+        assinatura:        null,
       };
       checklist.etapaAtiva = 'supervisor';
       try { _notificarSupervisorChecklist_(idEstagio, checklist); } catch (e) { logErro_('_notificarSupervisorChecklist_', e); }
     }
 
     if (ator === 'supervisor') {
-      // Libera admin/setor (3º ator)
+      // Libera coordenador (3º ator — novo)
+      var solCrd = _obterDadosSolicitacaoCompleto_(idEstagio);
+      var tokenCoordenador = Utilities.getUuid();
+      checklist.coordenador = {
+        status:            CK_STATUS.PENDENTE,
+        data:              null,
+        obs:               '',
+        prazoVencimento:   calcularPrazoVencimento_(prazos.checklist.coordenador || 5),
+        lembretesEnviados: 0,
+        token:             tokenCoordenador,
+        itens:             itensCamposSolicitacao_(solCrd),
+        assinatura:        null,
+      };
+      checklist.etapaAtiva = 'coordenador';
+      try { _notificarCoordenadorChecklist_(idEstagio, checklist); } catch (e) { logErro_('_notificarCoordenadorChecklist_', e); }
+    }
+
+    if (ator === 'coordenador') {
+      // Libera admin/setor (4º ator)
       var solAdm = _obterDadosSolicitacaoCompleto_(idEstagio);
       checklist.admin = {
         status:            CK_STATUS.PENDENTE,
@@ -400,6 +448,9 @@ function salvarRespostaAdmin_(idEstagio, itens, decisao, obs) {
       checklist.timestampConclusao = new Date().toISOString();
       checklist.etapaAtiva         = 'concluido';
       _atualizarStatusChecklistNaPlanilha_(idEstagio, checklist);
+      // Gera PDF do checklist com assinaturas e salva na pasta do estágio
+      try { gerarPdfChecklist_(idEstagio, checklist); } catch (e) { logErro_('salvarRespostaAdmin_.gerarPdf', e); }
+      // Inicia fluxo de assinaturas do TCE
       try { iniciarFluxoAssinaturas_(idEstagio); } catch (e) { logErro_('salvarRespostaAdmin_.assinaturas', e); }
     }
   }
@@ -418,7 +469,7 @@ function salvarRespostaAdmin_(idEstagio, itens, decisao, obs) {
  * Verifica se todos os 3 atores aprovaram.
  */
 function _verificarChecklistCompleto_(checklist) {
-  var atores = ['orientador', 'supervisor', 'admin'];
+  var atores = ['orientador', 'supervisor', 'coordenador', 'admin'];
   for (var i = 0; i < atores.length; i++) {
     var ck = checklist[atores[i]];
     if (!ck || ck.status !== CK_STATUS.APROVADO) return false;
@@ -515,7 +566,14 @@ function _atualizarStatusChecklistNaPlanilha_(idEstagio, checklist) {
         sheet.getRange(row, 9).setValue(checklist.supervisor.obs    || '');
         sheet.getRange(row, 14).setValue(checklist.supervisor.prazoVencimento || '');
       }
-      // Admin
+      // Coordenador (cols 18-20, prazo 21)
+      if (checklist.coordenador) {
+        sheet.getRange(row, 18).setValue(checklist.coordenador.status || '');
+        sheet.getRange(row, 19).setValue(checklist.coordenador.data   || '');
+        sheet.getRange(row, 20).setValue(checklist.coordenador.obs    || '');
+        sheet.getRange(row, 21).setValue(checklist.coordenador.prazoVencimento || '');
+      }
+      // Admin (cols 10-12, prazo 15 — mantidos)
       if (checklist.admin) {
         sheet.getRange(row, 10).setValue(checklist.admin.status || '');
         sheet.getRange(row, 11).setValue(checklist.admin.data   || '');
@@ -550,9 +608,10 @@ function calcularIdade_(dataNasc, dataRef) {
 // ── Labels ────────────────────────────────────────────────────────────────────
 
 var LABELS_ATORES_CK_ = {
-  orientador: 'Orientador(a) de Estágio',
-  supervisor: 'Supervisor(a) na Empresa',
-  admin:      'Setor de Estágios',
+  orientador:  'Orientador(a) de Estágio',
+  supervisor:  'Supervisor(a) na Empresa',
+  coordenador: 'Coordenador(a) de Curso',
+  admin:       'Setor de Estágios',
 };
 
 // ── Notificações de e-mail ────────────────────────────────────────────────────
@@ -705,23 +764,24 @@ function _verificarPrazosChecklist_() {
 
       var sol = _obterDadosSolicitacaoCompleto_(id);
       var emailsAtores = {
-        orientador: sol.emailOrientador  || '',
+        orientador:  sol.emailOrientador  || '',
         // Usa E-mail Setor do supervisor (mesma lógica do envio inicial)
-        supervisor: _obterEmailSetorSupervisor_(sol.nomeSupervisor, sol.emailSupervisor),
-        admin:      'estagios@riogrande.ifrs.edu.br',
+        supervisor:  _obterEmailSetorSupervisor_(sol.nomeSupervisor, sol.emailSupervisor),
+        coordenador: _ckObterEmailCoordenador_(sol.curso || ''),
+        admin:       'estagios@riogrande.ifrs.edu.br',
       };
 
       var modificado = false;
-      ['orientador', 'supervisor', 'admin'].forEach(function (ator) {
+      ['orientador', 'supervisor', 'coordenador', 'admin'].forEach(function (ator) {
         var ck = checklist[ator];
         if (!ck || ck.status !== CK_STATUS.PENDENTE || !ck.prazoVencimento) return;
         if (_diasUteisAte_(ck.prazoVencimento) !== 2) return;
         if ((ck.lembretesEnviados || 0) >= 1) return;
         var email = emailsAtores[ator];
         if (!email) return;
-        // Monta URL com token (magic-link) para supervisor; URL sem token para admin
+        // Monta URL com token (magic-link) para supervisor e coordenador; sem token para admin
         var urlLembrete;
-        if (ator === 'supervisor' && ck.token) {
+        if ((ator === 'supervisor' || ator === 'coordenador') && ck.token) {
           urlLembrete = BASE_URL_SGE_ + '/checklist/?id=' + encodeURIComponent(id)
                       + '&token=' + encodeURIComponent(ck.token);
         }
@@ -799,6 +859,7 @@ function _buildHistoricoPublico_(ck) {
     statusGeral: String(ck.statusGeral || ''),
     orientador:  _atorInfo(ck.orientador),
     supervisor:  _atorInfo(ck.supervisor),
+    coordenador: _atorInfo(ck.coordenador),
     admin:       _atorInfo(ck.admin),
   };
 }
@@ -868,10 +929,10 @@ function doGetChecklist(e) {
         driveUrl:           String(solDados.driveUrl        || ''),
       };
 
-      // ── Acesso por token (supervisor ou orientador via magic-link) ───────
+      // ── Acesso por token (supervisor, coordenador ou orientador via magic-link) ──
       var token = (e.parameter && e.parameter.token) || '';
       if (token) {
-        var atoresToken = ['supervisor', 'orientador'];
+        var atoresToken = ['supervisor', 'coordenador', 'orientador'];
         var atorToken = null;
         for (var t = 0; t < atoresToken.length; t++) {
           var secToken = ck[atoresToken[t]];
@@ -886,10 +947,11 @@ function doGetChecklist(e) {
         return jsonOk_(respToken);
       }
 
-      // ── Acesso por Google OAuth (admin / orientador logado) ──────────────
+      // ── Acesso por Google OAuth (admin / orientador / coordenador logado) ──
       ck._emailAtores = {
-        orientador: String(solDados.emailOrientador || ''),
-        supervisor: String(solDados.emailSupervisor || ''),
+        orientador:  String(solDados.emailOrientador || ''),
+        supervisor:  String(solDados.emailSupervisor || ''),
+        coordenador: _ckObterEmailCoordenador_(String(solDados.curso || '')),
       };
       ck._infoSolicitacao = infoSol;
       ck._historico = _buildHistoricoPublico_(ck);
@@ -897,6 +959,54 @@ function doGetChecklist(e) {
 
     case 'obterPrazos':
       return jsonOk_(obterPrazos_());
+
+    case 'validarChecklist': {
+      // Endpoint público — sem autenticação
+      if (!id) return jsonError_('Parâmetro id obrigatório.', 'MISSING_PARAM');
+      var ckVal = obterChecklist_(id);
+      if (!ckVal) return jsonError_('Documento não encontrado.', 'NOT_FOUND');
+      var solVal = {};
+      try { solVal = _obterDadosSolicitacaoCompleto_(id); } catch (_ev) {}
+
+      var _mascaraCpf = function (s) {
+        if (!s) return '—';
+        var limpo = String(s).replace(/\D/g, '');
+        if (limpo.length < 5) return '***';
+        return limpo.substring(0, 3) + '.' + limpo.substring(3, 6) + '.***.***-' + limpo.substring(limpo.length - 2);
+      };
+      var _mascaraEmail = function (em) {
+        if (!em || em.indexOf('@') === -1) return em || '—';
+        var partes = em.split('@');
+        var nome = partes[0];
+        var visivel = nome.length > 2 ? nome.substring(0, 2) + '***' : '***';
+        return visivel + '@' + partes[1];
+      };
+      var _buildSigPublica = function (sig) {
+        if (!sig || !sig.nome) return null;
+        return {
+          nome:    String(sig.nome    || ''),
+          cpf:     _mascaraCpf(sig.cpf),
+          email:   _mascaraEmail(sig.email),
+          dataHora: String(sig.dataHora || ''),
+        };
+      };
+
+      return jsonOk_({
+        valido:        ckVal.statusGeral === CK_STATUS.APROVADO,
+        idEstagio:     id,
+        nomeEstudante: String(solVal.nomeEstudante || ''),
+        curso:         String(solVal.curso         || ''),
+        nomeEmpresa:   String(solVal.nomeEmpresa   || ''),
+        dataGeracao:   String(ckVal.timestampConclusao || ''),
+        urlPdf:        String(ckVal.urlPdfChecklist || ''),
+        assinaturas: {
+          estudante:   _buildSigPublica(ckVal.assinaturaEstudante),
+          orientador:  _buildSigPublica(ckVal.orientador  && ckVal.orientador.assinatura),
+          supervisor:  _buildSigPublica(ckVal.supervisor  && ckVal.supervisor.assinatura),
+          coordenador: _buildSigPublica(ckVal.coordenador && ckVal.coordenador.assinatura),
+        },
+      });
+    }
 
     default:
       return jsonError_('Ação GET desconhecida: ' + action, 'UNKNOWN_ACTION');
@@ -996,4 +1106,322 @@ function _ckObterNomeCoordenador_(curso) {
     }
     return '';
   } catch (e) { return ''; }
+}
+
+/** Busca e-mail do coordenador ativo pelo curso na aba Coordenadores. */
+function _ckObterEmailCoordenador_(curso) {
+  try {
+    if (!curso) return '';
+    var cursoN = curso.trim().toLowerCase();
+    var sheet  = SpreadsheetApp.openById(SS_ID).getSheetByName('Coordenadores');
+    if (!sheet) return '';
+    var dados = sheet.getDataRange().getValues();
+    for (var i = 1; i < dados.length; i++) {
+      if (String(dados[i][6] || '').trim().toLowerCase() === cursoN
+          && String(dados[i][8] || '').trim() === 'Ativo') {
+        return String(dados[i][3] || '');  // EMAIL = índice 3
+      }
+    }
+    return '';
+  } catch (e) { return ''; }
+}
+
+/** Busca CPF do orientador pelo e-mail na aba Orientadores. */
+function _ckObterCpfOrientador_(email) {
+  try {
+    if (!email) return '';
+    var emailN = email.toLowerCase().trim();
+    var sheet  = SpreadsheetApp.openById(SS_ID).getSheetByName('Orientadores');
+    if (!sheet) return '';
+    var dados = sheet.getDataRange().getValues();
+    for (var i = 1; i < dados.length; i++) {
+      if (String(dados[i][COL_ORI.EMAIL] || '').toLowerCase().trim() === emailN) {
+        return String(dados[i][COL_ORI.CPF] || '');
+      }
+    }
+    return '';
+  } catch (e) { return ''; }
+}
+
+/** Busca CPF do supervisor pelo e-mail na aba Supervisores. */
+function _ckObterCpfSupervisor_(email) {
+  try {
+    if (!email) return '';
+    var emailN = email.toLowerCase().trim();
+    var sheet  = SpreadsheetApp.openById(SS_ID).getSheetByName('Supervisores');
+    if (!sheet) return '';
+    var dados = sheet.getDataRange().getValues();
+    for (var i = 1; i < dados.length; i++) {
+      if (String(dados[i][COL_SUP.EMAIL_SUP] || '').toLowerCase().trim() === emailN) {
+        return String(dados[i][COL_SUP.CPF] || '');
+      }
+    }
+    return '';
+  } catch (e) { return ''; }
+}
+
+/** Busca CPF do coordenador ativo pelo curso na aba Coordenadores. */
+function _ckObterCpfCoordenador_(curso) {
+  try {
+    if (!curso) return '';
+    var cursoN = curso.trim().toLowerCase();
+    var sheet  = SpreadsheetApp.openById(SS_ID).getSheetByName('Coordenadores');
+    if (!sheet) return '';
+    var dados = sheet.getDataRange().getValues();
+    for (var i = 1; i < dados.length; i++) {
+      if (String(dados[i][6] || '').trim().toLowerCase() === cursoN
+          && String(dados[i][8] || '').trim() === 'Ativo') {
+        return String(dados[i][0] || '');  // CPF = índice 0
+      }
+    }
+    return '';
+  } catch (e) { return ''; }
+}
+
+/**
+ * Monta o objeto de assinatura eletrônica para um ator do checklist.
+ * Busca nome, CPF e e-mail de acordo com o ator.
+ */
+function _buildAssinaturaAtor_(ator, sol, dataHora) {
+  try {
+    var nome = '', cpf = '', email = '';
+    switch (ator) {
+      case 'orientador':
+        nome  = String(sol.nomeOrientador  || '');
+        email = String(sol.emailOrientador || '');
+        cpf   = _ckObterCpfOrientador_(email);
+        break;
+      case 'supervisor':
+        nome  = String(sol.nomeSupervisor  || '');
+        email = String(sol.emailSupervisor || '');
+        cpf   = _ckObterCpfSupervisor_(email);
+        break;
+      case 'coordenador':
+        nome  = _ckObterNomeCoordenador_(String(sol.curso || ''));
+        email = _ckObterEmailCoordenador_(String(sol.curso || ''));
+        cpf   = _ckObterCpfCoordenador_(String(sol.curso  || ''));
+        break;
+    }
+    return { nome: nome, cpf: cpf, email: email, dataHora: String(dataHora || '') };
+  } catch (e) {
+    return { nome: '', cpf: '', email: '', dataHora: String(dataHora || '') };
+  }
+}
+
+/** Notifica o coordenador que é sua vez no checklist (magic-link). */
+function _notificarCoordenadorChecklist_(idEstagio, checklist) {
+  var sol = _obterDadosSolicitacaoCompleto_(idEstagio);
+  var emailCoordenador = _ckObterEmailCoordenador_(sol.curso || '');
+  if (!emailCoordenador) {
+    logErro_('_notificarCoordenadorChecklist_', new Error('E-mail do coordenador não encontrado para o curso: ' + (sol.curso || '')));
+    return;
+  }
+  var token        = checklist.coordenador.token;
+  var urlChecklist = BASE_URL_SGE_ + '/checklist/?id=' + encodeURIComponent(idEstagio)
+                   + '&token=' + encodeURIComponent(token);
+  MAIL.enviarEmailChecklistAtor({
+    idEstagio:       idEstagio,
+    nomeEstudante:   String(sol.nomeEstudante   || ''),
+    curso:           String(sol.curso           || ''),
+    nomeEmpresa:     String(sol.nomeEmpresa     || ''),
+    nomeSupervisor:  _ckObterNomeCoordenador_(String(sol.curso || '')),
+    labelAtor:       LABELS_ATORES_CK_.coordenador,
+    prazoVencimento: checklist.coordenador.prazoVencimento || '',
+    email:           emailCoordenador,
+    urlChecklist:    urlChecklist,
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Geração do PDF do Checklist
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Gera um PDF do checklist com todas as informações e assinaturas eletrônicas.
+ * Salva na pasta do estágio no Drive e armazena a URL no checklist.
+ *
+ * @param {string} idEstagio
+ * @param {Object} checklist  Objeto completo do checklist (já com assinaturas)
+ */
+function gerarPdfChecklist_(idEstagio, checklist) {
+  var sol = _obterDadosSolicitacaoCompleto_(idEstagio);
+  var urlValidacao = BASE_URL_SGE_ + '/validar/?id=' + encodeURIComponent(idEstagio);
+
+  // ── Cria documento Google Docs ─────────────────────────────────────────────
+  var docName = 'Checklist — ' + String(sol.nomeEstudante || idEstagio).replace(/[\/\\]/g, '-');
+  var doc  = DocumentApp.create(docName);
+  var body = doc.getBody();
+
+  var AZUL    = '#1d4ed8';
+  var CINZA   = '#6b7280';
+  var PRETO   = '#111827';
+  var BRANCO  = '#ffffff';
+
+  // Margens
+  body.setMarginTop(36);
+  body.setMarginBottom(36);
+  body.setMarginLeft(48);
+  body.setMarginRight(48);
+
+  // ── Cabeçalho ─────────────────────────────────────────────────────────────
+  // Logo (tenta buscar do Drive, se configurado)
+  var logoId = '';
+  try { logoId = PropertiesService.getScriptProperties().getProperty('config_logo_drive_id') || ''; } catch (_) {}
+  if (logoId) {
+    try {
+      var logoFile = DriveApp.getFileById(logoId);
+      var logoBlob = logoFile.getBlob();
+      var logoImg  = body.appendImage(logoBlob);
+      logoImg.setWidth(60).setHeight(60);
+    } catch (_) {}
+  }
+
+  var cabPar = body.appendParagraph('IFRS Campus Rio Grande — Central de Estágios');
+  cabPar.setHeading(DocumentApp.ParagraphHeading.HEADING1);
+  cabPar.getChild(0).setForegroundColor(AZUL).setBold(true);
+  cabPar.setAlignment(DocumentApp.HorizontalAlignment.CENTER);
+
+  var subCabPar = body.appendParagraph('CHECKLIST DE ESTÁGIO — CIÊNCIA E VERACIDADE DAS INFORMAÇÕES');
+  subCabPar.getChild(0).setForegroundColor(CINZA).setBold(true);
+  subCabPar.setAlignment(DocumentApp.HorizontalAlignment.CENTER);
+
+  body.appendParagraph('');
+
+  var _linha = function (label, valor) {
+    var p = body.appendParagraph('');
+    var bold = p.appendText(label + ': ');
+    bold.setBold(true).setForegroundColor(PRETO);
+    var normal = p.appendText(String(valor || '—'));
+    normal.setBold(false).setForegroundColor(PRETO);
+  };
+
+  var _secao = function (titulo) {
+    body.appendParagraph('');
+    var p = body.appendParagraph(titulo);
+    p.getChild(0).setForegroundColor(AZUL).setBold(true);
+    p.setSpacingBefore(6);
+    p.setSpacingAfter(2);
+    var linha = body.appendHorizontalRule();
+  };
+
+  // ── Dados do Estágio ───────────────────────────────────────────────────────
+  _secao('DADOS DO ESTÁGIO');
+  _linha('ID do Estágio', idEstagio);
+  _linha('Estudante', sol.nomeEstudante);
+  _linha('Matrícula', sol.matricula);
+  _linha('Curso', sol.curso);
+  _linha('Modalidade', _ckDerivarModalidade_(String(sol.curso || '')));
+  _linha('Turno / Semestre', (sol.turno || '') + (sol.semestre ? ' · ' + sol.semestre + 'º sem.' : ''));
+  _linha('E-mail Institucional', sol.emailEstudante);
+  _linha('Telefone', sol.telefone);
+  if (sol.nomeResp) {
+    body.appendParagraph('');
+    _linha('Responsável Legal', sol.nomeResp);
+    _linha('CPF do Responsável', sol.cpfResp);
+  }
+
+  _secao('ENTIDADE CONCEDENTE');
+  _linha('Empresa / Organização', sol.nomeEmpresa);
+  _linha('Tipo de Estágio', sol.tipoEstagio);
+  if (sol.cnpjEmpresa) _linha('CNPJ', sol.cnpjEmpresa);
+
+  _secao('SUPERVISOR NA EMPRESA');
+  _linha('Nome', sol.nomeSupervisor);
+  _linha('E-mail', sol.emailSupervisor);
+
+  _secao('PERÍODO E ATIVIDADES');
+  _linha('Início', _fmtDataCk_(sol.dataInicio));
+  _linha('Término', _fmtDataCk_(sol.dataTermino));
+  _linha('Carga Horária', sol.cargaHoraria ? sol.cargaHoraria + ' h/semana' : '');
+  _linha('Horários', sol.horario);
+  _linha('Plano de Atividades', sol.planoAtividades);
+
+  _secao('ORIENTADOR E COORDENADOR');
+  _linha('Orientador(a) de Estágio', sol.nomeOrientador);
+  _linha('Coordenador(a) do Curso', _ckObterNomeCoordenador_(String(sol.curso || '')));
+
+  // ── Assinaturas Eletrônicas ────────────────────────────────────────────────
+  body.appendParagraph('');
+  _secao('ASSINATURAS ELETRÔNICAS');
+
+  var fmtData = function (iso) {
+    if (!iso) return '—';
+    try {
+      return Utilities.formatDate(new Date(iso), Session.getScriptTimeZone(), 'dd/MM/yyyy HH:mm:ss');
+    } catch (_) { return String(iso); }
+  };
+
+  var _blocoAssinatura = function (titulo, sig) {
+    body.appendParagraph('');
+    var titP = body.appendParagraph(titulo);
+    titP.getChild(0).setBold(true).setForegroundColor(PRETO);
+    if (!sig || !sig.nome) {
+      body.appendParagraph('(não registrada)').getChild(0).setForegroundColor(CINZA).setItalic(true);
+      return;
+    }
+    _linha('Nome', sig.nome);
+    _linha('CPF', sig.cpf);
+    _linha('E-mail', sig.email);
+    _linha('Data e Hora', fmtData(sig.dataHora));
+    var rodape = body.appendParagraph('Assinatura realizada eletronicamente conforme os termos do SGE — IFRS Campus Rio Grande.');
+    rodape.getChild(0).setFontSize(8).setForegroundColor(CINZA).setItalic(true);
+  };
+
+  _blocoAssinatura('1. Estagiário(a)', checklist.assinaturaEstudante);
+  _blocoAssinatura('2. Orientador(a) de Estágio', checklist.orientador && checklist.orientador.assinatura);
+  _blocoAssinatura('3. Supervisor(a) na Empresa',  checklist.supervisor && checklist.supervisor.assinatura);
+  _blocoAssinatura('4. Coordenador(a) de Curso',   checklist.coordenador && checklist.coordenador.assinatura);
+
+  // ── QR Code de Validação ───────────────────────────────────────────────────
+  body.appendParagraph('');
+  _secao('VALIDAÇÃO DO DOCUMENTO');
+  try {
+    var qrUrl  = 'https://chart.googleapis.com/chart?cht=qr&chs=150x150&chld=M|0&chl='
+               + encodeURIComponent(urlValidacao);
+    var qrBlob = UrlFetchApp.fetch(qrUrl).getBlob().setName('qrcode.png');
+    var qrImg  = body.appendImage(qrBlob);
+    qrImg.setWidth(100).setHeight(100);
+  } catch (_qr) {}
+  var validPar = body.appendParagraph('Verifique a autenticidade em: ' + urlValidacao);
+  validPar.getChild(0).setFontSize(9).setForegroundColor(CINZA);
+
+  var rodapeFinal = body.appendParagraph(
+    'Documento gerado automaticamente pelo SGE — IFRS Campus Rio Grande · '
+    + Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'dd/MM/yyyy HH:mm:ss')
+  );
+  rodapeFinal.getChild(0).setFontSize(8).setForegroundColor(CINZA).setItalic(true);
+  rodapeFinal.setAlignment(DocumentApp.HorizontalAlignment.CENTER);
+
+  doc.saveAndClose();
+
+  // ── Exporta como PDF ───────────────────────────────────────────────────────
+  var docFile = DriveApp.getFileById(doc.getId());
+  var pdfBlob = docFile.getAs('application/pdf').setName(docName + '.pdf');
+
+  // Salva na pasta do estágio (se existir) ou na raiz
+  var pdfFile;
+  var driveUrl = String(sol.driveUrl || '');
+  if (driveUrl) {
+    try {
+      // Extrai ID da pasta a partir da URL do Drive
+      var matchId = driveUrl.match(/[-\w]{25,}/);
+      if (matchId) {
+        var pastaEst = DriveApp.getFolderById(matchId[0]);
+        pdfFile = pastaEst.createFile(pdfBlob);
+      }
+    } catch (_pd) {}
+  }
+  if (!pdfFile) {
+    pdfFile = DriveApp.createFile(pdfBlob);
+  }
+  pdfFile.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+
+  // Remove o doc temporário (mantém apenas o PDF)
+  try { docFile.setTrashed(true); } catch (_tr) {}
+
+  // Salva URL no checklist
+  checklist.urlPdfChecklist = pdfFile.getUrl();
+  salvarChecklist_(idEstagio, checklist);
+
+  return pdfFile.getUrl();
 }

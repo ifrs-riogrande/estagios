@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Validação de Documento — Central de Estágios IFRS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/base.css">
+  <link rel="stylesheet" href="../assets/css/components.css">
+  <link rel="stylesheet" href="../assets/css/layout.css">
+  <style>
+    .val-card {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-6);
+      margin-bottom: var(--space-5);
+    }
+    .val-ok {
+      background: var(--color-success-light);
+      border-color: var(--color-success-border);
+    }
+    .val-nok {
+      background: var(--color-error-light);
+      border-color: var(--color-error-border);
+    }
+    .val-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-2);
+      font-size: var(--font-size-sm);
+      font-weight: var(--font-weight-semibold);
+      padding: var(--space-2) var(--space-4);
+      border-radius: 9999px;
+      margin-bottom: var(--space-4);
+    }
+    .val-badge--ok  { background: var(--color-success); color: #fff; }
+    .val-badge--nok { background: var(--color-error);   color: #fff; }
+    .val-title {
+      font-size: var(--font-size-xl);
+      font-weight: var(--font-weight-semibold);
+      color: var(--color-text);
+      margin-bottom: var(--space-2);
+    }
+    .val-subtitle {
+      font-size: var(--font-size-sm);
+      color: var(--color-text-muted);
+      margin-bottom: var(--space-5);
+    }
+    .val-info-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-3) var(--space-6);
+    }
+    @media (max-width: 600px) { .val-info-grid { grid-template-columns: 1fr; } }
+    .val-info-label {
+      font-size: var(--font-size-xs);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      color: var(--color-text-muted);
+      display: block;
+      margin-bottom: 2px;
+    }
+    .val-info-value {
+      font-size: var(--font-size-sm);
+      font-weight: 500;
+      color: var(--color-text);
+      word-break: break-word;
+    }
+    .val-sig-grid {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-4);
+    }
+    .val-sig-item {
+      display: grid;
+      grid-template-columns: 36px 1fr;
+      gap: var(--space-3);
+      align-items: flex-start;
+      padding: var(--space-4);
+      background: var(--color-bg);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+    }
+    .val-sig-num {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--color-primary);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: var(--font-size-sm);
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+    .val-sig-num--ok  { background: var(--color-success); }
+    .val-sig-num--nok { background: var(--color-border); color: var(--color-text-muted); }
+    .val-sig-body {}
+    .val-sig-role {
+      font-size: var(--font-size-xs);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      color: var(--color-text-muted);
+      margin-bottom: var(--space-1);
+    }
+    .val-sig-nome {
+      font-size: var(--font-size-base);
+      font-weight: 600;
+      color: var(--color-text);
+      margin-bottom: var(--space-2);
+    }
+    .val-sig-meta {
+      font-size: var(--font-size-xs);
+      color: var(--color-text-muted);
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-2) var(--space-4);
+    }
+    .val-sig-missing {
+      font-size: var(--font-size-sm);
+      color: var(--color-text-muted);
+      font-style: italic;
+    }
+    .val-pdf-link {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-2);
+      font-size: var(--font-size-sm);
+      font-weight: 600;
+      color: var(--color-primary);
+      text-decoration: none;
+      padding: var(--space-3) var(--space-4);
+      border: 1px solid var(--color-primary);
+      border-radius: var(--radius-md);
+      transition: background .15s;
+    }
+    .val-pdf-link:hover { background: var(--color-info-light); }
+    .val-skeleton {
+      height: 200px;
+      background: linear-gradient(90deg, var(--color-border) 25%, #e9edf3 50%, var(--color-border) 75%);
+      background-size: 200% 100%;
+      border-radius: var(--radius-lg);
+      animation: shimmer 1.4s infinite;
+    }
+    @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+  </style>
+</head>
+<body>
+  <header id="app-header">
+    <div class="container">
+      <div class="header-inner">
+        <a href="../index.html" class="header-brand">
+          <div class="header-logo-fallback" aria-hidden="true">IFRS</div>
+          <div class="header-brand-text">
+            <span class="header-brand-name">Central de Estágios</span>
+            <span class="header-brand-sub">IFRS Campus Rio Grande</span>
+          </div>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <section class="page-hero">
+    <div class="container">
+      <h1>Validação de Documento</h1>
+      <p>Verifique a autenticidade das assinaturas eletrônicas do Checklist de Estágio.</p>
+    </div>
+  </section>
+
+  <main id="main-content">
+    <div class="container" style="padding-top:var(--space-8);padding-bottom:var(--space-12);">
+      <div style="max-width:680px;margin:0 auto;">
+
+        <!-- Loading -->
+        <div id="val-loading">
+          <div class="val-skeleton"></div>
+        </div>
+
+        <!-- Conteúdo -->
+        <div id="val-content" hidden></div>
+
+        <!-- Erro -->
+        <div id="val-error" hidden></div>
+
+      </div>
+    </div>
+  </main>
+
+  <footer id="app-footer">
+    <div class="container">
+      <div class="footer-inner">
+        <span class="footer-copy">&copy; <script>document.write(new Date().getFullYear())</script> Central de Estágios — IFRS Campus Rio Grande</span>
+        <nav class="footer-links">
+          <a href="mailto:estagios@riogrande.ifrs.edu.br">estagios@riogrande.ifrs.edu.br</a>
+        </nav>
+      </div>
+    </div>
+  </footer>
+
+  <script src="../assets/js/utils.js"></script>
+  <script src="../assets/js/api.js"></script>
+  <script>
+    'use strict';
+
+    document.addEventListener('DOMContentLoaded', function () {
+      var params = new URLSearchParams(window.location.search);
+      var id     = params.get('id') || '';
+
+      if (!id) {
+        mostrarErro('Parâmetro <code>id</code> não encontrado na URL. Verifique o QR Code ou link recebido.');
+        return;
+      }
+
+      carregarValidacao(id);
+    });
+
+    async function carregarValidacao(id) {
+      try {
+        var dados = await API.get('validarChecklist', { id: id });
+        renderizarValidacao(dados);
+      } catch (err) {
+        mostrarErro(err.message || 'Não foi possível validar o documento. Tente novamente ou entre em contato com o setor de estágios.');
+      }
+    }
+
+    function renderizarValidacao(d) {
+      document.getElementById('val-loading').hidden = true;
+
+      var valido = !!d.valido;
+
+      var fmtDH = function (iso) {
+        if (!iso) return '—';
+        try {
+          return new Date(iso).toLocaleString('pt-BR', {
+            day: '2-digit', month: '2-digit', year: 'numeric',
+            hour: '2-digit', minute: '2-digit', second: '2-digit',
+          });
+        } catch (_) { return iso; }
+      };
+
+      var fmtD = function (iso) {
+        if (!iso) return '—';
+        try {
+          return new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        } catch (_) { return iso; }
+      };
+
+      var v = function (val) { return escapeHtml(String(val || '—')); };
+
+      // ── Cabeçalho de status ──────────────────────────────────────────────
+      var html = '<div class="val-card ' + (valido ? 'val-ok' : 'val-nok') + '">';
+      html += '<span class="val-badge val-badge--' + (valido ? 'ok' : 'nok') + '">';
+      html += valido ? '✓ Documento Autêntico' : '⚠ Documento Pendente ou Inválido';
+      html += '</span>';
+      html += '<div class="val-title">' + v(d.nomeEstudante) + '</div>';
+      html += '<div class="val-subtitle">' + v(d.curso) + (d.nomeEmpresa ? ' · ' + escapeHtml(d.nomeEmpresa) : '') + '</div>';
+
+      html += '<div class="val-info-grid">';
+      html += '<div><span class="val-info-label">ID do Estágio</span><span class="val-info-value">' + v(d.idEstagio) + '</span></div>';
+      html += '<div><span class="val-info-label">Conclusão do Checklist</span><span class="val-info-value">' + fmtDH(d.dataGeracao) + '</span></div>';
+      html += '</div>';
+
+      if (d.urlPdf) {
+        html += '<div style="margin-top:var(--space-5);">';
+        html += '<a href="' + escapeHtml(d.urlPdf) + '" target="_blank" rel="noopener" class="val-pdf-link">';
+        html += '<svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clip-rule="evenodd"/></svg>';
+        html += 'Abrir PDF do Checklist ↗</a>';
+        html += '</div>';
+      }
+
+      html += '</div>'; // .val-card
+
+      // ── Assinaturas ──────────────────────────────────────────────────────
+      html += '<div class="val-card">';
+      html += '<h2 style="font-size:var(--font-size-base);font-weight:700;color:var(--color-text);margin-bottom:var(--space-5);">🖊 Assinaturas Eletrônicas</h2>';
+      html += '<div class="val-sig-grid">';
+
+      var sigs = [
+        { num: 1, role: 'Estagiário(a)',         sig: d.assinaturas && d.assinaturas.estudante   },
+        { num: 2, role: 'Orientador(a) de Estágio', sig: d.assinaturas && d.assinaturas.orientador  },
+        { num: 3, role: 'Supervisor(a) na Empresa', sig: d.assinaturas && d.assinaturas.supervisor  },
+        { num: 4, role: 'Coordenador(a) de Curso',  sig: d.assinaturas && d.assinaturas.coordenador },
+      ];
+
+      sigs.forEach(function (item) {
+        var temSig = !!(item.sig && item.sig.nome);
+        html += '<div class="val-sig-item">';
+        html += '<div class="val-sig-num ' + (temSig ? 'val-sig-num--ok' : 'val-sig-num--nok') + '">' + (temSig ? '✓' : item.num) + '</div>';
+        html += '<div class="val-sig-body">';
+        html += '<div class="val-sig-role">' + escapeHtml(item.role) + '</div>';
+        if (temSig) {
+          html += '<div class="val-sig-nome">' + v(item.sig.nome) + '</div>';
+          html += '<div class="val-sig-meta">';
+          if (item.sig.cpf)   html += '<span>CPF: ' + v(item.sig.cpf)   + '</span>';
+          if (item.sig.email) html += '<span>E-mail: ' + v(item.sig.email) + '</span>';
+          if (item.sig.dataHora) html += '<span>Assinado em: ' + fmtDH(item.sig.dataHora) + '</span>';
+          html += '</div>';
+        } else {
+          html += '<div class="val-sig-missing">Assinatura não registrada</div>';
+        }
+        html += '</div></div>';
+      });
+
+      html += '</div></div>'; // .val-sig-grid + .val-card
+
+      // ── Rodapé informativo ───────────────────────────────────────────────
+      html += '<p style="font-size:var(--font-size-xs);color:var(--color-text-muted);text-align:center;margin-top:var(--space-6);">';
+      html += 'Os dados de CPF e e-mail são exibidos de forma parcial para proteger a privacidade dos signatários.<br>';
+      html += 'Para verificação completa, entre em contato com o Setor de Estágios do IFRS Campus Rio Grande.';
+      html += '</p>';
+
+      var contentEl = document.getElementById('val-content');
+      contentEl.innerHTML = html;
+      contentEl.hidden = false;
+    }
+
+    function mostrarErro(msg) {
+      document.getElementById('val-loading').hidden = true;
+      var errEl = document.getElementById('val-error');
+      errEl.hidden = false;
+      errEl.innerHTML = '<div class="alert alert-error" role="alert"><strong>Erro:</strong> ' + msg + '</div>';
+    }
+  </script>
+</body>
+</html>

@@ -395,6 +395,14 @@ function solicitarEstagio_(dados) {
       dataInicio:      dataInicio,
       nomeAgente:      nomeAgente,
       tokenOrientador: aceiteToken,
+      // Assinatura eletrônica do estagiário — registrada no momento da submissão
+      assinaturaEstudante: {
+        nome:         String(estudante.nome      || ''),
+        cpf:          String(estudante.cpf       || ''),
+        email:        String(estudante.emailInst || tokenInfo.email || ''),
+        dataHora:     now.toISOString(),
+        aceitouTermo: true,
+      },
     });
   } catch (eCk) { logErro_('solicitarEstagio_.checklist', eCk); }
 

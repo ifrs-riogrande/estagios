@@ -525,6 +525,14 @@
                   </label>
                 </div>
                 <span id="decl-comunicacoes-error" class="form-error hidden" role="alert"></span>
+
+                <div class="form-check" style="margin-top:var(--space-4);padding-top:var(--space-4);border-top:1px solid var(--color-border);">
+                  <input type="checkbox" id="decl-termo-ciencia" name="declTermoCiencia" required aria-required="true" aria-describedby="decl-termo-ciencia-error">
+                  <label class="form-check-label required" for="decl-termo-ciencia" style="font-weight:600;">
+                    ✍️ Termo de Ciência e Veracidade — Ao marcar esta opção, declaro que todas as informações fornecidas nesta solicitação são verdadeiras e que estou ciente das regras de estágio do IFRS Campus Rio Grande. Esta marcação constitui minha assinatura eletrônica neste documento.
+                  </label>
+                </div>
+                <span id="decl-termo-ciencia-error" class="form-error hidden" role="alert"></span>
               </div>
             </div>
           </div>
@@ -998,6 +1006,7 @@
       if (!document.getElementById('decl-assinaturas').checked)  fail('decl-assinaturas', 'Aceite esta declaração para continuar.');
       if (!document.getElementById('decl-relatorios').checked)   fail('decl-relatorios', 'Aceite esta declaração para continuar.');
       if (!document.getElementById('decl-comunicacoes').checked) fail('decl-comunicacoes', 'Aceite esta declaração para continuar.');
+      if (!document.getElementById('decl-termo-ciencia').checked) fail('decl-termo-ciencia', 'Você precisa assinar eletronicamente o Termo de Ciência e Veracidade para prosseguir.');
 
       if (firstInvalid) {
         document.getElementById(firstInvalid)?.focus();

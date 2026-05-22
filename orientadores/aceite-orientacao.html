@@ -255,6 +255,18 @@
                 placeholder="Alguma observação sobre a solicitação ou o estágio?"></textarea>
             </div>
 
+            <!-- Termo de Ciência e Veracidade -->
+            <div id="ck-termo-section" style="background:#eff6ff;border:1px solid #93c5fd;border-radius:var(--radius-lg);padding:var(--space-5);margin-bottom:var(--space-5);">
+              <p style="font-size:var(--font-size-sm);font-weight:600;color:var(--color-text);margin-bottom:var(--space-3);">✍️ Termo de Ciência e Veracidade</p>
+              <div style="display:flex;align-items:flex-start;gap:var(--space-3);">
+                <input type="checkbox" id="ck-aceito-termo" style="margin-top:3px;width:16px;height:16px;flex-shrink:0;accent-color:#1d4ed8;cursor:pointer;">
+                <label for="ck-aceito-termo" style="font-size:var(--font-size-sm);color:var(--color-text);cursor:pointer;line-height:1.6;">
+                  Declaro que verifiquei os documentos e informações acima e que aceito formalmente a orientação deste estágio. Estou ciente de que esta marcação constitui minha assinatura eletrônica neste checklist, com validade no âmbito do SGE — IFRS Campus Rio Grande.
+                </label>
+              </div>
+              <p id="ck-termo-error" hidden style="color:#dc2626;font-size:var(--font-size-xs);margin-top:var(--space-2);font-weight:600;">⚠ Você precisa assinar o Termo de Ciência e Veracidade para confirmar.</p>
+            </div>
+
             <!-- Ações -->
             <div class="ck-actions">
               <button type="button" id="btn-ajuste" class="btn btn-warning">
@@ -427,16 +439,24 @@
         + '<div class="proc-step">'
         +   '<div class="proc-dot proc-dot--pending">4</div>'
         +   '<div class="proc-step-body">'
-        +     '<div class="proc-step-label">Setor de Estágios</div>'
-        +     '<div class="proc-step-meta">Aguardando etapas anteriores</div>'
+        +     '<div class="proc-step-label">Coordenador(a) de Curso</div>'
+        +     '<div class="proc-step-meta">Aguardando supervisor</div>'
         +   '</div>'
         + '</div>'
 
         + '<div class="proc-step">'
         +   '<div class="proc-dot proc-dot--pending">5</div>'
         +   '<div class="proc-step-body">'
-        +     '<div class="proc-step-label">Assinaturas e ativação do estágio</div>'
-        +     '<div class="proc-step-meta">TCE · Todas as partes · Direção</div>'
+        +     '<div class="proc-step-label">Setor de Estágios</div>'
+        +     '<div class="proc-step-meta">Aguardando etapas anteriores</div>'
+        +   '</div>'
+        + '</div>'
+
+        + '<div class="proc-step">'
+        +   '<div class="proc-dot proc-dot--pending">6</div>'
+        +   '<div class="proc-step-body">'
+        +     '<div class="proc-step-label">PDF gerado + Assinaturas TCE + Ativação</div>'
+        +     '<div class="proc-step-meta">Checklist PDF · TCE · Todas as partes · Direção</div>'
         +   '</div>'
         + '</div>'
 
@@ -676,6 +696,18 @@
         showFormFeedback('feedback-ck', 'error', 'Atenção',
           'Selecione "Sim, aceito orientar" antes de submeter o checklist.');
         return;
+      }
+
+      // Termo de ciência (obrigatório para aprovação)
+      if (decisao === 'aprovado') {
+        var termoCb    = document.getElementById('ck-aceito-termo');
+        var termoError = document.getElementById('ck-termo-error');
+        if (termoCb && !termoCb.checked) {
+          if (termoError) termoError.hidden = false;
+          termoCb.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          return;
+        }
+        if (termoError) termoError.hidden = true;
       }
 
       // Coleta itens

@@ -510,6 +510,18 @@
               placeholder="Informe observações gerais sobre a verificação…"></textarea>
           </div>
 
+          <!-- Termo de Ciência e Veracidade -->
+          <div id="ck-termo-section" style="background:#eff6ff;border:1px solid #93c5fd;border-radius:var(--radius-lg);padding:var(--space-5);margin-bottom:var(--space-5);">
+            <p style="font-size:var(--font-size-sm);font-weight:600;color:var(--color-text);margin-bottom:var(--space-3);">✍️ Termo de Ciência e Veracidade</p>
+            <div style="display:flex;align-items:flex-start;gap:var(--space-3);">
+              <input type="checkbox" id="ck-aceito-termo" style="margin-top:3px;width:16px;height:16px;flex-shrink:0;accent-color:#1d4ed8;cursor:pointer;">
+              <label for="ck-aceito-termo" style="font-size:var(--font-size-sm);color:var(--color-text);cursor:pointer;line-height:1.6;">
+                Declaro que verifiquei as informações acima e que elas estão corretas. Estou ciente de que esta marcação constitui minha assinatura eletrônica neste documento de checklist de estágio, com validade no âmbito do Sistema de Gestão de Estágios do IFRS Campus Rio Grande.
+              </label>
+            </div>
+            <p id="ck-termo-error" hidden style="color:var(--color-error);font-size:var(--font-size-xs);margin-top:var(--space-2);font-weight:600;">⚠ Você precisa assinar o Termo de Ciência e Veracidade para confirmar.</p>
+          </div>
+
           <!-- Ações -->
           <div class="ck-actions">
             <button class="btn btn-warning" id="btn-ajuste" type="button">
@@ -547,15 +559,17 @@
 
   // ── Constantes ────────────────────────────────────────────────
   const LABELS_ATORES = {
-    admin:      'Setor de Estágios',
-    orientador: 'Orientador(a) de Estágio',
-    supervisor: 'Supervisor(a) na Empresa',
+    admin:       'Setor de Estágios',
+    orientador:  'Orientador(a) de Estágio',
+    supervisor:  'Supervisor(a) na Empresa',
+    coordenador: 'Coordenador(a) de Curso',
   };
 
   const BADGE_COLORS = {
-    admin:      'var(--color-primary)',
-    orientador: 'var(--color-secondary)',
-    supervisor: 'var(--color-accent)',
+    admin:       'var(--color-primary)',
+    orientador:  'var(--color-secondary)',
+    supervisor:  'var(--color-accent)',
+    coordenador: '#7c3aed',
   };
 
   // ── Estado ────────────────────────────────────────────────────
@@ -629,7 +643,7 @@
 
     // Compara com e-mails dos atores
     if (ck._emailAtores) {
-      const atores = ['orientador', 'supervisor'];
+      const atores = ['orientador', 'supervisor', 'coordenador'];
       for (const ator of atores) {
         const e = (ck._emailAtores[ator] || '').toLowerCase();
         if (e && e === emailLower) return ator;
@@ -805,24 +819,36 @@
         ${supFez ? `<div class="proc-atores"><span class="proc-ator-chip ${chipCls(aSup.status)}">${chipIcon(aSup.status)}${statusLabel(aSup.status)}</span></div>` : ''}
       </div></div>`;
 
-    /* 4 — Setor de Estágios (Admin) */
+    /* 4 — Coordenador(a) de Curso */
+    const aCrd = hist.coordenador || {};
+    const crdFez = aCrd.status === 'aprovado' || aCrd.status === 'ajuste';
+    const crdAtivo = hist.etapaAtiva === 'coordenador';
+    steps += `<div class="proc-step">
+      <div class="proc-dot ${crdFez ? dotCls(aCrd.status) : (crdAtivo ? 'proc-dot--active' : 'proc-dot--pending')}">${dotIcon(aCrd.status,'4')}</div>
+      <div class="proc-step-body">
+        <div class="proc-step-label">Coordenador(a) de Curso</div>
+        <div class="proc-step-meta">${escapeHtml(info.nomeCoordenador||'')}${crdFez && aCrd.data ? ' · '+fmtDH(aCrd.data) : (crdAtivo ? ' · Em verificação…' : (!supFez ? ' · Aguardando supervisor' : ' · Aguardando liberação'))}</div>
+        ${crdFez ? `<div class="proc-atores"><span class="proc-ator-chip ${chipCls(aCrd.status)}">${chipIcon(aCrd.status)}${statusLabel(aCrd.status)}</span></div>` : ''}
+      </div></div>`;
+
+    /* 5 — Setor de Estágios (Admin) */
     const aAdmin = hist.admin || {};
     const adminFez = aAdmin.status === 'aprovado' || aAdmin.status === 'ajuste';
     const adminAtivo = hist.etapaAtiva === 'admin';
     steps += `<div class="proc-step">
-      <div class="proc-dot ${adminFez ? dotCls(aAdmin.status) : (adminAtivo ? 'proc-dot--active' : 'proc-dot--pending')}">${dotIcon(aAdmin.status,'4')}</div>
+      <div class="proc-dot ${adminFez ? dotCls(aAdmin.status) : (adminAtivo ? 'proc-dot--active' : 'proc-dot--pending')}">${dotIcon(aAdmin.status,'5')}</div>
       <div class="proc-step-body">
         <div class="proc-step-label">Setor de Estágios</div>
         <div class="proc-step-meta">${adminFez ? statusLabel(aAdmin.status)+(aAdmin.data ? ' · '+fmtDH(aAdmin.data) : '') : (adminAtivo ? 'Em verificação…' : 'Aguardando etapas anteriores')}</div>
       </div></div>`;
 
-    /* 5 — Assinaturas + ativação */
+    /* 6 — PDF + Assinaturas + ativação */
     const ckOk = hist.statusGeral === 'aprovado';
     steps += `<div class="proc-step">
-      <div class="proc-dot ${ckOk ? 'proc-dot--done' : 'proc-dot--pending'}">${ckOk ? '✓' : '5'}</div>
+      <div class="proc-dot ${ckOk ? 'proc-dot--done' : 'proc-dot--pending'}">${ckOk ? '✓' : '6'}</div>
       <div class="proc-step-body">
-        <div class="proc-step-label">Assinaturas e ativação do estágio</div>
-        <div class="proc-step-meta">TCE · Todas as partes · Direção</div>
+        <div class="proc-step-label">PDF gerado + Assinaturas TCE + Ativação</div>
+        <div class="proc-step-meta">Checklist PDF · TCE · Todas as partes · Direção</div>
       </div></div>`;
 
     el.innerHTML = `<div class="proc-timeline-title">📋 Movimentações do processo</div><div class="proc-steps">${steps}</div>`;
@@ -1159,6 +1185,16 @@
     const id = new URLSearchParams(window.location.search).get('id');
     const itens     = coletarItens();
     const obsGeral  = document.getElementById('ck-obs-geral').value.trim();
+
+    // Validação: termo de ciência deve estar marcado (somente para admin e coordenador com token)
+    const termoCb    = document.getElementById('ck-aceito-termo');
+    const termoError = document.getElementById('ck-termo-error');
+    if (termoCb && !termoCb.checked && decisao === 'aprovado') {
+      if (termoError) termoError.hidden = false;
+      termoCb.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+    if (termoError) termoError.hidden = true;
 
     // Validação: todos os checkboxes marcados quando "aprovar"
     if (decisao === 'aprovado') {
