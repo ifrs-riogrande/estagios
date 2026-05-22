@@ -210,23 +210,51 @@
 
     document.addEventListener('DOMContentLoaded', function () {
       var params = new URLSearchParams(window.location.search);
-      var id     = params.get('id') || '';
+      var token  = params.get('t')  || '';   // link do QR Code / PDF (completo)
+      var id     = params.get('id') || '';   // link legado ou acesso direto por ID
 
-      if (!id) {
-        mostrarErro('Parâmetro <code>id</code> não encontrado na URL. Verifique o QR Code ou link recebido.');
+      if (!token && !id) {
+        mostrarErro('Link inválido. Escaneie o QR Code ou use o link completo impresso no documento.');
         return;
       }
 
-      carregarValidacao(id);
+      carregarValidacao(token, id);
     });
 
-    async function carregarValidacao(id) {
+    async function carregarValidacao(token, id) {
       try {
-        var dados = await API.get('validarChecklist', { id: id });
+        var params = token ? { t: token } : { id: id };
+        var dados = await API.get('validarChecklist', params);
+
+        // Acesso por ID sem token: só confirma existência, sem dados pessoais
+        if (!token && dados.aviso) {
+          renderizarApenasExistencia(dados);
+          return;
+        }
+
         renderizarValidacao(dados);
       } catch (err) {
         mostrarErro(err.message || 'Não foi possível validar o documento. Tente novamente ou entre em contato com o setor de estágios.');
       }
+    }
+
+    function renderizarApenasExistencia(d) {
+      document.getElementById('val-loading').hidden = true;
+      var valido = !!d.valido;
+      var html = '<div class="val-card ' + (valido ? 'val-ok' : 'val-nok') + '">';
+      html += '<span class="val-badge val-badge--' + (valido ? 'ok' : 'nok') + '">';
+      html += valido ? '✓ Documento Registrado' : '⚠ Documento Pendente';
+      html += '</span>';
+      html += '<div class="val-title">Estágio ' + escapeHtml(d.idEstagio || '') + '</div>';
+      html += '<div class="val-subtitle" style="margin-bottom:var(--space-4)">Este documento está registrado no sistema.</div>';
+      html += '<div style="background:var(--color-info-light);border:1px solid var(--color-info-border);border-radius:var(--radius-md);padding:var(--space-4);font-size:var(--font-size-sm);color:var(--color-text);">';
+      html += '🔒 Para visualizar os dados completos de validação (assinaturas, signatários e autenticidade), ';
+      html += 'use o <strong>QR Code</strong> ou o <strong>link completo</strong> impressos no documento PDF original.';
+      html += '</div>';
+      html += '</div>';
+      var contentEl = document.getElementById('val-content');
+      contentEl.innerHTML = html;
+      contentEl.hidden = false;
     }
 
     function renderizarValidacao(d) {

@@ -962,11 +962,36 @@ function doGetChecklist(e) {
 
     case 'validarChecklist': {
       // Endpoint público — sem autenticação
-      if (!id) return jsonError_('Parâmetro id obrigatório.', 'MISSING_PARAM');
-      var ckVal = obterChecklist_(id);
+      // Aceita ?t=<tokenValidacao> (do QR/PDF) → dados completos
+      // Aceita ?id=<idEstagio> sem token → apenas confirma existência, sem dados pessoais
+      var tokenParam = (e.parameter && e.parameter.t) || '';
+      var idVal;
+
+      if (tokenParam) {
+        // Lookup pelo token opaco (alta entropia)
+        idVal = PropertiesService.getScriptProperties().getProperty('val_' + tokenParam) || '';
+        if (!idVal) return jsonError_('Token inválido ou link expirado.', 'INVALID_TOKEN');
+      } else if (id) {
+        // ID sem token — retorna apenas existência, sem dados pessoais
+        var ckAnon = obterChecklist_(id);
+        if (!ckAnon) return jsonError_('Documento não encontrado.', 'NOT_FOUND');
+        return jsonOk_({
+          valido:    ckAnon.statusGeral === CK_STATUS.APROVADO,
+          idEstagio: id,
+          aviso:     'Para visualizar os dados completos de validação, use o QR Code ou o link completo impresso no documento PDF.',
+        });
+      } else {
+        return jsonError_('Parâmetro t (token de validação) obrigatório.', 'MISSING_PARAM');
+      }
+
+      var ckVal = obterChecklist_(idVal);
       if (!ckVal) return jsonError_('Documento não encontrado.', 'NOT_FOUND');
+      // Confirma que o token bate com o registrado no checklist
+      if (ckVal.tokenValidacao && ckVal.tokenValidacao !== tokenParam) {
+        return jsonError_('Token inválido.', 'INVALID_TOKEN');
+      }
       var solVal = {};
-      try { solVal = _obterDadosSolicitacaoCompleto_(id); } catch (_ev) {}
+      try { solVal = _obterDadosSolicitacaoCompleto_(idVal); } catch (_ev) {}
 
       var _mascaraCpf = function (s) {
         if (!s) return '—';
@@ -993,7 +1018,7 @@ function doGetChecklist(e) {
 
       return jsonOk_({
         valido:        ckVal.statusGeral === CK_STATUS.APROVADO,
-        idEstagio:     id,
+        idEstagio:     idVal,
         nomeEstudante: String(solVal.nomeEstudante || ''),
         curso:         String(solVal.curso         || ''),
         nomeEmpresa:   String(solVal.nomeEmpresa   || ''),
@@ -1315,7 +1340,14 @@ function _notificarCoordenadorChecklist_(idEstagio, checklist) {
  */
 function gerarPdfChecklist_(idEstagio, checklist) {
   var sol = _obterDadosSolicitacaoCompleto_(idEstagio);
-  var urlValidacao = BASE_URL_SGE_ + '/validar/?id=' + encodeURIComponent(idEstagio);
+
+  // Gera (ou reutiliza) token opaco de validação — alta entropia, inviável de adivinhar
+  var tokenValidacao = checklist.tokenValidacao || Utilities.getUuid();
+  checklist.tokenValidacao = tokenValidacao;
+  // Mapa reverso: permite lookup por token sem escanear todas as propriedades
+  PropertiesService.getScriptProperties().setProperty('val_' + tokenValidacao, idEstagio);
+
+  var urlValidacao = BASE_URL_SGE_ + '/validar/?t=' + encodeURIComponent(tokenValidacao);
 
   // ── Cria documento Google Docs ─────────────────────────────────────────────
   var docName = 'Checklist — ' + String(sol.nomeEstudante || idEstagio).replace(/[\/\\]/g, '-');
