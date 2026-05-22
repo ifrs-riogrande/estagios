@@ -1445,14 +1445,35 @@ function gerarPdfChecklist_(idEstagio, checklist) {
   // ── QR Code de Validação ───────────────────────────────────────────────────
   body.appendParagraph('');
   _secao('VALIDAÇÃO DO DOCUMENTO');
+
+  // Parágrafo explicativo
+  var instrPar = body.appendParagraph(
+    'Escaneie o QR Code ou acesse o link abaixo para verificar a autenticidade deste documento e conferir as assinaturas eletrônicas registradas.'
+  );
+  instrPar.getChild(0).setFontSize(9).setForegroundColor(CINZA);
+  body.appendParagraph('');
+
+  // QR Code via Google Charts API
+  var qrGerado = false;
   try {
-    var qrUrl  = 'https://chart.googleapis.com/chart?cht=qr&chs=150x150&chld=M|0&chl='
+    var qrUrl  = 'https://chart.googleapis.com/chart?cht=qr&chs=200x200&chld=M%7C1&chl='
                + encodeURIComponent(urlValidacao);
-    var qrBlob = UrlFetchApp.fetch(qrUrl).getBlob().setName('qrcode.png');
-    var qrImg  = body.appendImage(qrBlob);
-    qrImg.setWidth(100).setHeight(100);
-  } catch (_qr) {}
-  var validPar = body.appendParagraph('Verifique a autenticidade em: ' + urlValidacao);
+    var qrResp = UrlFetchApp.fetch(qrUrl, { muteHttpExceptions: true });
+    if (qrResp.getResponseCode() === 200) {
+      var qrBlob = qrResp.getBlob().setContentType('image/png').setName('qrcode.png');
+      var qrImg  = body.appendImage(qrBlob);
+      qrImg.setWidth(120).setHeight(120);
+      body.appendParagraph('');
+      qrGerado = true;
+    }
+  } catch (_qr) {
+    logErro_('gerarPdfChecklist_.qrcode', _qr);
+  }
+
+  // URL sempre presente (como fallback ou complemento ao QR)
+  var validLabel = body.appendParagraph('🔗 Link de validação:');
+  validLabel.getChild(0).setFontSize(9).setBold(true).setForegroundColor(PRETO);
+  var validPar = body.appendParagraph(urlValidacao);
   validPar.getChild(0).setFontSize(9).setForegroundColor(CINZA);
 
   var rodapeFinal = body.appendParagraph(
