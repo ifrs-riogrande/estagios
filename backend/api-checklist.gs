@@ -1415,12 +1415,18 @@ function gerarPdfChecklist_(idEstagio, checklist) {
 
   // ── Cabeçalho idêntico ao TCE ──────────────────────────────────────────────
   var hdr = doc.addHeader();
-  var _logoBlob = _obterLogoCabecalho_();
-  if (_logoBlob) {
-    var hLogoP = hdr.appendParagraph('');
-    hLogoP.setAlignment(DocumentApp.HorizontalAlignment.CENTER);
-    hLogoP.setSpacingBefore(0).setSpacingAfter(3);
-    try { hLogoP.insertInlineImage(0, _logoBlob).setWidth(54).setHeight(54); } catch (_) {}
+  // Busca blob do logo diretamente (evita problemas de escopo entre arquivos .gs)
+  try {
+    var _logoId = PropertiesService.getScriptProperties().getProperty('config_logo_drive_id');
+    if (_logoId) {
+      var _logoBlob = DriveApp.getFileById(_logoId.trim()).getBlob();
+      var hLogoP = hdr.appendParagraph('');
+      hLogoP.setAlignment(DocumentApp.HorizontalAlignment.CENTER);
+      hLogoP.setSpacingBefore(0).setSpacingAfter(3);
+      hLogoP.insertInlineImage(0, _logoBlob).setWidth(54).setHeight(54);
+    }
+  } catch (_logoErr) {
+    logErro_('gerarPdfChecklist_.logo', _logoErr);
   }
   var hP1 = hdr.appendParagraph('MINISTÉRIO DA EDUCAÇÃO');
   hP1.setAlignment(DocumentApp.HorizontalAlignment.CENTER);
