@@ -152,9 +152,6 @@ function obterPrazos_() {
     assinaturas: {
       estudante:      5,
       empresa:        5,
-      supervisor:     5,
-      orientador:     5,
-      coordenador:    5,
       centralRevisao: 3,
       direcao:        7,
       centralFinal:   3,

@@ -433,7 +433,7 @@ var MAIL = (function () {
       + blocoRejeicao
       + campo_('ID do estágio', dados.idEstagio)
       + campo_('Estudante', dados.nomeEstudante)
-      + campo_('Sua etapa', 'Etapa ' + dados.numeroEtapa + '/8 — ' + dados.labelAtor)
+      + campo_('Sua etapa', 'Etapa ' + dados.numeroEtapa + '/5 — ' + dados.labelAtor)
       + campo_('Prazo limite', dados.prazoVencimento)
       + '<p style="margin-top:24px;">'
       + '<a href="' + pageUrl + '" style="display:inline-block;background:#1d4ed8;color:#fff;'
@@ -442,7 +442,7 @@ var MAIL = (function () {
       + '<p style="font-size:13px;color:#6b7280;margin-top:12px;">'
       + 'Se o botão não funcionar, acesse: <a href="' + pageUrl + '" style="color:#6b7280;">' + pageUrl + '</a></p>';
     enviar_(dados.email,
-      '[SGE] Assine o TCE (etapa ' + dados.numeroEtapa + '/8) — ' + dados.idEstagio,
+      '[SGE] Assine o TCE (etapa ' + dados.numeroEtapa + '/5) — ' + dados.idEstagio,
       htmlBase_('Assinatura do TCE — ' + dados.labelAtor, corpo));
   }
 
@@ -464,14 +464,14 @@ var MAIL = (function () {
       + blocoRejeicao
       + campo_('ID do estágio', dados.idEstagio)
       + campo_('Estudante', dados.nomeEstudante)
-      + campo_('Sua etapa', 'Etapa ' + dados.numeroEtapa + '/8 — ' + dados.labelAtor)
+      + campo_('Sua etapa', 'Etapa ' + dados.numeroEtapa + '/5 — ' + dados.labelAtor)
       + campo_('Prazo limite', dados.prazoVencimento)
       + '<p style="margin-top:24px;">'
       + '<a href="' + pageUrl + '" style="display:inline-block;background:#1d4ed8;color:#fff;'
       + 'padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:600;">'
       + 'Acessar Fluxo de Assinaturas</a></p>';
     enviar_(dados.email,
-      '[SGE] Ação necessária — fluxo TCE etapa ' + dados.numeroEtapa + '/8 — ' + dados.idEstagio,
+      '[SGE] Ação necessária — fluxo TCE etapa ' + dados.numeroEtapa + '/5 — ' + dados.idEstagio,
       htmlBase_('Fluxo TCE — ' + dados.labelAtor, corpo));
   }
 
@@ -486,7 +486,7 @@ var MAIL = (function () {
       + instrucao + '</p>'
       + campo_('ID do estágio', dados.idEstagio)
       + campo_('Estudante', dados.nomeEstudante)
-      + campo_('Sua etapa', 'Etapa ' + dados.numeroEtapa + '/8 — ' + dados.labelAtor)
+      + campo_('Sua etapa', 'Etapa ' + dados.numeroEtapa + '/5 — ' + dados.labelAtor)
       + campo_('Prazo limite', dados.prazoVencimento)
       + '<p style="margin-top:24px;">'
       + '<a href="' + urlSistema + '" style="display:inline-block;background:#d97706;color:#fff;'

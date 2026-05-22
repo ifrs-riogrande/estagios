@@ -46,14 +46,11 @@ var ASS_STATUS = {
  *       'interno' = ator age internamente no sistema (sem gov.br)
  */
 var ETAPAS_DEF = [
-  { numero: 1, ator: 'estudante',      label: 'Estudante',                          tipo: 'govbr'   },
-  { numero: 2, ator: 'empresa',        label: 'Empresa',                            tipo: 'govbr'   },
-  { numero: 3, ator: 'supervisor',     label: 'Supervisor',                         tipo: 'govbr'   },
-  { numero: 4, ator: 'orientador',     label: 'Orientador',                         tipo: 'govbr'   },
-  { numero: 5, ator: 'coordenador',    label: 'Coordenador de Curso',               tipo: 'govbr'   },
-  { numero: 6, ator: 'centralRevisao', label: 'Central de Estágios (revisão)',      tipo: 'interno' },
-  { numero: 7, ator: 'direcao',        label: 'Direção-Geral',                      tipo: 'govbr'   },
-  { numero: 8, ator: 'centralFinal',   label: 'Central de Estágios (finalização)',  tipo: 'interno' },
+  { numero: 1, ator: 'estudante',      label: 'Estudante / Responsável Legal',      tipo: 'govbr'   },
+  { numero: 2, ator: 'empresa',        label: 'Concedente',                         tipo: 'govbr'   },
+  { numero: 3, ator: 'centralRevisao', label: 'Central de Estágios (revisão)',      tipo: 'interno' },
+  { numero: 4, ator: 'direcao',        label: 'Direção-Geral',                      tipo: 'govbr'   },
+  { numero: 5, ator: 'centralFinal',   label: 'Central de Estágios (finalização)',  tipo: 'interno' },
 ];
 
 // ── Inicialização ─────────────────────────────────────────────────────────────
@@ -146,7 +143,7 @@ function concluirEtapaAssinatura_(idEstagio, numeroEtapa, driveUrl, emailAtor) {
   etapa.versao   = 'v' + numeroEtapa + '_' + etapa.ator;
   etapa.emailAtor = emailAtor;
 
-  if (numeroEtapa === 8) {
+  if (numeroEtapa === 5) {
     // ── Fluxo concluído ──────────────────────────────────────────────────
     fluxo.statusGeral        = 'concluido';
     fluxo.timestampConclusao = new Date().toISOString();

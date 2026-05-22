@@ -297,7 +297,7 @@
           API.get('listarSolicitacoesAdmin', { authToken: token }),
           API.get('listarDocumentosAdmin',   { authToken: token }),
           API.get('listarAdendosAdmin',       { authToken: token }),
-          API.get('listarFluxosPendentesEtapa', { etapa: 6 }).catch(() => []),
+          API.get('listarFluxosPendentesEtapa', { etapa: 3 }).catch(() => []),
           apiListarHistoricoEstagio(_id).catch(() => null),
         ]);
 
@@ -730,7 +730,7 @@
           <div class="doc-card-header">
             <div>
               <div class="doc-card-title">Fluxo Digital de Assinaturas</div>
-              <div style="font-size:12px;color:var(--color-text-muted)">Etapa 6 de 8 — aguardando aprovação da Central</div>
+              <div style="font-size:12px;color:var(--color-text-muted)">Etapa 3 de 5 — aguardando aprovação da Central</div>
             </div>
             <span class="badge badge-docs">Revisão Central</span>
           </div>

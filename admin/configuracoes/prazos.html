@@ -211,42 +211,21 @@
                 </div>
               </div>
               <div class="form-group">
-                <label for="as-supervisor">Supervisor (etapa 3)</label>
-                <div class="input-dias">
-                  <input type="number" id="as-supervisor" min="1" max="60" value="5">
-                  <span>dias úteis</span>
-                </div>
-              </div>
-              <div class="form-group">
-                <label for="as-orientador">Orientador (etapa 4)</label>
-                <div class="input-dias">
-                  <input type="number" id="as-orientador" min="1" max="60" value="5">
-                  <span>dias úteis</span>
-                </div>
-              </div>
-              <div class="form-group">
-                <label for="as-coordenador">Coordenador (etapa 5)</label>
-                <div class="input-dias">
-                  <input type="number" id="as-coordenador" min="1" max="60" value="5">
-                  <span>dias úteis</span>
-                </div>
-              </div>
-              <div class="form-group">
-                <label for="as-centralRevisao">Central — Revisão (etapa 6)</label>
+                <label for="as-centralRevisao">Central — Revisão (etapa 3)</label>
                 <div class="input-dias">
                   <input type="number" id="as-centralRevisao" min="1" max="60" value="3">
                   <span>dias úteis</span>
                 </div>
               </div>
               <div class="form-group">
-                <label for="as-direcao">Direção-Geral (etapa 7)</label>
+                <label for="as-direcao">Direção-Geral (etapa 4)</label>
                 <div class="input-dias">
                   <input type="number" id="as-direcao" min="1" max="60" value="7">
                   <span>dias úteis</span>
                 </div>
               </div>
               <div class="form-group">
-                <label for="as-centralFinal">Central — Final (etapa 8)</label>
+                <label for="as-centralFinal">Central — Final (etapa 5)</label>
                 <div class="input-dias">
                   <input type="number" id="as-centralFinal" min="1" max="60" value="3">
                   <span>dias úteis</span>
@@ -300,9 +279,6 @@
 
         setVal('as-estudante',     as.estudante     ?? 5);
         setVal('as-empresa',       as.empresa       ?? 5);
-        setVal('as-supervisor',    as.supervisor    ?? 5);
-        setVal('as-orientador',    as.orientador    ?? 5);
-        setVal('as-coordenador',   as.coordenador   ?? 5);
         setVal('as-centralRevisao',as.centralRevisao?? 3);
         setVal('as-direcao',       as.direcao       ?? 7);
         setVal('as-centralFinal',  as.centralFinal  ?? 3);
@@ -334,9 +310,6 @@
           assinaturas: {
             estudante:     getVal('as-estudante'),
             empresa:       getVal('as-empresa'),
-            supervisor:    getVal('as-supervisor'),
-            orientador:    getVal('as-orientador'),
-            coordenador:   getVal('as-coordenador'),
             centralRevisao:getVal('as-centralRevisao'),
             direcao:       getVal('as-direcao'),
             centralFinal:  getVal('as-centralFinal'),
