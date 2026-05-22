@@ -1520,21 +1520,26 @@ function gerarPdfChecklist_(idEstagio, checklist) {
   instrPar.getChild(0).setFontSize(9).setForegroundColor(CINZA);
   body.appendParagraph('');
 
-  // QR Code via Google Charts API
+  // QR Code — tenta quickchart.io, fallback para Google Charts
   var qrGerado = false;
-  try {
-    var qrUrl  = 'https://chart.googleapis.com/chart?cht=qr&chs=200x200&chld=M%7C1&chl='
-               + encodeURIComponent(urlValidacao);
-    var qrResp = UrlFetchApp.fetch(qrUrl, { muteHttpExceptions: true });
-    if (qrResp.getResponseCode() === 200) {
-      var qrBlob = qrResp.getBlob().setContentType('image/png').setName('qrcode.png');
-      var qrImg  = body.appendImage(qrBlob);
-      qrImg.setWidth(120).setHeight(120);
-      body.appendParagraph('');
-      qrGerado = true;
-    }
-  } catch (_qr) {
-    logErro_('gerarPdfChecklist_.qrcode', _qr);
+  var qrApis = [
+    'https://quickchart.io/qr?size=200&margin=2&text=' + encodeURIComponent(urlValidacao),
+    'https://chart.googleapis.com/chart?cht=qr&chs=200x200&chld=M|1&chl=' + encodeURIComponent(urlValidacao),
+  ];
+  for (var qi = 0; qi < qrApis.length && !qrGerado; qi++) {
+    try {
+      var qrResp = UrlFetchApp.fetch(qrApis[qi], { muteHttpExceptions: true });
+      if (qrResp.getResponseCode() === 200) {
+        var qrBlob = qrResp.getBlob().setContentType('image/png').setName('qrcode.png');
+        var qrImg  = body.appendImage(qrBlob);
+        qrImg.setWidth(130).setHeight(130);
+        body.appendParagraph('');
+        qrGerado = true;
+      }
+    } catch (_qr) { /* tenta próxima API */ }
+  }
+  if (!qrGerado) {
+    logErro_('gerarPdfChecklist_.qrcode', new Error('Nenhuma API de QR Code respondeu com sucesso.'));
   }
 
   // URL sempre presente (como fallback ou complemento ao QR)
