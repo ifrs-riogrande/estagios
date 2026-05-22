@@ -853,26 +853,59 @@
 
     // Dados da solicitação
     html += `<div class="sol-card"><div class="sol-grid">`;
+
+    // ── Estudante ──────────────────────────────────────────────────────────
     html += `<div class="sol-divider">Estudante</div>`;
     html += `<div class="sol-full"><span class="sol-label">Nome</span>${v(info.nomeEstudante)}</div>`;
+    html += `<div><span class="sol-label">Matrícula</span>${v(info.matricula)}</div>`;
     html += `<div><span class="sol-label">Curso</span>${v(info.curso)}</div>`;
+    html += `<div><span class="sol-label">Modalidade</span>${v(info.modalidade)}</div>`;
+    html += `<div><span class="sol-label">Formando</span>${v(info.formando)}</div>`;
     html += `<div><span class="sol-label">Turno / Semestre</span>${v((info.turno||'') + (info.semestre ? ' · ' + info.semestre + 'º sem.' : ''))}</div>`;
+    html += `<div><span class="sol-label">Telefone</span>${v(info.telefoneEstudante)}</div>`;
+    html += `<div><span class="sol-label">E-mail institucional</span>${v(info.emailEstudante)}</div>`;
 
-    html += `<div class="sol-divider">Empresa e Tipo</div>`;
-    html += `<div><span class="sol-label">Empresa concedente</span>${v(info.nomeEmpresa)}</div>`;
+    // ── Responsável Legal (apenas menores) ─────────────────────────────────
+    if (info.nomeResp) {
+      html += `<div class="sol-divider">Responsável Legal</div>`;
+      html += `<div><span class="sol-label">Nome</span>${v(info.nomeResp)}</div>`;
+      html += `<div><span class="sol-label">CPF</span>${v(info.cpfResp)}</div>`;
+      if (info.telResp) html += `<div><span class="sol-label">Telefone</span>${v(info.telResp)}</div>`;
+    }
+
+    // ── Entidade Concedente ────────────────────────────────────────────────
+    html += `<div class="sol-divider">Entidade Concedente</div>`;
+    html += `<div><span class="sol-label">Nome</span>${v(info.nomeEmpresa)}</div>`;
     html += `<div><span class="sol-label">Tipo de estágio</span>${v(info.tipoEstagio)}</div>`;
+    if (info.telEmpresa) html += `<div><span class="sol-label">Telefone</span>${v(info.telEmpresa)}</div>`;
+    if (info.cnpjEmpresa) html += `<div><span class="sol-label">CNPJ</span>${v(info.cnpjEmpresa)}</div>`;
 
-    html += `<div class="sol-divider">Período</div>`;
+    // ── Supervisor ─────────────────────────────────────────────────────────
+    html += `<div class="sol-divider">Supervisor na Empresa</div>`;
+    html += `<div><span class="sol-label">Nome</span>${v(info.nomeSupervisor)}</div>`;
+    html += `<div><span class="sol-label">E-mail</span>${v(info.emailSupervisor)}</div>`;
+    if (info.formacaoSupervisor) html += `<div class="sol-full"><span class="sol-label">Formação</span>${v(info.formacaoSupervisor)}</div>`;
+
+    // ── Período e Horários ─────────────────────────────────────────────────
+    html += `<div class="sol-divider">Período e Horários</div>`;
     html += `<div><span class="sol-label">Início</span>${v(formatarData(info.dataInicio))}</div>`;
     html += `<div><span class="sol-label">Término</span>${v(formatarData(info.dataTermino))}</div>`;
     html += `<div><span class="sol-label">Carga horária</span>${v(info.cargaHoraria)}</div>`;
-    html += `<div><span class="sol-label">Horário</span>${v(info.horario)}</div>`;
+    html += `<div class="sol-full"><span class="sol-label">Dias e horários</span>${v(info.horario)}</div>`;
 
-    html += `<div class="sol-divider">Plano de Estágio</div>`;
-    html += `<div class="sol-full"><span class="sol-label">Plano de atividades</span>${v(info.planoAtividades)}</div>`;
+    // ── Descrição das atividades ───────────────────────────────────────────
+    html += `<div class="sol-divider">Plano de Atividades</div>`;
+    html += `<div class="sol-full"><span class="sol-label">Descrição das atividades</span>${v(info.planoAtividades)}</div>`;
 
-    html += `<div class="sol-divider">Orientador selecionado</div>`;
+    // ── Orientador ─────────────────────────────────────────────────────────
+    html += `<div class="sol-divider">Orientador de Estágio</div>`;
     html += `<div class="sol-full"><span class="sol-label">Orientador(a)</span>${v(info.nomeOrientador)}</div>`;
+
+    // ── Coordenador ────────────────────────────────────────────────────────
+    if (info.nomeCoordenador) {
+      html += `<div class="sol-divider">Coordenador do Curso</div>`;
+      html += `<div class="sol-full"><span class="sol-label">Coordenador(a)</span>${v(info.nomeCoordenador)}</div>`;
+    }
 
     html += `</div></div>`;
 

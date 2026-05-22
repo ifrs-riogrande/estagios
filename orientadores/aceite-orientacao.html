@@ -450,24 +450,61 @@
           ? '<p class="sol-value">' + escapeHtml(String(val)) + '</p>'
           : '<p class="sol-value" style="color:var(--color-text-muted);font-style:italic;">Não informado</p>';
       };
-      document.getElementById('sol-content').innerHTML =
-        '<div class="sol-divider">Estudante</div>'
-        + '<div class="sol-full"><span class="sol-label">Nome</span>' + v(d.nomeEstudante) + '</div>'
-        + '<div><span class="sol-label">Curso</span>' + v(d.curso) + '</div>'
-        + '<div><span class="sol-label">Turno / Semestre</span>' + v((d.turno || '') + (d.semestre ? ' · ' + d.semestre + 'º sem.' : '')) + '</div>'
+      var html = '';
 
-        + '<div class="sol-divider">Empresa e Tipo</div>'
-        + '<div><span class="sol-label">Empresa concedente</span>' + v(d.nomeEmpresa) + '</div>'
-        + '<div><span class="sol-label">Tipo de estágio</span>' + v(d.tipoEstagio) + '</div>'
+      // ── Estudante ────────────────────────────────────────────────────────
+      html += '<div class="sol-divider">Estudante</div>';
+      html += '<div class="sol-full"><span class="sol-label">Nome</span>'         + v(d.nomeEstudante)    + '</div>';
+      html += '<div><span class="sol-label">Matrícula</span>'                     + v(d.matricula)        + '</div>';
+      html += '<div><span class="sol-label">Curso</span>'                         + v(d.curso)            + '</div>';
+      html += '<div><span class="sol-label">Modalidade</span>'                    + v(d.modalidade)       + '</div>';
+      html += '<div><span class="sol-label">Formando</span>'                      + v(d.formando)         + '</div>';
+      html += '<div><span class="sol-label">Turno / Semestre</span>'              + v((d.turno || '') + (d.semestre ? ' · ' + d.semestre + 'º sem.' : '')) + '</div>';
+      html += '<div><span class="sol-label">Telefone</span>'                      + v(d.telefoneEstudante) + '</div>';
+      html += '<div><span class="sol-label">E-mail institucional</span>'          + v(d.emailEstudante)   + '</div>';
 
-        + '<div class="sol-divider">Período</div>'
-        + '<div><span class="sol-label">Início</span>' + v(d.dataInicio) + '</div>'
-        + '<div><span class="sol-label">Término</span>' + v(d.dataTermino) + '</div>'
-        + '<div><span class="sol-label">Carga horária</span>' + v(d.cargaHoraria) + '</div>'
-        + '<div><span class="sol-label">Horário</span>' + v(d.horario) + '</div>'
+      // ── Responsável Legal (menores) ──────────────────────────────────────
+      if (d.nomeResp) {
+        html += '<div class="sol-divider">Responsável Legal</div>';
+        html += '<div><span class="sol-label">Nome</span>'   + v(d.nomeResp) + '</div>';
+        html += '<div><span class="sol-label">CPF</span>'    + v(d.cpfResp)  + '</div>';
+      }
 
-        + '<div class="sol-divider">Orientador selecionado</div>'
-        + '<div class="sol-full"><span class="sol-label">Você</span>' + v(d.nomeOrientador) + '</div>';
+      // ── Entidade Concedente ──────────────────────────────────────────────
+      html += '<div class="sol-divider">Entidade Concedente</div>';
+      html += '<div><span class="sol-label">Nome</span>'           + v(d.nomeEmpresa)  + '</div>';
+      html += '<div><span class="sol-label">Tipo de estágio</span>' + v(d.tipoEstagio) + '</div>';
+      if (d.telEmpresa)  html += '<div><span class="sol-label">Telefone</span>' + v(d.telEmpresa)  + '</div>';
+      if (d.cnpjEmpresa) html += '<div><span class="sol-label">CNPJ</span>'     + v(d.cnpjEmpresa) + '</div>';
+
+      // ── Supervisor ───────────────────────────────────────────────────────
+      html += '<div class="sol-divider">Supervisor na Empresa</div>';
+      html += '<div><span class="sol-label">Nome</span>'   + v(d.nomeSupervisor)     + '</div>';
+      html += '<div><span class="sol-label">E-mail</span>' + v(d.emailSupervisor)    + '</div>';
+      if (d.formacaoSupervisor) html += '<div class="sol-full"><span class="sol-label">Formação</span>' + v(d.formacaoSupervisor) + '</div>';
+
+      // ── Período e Horários ───────────────────────────────────────────────
+      html += '<div class="sol-divider">Período e Horários</div>';
+      html += '<div><span class="sol-label">Início</span>'                + v(d.dataInicio)   + '</div>';
+      html += '<div><span class="sol-label">Término</span>'               + v(d.dataTermino)  + '</div>';
+      html += '<div><span class="sol-label">Carga horária</span>'         + v(d.cargaHoraria) + '</div>';
+      html += '<div class="sol-full"><span class="sol-label">Dias e horários</span>' + v(d.horario) + '</div>';
+
+      // ── Plano de Atividades ──────────────────────────────────────────────
+      html += '<div class="sol-divider">Plano de Atividades</div>';
+      html += '<div class="sol-full"><span class="sol-label">Descrição das atividades</span>' + v(d.planoAtividades) + '</div>';
+
+      // ── Orientador ───────────────────────────────────────────────────────
+      html += '<div class="sol-divider">Orientador de Estágio</div>';
+      html += '<div class="sol-full"><span class="sol-label">Você</span>' + v(d.nomeOrientador) + '</div>';
+
+      // ── Coordenador ──────────────────────────────────────────────────────
+      if (d.nomeCoordenador) {
+        html += '<div class="sol-divider">Coordenador do Curso</div>';
+        html += '<div class="sol-full"><span class="sol-label">Coordenador(a)</span>' + v(d.nomeCoordenador) + '</div>';
+      }
+
+      document.getElementById('sol-content').innerHTML = html;
     }
 
     // ── Itens do checklist ─────────────────────────────────────────

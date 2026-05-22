@@ -669,20 +669,43 @@ function verificarAceiteOrientador_(e) {
     }
 
     // Retorna dados da solicitação + itens do checklist do orientador
+    var _curso    = String(dados[i][COL_SOL.CURSO]            || '');
+    var _cnpj     = String(dados[i][COL_SOL.CNPJ_EMPRESA]     || '');
+    var _emailSup = String(dados[i][COL_SOL.EMAIL_SUPERVISOR]  || '');
     return jsonOk_({
-      idEstagio:       idEstagio,
-      nomeEstudante:   String(dados[i][COL_SOL.NOME_ESTUDANTE]   || ''),
-      curso:           String(dados[i][COL_SOL.CURSO]            || ''),
-      turno:           String(dados[i][COL_SOL.TURNO]            || ''),
-      semestre:        String(dados[i][COL_SOL.SEMESTRE_SOL]     || ''),
-      nomeEmpresa:     String(dados[i][COL_SOL.NOME_EMPRESA]     || ''),
-      tipoEstagio:     String(dados[i][COL_SOL.TIPO_ESTAGIO]     || ''),
-      dataInicio:      formatarData_(String(dados[i][COL_SOL.DATA_INICIO]  || '')),
-      dataTermino:     formatarData_(String(dados[i][COL_SOL.DATA_TERMINO] || '')),
-      cargaHoraria:    String(dados[i][COL_SOL.CARGA_HOR]        || ''),
-      horario:         String(dados[i][COL_SOL.HORARIO]          || ''),
-      planoAtividades: String(dados[i][COL_SOL.PLANO_ATIVIDADES] || ''),
-      nomeOrientador:  String(dados[i][COL_SOL.NOME_ORIENTADOR]  || ''),
+      idEstagio:          idEstagio,
+      // ── Estudante ─────────────────────────────────────────────
+      nomeEstudante:      String(dados[i][COL_SOL.NOME_ESTUDANTE]   || ''),
+      emailEstudante:     String(dados[i][COL_SOL.EMAIL_ESTUDANTE]  || ''),
+      matricula:          String(dados[i][COL_SOL.MATRICULA]        || ''),
+      curso:              _curso,
+      modalidade:         _ckDerivarModalidade_(_curso),
+      turno:              String(dados[i][COL_SOL.TURNO]            || ''),
+      semestre:           String(dados[i][COL_SOL.SEMESTRE_SOL]     || ''),
+      formando:           String(dados[i][COL_SOL.FORMANDO]         || ''),
+      telefoneEstudante:  String(dados[i][COL_SOL.TELEFONE]         || ''),
+      // ── Responsável Legal (menores) ───────────────────────────
+      nomeResp:           String(dados[i][COL_SOL.NOME_RESP]        || ''),
+      cpfResp:            String(dados[i][COL_SOL.CPF_RESP]         || ''),
+      // ── Empresa ───────────────────────────────────────────────
+      nomeEmpresa:        String(dados[i][COL_SOL.NOME_EMPRESA]     || ''),
+      cnpjEmpresa:        _cnpj,
+      telEmpresa:         _ckObterTelEmpresa_(_cnpj),
+      tipoEstagio:        String(dados[i][COL_SOL.TIPO_ESTAGIO]     || ''),
+      // ── Supervisor ────────────────────────────────────────────
+      nomeSupervisor:     String(dados[i][COL_SOL.NOME_SUPERVISOR]  || ''),
+      emailSupervisor:    _emailSup,
+      formacaoSupervisor: _ckObterFormacaoSupervisor_(_emailSup),
+      // ── Orientador ────────────────────────────────────────────
+      nomeOrientador:     String(dados[i][COL_SOL.NOME_ORIENTADOR]  || ''),
+      // ── Coordenador ───────────────────────────────────────────
+      nomeCoordenador:    _ckObterNomeCoordenador_(_curso),
+      // ── Período e atividades ──────────────────────────────────
+      dataInicio:         formatarData_(String(dados[i][COL_SOL.DATA_INICIO]  || '')),
+      dataTermino:        formatarData_(String(dados[i][COL_SOL.DATA_TERMINO] || '')),
+      cargaHoraria:       String(dados[i][COL_SOL.CARGA_HOR]        || ''),
+      horario:            String(dados[i][COL_SOL.HORARIO]          || ''),
+      planoAtividades:    String(dados[i][COL_SOL.PLANO_ATIVIDADES] || ''),
       // Itens do checklist do orientador para renderização na página
       checklistItens:     ck.orientador.itens || [],
       prazoVencimento:    ck.orientador.prazoVencimento || '',

@@ -818,31 +818,54 @@ function doGetChecklist(e) {
       var solDados = {};
       try { solDados = _obterDadosSolicitacaoCompleto_(id); } catch (_e) {}
 
+      var _curso = String(solDados.curso || '');
+      var _cnpj  = String(solDados.cnpjEmpresa || '');
+      var _emailSup = String(solDados.emailSupervisor || '');
+
       var infoSol = {
-        idEstagio:       id,
-        nomeEstudante:   String(solDados.nomeEstudante   || ''),
-        emailEstudante:  String(solDados.emailEstudante  || ''),
-        matricula:       String(solDados.matricula       || ''),
-        curso:           String(solDados.curso           || ''),
-        turno:           String(solDados.turno           || ''),
-        semestre:        String(solDados.semestre        || ''),
-        nomeEmpresa:     String(solDados.nomeEmpresa     || ''),
-        cnpjEmpresa:     String(solDados.cnpjEmpresa     || ''),
-        nomeSupervisor:  String(solDados.nomeSupervisor  || ''),
-        nomeOrientador:  String(solDados.nomeOrientador  || ''),
-        tipoEstagio:     String(solDados.tipoEstagio     || ''),
-        dataInicio:      String(solDados.dataInicio      || ''),
-        dataTermino:     String(solDados.dataTermino     || ''),
-        cargaHoraria:    String(solDados.cargaHoraria    || ''),
-        horario:         String(solDados.horario         || ''),
-        remuneracao:     String(solDados.remuneracao     || ''),
-        valorBolsa:      String(solDados.valorBolsa      || ''),
-        planoAtividades: String(solDados.planoAtividades || ''),
-        nomeAgente:      String(solDados.nomeAgente      || ''),
-        linkDocMat:      String(solDados.linkDocMat      || ''),
-        linkDocId:       String(solDados.linkDocId       || ''),
-        linkDocBol:      String(solDados.linkDocBol      || ''),
-        driveUrl:        String(solDados.driveUrl        || ''),
+        idEstagio:          id,
+        // ── Estudante ─────────────────────────────────────────────
+        nomeEstudante:      String(solDados.nomeEstudante   || ''),
+        emailEstudante:     String(solDados.emailEstudante  || ''),
+        matricula:          String(solDados.matricula       || ''),
+        curso:              _curso,
+        modalidade:         _ckDerivarModalidade_(_curso),
+        turno:              String(solDados.turno           || ''),
+        semestre:           String(solDados.semestre        || ''),
+        formando:           String(solDados.formando        || ''),
+        telefoneEstudante:  String(solDados.telefone        || ''),
+        // ── Responsável Legal (menores) ───────────────────────────
+        nomeResp:           String(solDados.nomeResp        || ''),
+        cpfResp:            String(solDados.cpfResp         || ''),
+        telResp:            String(solDados.telResp         || ''),
+        // ── Empresa ───────────────────────────────────────────────
+        nomeEmpresa:        String(solDados.nomeEmpresa     || ''),
+        cnpjEmpresa:        _cnpj,
+        telEmpresa:         _ckObterTelEmpresa_(_cnpj),
+        tipoEstagio:        String(solDados.tipoEstagio     || ''),
+        // ── Supervisor ────────────────────────────────────────────
+        nomeSupervisor:     String(solDados.nomeSupervisor  || ''),
+        emailSupervisor:    _emailSup,
+        formacaoSupervisor: _ckObterFormacaoSupervisor_(_emailSup),
+        // ── Orientador ────────────────────────────────────────────
+        nomeOrientador:     String(solDados.nomeOrientador  || ''),
+        // ── Coordenador ───────────────────────────────────────────
+        nomeCoordenador:    _ckObterNomeCoordenador_(_curso),
+        // ── Período e atividades ──────────────────────────────────
+        dataInicio:         String(solDados.dataInicio      || ''),
+        dataTermino:        String(solDados.dataTermino     || ''),
+        cargaHoraria:       String(solDados.cargaHoraria    || ''),
+        horario:            String(solDados.horario         || ''),
+        planoAtividades:    String(solDados.planoAtividades || ''),
+        // ── Agente / financeiro ───────────────────────────────────
+        nomeAgente:         String(solDados.nomeAgente      || ''),
+        remuneracao:        String(solDados.remuneracao     || ''),
+        valorBolsa:         String(solDados.valorBolsa      || ''),
+        // ── Documentos ────────────────────────────────────────────
+        linkDocMat:         String(solDados.linkDocMat      || ''),
+        linkDocId:          String(solDados.linkDocId       || ''),
+        linkDocBol:         String(solDados.linkDocBol      || ''),
+        driveUrl:           String(solDados.driveUrl        || ''),
       };
 
       // ── Acesso por token (supervisor ou orientador via magic-link) ───────
@@ -902,4 +925,75 @@ function doPostChecklist(e) {
     default:
       return jsonError_('Ação POST desconhecida: ' + action, 'UNKNOWN_ACTION');
   }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Helpers internos — enriquecimento do infoSol
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Deriva modalidade a partir do nome do curso. */
+function _ckDerivarModalidade_(curso) {
+  if (!curso) return '';
+  if (curso.indexOf('Integrado')   !== -1) return 'Integrado';
+  if (curso.indexOf('Subsequente') !== -1) return 'Subsequente';
+  return 'Superior';
+}
+
+/** Busca telefone da empresa pelo CNPJ na aba Empresas. */
+function _ckObterTelEmpresa_(cnpj) {
+  try {
+    if (!cnpj) return '';
+    var cnpjN = cnpj.replace(/\D/g, '').trim();
+    if (!cnpjN) return '';
+    var sheet = SpreadsheetApp.openById(SS_ID).getSheetByName('Empresas');
+    if (!sheet) return '';
+    var dados = sheet.getDataRange().getValues();
+    for (var i = 1; i < dados.length; i++) {
+      if (String(dados[i][COL_EMP.CNPJ] || '').replace(/\D/g, '').trim() === cnpjN) {
+        return String(dados[i][COL_EMP.TEL_EMPRESA] || '');
+      }
+    }
+    return '';
+  } catch (e) { return ''; }
+}
+
+/** Busca formação do supervisor pelo e-mail na aba Supervisores. */
+function _ckObterFormacaoSupervisor_(email) {
+  try {
+    if (!email) return '';
+    var emailN = email.toLowerCase().trim();
+    var sheet  = SpreadsheetApp.openById(SS_ID).getSheetByName('Supervisores');
+    if (!sheet) return '';
+    var dados = sheet.getDataRange().getValues();
+    for (var i = 1; i < dados.length; i++) {
+      if (String(dados[i][COL_SUP.EMAIL_SUP] || '').toLowerCase().trim() === emailN) {
+        var nivel = String(dados[i][COL_SUP.NIVEL_FORMACAO] || '').trim();
+        var area  = String(dados[i][COL_SUP.AREA_FORMACAO]  || '').trim();
+        if (!nivel && !area) return '';
+        if (!area)  return nivel;
+        if (!nivel) return area;
+        return nivel + ' em ' + area;
+      }
+    }
+    return '';
+  } catch (e) { return ''; }
+}
+
+/** Busca nome do coordenador ativo pelo curso na aba Coordenadores. */
+function _ckObterNomeCoordenador_(curso) {
+  try {
+    if (!curso) return '';
+    var cursoN = curso.trim().toLowerCase();
+    var sheet  = SpreadsheetApp.openById(SS_ID).getSheetByName('Coordenadores');
+    if (!sheet) return '';
+    var dados = sheet.getDataRange().getValues();
+    // COL_COORD (base-0): CPF=0, SIAPE=1, NOME=2, EMAIL=3, TEL=4, TITULACAO=5, CURSO=6, TIMESTAMP=7, STATUS=8
+    for (var i = 1; i < dados.length; i++) {
+      if (String(dados[i][6] || '').trim().toLowerCase() === cursoN
+          && String(dados[i][8] || '').trim() === 'Ativo') {
+        return String(dados[i][2] || '');
+      }
+    }
+    return '';
+  } catch (e) { return ''; }
 }
