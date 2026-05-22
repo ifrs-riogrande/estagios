@@ -729,8 +729,11 @@
 
     function buildDocCardChecklist(ck) {
       const concluido  = ck.statusGeral === 'aprovado';
-      const urlPdf     = ck.urlPdf || '';
-      const validarUrl = `../validar/?id=${encodeURIComponent(_id)}`;
+      const urlPdf     = ck.urlPdfChecklist || ck.urlPdf || '';
+      // Usa token opaco quando disponível (acesso completo à página de validação)
+      const validarUrl = ck.tokenValidacao
+        ? `../validar/?t=${encodeURIComponent(ck.tokenValidacao)}`
+        : `../validar/?id=${encodeURIComponent(_id)}`;
 
       // Etiqueta da etapa ativa
       const LABEL_ETAPA = {
