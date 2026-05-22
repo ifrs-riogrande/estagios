@@ -908,6 +908,7 @@ function doGetChecklist(e) {
         nomeSupervisor:     String(solDados.nomeSupervisor  || ''),
         emailSupervisor:    _emailSup,
         formacaoSupervisor: _ckObterFormacaoSupervisor_(_emailSup),
+        supDados:           _ckObterDadosCompletosSupervisor_(_emailSup),
         // ── Orientador ────────────────────────────────────────────
         nomeOrientador:     String(solDados.nomeOrientador  || ''),
         // ── Coordenador ───────────────────────────────────────────
@@ -1187,24 +1188,38 @@ function _ckObterTelEmpresa_(cnpj) {
 
 /** Busca formação do supervisor pelo e-mail na aba Supervisores. */
 function _ckObterFormacaoSupervisor_(email) {
+  var d = _ckObterDadosCompletosSupervisor_(email);
+  if (!d.nivelFormacao && !d.areaFormacao) return '';
+  if (!d.areaFormacao)  return d.nivelFormacao;
+  if (!d.nivelFormacao) return d.areaFormacao;
+  return d.nivelFormacao + ' em ' + d.areaFormacao;
+}
+
+/**
+ * Retorna os campos completos de formação/experiência do supervisor
+ * cadastrado na aba Supervisores, buscando pelo e-mail.
+ */
+function _ckObterDadosCompletosSupervisor_(email) {
+  var vazio = { nivelFormacao: '', areaFormacao: '', instituicao: '', tempoExp: '', descExp: '' };
   try {
-    if (!email) return '';
+    if (!email) return vazio;
     var emailN = email.toLowerCase().trim();
     var sheet  = SpreadsheetApp.openById(SS_ID).getSheetByName('Supervisores');
-    if (!sheet) return '';
+    if (!sheet) return vazio;
     var dados = sheet.getDataRange().getValues();
     for (var i = 1; i < dados.length; i++) {
       if (String(dados[i][COL_SUP.EMAIL_SUP] || '').toLowerCase().trim() === emailN) {
-        var nivel = String(dados[i][COL_SUP.NIVEL_FORMACAO] || '').trim();
-        var area  = String(dados[i][COL_SUP.AREA_FORMACAO]  || '').trim();
-        if (!nivel && !area) return '';
-        if (!area)  return nivel;
-        if (!nivel) return area;
-        return nivel + ' em ' + area;
+        return {
+          nivelFormacao: String(dados[i][COL_SUP.NIVEL_FORMACAO] || '').trim(),
+          areaFormacao:  String(dados[i][COL_SUP.AREA_FORMACAO]  || '').trim(),
+          instituicao:   String(dados[i][COL_SUP.INSTITUICAO]    || '').trim(),
+          tempoExp:      String(dados[i][COL_SUP.TEMPO_EXP]      || '').trim(),
+          descExp:       String(dados[i][COL_SUP.DESC_EXP]       || '').trim(),
+        };
       }
     }
-    return '';
-  } catch (e) { return ''; }
+    return vazio;
+  } catch (e) { return vazio; }
 }
 
 /** Busca nome do coordenador ativo pelo curso na aba Coordenadores. */
@@ -1384,61 +1399,65 @@ function gerarPdfChecklist_(idEstagio, checklist) {
 
   var urlValidacao = BASE_URL_SGE_ + '/validar/?t=' + encodeURIComponent(tokenValidacao);
 
+  // Dados completos do supervisor (formação/experiência)
+  var supDados = _ckObterDadosCompletosSupervisor_(String(sol.emailSupervisor || ''));
+
   // ── Cria documento Google Docs ─────────────────────────────────────────────
   var docName = 'Checklist — ' + String(sol.nomeEstudante || idEstagio).replace(/[\/\\]/g, '-');
   var doc  = DocumentApp.create(docName);
   var body = doc.getBody();
 
-  var AZUL    = '#1d4ed8';
   var CINZA   = '#6b7280';
   var PRETO   = '#111827';
-  var BRANCO  = '#ffffff';
 
-  // Margens
-  body.setMarginTop(36);
-  body.setMarginBottom(36);
-  body.setMarginLeft(48);
-  body.setMarginRight(48);
+  // Margens idênticas ao TCE: topo/base 56pt (~2cm), lados 72pt (~2,5cm)
+  body.setMarginTop(56).setMarginBottom(56).setMarginLeft(72).setMarginRight(72);
 
-  // ── Cabeçalho ─────────────────────────────────────────────────────────────
-  // Logo (tenta buscar do Drive, se configurado)
-  var logoId = '';
-  try { logoId = PropertiesService.getScriptProperties().getProperty('config_logo_drive_id') || ''; } catch (_) {}
-  if (logoId) {
-    try {
-      var logoFile = DriveApp.getFileById(logoId);
-      var logoBlob = logoFile.getBlob();
-      var logoImg  = body.appendImage(logoBlob);
-      logoImg.setWidth(60).setHeight(60);
-    } catch (_) {}
+  // ── Cabeçalho idêntico ao TCE ──────────────────────────────────────────────
+  var hdr = doc.addHeader();
+  var _logoBlob = _obterLogoCabecalho_();
+  if (_logoBlob) {
+    var hLogoP = hdr.appendParagraph('');
+    hLogoP.setAlignment(DocumentApp.HorizontalAlignment.CENTER);
+    hLogoP.setSpacingBefore(0).setSpacingAfter(3);
+    try { hLogoP.insertInlineImage(0, _logoBlob).setWidth(54).setHeight(54); } catch (_) {}
   }
+  var hP1 = hdr.appendParagraph('MINISTÉRIO DA EDUCAÇÃO');
+  hP1.setAlignment(DocumentApp.HorizontalAlignment.CENTER);
+  hP1.setSpacingBefore(0).setSpacingAfter(1);
+  hP1.editAsText().setFontFamily('Arial').setFontSize(8);
+  var hP2 = hdr.appendParagraph('INSTITUTO FEDERAL DE EDUCAÇÃO, CIÊNCIA E TECNOLOGIA DO RIO GRANDE DO SUL');
+  hP2.setAlignment(DocumentApp.HorizontalAlignment.CENTER);
+  hP2.setSpacingBefore(1).setSpacingAfter(1);
+  hP2.editAsText().setFontFamily('Arial').setFontSize(9).setBold(true);
+  var hP3 = hdr.appendParagraph('Campus Rio Grande');
+  hP3.setAlignment(DocumentApp.HorizontalAlignment.CENTER);
+  hP3.setSpacingBefore(1).setSpacingAfter(10);
+  hP3.editAsText().setFontFamily('Arial').setFontSize(8);
 
-  var cabPar = body.appendParagraph('IFRS Campus Rio Grande — Central de Estágios');
-  cabPar.setHeading(DocumentApp.ParagraphHeading.HEADING1);
-  cabPar.getChild(0).setForegroundColor(AZUL).setBold(true);
-  cabPar.setAlignment(DocumentApp.HorizontalAlignment.CENTER);
+  // ── Título ─────────────────────────────────────────────────────────────────
+  var pTitulo = body.appendParagraph('PLANO DE ATIVIDADES DO ESTAGIÁRIO');
+  pTitulo.setAlignment(DocumentApp.HorizontalAlignment.CENTER);
+  pTitulo.setSpacingBefore(4).setSpacingAfter(8);
+  pTitulo.editAsText().setFontFamily('Arial').setFontSize(13).setBold(true);
 
-  var subCabPar = body.appendParagraph('CHECKLIST DE ESTÁGIO — CIÊNCIA E VERACIDADE DAS INFORMAÇÕES');
-  subCabPar.getChild(0).setForegroundColor(CINZA).setBold(true);
-  subCabPar.setAlignment(DocumentApp.HorizontalAlignment.CENTER);
-
-  body.appendParagraph('');
-
+  // ── Helpers de formatação ──────────────────────────────────────────────────
   var _linha = function (label, valor) {
-    var p = body.appendParagraph('');
-    var bold = p.appendText(label + ': ');
-    bold.setBold(true).setForegroundColor(PRETO);
-    var normal = p.appendText(String(valor || '—'));
-    normal.setBold(false).setForegroundColor(PRETO);
+    var v   = (valor !== undefined && valor !== null && String(valor).trim()) ? String(valor) : '—';
+    var txt = label + ': ' + v;
+    var p   = body.appendParagraph(txt);
+    p.setSpacingBefore(1).setSpacingAfter(1);
+    var t = p.editAsText();
+    t.setFontFamily('Arial').setFontSize(10);
+    t.setBold(true,  0, label.length);
+    t.setBold(false, label.length + 2, txt.length - 1);
   };
 
   var _secao = function (titulo) {
-    body.appendParagraph('');
     var p = body.appendParagraph(titulo);
-    p.getChild(0).setForegroundColor(AZUL).setBold(true);
-    p.setSpacingBefore(6);
-    p.setSpacingAfter(2);
-    var linha = body.appendHorizontalRule();
+    p.setSpacingBefore(10).setSpacingAfter(3);
+    p.editAsText().setFontFamily('Arial').setFontSize(10).setBold(true);
+    body.appendHorizontalRule();
   };
 
   // ── Dados do Estágio ───────────────────────────────────────────────────────
@@ -1465,6 +1484,11 @@ function gerarPdfChecklist_(idEstagio, checklist) {
   _secao('SUPERVISOR NA EMPRESA');
   _linha('Nome', sol.nomeSupervisor);
   _linha('E-mail', sol.emailSupervisor);
+  _linha('Nível de Formação', supDados.nivelFormacao);
+  _linha('Área de Formação', supDados.areaFormacao);
+  _linha('Instituição', supDados.instituicao);
+  _linha('Tempo de Experiência', supDados.tempoExp);
+  if (supDados.descExp) _linha('Descrição da Experiência', supDados.descExp);
 
   _secao('PERÍODO E ATIVIDADES');
   _linha('Início', _fmtDataCk_(sol.dataInicio));

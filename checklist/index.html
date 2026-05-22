@@ -910,7 +910,12 @@
     html += `<div class="sol-divider">Supervisor na Empresa</div>`;
     html += `<div><span class="sol-label">Nome</span>${v(info.nomeSupervisor)}</div>`;
     html += `<div><span class="sol-label">E-mail</span>${v(info.emailSupervisor)}</div>`;
-    if (info.formacaoSupervisor) html += `<div class="sol-full"><span class="sol-label">Formação</span>${v(info.formacaoSupervisor)}</div>`;
+    const sd = info.supDados || {};
+    if (sd.nivelFormacao) html += `<div><span class="sol-label">Nível de Formação</span>${v(sd.nivelFormacao)}</div>`;
+    if (sd.areaFormacao)  html += `<div><span class="sol-label">Área de Formação</span>${v(sd.areaFormacao)}</div>`;
+    if (sd.instituicao)   html += `<div><span class="sol-label">Instituição</span>${v(sd.instituicao)}</div>`;
+    if (sd.tempoExp)      html += `<div><span class="sol-label">Tempo de Experiência</span>${v(sd.tempoExp)}</div>`;
+    if (sd.descExp)       html += `<div class="sol-full"><span class="sol-label">Descrição da Experiência</span>${v(sd.descExp)}</div>`;
 
     // ── Período e Horários ─────────────────────────────────────────────────
     html += `<div class="sol-divider">Período e Horários</div>`;
