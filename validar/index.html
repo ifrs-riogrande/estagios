@@ -127,20 +127,7 @@
       color: var(--color-text-muted);
       font-style: italic;
     }
-    .val-pdf-link {
-      display: inline-flex;
-      align-items: center;
-      gap: var(--space-2);
-      font-size: var(--font-size-sm);
-      font-weight: 600;
-      color: var(--color-primary);
-      text-decoration: none;
-      padding: var(--space-3) var(--space-4);
-      border: 1px solid var(--color-primary);
-      border-radius: var(--radius-md);
-      transition: background .15s;
-    }
-    .val-pdf-link:hover { background: var(--color-info-light); }
+
     .val-skeleton {
       height: 200px;
       background: linear-gradient(90deg, var(--color-border) 25%, #e9edf3 50%, var(--color-border) 75%);
@@ -294,13 +281,7 @@
       html += '<div><span class="val-info-label">Conclusão do Checklist</span><span class="val-info-value">' + fmtDH(d.dataGeracao) + '</span></div>';
       html += '</div>';
 
-      if (d.urlPdf) {
-        html += '<div style="margin-top:var(--space-5);">';
-        html += '<a href="' + escapeHtml(d.urlPdf) + '" target="_blank" rel="noopener" class="val-pdf-link">';
-        html += '<svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clip-rule="evenodd"/></svg>';
-        html += 'Abrir PDF do Checklist ↗</a>';
-        html += '</div>';
-      }
+
 
       html += '</div>'; // .val-card
 
