@@ -172,9 +172,10 @@ var POST_ROUTES = {
   'excluirCoordenador':        doPostAdmin,
 
   // Checklist
-  'salvarRespostaAdmin':       doPostChecklist,
-  'salvarRespostaAtor':        doPostChecklist,
-  'salvarPrazos':              doPostChecklist,
+  'salvarRespostaAdmin':             doPostChecklist,
+  'salvarRespostaAtor':              doPostChecklist,
+  'salvarPrazos':                    doPostChecklist,
+  'reenviarNotificacaoChecklist':    doPostChecklist,
 
   // Assinaturas
   'concluirEtapa':                    doPostAssinaturas,

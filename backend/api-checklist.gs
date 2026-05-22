@@ -1032,8 +1032,66 @@ function doPostChecklist(e) {
     case 'salvarPrazos':
       return salvarPrazos_(body.prazos);
 
+    case 'reenviarNotificacaoChecklist':
+      return reenviarNotificacaoChecklist_(body);
+
     default:
       return jsonError_('Ação POST desconhecida: ' + action, 'UNKNOWN_ACTION');
+  }
+}
+
+/**
+ * Reenvia a notificação do ator da etapa ativa do checklist.
+ * Exclusivo para admin autenticado.
+ */
+function reenviarNotificacaoChecklist_(body) {
+  try { validarTokenAdmin_(body.authToken); }
+  catch (eAuth) { return jsonError_('Não autorizado: ' + eAuth.message, 'AUTH_ERROR'); }
+
+  var idEstagio = body.idEstagio;
+  if (!idEstagio) return jsonError_('Parâmetro idEstagio obrigatório.', 'MISSING_PARAM');
+
+  var checklist = obterChecklist_(idEstagio);
+  if (!checklist) return jsonError_('Checklist não encontrado.', 'NOT_FOUND');
+
+  var etapa = checklist.etapaAtiva || '';
+
+  // Etapas que já saíram do fluxo de checklist
+  if (!etapa || etapa === 'concluido' || etapa === 'admin') {
+    return jsonError_('Esta etapa não aceita reenvio pelo checklist. Use "Reenviar notificação" do fluxo de assinaturas.', 'INVALID_STATE');
+  }
+
+  // Etapa recusada pelo orientador — reenvio não faz sentido
+  if (etapa === 'orientador_recusado') {
+    return jsonError_('O orientador recusou a orientação. O estudante precisa escolher novo orientador.', 'INVALID_STATE');
+  }
+
+  try {
+    if (etapa === 'orientador') {
+      _notificarOrientadorNovoChecklist_(idEstagio, checklist);
+      return jsonOk_({ reenviado: true, etapa: etapa, label: LABELS_ATORES_CK_.orientador });
+    }
+    if (etapa === 'supervisor') {
+      _notificarSupervisorChecklist_(idEstagio, checklist);
+      return jsonOk_({ reenviado: true, etapa: etapa, label: LABELS_ATORES_CK_.supervisor });
+    }
+    if (etapa === 'coordenador') {
+      var emailCoordenador = _ckObterEmailCoordenador_((checklist.coordenador && checklist.coordenador.curso)
+        || _obterDadosSolicitacaoCompleto_(idEstagio).curso || '');
+      if (!emailCoordenador) {
+        var curso = _obterDadosSolicitacaoCompleto_(idEstagio).curso || '?';
+        return jsonError_(
+          'E-mail do coordenador não encontrado para o curso "' + curso +
+          '". Cadastre o coordenador com status Ativo na aba Coordenadores da planilha e tente novamente.',
+          'EMAIL_NOT_FOUND'
+        );
+      }
+      _notificarCoordenadorChecklist_(idEstagio, checklist);
+      return jsonOk_({ reenviado: true, etapa: etapa, label: LABELS_ATORES_CK_.coordenador, email: emailCoordenador });
+    }
+    return jsonError_('Etapa desconhecida: ' + etapa, 'INVALID_STATE');
+  } catch (e) {
+    return jsonError_('Erro ao reenviar notificação: ' + e.message, 'SEND_ERROR');
   }
 }
 

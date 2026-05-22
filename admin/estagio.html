@@ -990,18 +990,22 @@
       return d.length === 14 ? d.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5') : cnpj;
     }
 
-    /* ─── Reenviar notificação de assinatura ─── */
+    /* ─── Reenviar notificação (checklist ou assinatura, conforme status) ─── */
     async function reenviarNotificacaoAssinatura(idEstagio, btn) {
       if (!confirm('Reenviar e-mail de notificação para o ator da etapa atual?')) return;
       const orig = btn.textContent;
       btn.disabled = true;
       btn.textContent = 'Enviando…';
       try {
-        const res = await API.post('reenviarNotificacaoAssinatura', {
+        // Se o estágio está em checklist, usa a rota específica do checklist
+        const emChecklist = _estagio && _estagio.status === 'Em Checklist';
+        const action = emChecklist ? 'reenviarNotificacaoChecklist' : 'reenviarNotificacaoAssinatura';
+        const res = await API.post(action, {
           idEstagio: decodeURIComponent(idEstagio),
           authToken: getAccessToken(),
         });
-        showToast(`✉️ Notificação reenviada — Etapa ${res.etapa}: ${res.label} (${res.email})`, 'success');
+        const emailInfo = res.email ? ` (${res.email})` : '';
+        showToast(`✉️ Notificação reenviada — ${res.label || ('Etapa ' + res.etapa)}${emailInfo}`, 'success');
       } catch (err) {
         showToast('Erro ao reenviar: ' + err.message, 'error');
       } finally {
