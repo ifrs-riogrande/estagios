@@ -273,6 +273,7 @@
     let _fluxoDigital   = [];
     let _adendos        = [];
     let _docsAvulsos    = [];
+    let _checklistInfo  = null;   // dados do checklist (obterChecklist)
     let _arquivoAvulso  = null;
     let _sensivelVisivel = false;
 
@@ -293,12 +294,13 @@
 
       try {
         const token = getAccessToken();
-        const [estList, docData, adendoData, digitalRaw, historicoData] = await Promise.all([
+        const [estList, docData, adendoData, digitalRaw, historicoData, ckRaw] = await Promise.all([
           API.get('listarSolicitacoesAdmin', { authToken: token }),
           API.get('listarDocumentosAdmin',   { authToken: token }),
           API.get('listarAdendosAdmin',       { authToken: token }),
           API.get('listarFluxosPendentesEtapa', { etapa: 3 }).catch(() => []),
           apiListarHistoricoEstagio(_id).catch(() => null),
+          API.get('obterChecklist', { id: _id }).catch(() => null),
         ]);
 
         const lista = Array.isArray(estList) ? estList : (estList.solicitacoes || []);
@@ -309,6 +311,7 @@
         _aguardandoDG   = (docData.aguardandoDG   || []).filter(d => d.id === _id);
         _validacaoFinal = (docData.validacaoFinal || []).filter(d => d.id === _id);
         _fluxoDigital   = (Array.isArray(digitalRaw) ? digitalRaw : []).filter(d => d.idEstagio === _id);
+        _checklistInfo  = (ckRaw && !ckRaw.error) ? ckRaw : null;
         const adLista   = Array.isArray(adendoData) ? adendoData : (adendoData.adendos || []);
         _adendos        = adLista.filter(a => a.idEstagio === _id);
         _docsAvulsos    = (historicoData && historicoData.documentos) || [];
@@ -483,7 +486,8 @@
 
     /* ─── Aba: Documentos ─── */
     function renderDocumentos() {
-      const totalFluxo = _docsEnviados.length + _aguardandoDG.length + _validacaoFinal.length + _fluxoDigital.length;
+      const temChecklist  = !!_checklistInfo;
+      const totalFluxo = (temChecklist ? 1 : 0) + _docsEnviados.length + _aguardandoDG.length + _validacaoFinal.length + _fluxoDigital.length;
       const totalGeral = totalFluxo + _docsAvulsos.length;
       document.getElementById('cnt-docs').textContent = totalGeral > 0 ? String(totalGeral) : '';
 
@@ -502,6 +506,7 @@
       } else {
         html += `<div style="margin-top:var(--space-6);border-top:1px solid var(--color-border);padding-top:var(--space-6)">
           <h3 style="font-size:var(--font-size-md);font-weight:600;margin-bottom:var(--space-4)">Documentos do Fluxo</h3>`;
+        if (temChecklist)  html += buildDocCardChecklist(_checklistInfo);
         _docsEnviados.forEach((s, idx)  => { html += buildDocCard(s, 'docs-enviados',  'd' + idx); });
         _aguardandoDG.forEach((s, idx)  => { html += buildDocCard(s, 'aguardando-dg',  'g' + idx); });
         _validacaoFinal.forEach((s, idx)=> { html += buildDocCard(s, 'validacao-final', 'v' + idx); });
@@ -719,6 +724,55 @@
           </div>
           ${arquivosHtml ? `<div class="doc-files">${arquivosHtml}</div>` : '<p style="font-size:var(--font-size-xs);color:var(--color-text-muted)">Nenhum arquivo disponível.</p>'}
           ${actionsHtml}
+        </div>`;
+    }
+
+    function buildDocCardChecklist(ck) {
+      const concluido  = ck.statusGeral === 'aprovado';
+      const urlPdf     = ck.urlPdf || '';
+      const validarUrl = `../validar/?id=${encodeURIComponent(_id)}`;
+
+      // Etiqueta da etapa ativa
+      const LABEL_ETAPA = {
+        orientador:          'Aguardando Orientador(a)',
+        orientador_recusado: 'Orientação Recusada',
+        supervisor:          'Aguardando Supervisor(a)',
+        coordenador:         'Aguardando Coordenador(a)',
+        admin:               'Aguardando Setor de Estágios',
+        concluido:           'Concluído',
+      };
+      const etapaLabel = concluido
+        ? 'Todas as assinaturas registradas'
+        : (LABEL_ETAPA[ck.etapaAtiva] || ('Etapa: ' + (ck.etapaAtiva || '—')));
+
+      const badgeCls   = concluido ? 'badge-success' : 'badge-analysis';
+      const badgeTxt   = concluido ? '✓ Concluído'   : 'Em Checklist';
+
+      let acoesHtml = '';
+      if (urlPdf) {
+        acoesHtml += `<a href="${escapeHtml(urlPdf)}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">Baixar PDF ↗</a>`;
+      }
+      acoesHtml += `<a href="${escapeHtml(validarUrl)}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">Página de Validação ↗</a>`;
+      if (!concluido) {
+        acoesHtml += `<button class="btn btn-secondary btn-sm" onclick="reenviarNotificacaoAssinatura('${escapeHtml(_id)}', this)">
+          <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"/><path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"/></svg>
+          Reenviar notificação
+        </button>`;
+      }
+
+      return `
+        <div class="doc-card" style="margin-bottom:var(--space-4)">
+          <div class="doc-card-header">
+            <div>
+              <div class="doc-card-title">📋 Checklist de Estágio</div>
+              <div style="font-size:12px;color:var(--color-text-muted)">${escapeHtml(etapaLabel)}</div>
+            </div>
+            <span class="badge ${badgeCls}">${badgeTxt}</span>
+          </div>
+          <div class="doc-actions">
+            <div class="doc-actions-left"></div>
+            <div class="doc-actions-right">${acoesHtml}</div>
+          </div>
         </div>`;
     }
 
