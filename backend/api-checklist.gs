@@ -1060,6 +1060,9 @@ function doPostChecklist(e) {
     case 'reenviarNotificacaoChecklist':
       return reenviarNotificacaoChecklist_(body);
 
+    case 'regenerarPdfChecklist':
+      return regenerarPdfChecklist_(body);
+
     default:
       return jsonError_('Ação POST desconhecida: ' + action, 'UNKNOWN_ACTION');
   }
@@ -1117,6 +1120,38 @@ function reenviarNotificacaoChecklist_(body) {
     return jsonError_('Etapa desconhecida: ' + etapa, 'INVALID_STATE');
   } catch (e) {
     return jsonError_('Erro ao reenviar notificação: ' + e.message, 'SEND_ERROR');
+  }
+}
+
+/**
+ * Regenera o PDF do checklist (admin-only).
+ * Útil quando o PDF foi gerado antes de correções ou está desatualizado.
+ */
+function regenerarPdfChecklist_(body) {
+  try { validarTokenAdmin_(body.authToken); }
+  catch (eAuth) { return jsonError_('Não autorizado: ' + eAuth.message, 'AUTH_ERROR'); }
+
+  var idEstagio = body.idEstagio;
+  if (!idEstagio) return jsonError_('Parâmetro idEstagio obrigatório.', 'MISSING_PARAM');
+
+  var checklist = obterChecklist_(idEstagio);
+  if (!checklist) return jsonError_('Checklist não encontrado.', 'NOT_FOUND');
+
+  if (checklist.statusGeral !== CK_STATUS.APROVADO) {
+    return jsonError_('O checklist ainda não foi concluído. O PDF só pode ser gerado após todas as aprovações.', 'INVALID_STATE');
+  }
+
+  // Invalida token anterior para forçar geração de novo (QR atualizado)
+  if (checklist.tokenValidacao) {
+    try { PropertiesService.getScriptProperties().deleteProperty('val_' + checklist.tokenValidacao); } catch (_) {}
+  }
+  checklist.tokenValidacao = null;
+
+  try {
+    var urlPdf = gerarPdfChecklist_(idEstagio, checklist);
+    return jsonOk_({ urlPdf: urlPdf, tokenValidacao: checklist.tokenValidacao });
+  } catch (e) {
+    return jsonError_('Erro ao gerar PDF: ' + e.message, 'GENERATE_ERROR');
   }
 }
 

@@ -176,6 +176,7 @@ var POST_ROUTES = {
   'salvarRespostaAtor':              doPostChecklist,
   'salvarPrazos':                    doPostChecklist,
   'reenviarNotificacaoChecklist':    doPostChecklist,
+  'regenerarPdfChecklist':           doPostChecklist,
 
   // Assinaturas
   'concluirEtapa':                    doPostAssinaturas,

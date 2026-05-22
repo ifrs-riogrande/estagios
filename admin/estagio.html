@@ -755,8 +755,13 @@
       if (urlPdf) {
         acoesHtml += `<a href="${escapeHtml(urlPdf)}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">Baixar PDF ↗</a>`;
       }
-      acoesHtml += `<a href="${escapeHtml(validarUrl)}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">Página de Validação ↗</a>`;
-      if (!concluido) {
+      if (concluido) {
+        acoesHtml += `<a href="${escapeHtml(validarUrl)}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">Página de Validação ↗</a>`;
+        acoesHtml += `<button class="btn btn-secondary btn-sm" onclick="regenerarPdfChecklist('${escapeHtml(_id)}', this)">
+          <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"/></svg>
+          Regenerar PDF
+        </button>`;
+      } else {
         acoesHtml += `<button class="btn btn-secondary btn-sm" onclick="reenviarNotificacaoAssinatura('${escapeHtml(_id)}', this)">
           <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"/><path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"/></svg>
           Reenviar notificação
@@ -1045,6 +1050,27 @@
     function formatarCNPJ(cnpj) {
       const d = String(cnpj).replace(/\D/g, '');
       return d.length === 14 ? d.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5') : cnpj;
+    }
+
+    /* ─── Regenerar PDF do checklist ─── */
+    async function regenerarPdfChecklist(idEstagio, btn) {
+      if (!confirm('Gerar um novo PDF do checklist? O arquivo anterior no Drive será mantido e um novo será criado.')) return;
+      const orig = btn.textContent.trim();
+      btn.disabled = true;
+      btn.textContent = 'Gerando…';
+      try {
+        const res = await API.post('regenerarPdfChecklist', {
+          idEstagio: decodeURIComponent(idEstagio),
+          authToken: getAccessToken(),
+        });
+        showToast('✅ Novo PDF gerado com sucesso!', 'success');
+        // Recarrega a aba para atualizar botões com nova URL e token
+        await carregarTudo();
+      } catch (err) {
+        showToast('Erro ao gerar PDF: ' + err.message, 'error');
+        btn.disabled = false;
+        btn.textContent = orig;
+      }
     }
 
     /* ─── Reenviar notificação (checklist ou assinatura, conforme status) ─── */
