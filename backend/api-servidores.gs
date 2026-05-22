@@ -33,7 +33,8 @@ var COL_ORI = {
   TITULACAO:    9,
   AREA:         10,
   CURSOS:       11,  // vírgula-separado
-  STATUS:       12,  // 'Ativo' | 'Inativo'
+  STATUS:       12,  // 'Ativo' | 'Inativo' | 'Pendente' | 'Rejeitado' | 'Excluído'
+  OBS_REJEICAO: 13, // Observação preenchida ao rejeitar cadastro pendente
 };
 
 // ---------------------------------------------------------------------------

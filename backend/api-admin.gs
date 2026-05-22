@@ -1556,7 +1556,7 @@ function aprovarCadastroServidor_(body) {
       if (String(dados[i][COL_ORI.EMAIL] || '').toLowerCase() === email &&
           String(dados[i][COL_ORI.STATUS] || '') === 'Pendente') {
         sheet.getRange(i + 1, COL_ORI.STATUS + 1).setValue(novoStatus);
-        if (obs) sheet.getRange(i + 1, COL_ORI.STATUS + 2).setValue(obs); // col após STATUS
+        if (obs) sheet.getRange(i + 1, COL_ORI.OBS_REJEICAO + 1).setValue(obs);
         found = true;
         // Notificar por e-mail ao rejeitar
         var emailEnviadoOri = false;

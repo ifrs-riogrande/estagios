@@ -99,7 +99,7 @@ function configurarPlanilha() {
       cabecalho: [
         'Timestamp', 'Tipo Vínculo', 'Início Contrato', 'Fim Contrato',
         'Nome', 'CPF', 'SIAPE', 'Telefone',
-        'E-mail', 'Titulação', 'Área de Formação', 'Cursos', 'Status',
+        'E-mail', 'Titulação', 'Área de Formação', 'Cursos', 'Status', 'Obs. Rejeição',
       ],
     },
 
