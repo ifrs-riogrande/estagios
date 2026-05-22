@@ -1148,16 +1148,29 @@ function _ckObterFormacaoSupervisor_(email) {
 }
 
 /** Busca nome do coordenador ativo pelo curso na aba Coordenadores. */
+/**
+ * Verifica se o curso buscado está presente no campo Curso do coordenador.
+ * O campo pode conter múltiplos cursos separados por vírgula.
+ * Ex: "Técnico Subsequente em Automação Industrial, Técnico Integrado em Automação Industrial"
+ */
+function _coordenadorAtendeCurso_(campoCurso, cursoAlvo) {
+  var alvo = cursoAlvo.trim().toLowerCase();
+  var cursos = String(campoCurso || '').split(',');
+  for (var k = 0; k < cursos.length; k++) {
+    if (cursos[k].trim().toLowerCase() === alvo) return true;
+  }
+  return false;
+}
+
 function _ckObterNomeCoordenador_(curso) {
   try {
     if (!curso) return '';
-    var cursoN = curso.trim().toLowerCase();
     var sheet  = SpreadsheetApp.openById(SS_ID).getSheetByName('Coordenadores');
     if (!sheet) return '';
     var dados = sheet.getDataRange().getValues();
     // COL_COORD (base-0): CPF=0, SIAPE=1, NOME=2, EMAIL=3, TEL=4, TITULACAO=5, CURSO=6, TIMESTAMP=7, STATUS=8
     for (var i = 1; i < dados.length; i++) {
-      if (String(dados[i][6] || '').trim().toLowerCase() === cursoN
+      if (_coordenadorAtendeCurso_(dados[i][6], curso)
           && String(dados[i][8] || '').trim() === 'Ativo') {
         return String(dados[i][2] || '');
       }
@@ -1170,12 +1183,11 @@ function _ckObterNomeCoordenador_(curso) {
 function _ckObterEmailCoordenador_(curso) {
   try {
     if (!curso) return '';
-    var cursoN = curso.trim().toLowerCase();
     var sheet  = SpreadsheetApp.openById(SS_ID).getSheetByName('Coordenadores');
     if (!sheet) return '';
     var dados = sheet.getDataRange().getValues();
     for (var i = 1; i < dados.length; i++) {
-      if (String(dados[i][6] || '').trim().toLowerCase() === cursoN
+      if (_coordenadorAtendeCurso_(dados[i][6], curso)
           && String(dados[i][8] || '').trim() === 'Ativo') {
         return String(dados[i][3] || '');  // EMAIL = índice 3
       }
@@ -1222,12 +1234,11 @@ function _ckObterCpfSupervisor_(email) {
 function _ckObterCpfCoordenador_(curso) {
   try {
     if (!curso) return '';
-    var cursoN = curso.trim().toLowerCase();
     var sheet  = SpreadsheetApp.openById(SS_ID).getSheetByName('Coordenadores');
     if (!sheet) return '';
     var dados = sheet.getDataRange().getValues();
     for (var i = 1; i < dados.length; i++) {
-      if (String(dados[i][6] || '').trim().toLowerCase() === cursoN
+      if (_coordenadorAtendeCurso_(dados[i][6], curso)
           && String(dados[i][8] || '').trim() === 'Ativo') {
         return String(dados[i][0] || '');  // CPF = índice 0
       }
