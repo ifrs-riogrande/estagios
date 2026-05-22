@@ -1213,7 +1213,8 @@ function _notificarCoordenadorChecklist_(idEstagio, checklist) {
   var sol = _obterDadosSolicitacaoCompleto_(idEstagio);
   var emailCoordenador = _ckObterEmailCoordenador_(sol.curso || '');
   if (!emailCoordenador) {
-    logErro_('_notificarCoordenadorChecklist_', new Error('E-mail do coordenador não encontrado para o curso: ' + (sol.curso || '')));
+    // Coordenador não cadastrado ou sem e-mail — não é erro de sistema, só continua
+    // (o admin pode reenviar manualmente via painel)
     return;
   }
   var token        = checklist.coordenador.token;
