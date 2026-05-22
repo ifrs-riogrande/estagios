@@ -1413,21 +1413,27 @@ function gerarPdfChecklist_(idEstagio, checklist) {
   // Margens idênticas ao TCE: topo/base 56pt (~2cm), lados 72pt (~2,5cm)
   body.setMarginTop(56).setMarginBottom(56).setMarginLeft(72).setMarginRight(72);
 
-  // ── Cabeçalho idêntico ao TCE ──────────────────────────────────────────────
-  var hdr = doc.addHeader();
-  // Busca blob do logo diretamente (evita problemas de escopo entre arquivos .gs)
+  // ── Cabeçalho: logo no body (mais confiável que header section no DocumentApp)
+  //    + texto institucional no header (repete em todas as páginas)
+  // ──────────────────────────────────────────────────────────────────────────
   try {
     var _logoId = PropertiesService.getScriptProperties().getProperty('config_logo_drive_id');
     if (_logoId) {
       var _logoBlob = DriveApp.getFileById(_logoId.trim()).getBlob();
-      var hLogoP = hdr.appendParagraph('');
-      hLogoP.setAlignment(DocumentApp.HorizontalAlignment.CENTER);
-      hLogoP.setSpacingBefore(0).setSpacingAfter(3);
-      hLogoP.insertInlineImage(0, _logoBlob).setWidth(54).setHeight(54);
+      // Usa o primeiro parágrafo do body (que já existe e está vazio)
+      var logoP = body.getParagraphs()[0];
+      logoP.setAlignment(DocumentApp.HorizontalAlignment.CENTER);
+      logoP.setSpacingBefore(0).setSpacingAfter(4);
+      logoP.insertInlineImage(0, _logoBlob).setWidth(54).setHeight(54);
     }
   } catch (_logoErr) {
     logErro_('gerarPdfChecklist_.logo', _logoErr);
   }
+
+  // Texto institucional no header (repete em todas as páginas)
+  var hdr = doc.addHeader();
+  // Remove o parágrafo vazio padrão do header e usa os nossos
+  try { hdr.getChild(0).removeFromParent(); } catch (_) {}
   var hP1 = hdr.appendParagraph('MINISTÉRIO DA EDUCAÇÃO');
   hP1.setAlignment(DocumentApp.HorizontalAlignment.CENTER);
   hP1.setSpacingBefore(0).setSpacingAfter(1);
@@ -1438,7 +1444,7 @@ function gerarPdfChecklist_(idEstagio, checklist) {
   hP2.editAsText().setFontFamily('Arial').setFontSize(9).setBold(true);
   var hP3 = hdr.appendParagraph('Campus Rio Grande');
   hP3.setAlignment(DocumentApp.HorizontalAlignment.CENTER);
-  hP3.setSpacingBefore(1).setSpacingAfter(10);
+  hP3.setSpacingBefore(1).setSpacingAfter(6);
   hP3.editAsText().setFontFamily('Arial').setFontSize(8);
 
   // ── Título ─────────────────────────────────────────────────────────────────
