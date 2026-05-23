@@ -277,8 +277,8 @@ function _criarPastaAssinaturas_(idEstagio) {
   } catch (e) {
     logErro_('_criarPastaAssinaturas_', e);
   }
-  // Último recurso
-  return DriveApp.createFolder('Estagio_' + idEstagio);
+  // Último recurso — sempre dentro da pasta raiz de estágios
+  return DriveApp.getFolderById(CFG_DRIVE.ESTAGIOS_ID).createFolder('Estagio_' + idEstagio);
 }
 
 // ── Helpers TCE: configurações do sistema ────────────────────────────────

@@ -44,9 +44,11 @@ var DRIVE = (function () {
    * @returns {GoogleAppsScript.Drive.Folder}
    */
   function obterOuCriarPasta(pai, nome) {
-    var iter = pai ? pai.getFoldersByName(nome) : DriveApp.getFoldersByName(nome);
+    // pai é obrigatório — nunca criar pasta solta na raiz do Drive pessoal
+    if (!pai) throw new Error('drive.obterOuCriarPasta: pasta pai obrigatória');
+    var iter = pai.getFoldersByName(nome);
     if (iter.hasNext()) return iter.next();
-    return pai ? pai.createFolder(nome) : DriveApp.createFolder(nome);
+    return pai.createFolder(nome);
   }
 
   /**

@@ -1243,21 +1243,16 @@ function enviarDocumentosEmpresa_(body) {
   };
 }
 
-// Cria ou localiza a pasta da empresa dentro de SGE — Estágios IFRS / Empresas /
+// Cria ou localiza a pasta da empresa dentro de Cadastros / Empresas /
 function obterPastaEmpresa_(cnpj, razaoSocial) {
-  // Pasta raiz do sistema
-  var rootIter   = DriveApp.getFoldersByName(CFG.DRIVE_ROOT);
-  var rootFolder = rootIter.hasNext() ? rootIter.next() : DriveApp.createFolder(CFG.DRIVE_ROOT);
-
-  // Subpasta "Empresas"
-  var empIter   = rootFolder.getFoldersByName('Empresas');
-  var empFolder = empIter.hasNext() ? empIter.next() : rootFolder.createFolder('Empresas');
+  // Usa a pasta raiz de cadastros definida em CFG_DRIVE
+  var raiz      = DriveApp.getFolderById(CFG_DRIVE.CADASTROS_ID);
+  var empFolder = obterOuCriarPasta_(raiz, 'Empresas');
 
   // Subpasta da empresa: "{CNPJ} — {Razão Social}" (máx 50 chars, sem chars inválidos)
   var safe      = razaoSocial.substring(0, 45).replace(/[\/\\:*?"<>|]/g, '_');
   var nomePasta = cnpj + ' — ' + safe;
-  var compIter  = empFolder.getFoldersByName(nomePasta);
-  return compIter.hasNext() ? compIter.next() : empFolder.createFolder(nomePasta);
+  return obterOuCriarPasta_(empFolder, nomePasta);
 }
 
 // ─────────────────────────────────────────

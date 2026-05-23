@@ -1587,21 +1587,21 @@ function gerarPdfChecklist_(idEstagio, checklist) {
   var docFile = DriveApp.getFileById(_docId);
   var pdfBlob = docFile.getAs('application/pdf').setName(docName + '.pdf');
 
-  // Salva na pasta do estágio (se existir) ou na raiz
+  // Salva na pasta do estágio (Estágios / [Ano] / [ID — Nome])
   var pdfFile;
-  var driveUrl = String(sol.driveUrl || '');
-  if (driveUrl) {
-    try {
-      // Extrai ID da pasta a partir da URL do Drive
-      var matchId = driveUrl.match(/[-\w]{25,}/);
-      if (matchId) {
-        var pastaEst = DriveApp.getFolderById(matchId[0]);
-        pdfFile = pastaEst.createFile(pdfBlob);
-      }
-    } catch (_pd) {}
+  var pastaEst = abrirPastaEstagio_(String(sol.driveUrl || ''));
+  if (pastaEst) {
+    try { pdfFile = pastaEst.createFile(pdfBlob); } catch (_pd) {}
   }
   if (!pdfFile) {
-    pdfFile = DriveApp.createFile(pdfBlob);
+    // Fallback: cria/encontra a pasta correta na hierarquia e salva lá
+    try {
+      var _fbRes = criarPastaEstagio_(idEstagio, String(sol.nomeEstudante || ''));
+      pastaEst   = _fbRes.folder || DriveApp.getFolderById(CFG_DRIVE.ESTAGIOS_ID);
+      pdfFile    = pastaEst.createFile(pdfBlob);
+    } catch (_fb) {
+      pdfFile = DriveApp.getFolderById(CFG_DRIVE.ESTAGIOS_ID).createFile(pdfBlob);
+    }
   }
   pdfFile.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
 

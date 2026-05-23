@@ -1265,14 +1265,6 @@ function criarPastaEstagioNova_(vars) {
   return { folderId: res.folderId, url: res.url };
 }
 
-function obterOuCriarPasta_(pai, nome) {
-  var iter = pai
-    ? pai.getFoldersByName(nome)
-    : DriveApp.getFoldersByName(nome);
-  if (iter.hasNext()) return iter.next();
-  return pai ? pai.createFolder(nome) : DriveApp.createFolder(nome);
-}
-
 function compartilharPasta_(folderId, emails) {
   var folder = DriveApp.getFolderById(folderId);
   emails.forEach(function(email) {
