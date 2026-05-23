@@ -271,6 +271,7 @@
     let _aguardandoDG   = [];
     let _validacaoFinal = [];
     let _fluxoDigital   = [];
+    let _fluxoTCE       = null;   // dados completos do fluxo de assinaturas TCE (admin)
     let _adendos        = [];
     let _docsAvulsos    = [];
     let _checklistInfo  = null;   // dados do checklist (obterChecklist)
@@ -294,13 +295,14 @@
 
       try {
         const token = getAccessToken();
-        const [estList, docData, adendoData, digitalRaw, historicoData, ckRaw] = await Promise.all([
+        const [estList, docData, adendoData, digitalRaw, historicoData, ckRaw, tceRaw] = await Promise.all([
           API.get('listarSolicitacoesAdmin', { authToken: token }),
           API.get('listarDocumentosAdmin',   { authToken: token }),
           API.get('listarAdendosAdmin',       { authToken: token }),
           API.get('listarFluxosPendentesEtapa', { etapa: 3 }).catch(() => []),
           apiListarHistoricoEstagio(_id).catch(() => null),
           API.get('obterChecklist', { id: _id }).catch(() => null),
+          API.get('obterFluxoAssinaturasAdmin', { id: _id, authToken: token }).catch(() => null),
         ]);
 
         const lista = Array.isArray(estList) ? estList : (estList.solicitacoes || []);
@@ -312,6 +314,7 @@
         _validacaoFinal = (docData.validacaoFinal || []).filter(d => d.id === _id);
         _fluxoDigital   = (Array.isArray(digitalRaw) ? digitalRaw : []).filter(d => d.idEstagio === _id);
         _checklistInfo  = (ckRaw && !ckRaw.error) ? ckRaw : null;
+        _fluxoTCE       = (tceRaw && !tceRaw.error) ? tceRaw : null;
         const adLista   = Array.isArray(adendoData) ? adendoData : (adendoData.adendos || []);
         _adendos        = adLista.filter(a => a.idEstagio === _id);
         _docsAvulsos    = (historicoData && historicoData.documentos) || [];
@@ -487,7 +490,8 @@
     /* ─── Aba: Documentos ─── */
     function renderDocumentos() {
       const temChecklist  = !!_checklistInfo;
-      const totalFluxo = (temChecklist ? 1 : 0) + _docsEnviados.length + _aguardandoDG.length + _validacaoFinal.length + _fluxoDigital.length;
+      const temTCE        = !!_fluxoTCE;
+      const totalFluxo = (temChecklist ? 1 : 0) + (temTCE ? 1 : 0) + _docsEnviados.length + _aguardandoDG.length + _validacaoFinal.length + _fluxoDigital.length;
       const totalGeral = totalFluxo + _docsAvulsos.length;
       document.getElementById('cnt-docs').textContent = totalGeral > 0 ? String(totalGeral) : '';
 
@@ -505,8 +509,10 @@
           </div>`;
       } else {
         html += `<div style="margin-top:var(--space-6);border-top:1px solid var(--color-border);padding-top:var(--space-6)">
-          <h3 style="font-size:var(--font-size-md);font-weight:600;margin-bottom:var(--space-4)">Documentos do Fluxo</h3>`;
+          <h3 style="font-size:var(--font-size-md);font-weight:600;margin-bottom:var(--space-4)">Documentos do Fluxo</h3>
+          `;
         if (temChecklist)  html += buildDocCardChecklist(_checklistInfo);
+        if (temTCE)        html += buildDocCardTCE(_fluxoTCE);
         _docsEnviados.forEach((s, idx)  => { html += buildDocCard(s, 'docs-enviados',  'd' + idx); });
         _aguardandoDG.forEach((s, idx)  => { html += buildDocCard(s, 'aguardando-dg',  'g' + idx); });
         _validacaoFinal.forEach((s, idx)=> { html += buildDocCard(s, 'validacao-final', 'v' + idx); });
@@ -772,7 +778,7 @@
         <div class="doc-card" style="margin-bottom:var(--space-4)">
           <div class="doc-card-header">
             <div>
-              <div class="doc-card-title">📋 Checklist de Estágio</div>
+              <div class="doc-card-title">📋 Solicitação de Estágio</div>
               <div style="font-size:12px;color:var(--color-text-muted)">${escapeHtml(etapaLabel)}</div>
             </div>
             <span class="badge ${badgeCls}">${badgeTxt}</span>
@@ -780,6 +786,69 @@
           <div class="doc-actions">
             <div class="doc-actions-left"></div>
             <div class="doc-actions-right">${acoesHtml}</div>
+          </div>
+        </div>`;
+    }
+
+    function buildDocCardTCE(fluxo) {
+      const statusGeral = fluxo.statusGeral || 'em_andamento';
+      const concluido   = statusGeral === 'concluido';
+
+      const badgeCls = concluido ? 'badge-success' : 'badge-analysis';
+      const badgeTxt = concluido ? '✓ Concluído' : 'Em Assinatura';
+
+      // Etapa ativa
+      const etapaAtiva = (fluxo.etapas || []).find(e => e.status === 'aguardando');
+      const etapaLabel = concluido
+        ? 'Todas as assinaturas concluídas'
+        : (etapaAtiva ? 'Aguardando: ' + etapaAtiva.label : 'Pendente de início');
+
+      // Monta lista de versões de PDF (original + cada etapa concluída com driveUrl)
+      let versoes = [];
+      if (fluxo.pdfOriginalUrl) {
+        versoes.push({ label: 'TCE Original (não assinado)', url: fluxo.pdfOriginalUrl });
+      }
+      (fluxo.etapas || []).forEach(function(et) {
+        if (et.driveUrl) {
+          versoes.push({ label: 'v' + et.numero + ' — ' + et.label, url: et.driveUrl });
+        }
+      });
+
+      let versoesHtml = '';
+      if (versoes.length > 0) {
+        versoesHtml = `<div style="margin-top:var(--space-3);display:flex;flex-wrap:wrap;gap:var(--space-2)">`;
+        versoes.forEach(function(v) {
+          versoesHtml += `<a href="${escapeHtml(v.url)}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm" title="${escapeHtml(v.label)}">
+            <svg width="13" height="13" viewBox="0 0 20 20" fill="currentColor" style="margin-right:3px"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+            ${escapeHtml(v.label)}
+          </a>`;
+        });
+        versoesHtml += `</div>`;
+      } else {
+        versoesHtml = `<p style="font-size:12px;color:var(--color-text-muted);margin-top:var(--space-3)">Nenhum PDF disponível ainda.</p>`;
+      }
+
+      const assUrl = `../assinaturas/?id=${encodeURIComponent(_id)}`;
+
+      return `
+        <div class="doc-card" style="margin-bottom:var(--space-4)">
+          <div class="doc-card-header">
+            <div>
+              <div class="doc-card-title">📄 Termo de Compromisso de Estágio (TCE)</div>
+              <div style="font-size:12px;color:var(--color-text-muted)">${escapeHtml(etapaLabel)}</div>
+            </div>
+            <span class="badge ${badgeCls}">${badgeTxt}</span>
+          </div>
+          ${versoesHtml}
+          <div class="doc-actions" style="margin-top:var(--space-3)">
+            <div class="doc-actions-left"></div>
+            <div class="doc-actions-right">
+              <button class="btn btn-secondary btn-sm" onclick="regenerarTCEInicial('${escapeHtml(_id)}', this)">
+                <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"/></svg>
+                Regenerar TCE
+              </button>
+              <a href="${escapeHtml(assUrl)}" target="_blank" rel="noopener" class="btn btn-primary btn-sm">Abrir Fluxo ↗</a>
+            </div>
           </div>
         </div>`;
     }
@@ -1050,6 +1119,25 @@
     function formatarCNPJ(cnpj) {
       const d = String(cnpj).replace(/\D/g, '');
       return d.length === 14 ? d.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5') : cnpj;
+    }
+
+    /* ─── Regenerar TCE inicial (gera PDF e atualiza pdfOriginalUrl no fluxo) ─── */
+    async function regenerarTCEInicial(idEstagio, btn) {
+      if (!confirm('Regenerar o PDF original do TCE? Isso substituirá o arquivo original no fluxo de assinaturas.')) return;
+      const orig = btn.textContent.trim();
+      btn.disabled = true; btn.textContent = 'Gerando…';
+      try {
+        const res = await API.post('regenerarTCEInicial', {
+          idEstagio: decodeURIComponent(idEstagio),
+          authToken: getAccessToken(),
+        });
+        showToast('✅ TCE regenerado com sucesso!', 'success');
+        if (res.urlPdf) window.open(res.urlPdf, '_blank');
+        await carregarTudo();
+      } catch (err) {
+        showToast('Erro ao regenerar TCE: ' + err.message, 'error');
+        btn.disabled = false; btn.textContent = orig;
+      }
     }
 
     /* ─── Regenerar PDF do checklist ─── */
