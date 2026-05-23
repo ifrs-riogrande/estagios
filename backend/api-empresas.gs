@@ -1132,8 +1132,8 @@ function enviarDocumentosEmpresa_(body) {
       var nomeArq = tipo + ' — ' + nome;
       var blob    = Utilities.newBlob(bytes, mime, nomeArq);
       var file    = pasta.createFile(blob);
-      // Permite visualização via link (sem necessidade de conta Google)
-      file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+      // DOMAIN_WITH_LINK: documentos de empresa restritos ao domínio institucional (LGPD)
+      file.setSharing(DriveApp.Access.DOMAIN_WITH_LINK, DriveApp.Permission.VIEW);
       links.push({ tipo: tipo, nome: nome, url: file.getUrl() });
     } catch (e) {
       throw new Error('Erro ao salvar "' + nome + '": ' + e.message);

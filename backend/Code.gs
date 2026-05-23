@@ -272,10 +272,11 @@ function doPostServidores(e) {
 
 function doGetSolicitacao(e) {
   var action = (e.parameter && e.parameter.action) || '';
+  if (action === 'verificarIdEstagio')         return getVerificarIdEstagio_(e);
   if (action === 'verificarAceiteOrientador')  return verificarAceiteOrientador_(e);
   if (action === 'listarHistoricoEstagio')      return listarHistoricoEstagio_(e);
   if (action === 'listarDocumentosAvulsos')     return listarDocumentosAvulsos_(e);
-  return verificarIdEstagio_(e);
+  return jsonError_('Ação GET não reconhecida em solicitacao: ' + action, 'NOT_IMPLEMENTED');
 }
 
 function doPostSolicitacao(e) {
@@ -364,6 +365,4 @@ function doGetPublicConfig(e) {
   return jsonError_('AÃ§Ã£o nÃ£o implementada.', 'NOT_IMPLEMENTED');
 }
 
-function doGetFixCabecalhoSol_(e) {
-  return corrigirCabecalhoSolicitacoes_();
-}
+// corrigirCabecalhoSolicitacoes_() permanece disponível para execução manual via editor GAS

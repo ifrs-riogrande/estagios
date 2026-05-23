@@ -84,9 +84,11 @@ var DRIVE = (function () {
   function abrirPastaEstagio(driveUrl) {
     try {
       if (!driveUrl) return null;
-      var m = String(driveUrl).match(/folders\/([a-zA-Z0-9_-]+)/);
-      if (!m) m = String(driveUrl).match(/[-\w]{25,}/);
-      return m ? DriveApp.getFolderById(m[1] || m[0]) : null;
+      // Extrai o ID apenas do padrão canônico /folders/<id> — não usa fallback
+      // permissivo que poderia capturar partes erradas da URL.
+      var m = String(driveUrl).match(/\/folders\/([a-zA-Z0-9_-]+)/);
+      if (!m) return null;
+      return DriveApp.getFolderById(m[1]);
     } catch (e) { return null; }
   }
 

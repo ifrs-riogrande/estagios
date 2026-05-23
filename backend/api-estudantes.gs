@@ -353,7 +353,15 @@ function obterMeuCadastro_(e) {
  * @param {string} codigo  (ignorado)
  * @returns {{ nome, matricula, curso, cpf, telefone, emailPessoal, emailInst, dataNasc, endereco }}
  */
-function validarCodigoAcesso_(emailEstudante, codigo) {
+/**
+ * @deprecated O parâmetro `codigo` é ignorado — autenticação migrada para Google OAuth.
+ * Mantida apenas para compatibilidade de chamadas legadas.
+ * Use buscarEstudantePorEmail_(email) diretamente.
+ *
+ * @param {string} emailEstudante
+ * @param {string} codigo  ⚠️ NÃO UTILIZADO
+ */
+function validarCodigoAcesso_(emailEstudante, codigo) {  // eslint-disable-line no-unused-vars
   return buscarEstudantePorEmail_(emailEstudante);
 }
 

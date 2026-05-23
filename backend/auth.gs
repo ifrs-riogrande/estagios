@@ -84,8 +84,10 @@ var AUTH = (function () {
 
   /** Valida e exige domínio de estudante. */
   function validarTokenEstudante(token) {
-    var info = validarToken(token);
-    if (!info.email.endsWith('@' + STUDENT_DOMAIN)) {
+    var info   = validarToken(token);
+    // Compara o domínio após '@' exatamente — endsWith seria frágil a subdomínios prefixados
+    var domain = info.email.split('@')[1] || '';
+    if (domain !== STUDENT_DOMAIN) {
       throw new ErroAutenticacao('Acesso restrito a e-mails @' + STUDENT_DOMAIN + '.');
     }
     return info;
@@ -93,8 +95,9 @@ var AUTH = (function () {
 
   /** Valida e exige domínio de servidor. */
   function validarTokenServidor(token) {
-    var info = validarToken(token);
-    if (!info.email.endsWith('@' + STAFF_DOMAIN)) {
+    var info   = validarToken(token);
+    var domain = info.email.split('@')[1] || '';
+    if (domain !== STAFF_DOMAIN) {
       throw new ErroAutenticacao('Acesso restrito a e-mails @' + STAFF_DOMAIN + '.');
     }
     return info;

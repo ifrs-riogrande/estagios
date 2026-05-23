@@ -35,9 +35,12 @@ function jsonError_(mensagem, code) {
  */
 function sanitizar_(valor, maxLen) {
   if (valor === null || valor === undefined) return '';
-  var s = String(valor)
-    .replace(/<[^>]*>/g, '')          // strip HTML
-    .replace(/[\x00-\x08\x0B\x0C\x0D\x0E-\x1F\x7F]/g, '') // ctrl chars (inclui \r)
+  var s = String(valor);
+  // Normalização Unicode NFC — previne ataques de homoglifos (ex.: 'а' cirílico ≠ 'a' latino)
+  if (typeof s.normalize === 'function') s = s.normalize('NFC');
+  s = s
+    .replace(/<[^>]*>/g, '')                                 // strip HTML
+    .replace(/[\x00-\x08\x0B\x0C\x0D\x0E-\x1F\x7F]/g, '')  // ctrl chars (inclui \r)
     .trim();
   return s.slice(0, maxLen || 2000);
 }
@@ -128,15 +131,23 @@ function validarUrl_(url) {
 function checkRateLimit_(action, maxReqs) {
   var max = maxReqs || 15;
   try {
-    var props = PropertiesService.getScriptProperties();
-    var minuto = Math.floor(Date.now() / 60000);
-    var key    = 'rl_' + action + '_' + minuto;
-    var count  = parseInt(props.getProperty(key) || '0', 10);
-    if (count >= max) return false;
-    props.setProperty(key, String(count + 1));
-    return true;
+    // LockService garante atomicidade da sequência leitura→incremento→escrita.
+    // Sem o lock, requests paralelos leem o mesmo count e todos passam.
+    var lock = LockService.getScriptLock();
+    lock.waitLock(1500); // espera até 1,5 s
+    try {
+      var props  = PropertiesService.getScriptProperties();
+      var minuto = Math.floor(Date.now() / 60000);
+      var key    = 'rl_' + action + '_' + minuto;
+      var count  = parseInt(props.getProperty(key) || '0', 10);
+      if (count >= max) return false;
+      props.setProperty(key, String(count + 1));
+      return true;
+    } finally {
+      lock.releaseLock();
+    }
   } catch (e) {
-    return true; // fail-open: não bloqueia se PropertiesService falhar
+    return true; // fail-open: não bloqueia se lock/PropertiesService falhar
   }
 }
 
@@ -179,19 +190,28 @@ function normalizarDataISO_(data) {
   } else {
     var s = String(data).trim();
     if (!s) return '';
-    // Formato ISO já correto: AAAA-MM-DD
+    // Formato ISO AAAA-MM-DD — retorna direto (sem conversão de fuso)
     if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
     // Formato brasileiro DD/MM/AAAA
     var brMatch = s.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
     if (brMatch) return brMatch[3] + '-' + brMatch[2] + '-' + brMatch[1];
-    // Qualquer outro formato (string longa do GAS, etc.) — deixa o Date constructor resolver
+    // Formato DD/MM/AAAA HH:MM:SS (variante do Sheets com hora)
+    var brDtMatch = s.match(/^(\d{2})\/(\d{2})\/(\d{4})\s/);
+    if (brDtMatch) return brDtMatch[3] + '-' + brDtMatch[2] + '-' + brDtMatch[1];
+    // Fallback: deixa o Date constructor resolver a string longa do GAS
     d = new Date(s);
   }
   if (!d || isNaN(d.getTime())) return '';
-  var yyyy = d.getFullYear();
-  var mm   = String(d.getMonth() + 1).padStart(2, '0');
-  var dd   = String(d.getDate()).padStart(2, '0');
-  return yyyy + '-' + mm + '-' + dd;
+  // Usa Utilities.formatDate com fuso Brasília para evitar off-by-one de fuso
+  // (new Date("2025-01-15") sem hora é UTC midnight → equivale a 13/01 às 21h em UTC-3)
+  try {
+    return Utilities.formatDate(d, 'America/Sao_Paulo', 'yyyy-MM-dd');
+  } catch (_) {
+    var yyyy = d.getFullYear();
+    var mm   = String(d.getMonth() + 1).padStart(2, '0');
+    var dd   = String(d.getDate()).padStart(2, '0');
+    return yyyy + '-' + mm + '-' + dd;
+  }
 }
 
 /**
@@ -226,7 +246,21 @@ function hojeISO_() {
  */
 function logErro_(contexto, erro) {
   try {
-    var dest  = 'estagios@riogrande.ifrs.edu.br';
+    // Throttle: no máximo 1 notificação por contexto a cada hora.
+    // Sem isso, um bug em loop esgota a cota de 100 e-mails/dia do MailApp
+    // e os alertas param de chegar silenciosamente.
+    var cacheKey = 'err_' + contexto.replace(/[^a-zA-Z0-9_]/g, '_').slice(0, 50);
+    var cache    = CacheService.getScriptCache();
+    if (cache.get(cacheKey)) return;
+    cache.put(cacheKey, '1', 3600);
+
+    // Destino configurável via PropertiesService (chave ERROR_EMAIL); fallback fixo.
+    var dest = '';
+    try {
+      dest = PropertiesService.getScriptProperties().getProperty('ERROR_EMAIL') || '';
+    } catch (_) {}
+    if (!dest) dest = 'estagios@riogrande.ifrs.edu.br';
+
     var assunto = '[SGE] Erro em ' + contexto + ' — ' + hojeISO_();
     var corpo   = 'Contexto: ' + contexto + '\n\n'
       + 'Mensagem: ' + (erro && erro.message ? erro.message : String(erro)) + '\n\n'

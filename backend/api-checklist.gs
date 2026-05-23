@@ -1603,7 +1603,8 @@ function gerarPdfChecklist_(idEstagio, checklist) {
       pdfFile = DriveApp.getFolderById(CFG_DRIVE.ESTAGIOS_ID).createFile(pdfBlob);
     }
   }
-  pdfFile.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  // DOMAIN_WITH_LINK: PDF do checklist é documento institucional — restrito ao domínio (LGPD)
+  pdfFile.setSharing(DriveApp.Access.DOMAIN_WITH_LINK, DriveApp.Permission.VIEW);
 
   // Mantém o Google Doc na pasta junto com o PDF
   if (pastaEst) {
