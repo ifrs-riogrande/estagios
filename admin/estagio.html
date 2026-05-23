@@ -843,6 +843,7 @@
           <div class="doc-actions" style="margin-top:var(--space-3)">
             <div class="doc-actions-left"></div>
             <div class="doc-actions-right">
+              <button class="btn btn-secondary btn-sm" onclick="diagnosticarLogo(this)">🔍 Diag. Logo</button>
               <button class="btn btn-secondary btn-sm" onclick="regenerarTCEInicial('${escapeHtml(_id)}', this)">
                 <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"/></svg>
                 Regenerar TCE
@@ -1119,6 +1120,23 @@
     function formatarCNPJ(cnpj) {
       const d = String(cnpj).replace(/\D/g, '');
       return d.length === 14 ? d.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5') : cnpj;
+    }
+
+    /* ─── Diagnóstico do logo ─── */
+    async function diagnosticarLogo(btn) {
+      const orig = btn.textContent.trim();
+      btn.disabled = true; btn.textContent = 'Testando…';
+      try {
+        const res = await API.post('diagnosticarLogo', { authToken: getAccessToken() });
+        console.log('[Logo Diagnóstico]', res);
+        const lines = Object.entries(res).map(([k,v]) => k + ': ' + JSON.stringify(v));
+        alert('=== DIAGNÓSTICO LOGO ===\n' + lines.join('\n'));
+        if (res.testePdfUrl) window.open(res.testePdfUrl, '_blank');
+      } catch (err) {
+        alert('Erro no diagnóstico: ' + err.message);
+      } finally {
+        btn.disabled = false; btn.textContent = orig;
+      }
     }
 
     /* ─── Regenerar TCE inicial (gera PDF e atualiza pdfOriginalUrl no fluxo) ─── */
