@@ -1405,38 +1405,37 @@ function gerarPdfChecklist_(idEstagio, checklist) {
   // ── Cria documento Google Docs ─────────────────────────────────────────────
   var docName = 'Checklist — ' + String(sol.nomeEstudante || idEstagio).replace(/[\/\\]/g, '-');
   var doc  = DocumentApp.create(docName);
+  var _docId  = doc.getId(); // salva antes de qualquer saveAndClose
   var body = doc.getBody();
+  body.clear();
 
   var CINZA   = '#6b7280';
   var PRETO   = '#111827';
 
-  // Margens idênticas ao TCE: topo/base 56pt (~2cm), lados 72pt (~2,5cm)
   body.setMarginTop(56).setMarginBottom(56).setMarginLeft(72).setMarginRight(72);
 
-  // ── Cabeçalho — idêntico ao TCE ──────────────────────────────────────────
-  var hdr = doc.addHeader();
-
-  // Logo (igual ao TCE)
+  // ── IDENTIFICAÇÃO INSTITUCIONAL: logo + texto (tudo no corpo, header falha no Web App) ──
   var _logoBlob = _obterLogoCabecalho_();
   if (_logoBlob) {
-    var hLogoP = hdr.appendParagraph('');
-    hLogoP.setAlignment(DocumentApp.HorizontalAlignment.CENTER);
-    hLogoP.setSpacingBefore(0).setSpacingAfter(3);
-    try { hLogoP.insertInlineImage(0, _logoBlob).setWidth(54).setHeight(54); } catch (_) {}
+    try {
+      var logoImg = body.appendImage(_logoBlob);
+      logoImg.setWidth(54).setHeight(54);
+      logoImg.getParent().setAlignment(DocumentApp.HorizontalAlignment.CENTER);
+      logoImg.getParent().setSpacingBefore(0).setSpacingAfter(2);
+    } catch (_logoErr) { logErro_('gerarPdfChecklist_.logo', _logoErr); }
   }
-
-  var hP1 = hdr.appendParagraph('MINISTÉRIO DA EDUCAÇÃO');
-  hP1.setAlignment(DocumentApp.HorizontalAlignment.CENTER);
-  hP1.setSpacingBefore(0).setSpacingAfter(1);
-  hP1.editAsText().setFontFamily('Arial').setFontSize(8);
-  var hP2 = hdr.appendParagraph('INSTITUTO FEDERAL DE EDUCAÇÃO, CIÊNCIA E TECNOLOGIA DO RIO GRANDE DO SUL');
-  hP2.setAlignment(DocumentApp.HorizontalAlignment.CENTER);
-  hP2.setSpacingBefore(1).setSpacingAfter(1);
-  hP2.editAsText().setFontFamily('Arial').setFontSize(9).setBold(true);
-  var hP3 = hdr.appendParagraph('Campus Rio Grande');
-  hP3.setAlignment(DocumentApp.HorizontalAlignment.CENTER);
-  hP3.setSpacingBefore(1).setSpacingAfter(10);
-  hP3.editAsText().setFontFamily('Arial').setFontSize(8);
+  var iP1 = body.appendParagraph('MINISTÉRIO DA EDUCAÇÃO');
+  iP1.setAlignment(DocumentApp.HorizontalAlignment.CENTER);
+  iP1.setSpacingBefore(0).setSpacingAfter(1);
+  iP1.editAsText().setFontFamily('Arial').setFontSize(8);
+  var iP2 = body.appendParagraph('INSTITUTO FEDERAL DE EDUCAÇÃO, CIÊNCIA E TECNOLOGIA DO RIO GRANDE DO SUL');
+  iP2.setAlignment(DocumentApp.HorizontalAlignment.CENTER);
+  iP2.setSpacingBefore(1).setSpacingAfter(1);
+  iP2.editAsText().setFontFamily('Arial').setFontSize(9).setBold(true);
+  var iP3 = body.appendParagraph('Campus Rio Grande');
+  iP3.setAlignment(DocumentApp.HorizontalAlignment.CENTER);
+  iP3.setSpacingBefore(1).setSpacingAfter(10);
+  iP3.editAsText().setFontFamily('Arial').setFontSize(8);
 
   // ── Título ─────────────────────────────────────────────────────────────────
   var pTitulo = body.appendParagraph('PLANO DE ATIVIDADES DO ESTAGIÁRIO');
@@ -1585,7 +1584,7 @@ function gerarPdfChecklist_(idEstagio, checklist) {
   doc.saveAndClose();
 
   // ── Exporta como PDF ───────────────────────────────────────────────────────
-  var docFile = DriveApp.getFileById(doc.getId());
+  var docFile = DriveApp.getFileById(_docId);
   var pdfBlob = docFile.getAs('application/pdf').setName(docName + '.pdf');
 
   // Salva na pasta do estágio (se existir) ou na raiz
@@ -1606,8 +1605,13 @@ function gerarPdfChecklist_(idEstagio, checklist) {
   }
   pdfFile.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
 
-  // Remove o doc temporário (mantém apenas o PDF)
-  try { docFile.setTrashed(true); } catch (_tr) {}
+  // Mantém o Google Doc na pasta junto com o PDF
+  if (pastaEst) {
+    try {
+      pastaEst.addFile(docFile);
+      DriveApp.getRootFolder().removeFile(docFile);
+    } catch (_mv) {}
+  }
 
   // Salva URL no checklist
   checklist.urlPdfChecklist = pdfFile.getUrl();

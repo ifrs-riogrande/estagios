@@ -758,15 +758,15 @@
       const badgeTxt   = concluido ? '✓ Concluído'   : 'Em Checklist';
 
       let acoesHtml = '';
-      if (urlPdf) {
-        acoesHtml += `<a href="${escapeHtml(urlPdf)}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">Baixar PDF ↗</a>`;
-      }
       if (concluido) {
-        acoesHtml += `<a href="${escapeHtml(validarUrl)}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">Página de Validação ↗</a>`;
         acoesHtml += `<button class="btn btn-secondary btn-sm" onclick="regenerarPdfChecklist('${escapeHtml(_id)}', this)">
           <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"/></svg>
-          Regenerar PDF
+          Regenerar
         </button>`;
+        acoesHtml += `<a href="${escapeHtml(validarUrl)}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">Página de Validação ↗</a>`;
+        if (urlPdf) {
+          acoesHtml += `<a href="${escapeHtml(urlPdf)}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">Baixar PDF ↗</a>`;
+        }
       } else {
         acoesHtml += `<button class="btn btn-secondary btn-sm" onclick="reenviarNotificacaoAssinatura('${escapeHtml(_id)}', this)">
           <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"/><path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"/></svg>
@@ -803,32 +803,10 @@
         ? 'Todas as assinaturas concluídas'
         : (etapaAtiva ? 'Aguardando: ' + etapaAtiva.label : 'Pendente de início');
 
-      // Monta lista de versões de PDF (original + cada etapa concluída com driveUrl)
-      let versoes = [];
-      if (fluxo.pdfOriginalUrl) {
-        versoes.push({ label: 'TCE Original (não assinado)', url: fluxo.pdfOriginalUrl });
-      }
-      (fluxo.etapas || []).forEach(function(et) {
-        if (et.driveUrl) {
-          versoes.push({ label: 'v' + et.numero + ' — ' + et.label, url: et.driveUrl });
-        }
-      });
-
-      let versoesHtml = '';
-      if (versoes.length > 0) {
-        versoesHtml = `<div style="margin-top:var(--space-3);display:flex;flex-wrap:wrap;gap:var(--space-2)">`;
-        versoes.forEach(function(v) {
-          versoesHtml += `<a href="${escapeHtml(v.url)}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm" title="${escapeHtml(v.label)}">
-            <svg width="13" height="13" viewBox="0 0 20 20" fill="currentColor" style="margin-right:3px"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
-            ${escapeHtml(v.label)}
-          </a>`;
-        });
-        versoesHtml += `</div>`;
-      } else {
-        versoesHtml = `<p style="font-size:12px;color:var(--color-text-muted);margin-top:var(--space-3)">Nenhum PDF disponível ainda.</p>`;
-      }
-
-      const assUrl = `../assinaturas/?id=${encodeURIComponent(_id)}`;
+      // URL da pasta do Drive onde ficam todas as versões do TCE
+      const pastaUrl = fluxo.drivePastaId
+        ? `https://drive.google.com/drive/folders/${encodeURIComponent(fluxo.drivePastaId)}`
+        : (_estagio && _estagio.driveUrl ? _estagio.driveUrl : '');
 
       return `
         <div class="doc-card" style="margin-bottom:var(--space-4)">
@@ -839,16 +817,21 @@
             </div>
             <span class="badge ${badgeCls}">${badgeTxt}</span>
           </div>
-          ${versoesHtml}
-          <div class="doc-actions" style="margin-top:var(--space-3)">
+          <div class="doc-actions">
             <div class="doc-actions-left"></div>
             <div class="doc-actions-right">
-              <button class="btn btn-secondary btn-sm" onclick="diagnosticarLogo(this)">🔍 Diag. Logo</button>
               <button class="btn btn-secondary btn-sm" onclick="regenerarTCEInicial('${escapeHtml(_id)}', this)">
                 <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"/></svg>
                 Regenerar TCE
               </button>
-              <a href="${escapeHtml(assUrl)}" target="_blank" rel="noopener" class="btn btn-primary btn-sm">Abrir Fluxo ↗</a>
+              <a href="https://validar.iti.gov.br/" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">
+                <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                Validador ITI ↗
+              </a>
+              ${pastaUrl ? `<a href="${escapeHtml(pastaUrl)}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">
+                <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"/></svg>
+                Pasta no Drive ↗
+              </a>` : ''}
             </div>
           </div>
         </div>`;
@@ -1120,23 +1103,6 @@
     function formatarCNPJ(cnpj) {
       const d = String(cnpj).replace(/\D/g, '');
       return d.length === 14 ? d.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5') : cnpj;
-    }
-
-    /* ─── Diagnóstico do logo ─── */
-    async function diagnosticarLogo(btn) {
-      const orig = btn.textContent.trim();
-      btn.disabled = true; btn.textContent = 'Testando…';
-      try {
-        const res = await API.post('diagnosticarLogo', { authToken: getAccessToken() });
-        console.log('[Logo Diagnóstico]', res);
-        const lines = Object.entries(res).map(([k,v]) => k + ': ' + JSON.stringify(v));
-        alert('=== DIAGNÓSTICO LOGO ===\n' + lines.join('\n'));
-        if (res.testePdfUrl) window.open(res.testePdfUrl, '_blank');
-      } catch (err) {
-        alert('Erro no diagnóstico: ' + err.message);
-      } finally {
-        btn.disabled = false; btn.textContent = orig;
-      }
     }
 
     /* ─── Regenerar TCE inicial (gera PDF e atualiza pdfOriginalUrl no fluxo) ─── */

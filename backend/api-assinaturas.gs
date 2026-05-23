@@ -69,7 +69,8 @@ function iniciarFluxoAssinaturas_(idEstagio) {
   var pasta  = _criarPastaAssinaturas_(idEstagio);
 
   // Gera o PDF inicial do TCE (não assinado) e salva no Drive
-  var pdfInicial = _gerarPdfTCEInicial_(idEstagio, sol, pasta.getId());
+  var pdfInicial = null;
+  try { pdfInicial = _gerarPdfTCEInicial_(idEstagio, sol, pasta.getId()); } catch (ePdfInicial) { logErro_('iniciarFluxoAssinaturas_.gerarPdfInicial', ePdfInicial); }
 
   // Mapa de e-mails dos atores — usando _resolverEmailAtor_ como fonte única
   var emails = {};
@@ -300,7 +301,15 @@ function _obterLogoCabecalho_() {
   try {
     var logoId = PropertiesService.getScriptProperties().getProperty('config_logo_drive_id');
     if (!logoId) return null;
-    return DriveApp.getFileById(logoId.trim()).getBlob();
+    // Usa UrlFetchApp + Drive API v3 (mesmo padrão do QR code que funciona no Web App)
+    // DriveApp.getBlob() produz um blob que body.appendImage() não consegue usar no contexto Web App
+    var token = ScriptApp.getOAuthToken();
+    var resp = UrlFetchApp.fetch(
+      'https://www.googleapis.com/drive/v3/files/' + logoId.trim() + '?alt=media',
+      { headers: { 'Authorization': 'Bearer ' + token }, muteHttpExceptions: true }
+    );
+    if (resp.getResponseCode() !== 200) return null;
+    return resp.getBlob().setContentType('image/png').setName('logo.png');
   } catch (e) {
     logErro_('_obterLogoCabecalho_', e);
     return null;
@@ -407,7 +416,7 @@ function _gerarPdfTCEInicial_(idEstagio, sol, pastaId) {
     var oriTel = _obterTelOrientadorTCE_(sol.nomeOrientador);
     var estEnd = _obterEndEstudanteTCE_(sol.cpf);
 
-    var doc  = DocumentApp.create('TCE_' + idEstagio + '_rascunho_temp');
+    var doc  = DocumentApp.create('TCE_' + idEstagio + '_v0_original');
     docId    = doc.getId();
     var body = doc.getBody();
     body.clear();
@@ -430,8 +439,8 @@ function _gerarPdfTCEInicial_(idEstagio, sol, pastaId) {
       if (indent) p.setIndentStart(indent);
       var t = p.editAsText();
       t.setFontFamily('Arial').setFontSize(10);
-      t.setBold(true,  0, lbl.length);            // negrito no rótulo + ":"
-      t.setBold(false, lbl.length + 2, txt.length - 1); // normal no valor
+      t.setBold(0, lbl.length, true);             // negrito no rótulo + ":"
+      if (txt.length - 1 > lbl.length + 2) t.setBold(lbl.length + 2, txt.length - 1, false); // normal no valor
       return p;
     }
 
@@ -449,8 +458,8 @@ function _gerarPdfTCEInicial_(idEstagio, sol, pastaId) {
       var pos = 0;
       partes.forEach(function(parte, i) {
         var lblLen = pares[i][0].length;
-        t.setBold(true,  pos, pos + lblLen);
-        if (parte.length > lblLen + 2) t.setBold(false, pos + lblLen + 2, pos + parte.length - 1);
+        t.setBold(pos, pos + lblLen, true);
+        if (parte.length > lblLen + 2) t.setBold(pos + lblLen + 2, pos + parte.length - 1, false);
         pos += parte.length + (i < partes.length - 1 ? 5 : 0);
       });
       return p;
@@ -492,8 +501,8 @@ function _gerarPdfTCEInicial_(idEstagio, sol, pastaId) {
       p.setSpacingBefore(7).setSpacingAfter(2);
       var t = p.editAsText();
       t.setFontFamily('Arial').setFontSize(10);
-      t.setBold(true,  0, lbl.length - 1);
-      t.setBold(false, lbl.length, full.length - 1);
+      t.setBold(0, lbl.length - 1, true);
+      t.setBold(lbl.length, full.length - 1, false);
       return p;
     }
 
@@ -505,8 +514,8 @@ function _gerarPdfTCEInicial_(idEstagio, sol, pastaId) {
       p.setSpacingBefore(2).setSpacingAfter(2).setIndentStart(28);
       var t = p.editAsText();
       t.setFontFamily('Arial').setFontSize(10);
-      t.setBold(true,  0, lbl.length - 1);
-      t.setBold(false, lbl.length + 1, full.length - 1);
+      t.setBold(0, lbl.length - 1, true);
+      t.setBold(lbl.length + 1, full.length - 1, false);
       return p;
     }
 
@@ -528,30 +537,28 @@ function _gerarPdfTCEInicial_(idEstagio, sol, pastaId) {
       if (complemento) txt(complemento, { before:0, after:2, italic:true, center:true });
     }
 
-    // ── CABEÇALHO (Header) ────────────────────────────────────────────────────
-    var hdr = doc.addHeader();
-
-    // Logo centralizado (se configurado pelo admin)
+    // ── IDENTIFICAÇÃO INSTITUCIONAL: logo + texto (tudo no corpo, header falha no Web App) ──
     var _logoBlob = _obterLogoCabecalho_();
     if (_logoBlob) {
-      var hLogoP = hdr.appendParagraph('');
-      hLogoP.setAlignment(DocumentApp.HorizontalAlignment.CENTER);
-      hLogoP.setSpacingBefore(0).setSpacingAfter(3);
-      try { hLogoP.insertInlineImage(0, _logoBlob).setWidth(54).setHeight(54); } catch (_) {}
+      try {
+        var logoImg = body.appendImage(_logoBlob);
+        logoImg.setWidth(54).setHeight(54);
+        logoImg.getParent().setAlignment(DocumentApp.HorizontalAlignment.CENTER);
+        logoImg.getParent().setSpacingBefore(0).setSpacingAfter(2);
+      } catch (_logoErr) { logErro_('_gerarPdfTCEInicial_.logo', _logoErr); }
     }
-
-    var hP1 = hdr.appendParagraph('MINISTÉRIO DA EDUCAÇÃO');
-    hP1.setAlignment(DocumentApp.HorizontalAlignment.CENTER);
-    hP1.setSpacingBefore(0).setSpacingAfter(1);
-    hP1.editAsText().setFontFamily('Arial').setFontSize(8);
-    var hP2 = hdr.appendParagraph('INSTITUTO FEDERAL DE EDUCAÇÃO, CIÊNCIA E TECNOLOGIA DO RIO GRANDE DO SUL');
-    hP2.setAlignment(DocumentApp.HorizontalAlignment.CENTER);
-    hP2.setSpacingBefore(1).setSpacingAfter(1);
-    hP2.editAsText().setFontFamily('Arial').setFontSize(9).setBold(true);
-    var hP3 = hdr.appendParagraph('Campus Rio Grande');
-    hP3.setAlignment(DocumentApp.HorizontalAlignment.CENTER);
-    hP3.setSpacingBefore(1).setSpacingAfter(10); // espaço entre cabeçalho e corpo
-    hP3.editAsText().setFontFamily('Arial').setFontSize(8);
+    var iP1 = body.appendParagraph('MINISTÉRIO DA EDUCAÇÃO');
+    iP1.setAlignment(DocumentApp.HorizontalAlignment.CENTER);
+    iP1.setSpacingBefore(0).setSpacingAfter(1);
+    iP1.editAsText().setFontFamily('Arial').setFontSize(8);
+    var iP2 = body.appendParagraph('INSTITUTO FEDERAL DE EDUCAÇÃO, CIÊNCIA E TECNOLOGIA DO RIO GRANDE DO SUL');
+    iP2.setAlignment(DocumentApp.HorizontalAlignment.CENTER);
+    iP2.setSpacingBefore(1).setSpacingAfter(1);
+    iP2.editAsText().setFontFamily('Arial').setFontSize(9).setBold(true);
+    var iP3 = body.appendParagraph('Campus Rio Grande');
+    iP3.setAlignment(DocumentApp.HorizontalAlignment.CENTER);
+    iP3.setSpacingBefore(1).setSpacingAfter(10);
+    iP3.editAsText().setFontFamily('Arial').setFontSize(8);
 
     // ── TÍTULO ────────────────────────────────────────────────────────────────
     var pTitulo = body.appendParagraph('TERMO DE COMPROMISSO DE ESTÁGIO ' + tipoNome);
@@ -819,13 +826,20 @@ function _gerarPdfTCEInicial_(idEstagio, sol, pastaId) {
         .getAs(MimeType.PDF)
         .setName('TCE_' + idEstagio + '_v0_original.pdf');
     var arquivo = DriveApp.getFolderById(pastaId).createFile(pdfBlob);
-    DriveApp.getFileById(docId).setTrashed(true);
+
+    // Mantém o Google Doc na pasta junto com o PDF
+    var docFile = DriveApp.getFileById(docId);
+    try {
+      DriveApp.getFolderById(pastaId).addFile(docFile);
+      DriveApp.getRootFolder().removeFile(docFile);
+    } catch (_mv) {}
+
     return arquivo;
 
   } catch (e) {
     logErro_('_gerarPdfTCEInicial_', e);
     if (docId) { try { DriveApp.getFileById(docId).setTrashed(true); } catch (_) {} }
-    return null;
+    throw e;  // propaga para o chamador poder reportar o erro real
   }
 }
 
@@ -1373,6 +1387,32 @@ function doGetAssinaturas(e) {
       return jsonOk_(fluxoPublico);
     }
 
+    case 'obterFluxoAssinaturasAdmin': {
+      // Admin-only: retorna fluxo completo com pdfOriginalUrl e driveUrl por etapa
+      var authTkAdmin = (e.parameter && e.parameter.authToken) || '';
+      try { validarTokenAdmin_(authTkAdmin); } catch(eAuthAdm) { return jsonError_('Não autorizado: ' + eAuthAdm.message, 'AUTH_ERROR'); }
+      if (!id) return jsonError_('Parâmetro id obrigatório.', 'MISSING_PARAM');
+      var fluxoAdm = obterFluxoAssinaturas_(id);
+      if (!fluxoAdm) return jsonError_('Fluxo não encontrado.', 'NOT_FOUND');
+      // Retorna fluxo sem tokens mas com URLs de PDF
+      var fluxoAdmPub = JSON.parse(JSON.stringify(fluxoAdm));
+      fluxoAdmPub.etapas = fluxoAdmPub.etapas.map(function(et) {
+        return {
+          numero:          et.numero,
+          ator:            et.ator,
+          label:           et.label,
+          tipo:            et.tipo,
+          status:          et.status,
+          prazoVencimento: et.prazoVencimento,
+          data:            et.data,
+          versao:          et.versao,
+          obs:             et.obs,
+          driveUrl:        et.driveUrl || null,
+        };
+      });
+      return jsonOk_(fluxoAdmPub);
+    }
+
     case 'baixarPdfAssinatura': {
       if (!id) return jsonError_('Parâmetro id obrigatório.', 'MISSING_PARAM');
       var token = (e.parameter && e.parameter.token) || '';
@@ -1480,6 +1520,35 @@ function doPostAssinaturas(e) {
         return jsonError_('Erro ao reenviar notificação: ' + e.message, 'SEND_ERROR');
       }
       return jsonOk_({ reenviado: true, etapa: etaAtiva.numero, label: etaAtiva.label, email: etaAtiva.email });
+    }
+
+    case 'regenerarTCEInicial': {
+      try { validarTokenAdmin_(body.authToken); } catch(eA) { return jsonError_('Não autorizado', 'AUTH_ERROR'); }
+      if (!body.idEstagio) return jsonError_('idEstagio obrigatório', 'MISSING_PARAM');
+      try {
+        var fluxoReg = obterFluxoAssinaturas_(body.idEstagio);
+        if (!fluxoReg) return jsonError_('Fluxo de assinaturas não encontrado.', 'NOT_FOUND');
+
+        var solReg = _obterDadosSolicitacaoCompleto_(body.idEstagio);
+        var pastaIdReg = fluxoReg.drivePastaId || null;
+        if (!pastaIdReg) {
+          // Tenta derivar da URL do Drive da solicitação
+          var driveUrlReg = String(solReg.driveUrl || '');
+          var mReg = driveUrlReg.match(/[-\w]{25,}/);
+          if (mReg) pastaIdReg = mReg[0];
+        }
+        if (!pastaIdReg) return jsonError_('Pasta do estágio não encontrada.', 'NOT_FOUND');
+
+        var arquivoReg = _gerarPdfTCEInicial_(body.idEstagio, solReg, pastaIdReg);
+
+        // Atualiza pdfOriginalUrl no fluxo
+        fluxoReg.pdfOriginalUrl = arquivoReg.getUrl();
+        salvarFluxoAssinaturas_(body.idEstagio, fluxoReg);
+
+        return jsonOk_({ urlPdf: arquivoReg.getUrl() });
+      } catch (eTCE) {
+        return jsonError_('Erro ao gerar TCE: ' + eTCE.message, 'GENERATE_ERROR');
+      }
     }
 
     default:

@@ -84,6 +84,7 @@ var GET_ROUTES = {
 
   // Assinaturas
   'obterFluxoAssinaturas':        doGetAssinaturas,
+  'obterFluxoAssinaturasAdmin':   doGetAssinaturas,
   'listarFluxosPendentesEtapa':   doGetAssinaturas,
   'baixarPdfAssinatura':          doGetAssinaturas,
 
@@ -183,6 +184,7 @@ var POST_ROUTES = {
   'rejeitarEtapa':                    doPostAssinaturas,
   'uploadPdfAssinado':                doPostAssinaturas,
   'reenviarNotificacaoAssinatura':    doPostAssinaturas,
+  'regenerarTCEInicial':              doPostAssinaturas,
 };
 
 // â”€â”€ Ponto de entrada GET â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
