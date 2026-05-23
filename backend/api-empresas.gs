@@ -38,9 +38,6 @@ var CFG = {
   ABA_OPP:          'Oportunidades',
   ABA_LOG:          'Log de Alterações',
 
-  // Pasta raiz no Drive para documentos
-  DRIVE_ROOT: 'SGE — Estágios IFRS',
-
   // Rate limiting: máx requisições por IP por minuto
   RATE_LIMIT: 10,
 };
@@ -71,84 +68,6 @@ var COL_SUP = {
   STATUS: 19, VALIDADO_POR: 20, DATA_VALIDACAO: 21,
   OBSERVACOES: 22, DATA_ULT_ATZ: 23, CODIGO_ACESSO: 24,
 };
-
-// ─────────────────────────────────────────
-//  ROTEADOR PRINCIPAL
-// ─────────────────────────────────────────
-
-function doGet(e) {
-  try {
-    var action = e.parameter.action || '';
-    var result;
-
-    switch (action) {
-      case 'listarEmpresas':
-        result = listarEmpresas_();
-        break;
-      case 'listarSupervisores':
-        result = listarSupervisores_(e.parameter.empresa || '');
-        break;
-      case 'obterCadastroEmpresa':
-        result = obterCadastroEmpresa_(e.parameter.cnpjCpf || '');
-        break;
-      case 'obterCadastroSupervisor':
-        result = obterCadastroSupervisor_(e.parameter.cpf || '');
-        break;
-      default:
-        return jsonError_('Ação GET não reconhecida: ' + action, 400);
-    }
-
-    return jsonOk_(result);
-
-  } catch (err) {
-    logErro_('doGet', err);
-    return jsonError_('Erro interno no servidor. Tente novamente.', 500);
-  }
-}
-
-function doPost(e) {
-  try {
-    // Parse do body JSON
-    var body = {};
-    if (e.postData && e.postData.contents) {
-      body = JSON.parse(e.postData.contents);
-    }
-
-    var action = body.action || '';
-    var result;
-
-    // Rate limiting simples por propriedade de script
-    if (!checkRateLimit_(action)) {
-      return jsonError_('Muitas requisições. Aguarde um momento e tente novamente.', 429);
-    }
-
-    switch (action) {
-      case 'cadastrarEmpresa':
-        result = cadastrarEmpresa_(body);
-        break;
-      case 'cadastrarSupervisor':
-        result = cadastrarSupervisor_(body);
-        break;
-      case 'cadastrarOportunidade':
-        result = cadastrarOportunidade_(body);
-        break;
-      case 'salvarMeuCadastroEmpresa':
-        result = salvarMeuCadastroEmpresa_(body);
-        break;
-      case 'salvarMeuCadastroSupervisor':
-        result = salvarMeuCadastroSupervisor_(body);
-        break;
-      default:
-        return jsonError_('Ação POST não reconhecida: ' + action, 400);
-    }
-
-    return jsonOk_(result);
-
-  } catch (err) {
-    logErro_('doPost', err);
-    return jsonError_('Erro interno no servidor. Tente novamente.', 500);
-  }
-}
 
 // ─────────────────────────────────────────
 //  GET: listarEmpresas
@@ -751,7 +670,7 @@ function salvarMeuCadastroEmpresa_(body) {
   }
 
   // Novo cadastro — gera código de acesso imediatamente (EMP-XXXXXX)
-  var codigoAcesso = 'EMP-' + Math.random().toString(36).substr(2, 6).toUpperCase();
+  var codigoAcesso = 'EMP-' + Utilities.getUuid().replace(/-/g,'').slice(0,8).toUpperCase();
 
   var novaLinha = new Array(23).fill('');
   novaLinha[COL_EMP.TIMESTAMP]      = timestamp;
@@ -947,7 +866,7 @@ function salvarMeuCadastroSupervisor_(body) {
   }
 
   // Novo cadastro
-  var codigoAcesso = 'S' + Math.random().toString(36).substr(2, 6).toUpperCase();
+  var codigoAcesso = 'SUP-' + Utilities.getUuid().replace(/-/g,'').slice(0,8).toUpperCase();
   var novaLinha = new Array(25).fill('');
   novaLinha[COL_SUP.TIMESTAMP]      = timestamp;
   novaLinha[COL_SUP.EMAIL_FORM]     = emailSup;

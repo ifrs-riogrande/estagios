@@ -52,6 +52,7 @@ var GET_ROUTES = {
   'verificarIdEstagio':         doGetSolicitacao,
   'verificarAceiteOrientador':  doGetSolicitacao,
   'listarHistoricoEstagio':     doGetSolicitacao,
+  'listarDocumentosAvulsos':    doGetSolicitacao,
 
   // Admin
   'listarSolicitacoesAdmin':  doGetAdmin,
@@ -273,6 +274,7 @@ function doGetSolicitacao(e) {
   var action = (e.parameter && e.parameter.action) || '';
   if (action === 'verificarAceiteOrientador')  return verificarAceiteOrientador_(e);
   if (action === 'listarHistoricoEstagio')      return listarHistoricoEstagio_(e);
+  if (action === 'listarDocumentosAvulsos')     return listarDocumentosAvulsos_(e);
   return verificarIdEstagio_(e);
 }
 
@@ -289,6 +291,7 @@ function doPostSolicitacao(e) {
     case 'responderAceiteOrientador':  return responderAceiteOrientador_(body);
     case 'trocarOrientador':           return trocarOrientador_(body);
     case 'uploadDocumentoEstagio':     return uploadDocumentoEstagio_(body);
+    case 'marcarDocumentoRevisado':    return marcarDocumentoRevisado_(body);
     default: return jsonError_('Ação não implementada: ' + action, 'NOT_IMPLEMENTED');
   }
 }

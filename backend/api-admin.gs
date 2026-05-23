@@ -152,8 +152,8 @@ function doGetAdmin(e) {
 
 function doPostAdmin(e) {
   try {
-    var body   = JSON.parse(e.postData.contents);
-    var token  = body.authToken;
+    var body  = e._body || JSON.parse(e.postData.contents);
+    var token = body.authToken;
     validarTokenAdmin_(token);
     var action = body.action || '';
 
@@ -217,7 +217,18 @@ function doPostAdmin(e) {
 function validarTokenAdmin_(token) {
   var info = AUTH.validarToken(token);
   var email = (info.email || '').toLowerCase().trim();
-  var admins = CFG_ADMIN.ADMIN_EMAILS.map(function(e) { return e.toLowerCase(); });
+
+  // Preferência: lista em PropertiesService (chave ADMIN_EMAILS, vírgula-separado).
+  // Se não configurada, usa o fallback em CFG_ADMIN.ADMIN_EMAILS.
+  var adminList = CFG_ADMIN.ADMIN_EMAILS;
+  try {
+    var prop = PropertiesService.getScriptProperties().getProperty('ADMIN_EMAILS');
+    if (prop && prop.trim()) {
+      adminList = prop.split(',').map(function(s) { return s.trim(); }).filter(Boolean);
+    }
+  } catch (_propErr) {}
+
+  var admins = adminList.map(function(a) { return a.toLowerCase(); });
   if (admins.indexOf(email) === -1) {
     throw new ErroAutenticacao('E-mail ' + email + ' não tem permissão de Admin.');
   }
@@ -271,8 +282,6 @@ function listarSolicitacoesAdmin_() {
 }
 
 function listarDocumentosAdmin_() {
-  var lista = listarSolicitacoesAdmin_();
-  // lista já é um ContentService — precisa ler o JSON
   var ss    = SpreadsheetApp.openById(CFG_ADMIN.SS_ID);
   var sheet = ss.getSheetByName(CFG_ADMIN.ABA_SOL);
   if (!sheet) return jsonOk_({ docsEnviados: [], aguardandoDG: [], validacaoFinal: [] });
@@ -481,18 +490,19 @@ function listarAdendosAdmin_() {
   var lista = [];
   for (var i = 1; i < dados.length; i++) {
     var r = dados[i];
-    if (!r[0]) continue;
+    if (!r[COL_ADENDO.TIMESTAMP]) continue;
     lista.push({
       id:              i,   // linha como ID
-      idEstagio:       String(r[1] || '').trim(),
-      nomeEstudante:   String(r[2] || ''),
-      emailEstudante:  String(r[3] || ''),
-      tipoAlteracao:   String(r[4] || ''),
-      descricao:       String(r[5] || ''),
-      valorAnterior:   String(r[6] || ''),
-      valorNovo:       String(r[7] || ''),
-      status:          String(r[9] || 'Pendente'),
-      dataSolicitacao: formatarData_(r[0]),
+      idEstagio:       String(r[COL_ADENDO.ID_ESTAGIO]        || '').trim(),
+      emailEstudante:  String(r[COL_ADENDO.EMAIL_ESTUDANTE]   || ''),
+      tipoAlteracao:   String(r[COL_ADENDO.TIPO_ADENDO]       || ''),
+      novaDataTermino: String(r[COL_ADENDO.NOVA_DATA_TERMINO] || ''),
+      novaCarga:       String(r[COL_ADENDO.NOVA_CARGA]        || ''),
+      novoHorario:     String(r[COL_ADENDO.NOVO_HORARIO]      || ''),
+      justificativa:   String(r[COL_ADENDO.JUSTIFICATIVA]     || ''),
+      obs:             String(r[COL_ADENDO.OBS]               || ''),
+      status:          String(r[COL_ADENDO.STATUS]            || 'Pendente'),
+      dataSolicitacao: formatarData_(r[COL_ADENDO.TIMESTAMP]),
     });
   }
   lista.reverse();
@@ -744,7 +754,7 @@ function alterarStatusEmpresa_(cnpj, novoStatus) {
     if (novoStatus === 'Validada') {
       // Reusa código existente ou gera novo (para empresas cadastradas antes desta atualização)
       var codigoExistente = String(dados[i][20] || '').trim(); // CODIGO_ACESSO = col U
-      var codigo = codigoExistente || ('EMP-' + Math.random().toString(36).substr(2, 6).toUpperCase());
+      var codigo = codigoExistente || ('EMP-' + Utilities.getUuid().replace(/-/g,'').slice(0,8).toUpperCase());
       if (!codigoExistente) {
         sheet.getRange(i + 1, 21).setValue(codigo);
       }
@@ -2112,7 +2122,7 @@ function alterarStatusSupervisor_(cpf, novoStatus) {
       var codigoExist = String(sheet.getRange(i + 1, 25).getValue() || '').trim();
       var codigoAcesso = codigoExist;
       if (!codigoAcesso) {
-        codigoAcesso = 'S' + Math.random().toString(36).substr(2, 6).toUpperCase();
+        codigoAcesso = 'SUP-' + Utilities.getUuid().replace(/-/g,'').slice(0,8).toUpperCase();
         sheet.getRange(i + 1, 25).setValue(codigoAcesso);                // CODIGO_ACESSO
       }
 

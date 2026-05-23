@@ -30,7 +30,10 @@ var AUTH = (function () {
 
     // Tenta o cache primeiro
     var cache = CacheService.getScriptCache();
-    var cacheKey = 'tok_' + token.slice(-32); // evita chave muito longa
+    // Usa MD5 do token como chave — evita colisões por sufixo e chaves muito longas
+    var cacheKey = 'tok_' + Utilities.computeDigest(
+      Utilities.DigestAlgorithm.MD5, token, Utilities.Charset.UTF_8
+    ).map(function(b) { return ('0' + (b & 0xFF).toString(16)).slice(-2); }).join('');
     var cached   = cache.get(cacheKey);
     if (cached) {
       try { return JSON.parse(cached); } catch (e) { /* ignora cache corrompido */ }
@@ -57,6 +60,18 @@ var AUTH = (function () {
 
     if (data.error || !data.email) {
       throw new ErroAutenticacao('Token rejeitado pelo Google: ' + (data.error_description || data.error || 'sem e-mail.'));
+    }
+
+    // Valida audience (client_id) se configurado em PropertiesService
+    // Configure com: PropertiesService.getScriptProperties().setProperty('OAUTH_CLIENT_ID', 'xxx.apps.googleusercontent.com')
+    try {
+      var expectedAud = PropertiesService.getScriptProperties().getProperty('OAUTH_CLIENT_ID');
+      if (expectedAud && data.aud && data.aud !== expectedAud) {
+        throw new ErroAutenticacao('Token emitido para aplicação não autorizada.');
+      }
+    } catch (eAud) {
+      if (eAud instanceof ErroAutenticacao) throw eAud;
+      // Se PropertiesService falhar, ignora a verificação (fail-open intencional)
     }
 
     var info = { email: data.email.toLowerCase(), name: data.name || '' };

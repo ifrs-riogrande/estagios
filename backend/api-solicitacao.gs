@@ -129,57 +129,6 @@ var COL_ADENDO = {
 };
 
 // ---------------------------------------------------------------------------
-// Roteamento
-// Nota: Code.gs é o roteador principal. Estas funções servem como fallback
-// caso o GAS carregue este arquivo por último na ordem alfabética.
-// ---------------------------------------------------------------------------
-
-function doGet(e) {
-  try {
-    var action = (e.parameter && e.parameter.action) || '';
-    if (action === 'verificarAceiteOrientador') return verificarAceiteOrientador_(e);
-    if (action === 'listarHistoricoEstagio')    return listarHistoricoEstagio_(e);
-    if (action === 'verificarIdEstagio')        return verificarIdEstagio_(e);
-    if (action === 'listarDocumentosAvulsos')   return listarDocumentosAvulsos_(e);
-    return jsonError_('Ação GET não reconhecida em solicitacao: ' + action, 'UNKNOWN_ACTION');
-  } catch (err) {
-    logErro_('api-solicitacao.doGet', err);
-    return jsonError_('Erro interno.', 'INTERNAL');
-  }
-}
-
-function doPost(e) {
-  var dados;
-  try {
-    dados = JSON.parse(e.postData.contents);
-  } catch (err) {
-    return jsonError_('Corpo da requisição inválido.', 'PARSE_ERROR');
-  }
-
-  try {
-    var action = dados.action || '';
-    switch (action) {
-      case 'solicitarEstagio':          return solicitarEstagio_(dados);
-      case 'enviarRelatorioParcial':    return enviarRelatorioParcial_(dados);
-      case 'enviarRelatorioFinal':      return enviarRelatorioFinal_(dados);
-      case 'enviarAdendo':              return enviarAdendo_(dados);
-      case 'enviarDocumentosAssinados': return enviarDocumentosAssinados_(dados);
-      case 'enviarDocumentoDG':         return enviarDocumentoDG_(dados);
-      case 'responderAceiteOrientador': return responderAceiteOrientador_(dados);
-      case 'trocarOrientador':          return trocarOrientador_(dados);
-      case 'uploadDocumentoEstagio':    return uploadDocumentoEstagio_(dados);
-      case 'marcarDocumentoRevisado':   return marcarDocumentoRevisado_(dados);
-      default:
-        return jsonError_('Ação não reconhecida.', 'UNKNOWN_ACTION');
-    }
-  } catch (err) {
-    logErro_('api-solicitacao.doPost[' + (dados && dados.action) + ']', err);
-    if (err instanceof ErroAutenticacao) return jsonError_(err.message, 'AUTH_ERROR');
-    return jsonError_('Erro interno ao processar a requisição.', 'INTERNAL');
-  }
-}
-
-// ---------------------------------------------------------------------------
 // POST — Solicitar estágio
 // ---------------------------------------------------------------------------
 
@@ -359,7 +308,7 @@ function solicitarEstagio_(dados) {
   linha[COL_SOL.VALOR_BOLSA]      = valorBolsa;
   linha[COL_SOL.VALOR_TRANSPORTE] = valorTransp;
   linha[COL_SOL.PLANO_ATIVIDADES] = planoAtiv;
-  linha[COL_SOL.OBJETIVOS]        = '';
+  linha[COL_SOL.OBJETIVOS]        = sanitizar_(dados.objetivos || '', 2000);
   linha[COL_SOL.FORMANDO]         = formando;
   linha[COL_SOL.TURNO]              = turno;
   linha[COL_SOL.SEMESTRE_SOL]       = semestreAtual;
@@ -736,20 +685,45 @@ function responderAceiteOrientador_(body) {
   if (!token) return jsonError_('Token não informado.', 'VALIDATION');
   if (!decisao) return jsonError_('Decisão não informada.', 'VALIDATION');
 
-  // Se idEstagio não veio no body, localiza pelo token na planilha
+  // Localiza a solicitação pelo token (ou pelo idEstagio se já veio)
+  var ss    = SpreadsheetApp.openById(CFG_SOL.SS_ID);
+  var sheet = ss.getSheetByName(CFG_SOL.ABA_SOL);
+  if (!sheet) return jsonError_('Planilha não configurada.', 'INTERNAL');
+
+  var dados = sheet.getDataRange().getValues();
+  var linhaToken = null;
+
   if (!idEstagio) {
-    var ss    = SpreadsheetApp.openById(CFG_SOL.SS_ID);
-    var sheet = ss.getSheetByName(CFG_SOL.ABA_SOL);
-    if (sheet) {
-      var dados = sheet.getDataRange().getValues();
-      for (var i = 1; i < dados.length; i++) {
-        if (String(dados[i][COL_SOL.TOKEN_ACEITE_ORI] || '') === token) {
-          idEstagio = String(dados[i][COL_SOL.ID_ESTAGIO] || '');
-          break;
-        }
+    for (var i = 1; i < dados.length; i++) {
+      if (String(dados[i][COL_SOL.TOKEN_ACEITE_ORI] || '') === token) {
+        idEstagio  = String(dados[i][COL_SOL.ID_ESTAGIO] || '');
+        linhaToken = dados[i];
+        break;
       }
     }
-    if (!idEstagio) return jsonError_('Token não encontrado.', 'NOT_FOUND');
+    if (!idEstagio) return jsonError_('Token não encontrado ou já utilizado.', 'NOT_FOUND');
+  } else {
+    // idEstagio veio no body — localiza para validar o token
+    for (var j = 1; j < dados.length; j++) {
+      if (String(dados[j][COL_SOL.ID_ESTAGIO] || '') === idEstagio) {
+        linhaToken = dados[j];
+        break;
+      }
+    }
+  }
+
+  // Valida token contra a planilha (evita uso de token de outro estágio)
+  if (linhaToken && String(linhaToken[COL_SOL.TOKEN_ACEITE_ORI] || '') !== token) {
+    return jsonError_('Token inválido para este estágio.', 'AUTH_ERROR');
+  }
+
+  // Verifica se o status ainda permite resposta do orientador
+  var statusAtual = linhaToken ? String(linhaToken[COL_SOL.STATUS] || '').trim() : '';
+  if (statusAtual && statusAtual !== 'Em Checklist') {
+    return jsonError_(
+      'Este estágio não está mais aguardando resposta do orientador (status: ' + statusAtual + ').',
+      'INVALID_STATE'
+    );
   }
 
   return salvarRespostaAtor_(idEstagio, 'orientador', itens, decisao, obs, null, token);
@@ -1658,12 +1632,12 @@ function listarDocumentosAvulsos_(e) {
 
 /**
  * Marca (ou desmarca) um documento avulso como revisado pelo admin.
- * Requer token de servidor/admin.
+ * Requer token de administrador (lista ADMIN_EMAILS).
  *
  * Body: { authToken, idEstagio, docId, revisado: bool, obsAdmin?: string }
  */
 function marcarDocumentoRevisado_(body) {
-  try { validarTokenServidor_(body.authToken); }
+  try { validarTokenAdmin_(body.authToken); }
   catch (e) { return jsonError_(e.message, 'AUTH_ERROR'); }
 
   var idEstagio = sanitizar_(body.idEstagio || '', 20).toUpperCase().trim();

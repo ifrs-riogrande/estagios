@@ -41,39 +41,6 @@ var COL_ORI = {
 // Roteamento
 // ---------------------------------------------------------------------------
 
-function doGet(e) {
-  try {
-    var action = (e.parameter && e.parameter.action) || '';
-    if (action === 'listarOrientadores') {
-      var curso = (e.parameter && e.parameter.curso) ? decodeURIComponent(e.parameter.curso) : '';
-      return listarOrientadores_(curso);
-    }
-    return jsonError_('Ação não reconhecida.', 'UNKNOWN_ACTION');
-  } catch (err) {
-    logErro_('api-servidores.doGet', err);
-    return jsonError_('Erro interno.', 'INTERNAL');
-  }
-}
-
-function doPost(e) {
-  var dados;
-  try {
-    dados = JSON.parse(e.postData.contents);
-  } catch (err) {
-    return jsonError_('Corpo da requisição inválido.', 'PARSE_ERROR');
-  }
-
-  try {
-    var action = dados.action || '';
-    if (action === 'cadastrarOrientador') return cadastrarOrientador_(dados);
-    return jsonError_('Ação não reconhecida.', 'UNKNOWN_ACTION');
-  } catch (err) {
-    logErro_('api-servidores.doPost[' + (dados && dados.action) + ']', err);
-    if (err instanceof ErroAutenticacao) return jsonError_(err.message, 'AUTH_ERROR');
-    return jsonError_('Erro interno ao processar a requisição.', 'INTERNAL');
-  }
-}
-
 // ---------------------------------------------------------------------------
 // GET — Listar orientadores (opcionalmente filtrados por curso)
 // ---------------------------------------------------------------------------
@@ -473,23 +440,23 @@ function listarMeusOrientandos_(e) {
 
   for (var i = 1; i < dados.length; i++) {
     var linha = dados[i];
-    var emailOri = String(linha[16] || '').toLowerCase().trim(); // COL_SOL.EMAIL_ORIENTADOR
+    var emailOri = String(linha[COL_SOL.EMAIL_ORIENTADOR] || '').toLowerCase().trim();
     if (emailOri !== email) continue;
 
     lista.push({
-      id:                  String(linha[1]  || ''),   // ID_ESTAGIO
-      nomeEstudante:       String(linha[3]  || ''),   // NOME_ESTUDANTE
-      matricula:           String(linha[4]  || ''),   // MATRICULA
-      curso:               String(linha[5]  || ''),   // CURSO
-      tipoEstagio:         String(linha[9]  || ''),   // TIPO_ESTAGIO
-      empresa:             String(linha[10] || ''),   // NOME_EMPRESA
-      nomeSupervisor:      String(linha[12] || ''),   // NOME_SUPERVISOR
-      dataInicio:          normalizarDataISO_(linha[17]), // DATA_INICIO
-      dataTermino:         normalizarDataISO_(linha[18]), // DATA_TERMINO
-      cargaHorariaSemanal: String(linha[19] || ''),   // CARGA_HOR
-      status:              String(linha[28] || ''),   // STATUS
-      obsSetor:            String(linha[29] || ''),   // OBS_SETOR
-      driveUrl:            String(linha[31] || ''),   // DRIVE_URL
+      id:                  String(linha[COL_SOL.ID_ESTAGIO]      || ''),
+      nomeEstudante:       String(linha[COL_SOL.NOME_ESTUDANTE]  || ''),
+      matricula:           String(linha[COL_SOL.MATRICULA]       || ''),
+      curso:               String(linha[COL_SOL.CURSO]           || ''),
+      tipoEstagio:         String(linha[COL_SOL.TIPO_ESTAGIO]    || ''),
+      empresa:             String(linha[COL_SOL.NOME_EMPRESA]    || ''),
+      nomeSupervisor:      String(linha[COL_SOL.NOME_SUPERVISOR] || ''),
+      dataInicio:          normalizarDataISO_(linha[COL_SOL.DATA_INICIO]),
+      dataTermino:         normalizarDataISO_(linha[COL_SOL.DATA_TERMINO]),
+      cargaHorariaSemanal: String(linha[COL_SOL.CARGA_HOR]       || ''),
+      status:              String(linha[COL_SOL.STATUS]          || ''),
+      obsSetor:            String(linha[COL_SOL.OBS_SETOR]       || ''),
+      driveUrl:            String(linha[COL_SOL.DRIVE_URL]       || ''),
     });
   }
 
@@ -514,9 +481,9 @@ function listarEstagiosCoordenador_(e) {
   var dadosCoord = sheetCoord.getDataRange().getValues();
   var curso = '';
   for (var i = 1; i < dadosCoord.length; i++) {
-    var emailCoord = String(dadosCoord[i][3] || '').toLowerCase().trim(); // E-mail = índice 3
+    var emailCoord = String(dadosCoord[i][COL_COORD.EMAIL] || '').toLowerCase().trim();
     if (emailCoord === email) {
-      curso = String(dadosCoord[i][6] || '').trim(); // Curso = índice 6
+      curso = String(dadosCoord[i][COL_COORD.CURSO] || '').trim();
       break;
     }
   }
@@ -525,7 +492,7 @@ function listarEstagiosCoordenador_(e) {
     return jsonError_('Coordenador não encontrado ou sem curso vinculado.', 'NOT_FOUND');
   }
 
-  // Filtra Solicitações pelo nome do curso (COL_SOL.CURSO = índice 5)
+  // Filtra Solicitações pelo nome do curso
   var sheetSol = ss.getSheetByName('Solicitações');
   if (!sheetSol) return jsonOk_({ curso: curso, estagios: [] });
 
@@ -534,24 +501,24 @@ function listarEstagiosCoordenador_(e) {
 
   for (var j = 1; j < dados.length; j++) {
     var linha = dados[j];
-    var cursoBanco = String(linha[5] || '').trim(); // CURSO = índice 5
+    var cursoBanco = String(linha[COL_SOL.CURSO] || '').trim();
     if (cursoBanco !== curso) continue;
 
     lista.push({
-      id:                  String(linha[1]  || ''),
-      nomeEstudante:       String(linha[3]  || ''),
-      matricula:           String(linha[4]  || ''),
-      curso:               String(linha[5]  || ''),
-      tipoEstagio:         String(linha[9]  || ''),
-      empresa:             String(linha[10] || ''),
-      nomeOrientador:      String(linha[15] || ''),
-      nomeSupervisor:      String(linha[12] || ''),
-      dataInicio:          normalizarDataISO_(linha[17]),
-      dataTermino:         normalizarDataISO_(linha[18]),
-      cargaHorariaSemanal: String(linha[19] || ''),
-      status:              String(linha[28] || ''),
-      obsSetor:            String(linha[29] || ''),
-      driveUrl:            String(linha[31] || ''),
+      id:                  String(linha[COL_SOL.ID_ESTAGIO]      || ''),
+      nomeEstudante:       String(linha[COL_SOL.NOME_ESTUDANTE]  || ''),
+      matricula:           String(linha[COL_SOL.MATRICULA]       || ''),
+      curso:               String(linha[COL_SOL.CURSO]           || ''),
+      tipoEstagio:         String(linha[COL_SOL.TIPO_ESTAGIO]    || ''),
+      empresa:             String(linha[COL_SOL.NOME_EMPRESA]    || ''),
+      nomeOrientador:      String(linha[COL_SOL.NOME_ORIENTADOR] || ''),
+      nomeSupervisor:      String(linha[COL_SOL.NOME_SUPERVISOR] || ''),
+      dataInicio:          normalizarDataISO_(linha[COL_SOL.DATA_INICIO]),
+      dataTermino:         normalizarDataISO_(linha[COL_SOL.DATA_TERMINO]),
+      cargaHorariaSemanal: String(linha[COL_SOL.CARGA_HOR]       || ''),
+      status:              String(linha[COL_SOL.STATUS]          || ''),
+      obsSetor:            String(linha[COL_SOL.OBS_SETOR]       || ''),
+      driveUrl:            String(linha[COL_SOL.DRIVE_URL]       || ''),
     });
   }
 

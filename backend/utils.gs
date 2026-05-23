@@ -37,7 +37,7 @@ function sanitizar_(valor, maxLen) {
   if (valor === null || valor === undefined) return '';
   var s = String(valor)
     .replace(/<[^>]*>/g, '')          // strip HTML
-    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '') // ctrl chars
+    .replace(/[\x00-\x08\x0B\x0C\x0D\x0E-\x1F\x7F]/g, '') // ctrl chars (inclui \r)
     .trim();
   return s.slice(0, maxLen || 2000);
 }
@@ -209,12 +209,10 @@ function formatarData_(data) {
 
 /**
  * Retorna a data atual como string ISO (AAAA-MM-DD) no fuso de Brasília.
+ * Usa Utilities.formatDate para garantir fuso correto em qualquer horário.
  */
 function hojeISO_() {
-  var d = new Date();
-  // UTC-3
-  d.setHours(d.getHours() - 3);
-  return d.toISOString().split('T')[0];
+  return Utilities.formatDate(new Date(), 'America/Sao_Paulo', 'yyyy-MM-dd');
 }
 
 // ---------------------------------------------------------------------------

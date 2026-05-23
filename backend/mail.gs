@@ -46,7 +46,8 @@ var MAIL = (function () {
   }
 
   function campo_(label, valor) {
-    return '<p class="label">' + label + '</p><p class="value">' + (valor || '—') + '</p>';
+    return '<p class="label">' + label + '</p><p class="value">'
+      + escapeHtmlMail_(String(valor || '—')) + '</p>';
   }
 
   function formatarDataBR_(valor) {

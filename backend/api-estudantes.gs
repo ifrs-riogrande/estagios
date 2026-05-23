@@ -42,10 +42,10 @@ var COL_EST = {
   CPF_RESP:        14,
   TEL_RESP:        15,
   EMAIL_RESP:      16,
-  DOC_RESP:        17,
+  DOC_RESP:        17,   // ⚠️ não utilizado — coluna reservada para documento do responsável
   STATUS:          18,   // 'Aguardando Validação' | 'Ativo' | 'Inativo'
-  COD_ACESSO:      19,   // código permanente SGE-XXXX-XXXX-XXXX (gerado pelo setor)
-  COD_EXPIRA:      20,   // não utilizado (mantido para compatibilidade de coluna)
+  COD_ACESSO:      19,   // ⚠️ não utilizado — autenticação migrada para Google OAuth (mantido para compatibilidade de coluna)
+  COD_EXPIRA:      20,   // ⚠️ não utilizado — mantido para compatibilidade de coluna
   MODALIDADE:      21,   // modalidade do primeiro curso (compatibilidade)
   BAIRRO:          22,
   CEP:             23,
@@ -54,18 +54,6 @@ var COL_EST = {
   CURSOS_JSON:     26,   // JSON array [{emailInst, curso, matricula}] — todos os cursos do aluno
   NEE:             27,   // Portador de Necessidades Específicas: "Sim" ou "Não"
 };
-
-// ---------------------------------------------------------------------------
-// Roteamento legado (mantido para compatibilidade; roteamento real é Code.gs)
-// ---------------------------------------------------------------------------
-
-function doGet(e) {
-  return jsonError_('Método não suportado diretamente.', 'METHOD_NOT_ALLOWED');
-}
-
-function doPost(e) {
-  return jsonError_('Método não suportado diretamente.', 'METHOD_NOT_ALLOWED');
-}
 
 // ---------------------------------------------------------------------------
 // POST — Cadastrar estudante
@@ -173,8 +161,7 @@ function cadastrarEstudante_(dados) {
   linha[COL_EST.NEE]           = nee;
   linha[COL_EST.MODALIDADE]    = modalidade;
   linha[COL_EST.STATUS]        = 'Aguardando Validação';
-  linha[COL_EST.COD_ACESSO]    = '';
-  linha[COL_EST.COD_EXPIRA]    = '';
+  // COD_ACESSO (19) e COD_EXPIRA (20) não são mais utilizados — colunas preservadas para compatibilidade
   linha[COL_EST.CURSOS_JSON]   = JSON.stringify(cursos);
 
   sheet.appendRow(linha);
