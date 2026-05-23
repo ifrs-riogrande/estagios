@@ -286,48 +286,42 @@ function solicitarEstagio_(dados) {
   var idEstagio = gerarIdEstagio_();
 
   // Cria pasta no Drive imediatamente para armazenar os documentos de admissão.
-  // Estrutura: Estágios SGE / CPF / Matrícula / ID — Nome
+  // Estrutura: Estágios / [Ano] / [ID — Nome]
   // Mesmo que a solicitação seja reprovada depois, a pasta já existe e pode ser reutilizada.
-  var rootDriveName = (typeof CFG_ADMIN !== 'undefined' && CFG_ADMIN.DRIVE_ROOT_NAME)
-                      ? CFG_ADMIN.DRIVE_ROOT_NAME : 'Estágios SGE';
   var driveUrlSol  = '';
   var docMatLink   = '';
   var docIdLink    = '';
   var docBolLink   = '';
 
   try {
-    var cpfFolder  = (estudante.cpf || 'SEM_CPF').replace(/\D/g, '') || 'SEM_CPF';
-    var matrFolder = matriculaEstagio || 'SEM_MATRICULA';
-    var nomeFolder = estudante.nome   || '';
+    var driveRes = criarPastaEstagio_(idEstagio, estudante.nome || '');
+    var pastaEst = driveRes.folder;
+    driveUrlSol  = driveRes.url;
 
-    var raizDrive  = obterOuCriarPasta_(null,       rootDriveName);
-    var pastaCpf   = obterOuCriarPasta_(raizDrive,  cpfFolder);
-    var pastaMatr  = obterOuCriarPasta_(pastaCpf,   matrFolder);
-    var pastaEst   = obterOuCriarPasta_(pastaMatr,  idEstagio + (nomeFolder ? ' — ' + nomeFolder : ''));
-    driveUrlSol    = pastaEst.getUrl();
+    if (pastaEst) {
+      // Sobe cada documento de admissão na subpasta Admissão
+      var pastaAdm = obterOuCriarPasta_(pastaEst, 'Admissão');
 
-    // Sobe cada documento de admissão
-    var pastaAdm = obterOuCriarPasta_(pastaEst, 'Documentos Admissão');
+      var uploadArqAdm_ = function(arq) {
+        if (!arq || !arq.base64 || !arq.nome) return '';
+        try {
+          var ext  = String(arq.nome).split('.').pop().toLowerCase();
+          var mime = ext === 'pdf'  ? 'application/pdf'
+                   : ext === 'png'  ? 'image/png'
+                   : ext === 'jpg' || ext === 'jpeg' ? 'image/jpeg'
+                   : 'application/octet-stream';
+          var bytes = Utilities.base64Decode(arq.base64);
+          var blob  = Utilities.newBlob(bytes, mime, sanitizarNomeArquivo_(arq.nome));
+          var file  = pastaAdm.createFile(blob);
+          file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+          return file.getUrl();
+        } catch (eU) { logErro_('solicitarEstagio_.uploadAdm', eU); return ''; }
+      };
 
-    var uploadArqAdm_ = function(arq) {
-      if (!arq || !arq.base64 || !arq.nome) return '';
-      try {
-        var ext  = String(arq.nome).split('.').pop().toLowerCase();
-        var mime = ext === 'pdf'  ? 'application/pdf'
-                 : ext === 'png'  ? 'image/png'
-                 : ext === 'jpg' || ext === 'jpeg' ? 'image/jpeg'
-                 : 'application/octet-stream';
-        var bytes = Utilities.base64Decode(arq.base64);
-        var blob  = Utilities.newBlob(bytes, mime, sanitizarNomeArquivo_(arq.nome));
-        var file  = pastaAdm.createFile(blob);
-        file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-        return file.getUrl();
-      } catch (eU) { logErro_('solicitarEstagio_.uploadAdm', eU); return ''; }
-    };
-
-    docMatLink = uploadArqAdm_(arqMat);
-    docIdLink  = uploadArqAdm_(arqId);
-    docBolLink = uploadArqAdm_(arqBol);
+      docMatLink = uploadArqAdm_(arqMat);
+      docIdLink  = uploadArqAdm_(arqId);
+      docBolLink = uploadArqAdm_(arqBol);
+    }
 
   } catch (eDrive) {
     logErro_('solicitarEstagio_.drive', eDrive);
@@ -1523,26 +1517,16 @@ function uploadDocumentoEstagio_(body) {
   if (donoBloqueado) return jsonError_('Estágio não encontrado ou acesso negado.', 'FORBIDDEN');
 
   // Obtém pasta de destino no Drive
-  // — Se o estágio já tem pasta (aprovado), usa ela.
-  // — Caso contrário, cria/encontra a estrutura padrão: Estágios SGE / CPF / Matrícula / ID.
-  var pastaEstagio = null;
-  if (driveUrlEstagio) {
-    try {
-      var matchFolder = driveUrlEstagio.match(/folders\/([a-zA-Z0-9_-]+)/);
-      if (matchFolder) pastaEstagio = DriveApp.getFolderById(matchFolder[1]);
-    } catch (eD) { logErro_('uploadDocumentoEstagio_.openFolder', eD); }
-  }
+  // — Se o estágio já tem pasta registrada, usa ela.
+  // — Caso contrário, cria em Estágios / [Ano] / [ID — Nome].
+  var pastaEstagio = abrirPastaEstagio_(driveUrlEstagio);
   if (!pastaEstagio) {
     try {
-      var rootName = (typeof CFG_ADMIN !== 'undefined' && CFG_ADMIN.DRIVE_ROOT_NAME)
-                     ? CFG_ADMIN.DRIVE_ROOT_NAME : 'Estágios SGE';
-      var raizP    = obterOuCriarPasta_(null, rootName);
-      var pastaCpf = obterOuCriarPasta_(raizP,    cpfParaPasta);
-      var pastaMatr= obterOuCriarPasta_(pastaCpf, matrParaPasta);
-      pastaEstagio = obterOuCriarPasta_(pastaMatr, idEstagio + (nomeParaPasta ? ' — ' + nomeParaPasta : ''));
+      var driveResFb = criarPastaEstagio_(idEstagio, nomeParaPasta);
+      pastaEstagio   = driveResFb.folder;
       // Persiste o URL na planilha para que próximas operações usem a pasta recém-criada
-      if (sheetSol2 && rowIdxSol2 > 0) {
-        sheetSol2.getRange(rowIdxSol2 + 1, COL_SOL.DRIVE_URL + 1).setValue(pastaEstagio.getUrl());
+      if (sheetSol2 && rowIdxSol2 >= 0 && driveResFb.url) {
+        sheetSol2.getRange(rowIdxSol2 + 1, COL_SOL.DRIVE_URL + 1).setValue(driveResFb.url);
       }
     } catch (eC) { logErro_('uploadDocumentoEstagio_.createFolder', eC); }
   }

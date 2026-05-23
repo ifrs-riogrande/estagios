@@ -66,8 +66,6 @@ var CFG_ADMIN = {
     'den@riogrande.ifrs.edu.br',
   ],
 
-  // Pasta raiz no Drive
-  DRIVE_ROOT_NAME: 'Estágios SGE',
 };
 
 // Índices de coluna — aba Solicitações (0-based)
@@ -1257,21 +1255,14 @@ function montarVariaveis_(r) {
 }
 
 // ─────────────────────────────────────────────────────────────────
-// Drive — pasta por CPF/Matrícula/ID
+// Drive — pasta do estágio em Estágios / [Ano] / [ID — Nome]
 // ─────────────────────────────────────────────────────────────────
 
 function criarPastaEstagioNova_(vars) {
-  var raiz    = obterOuCriarPasta_(null, CFG_ADMIN.DRIVE_ROOT_NAME);
-  var cpf     = (vars['{{CPF_ESTUDANTE}}'] || 'SEM_CPF').replace(/\D/g,'');
-  var matr    = vars['{{MATRICULA}}']  || 'SEM_MATRICULA';
-  var id      = vars['{{ID_ESTAGIO}}']  || 'SEM_ID';
-  var nome    = vars['{{NOME_ESTUDANTE}}'] || '';
-
-  var pastaCPF  = obterOuCriarPasta_(raiz, cpf);
-  var pastaMatr = obterOuCriarPasta_(pastaCPF, matr);
-  var pastaID   = obterOuCriarPasta_(pastaMatr, id + (nome ? ' — ' + nome : ''));
-
-  return { folderId: pastaID.getId(), url: pastaID.getUrl() };
+  var id   = vars['{{ID_ESTAGIO}}']    || 'SEM_ID';
+  var nome = vars['{{NOME_ESTUDANTE}}'] || '';
+  var res  = criarPastaEstagio_(id, nome);
+  return { folderId: res.folderId, url: res.url };
 }
 
 function obterOuCriarPasta_(pai, nome) {

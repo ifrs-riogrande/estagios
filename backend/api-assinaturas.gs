@@ -262,18 +262,23 @@ function salvarFluxoAssinaturas_(idEstagio, fluxo) {
 // ── Drive ─────────────────────────────────────────────────────────────────────
 
 /**
- * Cria pasta no Drive para armazenar os PDFs desta solicitação.
- * Pasta criada dentro da pasta raiz configurada em "config_drive_pasta_id".
+ * Retorna a pasta do estágio no Drive para armazenar os PDFs do TCE.
+ * Usa a pasta já criada para o estágio (driveUrl na solicitação).
+ * Se não encontrar, cria em Estágios / [Ano] / [ID — Nome].
  */
 function _criarPastaAssinaturas_(idEstagio) {
   try {
-    var pastaRaizId = PropertiesService.getScriptProperties().getProperty('config_drive_pasta_id');
-    var pai         = pastaRaizId ? DriveApp.getFolderById(pastaRaizId) : DriveApp.getRootFolder();
-    return pai.createFolder('TCE_' + idEstagio);
+    var sol   = _obterDadosSolicitacaoCompleto_(idEstagio);
+    var pasta = abrirPastaEstagio_(String(sol.driveUrl || ''));
+    if (pasta) return pasta;
+    // Fallback: cria a pasta na hierarquia correta
+    var res = criarPastaEstagio_(idEstagio, String(sol.nomeEstudante || ''));
+    if (res.folder) return res.folder;
   } catch (e) {
     logErro_('_criarPastaAssinaturas_', e);
-    return DriveApp.createFolder('TCE_' + idEstagio);
   }
+  // Último recurso
+  return DriveApp.createFolder('Estagio_' + idEstagio);
 }
 
 // ── Helpers TCE: configurações do sistema ────────────────────────────────

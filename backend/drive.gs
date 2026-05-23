@@ -2,74 +2,106 @@
  * drive.gs — Gestão de pastas e arquivos no Google Drive
  * SGE — Sistema de Gestão de Estágios · IFRS Campus Rio Grande
  *
- * Estrutura de pastas ATUAL (usada por api-admin.gs):
- *   Estágios SGE/
- *     <CPF>/
- *       <Matrícula>/
- *         <ID> — <Nome>/
+ * ── Hierarquia de pastas ────────────────────────────────────────────────────
  *
- * Funções exportadas:
- *   obterOuCriarPasta_(pastaRaiz, nomePasta)  → Folder
- *   criarPastaEstagio_(...)                   → URL (estrutura legada, mantida para compat.)
+ *   📁 Estágios  (CFG_DRIVE.ESTAGIOS_ID)
+ *     └── 📁 2026
+ *         └── 📁 RG26-XXXX-XXXX — João da Silva
+ *             ├── 📁 Admissão           ← docs da solicitação (matrícula, identidade, boletim)
+ *             ├── 📁 Documentos Avulsos ← uploads avulsos do setor e do estudante
+ *             ├── Checklist — João da Silva.pdf   (+ Google Doc)
+ *             ├── TCE_RG26-..._v0_original.pdf    (+ Google Doc)
+ *             └── TCE_RG26-..._v1_estudante.pdf   (etc.)
+ *
+ *   📁 Cadastros  (CFG_DRIVE.CADASTROS_ID)
+ *     └── (reservado para documentos de cadastro de empresas, supervisores, etc.)
+ *
+ * ── Funções públicas (aliases globais no final) ─────────────────────────────
+ *   criarPastaEstagio_(idEstagio, nomeEstudante)  → { folder, folderId, url }
+ *   abrirPastaEstagio_(driveUrl)                  → Folder | null
+ *   obterOuCriarPasta_(pai, nome)                 → Folder
  */
 
 'use strict';
 
+// ── Configuração das pastas raiz ──────────────────────────────────────────────
+
+var CFG_DRIVE = {
+  /** Pasta raiz de estágios — todos os TCEs e documentos do processo */
+  ESTAGIOS_ID:  '15y4xP1y3A3Lu5kbsjitr7jWqOIPgVqr6',
+  /** Pasta raiz de cadastros — documentos de entidades (empresas, supervisores…) */
+  CADASTROS_ID: '1ofES-nxEB2yI3Gj3DxsDkmreph3_xVUP',
+};
+
+// ── Módulo DRIVE ──────────────────────────────────────────────────────────────
+
 var DRIVE = (function () {
 
-  /** Nome da pasta raiz do SGE no Drive do usuário que executa o script. */
-  var PASTA_RAIZ = 'Estágios SGE';
-
   /**
-   * Obtém ou cria uma subpasta com o nome dado dentro de `pastaRaiz`.
-   * @param {GoogleAppsScript.Drive.Folder} pastaRaiz
-   * @param {string} nomePasta
+   * Obtém ou cria uma subpasta pelo nome dentro de `pai`.
+   * @param {GoogleAppsScript.Drive.Folder|null} pai  null = raiz pessoal do Drive (evitar)
+   * @param {string} nome
    * @returns {GoogleAppsScript.Drive.Folder}
    */
-  function obterOuCriarPasta(pastaRaiz, nomePasta) {
-    var iter = pastaRaiz
-      ? pastaRaiz.getFoldersByName(nomePasta)
-      : DriveApp.getFoldersByName(nomePasta);
+  function obterOuCriarPasta(pai, nome) {
+    var iter = pai ? pai.getFoldersByName(nome) : DriveApp.getFoldersByName(nome);
     if (iter.hasNext()) return iter.next();
-    return pastaRaiz
-      ? pastaRaiz.createFolder(nomePasta)
-      : DriveApp.createFolder(nomePasta);
+    return pai ? pai.createFolder(nome) : DriveApp.createFolder(nome);
   }
 
   /**
-   * Cria (ou retorna existente) a hierarquia de pastas para um estágio:
-   *   Estágios SGE / <Ano> / <Curso> / <ID>—<Matrícula>—<Nome>
+   * Cria (ou retorna existente) a hierarquia de pastas de um estágio:
+   *   [Estágios] / [Ano] / [ID — Nome]
    *
-   * @param {string} idEstagio     Ex.: RG25-A3BX-9K2F
-   * @param {string} ano           Ex.: 2025
-   * @param {string} curso         Ex.: Análise e Desenvolvimento de Sistemas
-   * @param {string} matricula     Ex.: 202300123
-   * @param {string} nomeEstudante Ex.: João da Silva
-   * @returns {string}  URL de acesso à pasta criada
+   * O ano é derivado do próprio ID do estágio (RG26-… → 2026).
+   *
+   * @param {string} idEstagio      Ex.: RG26-LD9B-DNN5
+   * @param {string} nomeEstudante  Ex.: João da Silva
+   * @returns {{ folder: Folder, folderId: string, url: string }}
    */
-  function criarPastaEstagio(idEstagio, ano, curso, matricula, nomeEstudante) {
+  function criarPastaEstagio(idEstagio, nomeEstudante) {
     try {
-      var raiz = obterOuCriarPasta(DriveApp.getRootFolder(), PASTA_RAIZ);
-      var pastaAno   = obterOuCriarPasta(raiz, String(ano));
-      var pastaCurso = obterOuCriarPasta(pastaAno, sanitizarNomePasta_(curso));
-
-      // Nome da pasta do estagiário: "RG25-XXXX-XXXX — 202300123 — João da Silva"
-      var nomePasta = idEstagio + ' — ' + String(matricula) + ' — ' + sanitizarNomePasta_(nomeEstudante);
-      var pastaEstag = obterOuCriarPasta(pastaCurso, nomePasta);
-
-      return pastaEstag.getUrl();
+      var ano       = _anoDeId_(idEstagio);
+      var raiz      = DriveApp.getFolderById(CFG_DRIVE.ESTAGIOS_ID);
+      var pastaAno  = obterOuCriarPasta(raiz, String(ano));
+      var nomePasta = idEstagio + (nomeEstudante ? ' — ' + _sanitizarNome_(nomeEstudante) : '');
+      var pasta     = obterOuCriarPasta(pastaAno, nomePasta);
+      return { folder: pasta, folderId: pasta.getId(), url: pasta.getUrl() };
     } catch (e) {
       logErro_('drive.criarPastaEstagio', e);
-      return ''; // não bloqueia o fluxo principal se o Drive falhar
+      return { folder: null, folderId: '', url: '' };
     }
   }
 
   /**
-   * Remove caracteres inválidos para nomes de pasta no Drive.
-   * @param {string} nome
-   * @returns {string}
+   * Abre a pasta de um estágio a partir da URL armazenada na planilha.
+   * Extrai o ID do folder da URL do Drive.
+   * @param {string} driveUrl
+   * @returns {GoogleAppsScript.Drive.Folder|null}
    */
-  function sanitizarNomePasta_(nome) {
+  function abrirPastaEstagio(driveUrl) {
+    try {
+      if (!driveUrl) return null;
+      var m = String(driveUrl).match(/folders\/([a-zA-Z0-9_-]+)/);
+      if (!m) m = String(driveUrl).match(/[-\w]{25,}/);
+      return m ? DriveApp.getFolderById(m[1] || m[0]) : null;
+    } catch (e) { return null; }
+  }
+
+  /**
+   * Extrai o ano de um ID de estágio.
+   * RG26-XXXX-XXXX → 2026.  Fallback: ano corrente.
+   */
+  function _anoDeId_(idEstagio) {
+    var m = String(idEstagio || '').match(/^RG(\d{2})-/);
+    if (m) return 2000 + parseInt(m[1], 10);
+    return new Date().getFullYear();
+  }
+
+  /**
+   * Remove caracteres inválidos de nomes de pasta no Drive.
+   */
+  function _sanitizarNome_(nome) {
     return String(nome || 'Sem nome')
       .replace(/[\/\\:*?"<>|]/g, '-')
       .replace(/\s+/g, ' ')
@@ -78,15 +110,33 @@ var DRIVE = (function () {
   }
 
   return {
-    criarPastaEstagio:    criarPastaEstagio,
-    obterOuCriarPasta:    obterOuCriarPasta,
+    criarPastaEstagio: criarPastaEstagio,
+    abrirPastaEstagio: abrirPastaEstagio,
+    obterOuCriarPasta: obterOuCriarPasta,
   };
+
 })();
 
-// Aliases globais
-function criarPastaEstagio_(idEstagio, ano, curso, matricula, nomeEstudante) {
-  return DRIVE.criarPastaEstagio(idEstagio, ano, curso, matricula, nomeEstudante);
+// ── Aliases globais ──────────────────────────────────────────────────────────
+
+/**
+ * Cria (ou retorna) a pasta do estágio em:
+ *   Estágios / [Ano] / [ID — Nome]
+ */
+function criarPastaEstagio_(idEstagio, nomeEstudante) {
+  return DRIVE.criarPastaEstagio(idEstagio, nomeEstudante);
 }
-function obterOuCriarPasta_(pastaRaiz, nomePasta) {
-  return DRIVE.obterOuCriarPasta(pastaRaiz, nomePasta);
+
+/**
+ * Abre a pasta de um estágio a partir da URL do Drive.
+ */
+function abrirPastaEstagio_(driveUrl) {
+  return DRIVE.abrirPastaEstagio(driveUrl);
+}
+
+/**
+ * Obtém ou cria uma subpasta pelo nome dentro de `pai`.
+ */
+function obterOuCriarPasta_(pai, nome) {
+  return DRIVE.obterOuCriarPasta(pai, nome);
 }
