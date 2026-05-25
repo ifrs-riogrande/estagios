@@ -279,6 +279,16 @@ async function apiTrocarOrientador(dados) {
   return API.post('trocarOrientador', dados);
 }
 
+/** Verifica se um e-mail de orientador já tem cadastro ativo/pendente (sem auth). */
+async function apiVerificarCadastroOrientador(email) {
+  return API.get('verificarCadastroOrientador', { email: email });
+}
+
+/** Orientador convidado completa o cadastro mínimo (requer authToken + token de checklist). */
+async function apiRegistrarOrientadorConvidado(dados) {
+  return API.post('registrarOrientadorConvidado', dados);
+}
+
 /** Envia formulário de cadastro de estudante. */
 async function apiCadastrarEstudante(dados) {
   return API.post('cadastrarEstudante', dados);

@@ -525,3 +525,191 @@ function listarEstagiosCoordenador_(e) {
   lista.reverse();
   return jsonOk_({ curso: curso, estagios: lista });
 }
+
+// ---------------------------------------------------------------------------
+// Helper — localiza orientador por e-mail (retorna { rowIndex, data } ou null)
+// ---------------------------------------------------------------------------
+
+function verificarOrientadorPorEmail_(email) {
+  var sheet = abrirAba_(CFG_SRV.SS_ID, CFG_SRV.ABA);
+  var dados = sheet.getDataRange().getValues();
+  var emailNorm = String(email || '').toLowerCase().trim();
+  for (var i = 1; i < dados.length; i++) {
+    if (String(dados[i][COL_ORI.EMAIL] || '').toLowerCase().trim() === emailNorm) {
+      return { rowIndex: i, data: dados[i] };
+    }
+  }
+  return null;
+}
+
+// ---------------------------------------------------------------------------
+// Helper — cria entrada provisional 'Convidado' (chamada por solicitarEstagio_)
+// ---------------------------------------------------------------------------
+
+function criarOrientadorConvidado_(email, nome) {
+  var sheet = abrirAba_(CFG_SRV.SS_ID, CFG_SRV.ABA);
+  // Se já existe qualquer entrada (mesmo 'Convidado'), não duplica
+  var dados = sheet.getDataRange().getValues();
+  var emailNorm = String(email || '').toLowerCase().trim();
+  for (var i = 1; i < dados.length; i++) {
+    if (String(dados[i][COL_ORI.EMAIL] || '').toLowerCase().trim() === emailNorm) return;
+  }
+  var linha = new Array(14);
+  linha[COL_ORI.TIMESTAMP] = new Date();
+  linha[COL_ORI.NOME]      = sanitizar_(nome || '', 200);
+  linha[COL_ORI.EMAIL]     = emailNorm;
+  linha[COL_ORI.STATUS]    = 'Convidado';
+  sheet.appendRow(linha);
+}
+
+// ---------------------------------------------------------------------------
+// GET — Verifica status do cadastro do orientador pelo e-mail (sem auth)
+// Usado pelo frontend do checklist para saber se precisa exibir o formulário
+// ---------------------------------------------------------------------------
+
+function verificarCadastroOrientador_(e) {
+  var email = sanitizar_((e.parameter && e.parameter.email) || '', 100).toLowerCase();
+  if (!validarEmail_(email)) return jsonError_('E-mail inválido.', 'VALIDATION');
+
+  var ori = verificarOrientadorPorEmail_(email);
+  if (!ori) return jsonOk_({ cadastrado: false, status: '' });
+
+  var status = String(ori.data[COL_ORI.STATUS] || '').trim();
+  var cadastrado = (status === 'Ativo' || status === 'Pendente');
+  return jsonOk_({ cadastrado: cadastrado, status: status });
+}
+
+// ---------------------------------------------------------------------------
+// POST — Professor convidado completa cadastro mínimo + fica pronto para checklist
+// Body: { authToken, token, nome, cpf, tipoVinculo, siape, tel, titulacao, area,
+//         cursos, inicioContrato?, fimContrato? }
+// ---------------------------------------------------------------------------
+
+function registrarOrientadorConvidado_(body) {
+  // 1. Autentica o servidor com Google OAuth
+  var tokenInfo = validarTokenServidor_(body.authToken);
+  var email = tokenInfo.email.toLowerCase();
+
+  if (!checkRateLimit_('registrarOrientadorConvidado', 5)) {
+    return jsonError_('Muitas requisições. Aguarde um momento.', 'RATE_LIMIT');
+  }
+
+  // 2. Token do checklist é obrigatório — vincula o cadastro à solicitação correta
+  var ckToken = String(body.token || '').trim();
+  if (!ckToken) return jsonError_('Token de convite não informado.', 'VALIDATION');
+
+  // 3. Valida que o token corresponde a uma solicitação com este e-mail como orientador
+  var ss       = SpreadsheetApp.openById(CFG_SOL.SS_ID);
+  var sheetSol = ss.getSheetByName(CFG_SOL.ABA_SOL);
+  if (!sheetSol) return jsonError_('Planilha de solicitações não encontrada.', 'INTERNAL');
+  var dadosSol = sheetSol.getDataRange().getValues();
+  var solicitacao = null;
+  for (var i = 1; i < dadosSol.length; i++) {
+    if (String(dadosSol[i][COL_SOL.TOKEN_ACEITE_ORI] || '').trim() === ckToken) {
+      solicitacao = dadosSol[i];
+      break;
+    }
+  }
+  if (!solicitacao) return jsonError_('Token inválido ou não encontrado.', 'NOT_FOUND');
+
+  var emailSolicitado = String(solicitacao[COL_SOL.EMAIL_ORIENTADOR] || '').toLowerCase().trim();
+  if (emailSolicitado !== email) {
+    return jsonError_(
+      'O e-mail institucional autenticado (' + email + ') não corresponde ao orientador desta solicitação (' + emailSolicitado + ').',
+      'AUTH_ERROR'
+    );
+  }
+
+  // 4. Sanitiza e valida campos do cadastro
+  var nome    = sanitizar_(body.nome,     200);
+  var cpf     = sanitizar_(body.cpf,       14).replace(/\D/g, '');
+  var vinculo = sanitizar_(body.tipoVinculo, 20);
+  var siape   = sanitizar_(body.siape,      7).replace(/\D/g, '');
+  var tel     = sanitizar_(body.tel,       30);
+  var titulac = sanitizar_(body.titulacao, 50);
+  var area    = sanitizar_(body.area,     200);
+  var cursos  = sanitizar_(body.cursos,   500);
+  var iniCont = sanitizar_(body.inicioContrato || '', 10);
+  var fimCont = sanitizar_(body.fimContrato    || '', 10);
+
+  if (!nome)                      return jsonError_('Nome é obrigatório.', 'VALIDATION');
+  if (!validarCPF_(cpf))          return jsonError_('CPF inválido.', 'VALIDATION');
+  if (!vinculo)                   return jsonError_('Tipo de vínculo é obrigatório.', 'VALIDATION');
+  if (!siape || siape.length < 6) return jsonError_('SIAPE inválido (mínimo 6 dígitos).', 'VALIDATION');
+  if (!tel)                       return jsonError_('Telefone é obrigatório.', 'VALIDATION');
+  if (!titulac)                   return jsonError_('Titulação é obrigatória.', 'VALIDATION');
+  if (!area)                      return jsonError_('Área de formação é obrigatória.', 'VALIDATION');
+  if (!cursos)                    return jsonError_('Selecione ao menos um curso para orientar.', 'VALIDATION');
+  if (vinculo === 'Substituto') {
+    if (!iniCont) return jsonError_('Início do contrato é obrigatório para substitutos.', 'VALIDATION');
+    if (!fimCont) return jsonError_('Término do contrato é obrigatório para substitutos.', 'VALIDATION');
+    if (fimCont < iniCont) return jsonError_('Término do contrato não pode ser anterior ao início.', 'VALIDATION');
+  }
+
+  // 5. Localiza (ou cria) a linha na aba Orientadores
+  var sheetOri  = abrirAba_(CFG_SRV.SS_ID, CFG_SRV.ABA);
+  var dadosOri  = sheetOri.getDataRange().getValues();
+  var oriRowIdx = -1;
+
+  // Verifica duplicidade de CPF em outra linha (diferente do próprio e-mail)
+  for (var j = 1; j < dadosOri.length; j++) {
+    var cpfLinha   = String(dadosOri[j][COL_ORI.CPF]   || '').replace(/\D/g, '');
+    var emailLinha = String(dadosOri[j][COL_ORI.EMAIL]  || '').toLowerCase().trim();
+    if (cpfLinha === cpf && emailLinha !== email) {
+      return jsonError_('CPF já cadastrado para outro orientador.', 'CONFLICT');
+    }
+    if (emailLinha === email) {
+      oriRowIdx = j + 1; // base-1
+    }
+  }
+
+  if (oriRowIdx === -1) {
+    // Cria nova linha (não havia entrada nem como 'Convidado')
+    var novaLinha = new Array(14);
+    novaLinha[COL_ORI.TIMESTAMP]    = new Date();
+    novaLinha[COL_ORI.TIPO_VINCULO] = vinculo;
+    novaLinha[COL_ORI.INI_CONTRATO] = iniCont;
+    novaLinha[COL_ORI.FIM_CONTRATO] = fimCont;
+    novaLinha[COL_ORI.NOME]         = nome;
+    novaLinha[COL_ORI.CPF]          = cpf;
+    novaLinha[COL_ORI.SIAPE]        = siape;
+    novaLinha[COL_ORI.TEL]          = tel;
+    novaLinha[COL_ORI.EMAIL]        = email;
+    novaLinha[COL_ORI.TITULACAO]    = titulac;
+    novaLinha[COL_ORI.AREA]         = area;
+    novaLinha[COL_ORI.CURSOS]       = cursos;
+    novaLinha[COL_ORI.STATUS]       = 'Pendente';
+    sheetOri.appendRow(novaLinha);
+  } else {
+    // Atualiza linha existente ('Convidado' → 'Pendente')
+    sheetOri.getRange(oriRowIdx, COL_ORI.TIPO_VINCULO + 1).setValue(vinculo);
+    sheetOri.getRange(oriRowIdx, COL_ORI.INI_CONTRATO + 1).setValue(iniCont);
+    sheetOri.getRange(oriRowIdx, COL_ORI.FIM_CONTRATO + 1).setValue(fimCont);
+    sheetOri.getRange(oriRowIdx, COL_ORI.NOME         + 1).setValue(nome);
+    sheetOri.getRange(oriRowIdx, COL_ORI.CPF          + 1).setValue(cpf);
+    sheetOri.getRange(oriRowIdx, COL_ORI.SIAPE        + 1).setValue(siape);
+    sheetOri.getRange(oriRowIdx, COL_ORI.TEL          + 1).setValue(tel);
+    sheetOri.getRange(oriRowIdx, COL_ORI.TITULACAO    + 1).setValue(titulac);
+    sheetOri.getRange(oriRowIdx, COL_ORI.AREA         + 1).setValue(area);
+    sheetOri.getRange(oriRowIdx, COL_ORI.CURSOS       + 1).setValue(cursos);
+    sheetOri.getRange(oriRowIdx, COL_ORI.STATUS       + 1).setValue('Pendente');
+  }
+
+  // 6. Notifica o setor
+  try {
+    enviarEmailNovoOrientador_({
+      nomeOrientador: nome,
+      cpfOrientador:  cpf,
+      siape:          siape,
+      emailInst:      email,
+      tipoVinculo:    vinculo,
+      titulacao:      titulac,
+      cursos:         cursos,
+    });
+  } catch (eM) { logErro_('registrarOrientadorConvidado_.mail', eM); }
+
+  return jsonOk_({
+    cadastrado: true,
+    mensagem:   'Cadastro registrado com sucesso! Agora você pode revisar o checklist da solicitação.',
+  });
+}

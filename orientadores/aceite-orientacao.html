@@ -201,6 +201,100 @@
           <!-- Feedback global (erros de submissão) -->
           <div id="feedback-ck" class="form-feedback" role="status" aria-live="polite"></div>
 
+          <!-- ── Painel: cadastro mínimo obrigatório (apenas quando status=Convidado) ── -->
+          <div id="painel-cadastro-orientador" hidden
+            style="background:#eff6ff;border:2px solid #93c5fd;border-radius:var(--radius-lg);padding:var(--space-6);margin-bottom:var(--space-5);">
+            <h3 style="font-size:var(--font-size-base);font-weight:700;color:#1d4ed8;margin-bottom:var(--space-2);">
+              📝 Complete seu cadastro para continuar
+            </h3>
+            <p style="font-size:var(--font-size-sm);color:var(--color-text-muted);margin-bottom:var(--space-4);">
+              Esta é sua primeira solicitação no SGE. Preencha os dados abaixo — leva menos de 2 minutos.
+              Após confirmar, você será direcionado(a) ao checklist.
+            </p>
+
+            <div id="feedback-cadastro" class="form-feedback" role="status" aria-live="polite"></div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label required" for="cad-nome">Nome completo</label>
+                <input type="text" id="cad-nome" class="form-control" maxlength="200"
+                  placeholder="Seu nome como aparece nos documentos">
+              </div>
+              <div class="form-group">
+                <label class="form-label required" for="cad-cpf">CPF</label>
+                <input type="text" id="cad-cpf" class="form-control" maxlength="14"
+                  placeholder="000.000.000-00"
+                  oninput="this.value=formatarCPF(this.value)">
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label required" for="cad-vinculo">Tipo de vínculo</label>
+                <select id="cad-vinculo" class="form-control" onchange="toggleContratoConvidado()">
+                  <option value="">Selecione...</option>
+                  <option value="Efetivo">Efetivo</option>
+                  <option value="Substituto">Substituto (contrato temporário)</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label required" for="cad-siape">Matrícula SIAPE</label>
+                <input type="text" id="cad-siape" class="form-control" maxlength="7"
+                  placeholder="7 dígitos" oninput="this.value=this.value.replace(/\D/g,'')">
+              </div>
+            </div>
+
+            <!-- Contrato (Substituto) -->
+            <div id="cad-contrato-area" hidden class="form-row">
+              <div class="form-group">
+                <label class="form-label required" for="cad-ini-contrato">Início do contrato</label>
+                <input type="date" id="cad-ini-contrato" class="form-control">
+              </div>
+              <div class="form-group">
+                <label class="form-label required" for="cad-fim-contrato">Término do contrato</label>
+                <input type="date" id="cad-fim-contrato" class="form-control">
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label required" for="cad-tel">Telefone / WhatsApp</label>
+                <input type="tel" id="cad-tel" class="form-control" maxlength="30"
+                  placeholder="(53) 9 9999-9999">
+              </div>
+              <div class="form-group">
+                <label class="form-label required" for="cad-titulacao">Titulação</label>
+                <select id="cad-titulacao" class="form-control">
+                  <option value="">Selecione...</option>
+                  <option>Graduação</option>
+                  <option>Especialização</option>
+                  <option>Mestrado</option>
+                  <option>Doutorado</option>
+                  <option>Pós-Doutorado</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label required" for="cad-area">Área de formação</label>
+              <input type="text" id="cad-area" class="form-control" maxlength="200"
+                placeholder="Ex.: Engenharia Elétrica, Administração, Informática…">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label required">Cursos que pode orientar</label>
+              <div id="cad-cursos-checkboxes" style="display:flex;flex-wrap:wrap;gap:var(--space-2);margin-top:var(--space-2);"></div>
+              <span id="cad-cursos-hint" class="form-hint">Selecione os cursos cujos estudantes você pode orientar.</span>
+            </div>
+
+            <div class="form-actions" style="margin-top:var(--space-4);">
+              <button type="button" id="btn-salvar-cadastro" class="btn btn-primary btn-lg"
+                onclick="salvarCadastroConvidado()">
+                Salvar cadastro e continuar para o checklist →
+              </button>
+            </div>
+          </div>
+
           <!-- Aceite de orientação -->
           <div class="ck-aceite-card">
             <p class="aceite-pergunta">Aceito assumir a orientação deste estágio?</p>
@@ -304,7 +398,9 @@
     </div>
   </footer>
 
+  <script src="https://accounts.google.com/gsi/client" async></script>
   <script src="../assets/js/utils.js"></script>
+  <script src="../assets/js/auth.js"></script>
   <script src="../assets/js/api.js"></script>
   <script>
     'use strict';
@@ -314,6 +410,7 @@
     var _itensRaw  = [];
     var _aceitou   = null;
     var _dadosSol  = {};
+    var _authToken = '';   // token Google do orientador autenticado (preenchido no fluxo de cadastro)
 
     var PAINEIS = ['painel-carregando', 'painel-erro', 'painel-info', 'painel-confirmacao'];
 
@@ -370,6 +467,11 @@
         });
         renderizarItensChecklist(_itensRaw);
 
+        // Se o orientador ainda não completou o cadastro, mostra o formulário de registro
+        if (dados.orientadorPrecisaCadastro) {
+          mostrarPainelCadastro(dados);
+        }
+
         // Listener obs-geral → bloqueia confirmar
         document.getElementById('obs-geral').addEventListener('input', function () {
           var temObs = this.value.trim().length > 0;
@@ -397,6 +499,180 @@
         else
           mostrarErro('Erro ao carregar solicitação: ' + msg);
       }
+    }
+
+    // ── Cadastro de orientador convidado ──────────────────────────
+    function mostrarPainelCadastro(dadosSol) {
+      // Bloqueia área de aceite enquanto cadastro não for preenchido
+      var painelCad = document.getElementById('painel-cadastro-orientador');
+      painelCad.hidden = false;
+
+      // Bloqueia os botões de aceite
+      var btnSim = document.getElementById('btn-sim');
+      var btnNao = document.getElementById('btn-nao');
+      if (btnSim) { btnSim.disabled = true; btnSim.style.opacity = '0.4'; }
+      if (btnNao) { btnNao.disabled = true; btnNao.style.opacity = '0.4'; }
+
+      // Pré-preenche o nome se vier na solicitação
+      var nomeEl = document.getElementById('cad-nome');
+      if (nomeEl && dadosSol.nomeOrientador && !nomeEl.value) {
+        nomeEl.value = dadosSol.nomeOrientador;
+      }
+
+      // Carrega lista de cursos para os checkboxes
+      carregarCursosParaCadastro();
+    }
+
+    function toggleContratoConvidado() {
+      var vinculo = document.getElementById('cad-vinculo').value;
+      document.getElementById('cad-contrato-area').hidden = (vinculo !== 'Substituto');
+    }
+
+    function formatarCPF(v) {
+      v = v.replace(/\D/g, '').slice(0, 11);
+      if (v.length > 9) return v.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+      if (v.length > 6) return v.replace(/(\d{3})(\d{3})(\d{3})/, '$1.$2.$3');
+      if (v.length > 3) return v.replace(/(\d{3})(\d{3})/, '$1.$2');
+      return v;
+    }
+
+    async function carregarCursosParaCadastro() {
+      var container = document.getElementById('cad-cursos-checkboxes');
+      try {
+        var cursos = await API.get('listarCursos', {});
+        if (!cursos || !cursos.length) {
+          container.innerHTML = '<span style="font-size:var(--font-size-sm);color:var(--color-text-muted);">Nenhum curso disponível.</span>';
+          return;
+        }
+        container.innerHTML = cursos.map(function (c) {
+          var nome = typeof c === 'string' ? c : (c.curso || c.nome || '');
+          var id   = 'cad-curso-' + nome.replace(/\W/g, '_');
+          return '<label style="display:flex;align-items:center;gap:6px;font-size:var(--font-size-sm);cursor:pointer;">'
+            + '<input type="checkbox" id="' + escapeHtml(id) + '" value="' + escapeHtml(nome) + '" style="accent-color:#1d4ed8;width:14px;height:14px;">'
+            + '<span>' + escapeHtml(nome) + '</span>'
+            + '</label>';
+        }).join('');
+      } catch (e) {
+        container.innerHTML = '<span style="font-size:var(--font-size-sm);color:var(--color-text-muted);">Erro ao carregar cursos. Recarregue a página.</span>';
+      }
+    }
+
+    async function salvarCadastroConvidado() {
+      var btn = document.getElementById('btn-salvar-cadastro');
+
+      // Coleta valores
+      var nome    = (document.getElementById('cad-nome').value    || '').trim();
+      var cpf     = (document.getElementById('cad-cpf').value     || '').replace(/\D/g, '');
+      var vinculo = (document.getElementById('cad-vinculo').value || '').trim();
+      var siape   = (document.getElementById('cad-siape').value   || '').trim();
+      var tel     = (document.getElementById('cad-tel').value     || '').trim();
+      var titulac = (document.getElementById('cad-titulacao').value || '').trim();
+      var area    = (document.getElementById('cad-area').value    || '').trim();
+      var iniCont = (document.getElementById('cad-ini-contrato').value || '');
+      var fimCont = (document.getElementById('cad-fim-contrato').value || '');
+
+      var cursosChecked = [];
+      document.querySelectorAll('#cad-cursos-checkboxes input[type=checkbox]:checked').forEach(function (cb) {
+        cursosChecked.push(cb.value);
+      });
+      var cursos = cursosChecked.join(', ');
+
+      // Validação básica no frontend
+      if (!nome)    return alert('Nome é obrigatório.');
+      if (cpf.length !== 11) return alert('CPF inválido — informe 11 dígitos.');
+      if (!vinculo) return alert('Tipo de vínculo é obrigatório.');
+      if (!siape || siape.length < 6) return alert('SIAPE inválido (mínimo 6 dígitos).');
+      if (!tel)     return alert('Telefone é obrigatório.');
+      if (!titulac) return alert('Titulação é obrigatória.');
+      if (!area)    return alert('Área de formação é obrigatória.');
+      if (!cursos)  return alert('Selecione ao menos um curso.');
+      if (vinculo === 'Substituto' && (!iniCont || !fimCont)) return alert('Datas de início e término do contrato são obrigatórias para substitutos.');
+
+      // Garante que o orientador está autenticado com conta institucional
+      var authTok = (typeof getAccessToken === 'function') ? getAccessToken() : null;
+      if (!authTok) {
+        try {
+          authTok = await getGoogleAuthToken();
+        } catch (eA) {
+          showFormFeedback('feedback-cadastro', 'error', 'Autenticação necessária',
+            'Para salvar o cadastro, faça login com sua conta institucional @riogrande.ifrs.edu.br. Recarregue a página e tente novamente.');
+          return;
+        }
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'Salvando...';
+      hideFormFeedback('feedback-cadastro');
+
+      try {
+        await apiRegistrarOrientadorConvidado({
+          authToken:      authTok,
+          token:          _token,
+          nome:           nome,
+          cpf:            cpf,
+          tipoVinculo:    vinculo,
+          siape:          siape,
+          tel:            tel,
+          titulacao:      titulac,
+          area:           area,
+          cursos:         cursos,
+          inicioContrato: iniCont,
+          fimContrato:    fimCont,
+        });
+
+        // Sucesso — oculta o painel e libera os botões de aceite
+        document.getElementById('painel-cadastro-orientador').hidden = true;
+        var btnSim = document.getElementById('btn-sim');
+        var btnNao = document.getElementById('btn-nao');
+        if (btnSim) { btnSim.disabled = false; btnSim.style.opacity = ''; }
+        if (btnNao) { btnNao.disabled = false; btnNao.style.opacity = ''; }
+
+        showFormFeedback('feedback-ck', 'success',
+          '✅ Cadastro registrado!',
+          'Seus dados foram salvos e aguardam aprovação do setor. Agora prossiga com a revisão do checklist abaixo.');
+
+      } catch (eR) {
+        showFormFeedback('feedback-cadastro', 'error', 'Erro ao salvar cadastro', eR.message || 'Tente novamente.');
+        btn.disabled = false;
+        btn.textContent = 'Salvar cadastro e continuar para o checklist →';
+      }
+    }
+
+    // Obtém token Google via auth.js (carregado nesta página para o fluxo de cadastro)
+    function getGoogleAuthToken() {
+      return new Promise(function (resolve, reject) {
+        // Verifica sessão existente (auth.js)
+        if (typeof getAccessToken === 'function') {
+          var tok = getAccessToken();
+          if (tok) return resolve(tok);
+        }
+        // Inicia fluxo Google OAuth se não estiver logado
+        if (typeof initGoogleSignIn === 'function') {
+          initGoogleSignIn(function (token) {
+            if (token) resolve(token);
+            else reject(new Error('Login cancelado.'));
+          });
+        } else if (window.google && window.google.accounts && window.google.accounts.oauth2) {
+          // Fallback direto via GIS
+          var client = window.google.accounts.oauth2.initTokenClient({
+            client_id: AUTH_CONFIG ? AUTH_CONFIG.CLIENT_ID : '',
+            scope: 'openid email profile',
+            callback: function (resp) {
+              if (resp && resp.access_token) {
+                if (typeof saveSession === 'function') {
+                  saveSession({ token: resp.access_token, expires_at: Date.now() + 3500000 });
+                }
+                resolve(resp.access_token);
+              } else {
+                reject(new Error('Login cancelado ou falhou.'));
+              }
+            },
+          });
+          client.requestAccessToken({ prompt: '' });
+        } else {
+          reject(new Error('Biblioteca Google não carregada. Recarregue a página.'));
+        }
+      });
     }
 
     // ── Timeline simples ───────────────────────────────────────────

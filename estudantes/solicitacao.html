@@ -358,8 +358,44 @@
               <select id="orientador" name="orientador" class="form-control" required aria-required="true" aria-describedby="orientador-hint orientador-error" disabled>
                 <option value="">Selecione primeiro o curso (cadastro)...</option>
               </select>
-              <span id="orientador-hint" class="form-hint">Lista filtrada pelo curso do seu cadastro. Se vazio, entre em contato com o setor.</span>
+              <span id="orientador-hint" class="form-hint">Lista filtrada pelo curso do seu cadastro.</span>
               <span id="orientador-error" class="form-error hidden" role="alert"></span>
+            </div>
+
+            <!-- Orientador não encontrado — convite por e-mail -->
+            <div id="orientador-nao-encontrado-toggle" hidden style="margin-top: -8px; margin-bottom: var(--space-3);">
+              <button type="button" id="btn-orientador-nao-encontrado" class="btn btn-ghost btn-sm"
+                onclick="toggleOrientadorConvite()" style="font-size: var(--font-size-sm); padding: 4px 10px;">
+                ＋ Orientador(a) não está na lista?
+              </button>
+            </div>
+
+            <div id="orientador-convite-area" hidden style="background: #eff6ff; border: 1px solid #93c5fd; border-radius: var(--radius-md); padding: var(--space-4); margin-bottom: var(--space-3);">
+              <p style="font-size: var(--font-size-sm); font-weight: 600; color: #1d4ed8; margin-bottom: var(--space-3);">
+                📧 Convidar orientador(a) não cadastrado(a)
+              </p>
+              <p style="font-size: var(--font-size-sm); color: var(--color-text-muted); margin-bottom: var(--space-3);">
+                O(a) professor(a) receberá um e-mail com o link para completar o cadastro e revisar esta solicitação em uma única visita.
+              </p>
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label required" for="orientador-email-convite">E-mail institucional do(a) orientador(a)</label>
+                  <input type="email" id="orientador-email-convite" class="form-control"
+                    placeholder="professor@riogrande.ifrs.edu.br"
+                    aria-describedby="orientador-email-convite-hint orientador-email-convite-error"
+                    oninput="validarEmailOrientadorConvite()">
+                  <span id="orientador-email-convite-hint" class="form-hint">Deve ser @riogrande.ifrs.edu.br</span>
+                  <span id="orientador-email-convite-error" class="form-error hidden" role="alert"></span>
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="orientador-nome-convite">Nome do(a) professor(a) <span style="font-weight:400;color:var(--color-text-muted)">(opcional)</span></label>
+                  <input type="text" id="orientador-nome-convite" class="form-control"
+                    placeholder="Como você conhece o(a) professor(a)"
+                    maxlength="200">
+                </div>
+              </div>
+              <button type="button" class="btn btn-ghost btn-sm" onclick="cancelarOrientadorConvite()"
+                style="font-size: var(--font-size-sm);">✕ Cancelar — usar lista</button>
             </div>
           </div>
 
@@ -714,12 +750,60 @@
       }
     }
 
+    // ── Estado: modo convite do orientador ──────────────────────────────────
+    let modoConviteOrientador = false;
+
+    function toggleOrientadorConvite() {
+      modoConviteOrientador = true;
+      document.getElementById('orientador-convite-area').hidden = false;
+      document.getElementById('orientador-nao-encontrado-toggle').hidden = true;
+      // Libera o select de required (será ignorado no modo convite)
+      const sel = document.getElementById('orientador');
+      sel.required = false;
+      sel.value = '';
+    }
+
+    function cancelarOrientadorConvite() {
+      modoConviteOrientador = false;
+      document.getElementById('orientador-convite-area').hidden = true;
+      document.getElementById('orientador-email-convite').value = '';
+      document.getElementById('orientador-nome-convite').value = '';
+      document.getElementById('orientador-email-convite-error').classList.add('hidden');
+      // Restaura o select
+      const sel = document.getElementById('orientador');
+      sel.required = true;
+      if (document.getElementById('orientador-nao-encontrado-toggle').dataset.temOrientadores) {
+        document.getElementById('orientador-nao-encontrado-toggle').hidden = false;
+      }
+    }
+
+    function validarEmailOrientadorConvite() {
+      const input = document.getElementById('orientador-email-convite');
+      const err   = document.getElementById('orientador-email-convite-error');
+      const val   = input.value.trim();
+      if (!val) { err.classList.add('hidden'); return; }
+      const ok = /^[^\s@]+@riogrande\.ifrs\.edu\.br$/i.test(val);
+      if (!ok) {
+        err.textContent = 'Use um e-mail @riogrande.ifrs.edu.br';
+        err.classList.remove('hidden');
+      } else {
+        err.classList.add('hidden');
+      }
+    }
+
     // ── Carrega orientadores (opcional: filtro por curso) ────────────────────
     async function carregarOrientadores(curso) {
       const select = document.getElementById('orientador');
       populateSelect('orientador', [], 'Carregando orientadores...');
       select.disabled = true;
+      select.required = true;
       orientadoresCache = [];
+      // Reseta modo convite ao trocar de curso
+      modoConviteOrientador = false;
+      document.getElementById('orientador-convite-area').hidden = true;
+      document.getElementById('orientador-nao-encontrado-toggle').hidden = true;
+      document.getElementById('orientador-nao-encontrado-toggle').dataset.temOrientadores = '';
+
       try {
         const params = curso ? { curso: curso } : {};
         const orientadores = await API.get('listarOrientadores', params);
@@ -727,11 +811,21 @@
           orientadoresCache = orientadores;
           populateSelect('orientador', orientadores.map(o => ({ value: o.siape, label: o.nome })), 'Selecione o orientador...');
           select.disabled = false;
+          // Exibe botão de convite
+          const toggleEl = document.getElementById('orientador-nao-encontrado-toggle');
+          toggleEl.hidden = false;
+          toggleEl.dataset.temOrientadores = '1';
         } else {
-          populateSelect('orientador', [], 'Nenhum orientador disponível — contate o setor');
+          populateSelect('orientador', [], 'Nenhum orientador disponível — use a opção abaixo');
+          select.disabled = true;
+          // Sem orientadores: abre o modo convite automaticamente
+          document.getElementById('orientador-nao-encontrado-toggle').hidden = false;
+          document.getElementById('orientador-nao-encontrado-toggle').dataset.temOrientadores = '';
+          toggleOrientadorConvite();
         }
       } catch (e) {
         populateSelect('orientador', [], 'Erro ao carregar orientadores');
+        document.getElementById('orientador-nao-encontrado-toggle').hidden = false;
       }
     }
 
@@ -973,7 +1067,17 @@
 
       if (!document.getElementById('empresa').value)           fail('empresa', 'Selecione a empresa concedente.');
       if (!document.getElementById('supervisor').value)        fail('supervisor', 'Selecione o supervisor.');
-      if (!document.getElementById('orientador').value)        fail('orientador', 'Selecione o professor orientador.');
+
+      if (modoConviteOrientador) {
+        const emailConvite = document.getElementById('orientador-email-convite').value.trim();
+        if (!emailConvite) {
+          fail('orientador-email-convite', 'Informe o e-mail institucional do orientador.');
+        } else if (!/^[^\s@]+@riogrande\.ifrs\.edu\.br$/i.test(emailConvite)) {
+          fail('orientador-email-convite', 'Use um e-mail @riogrande.ifrs.edu.br');
+        }
+      } else {
+        if (!document.getElementById('orientador').value) fail('orientador', 'Selecione o professor orientador.');
+      }
 
       const dataInicio  = document.getElementById('data-inicio').value;
       const dataTermino = document.getElementById('data-termino').value;
@@ -1027,6 +1131,14 @@
       const oriSiape = document.getElementById('orientador').value;
       const oriObj  = orientadoresCache.find(o => o.siape === oriSiape) || {};
 
+      // Modo convite: usa os dados digitados diretamente
+      const oriEmailConvite = modoConviteOrientador
+        ? document.getElementById('orientador-email-convite').value.trim().toLowerCase()
+        : (oriObj.email || '');
+      const oriNomeConvite = modoConviteOrientador
+        ? (document.getElementById('orientador-nome-convite').value.trim() || oriEmailConvite.split('@')[0])
+        : (oriObj.nome || document.getElementById('orientador').options[document.getElementById('orientador').selectedIndex]?.text || '');
+
       const dados = {
         nomeResponsavel:    document.getElementById('nome-responsavel').value.trim(),
         cpfResponsavel:     document.getElementById('cpf-responsavel').value.trim(),
@@ -1050,9 +1162,9 @@
         // Supervisor — nome limpo (sem cargo) e e-mail vindos do cache
         nomeSupervisor:     supObj.nome || document.getElementById('supervisor').options[document.getElementById('supervisor').selectedIndex]?.text || '',
         emailSupervisor:    supObj.email || '',
-        // Orientador — nome e e-mail vindos do cache
-        nomeOrientador:     oriObj.nome || document.getElementById('orientador').options[document.getElementById('orientador').selectedIndex]?.text || '',
-        emailOrientador:    oriObj.email || '',
+        // Orientador — nome e e-mail (do cache quando selecionado; do input no modo convite)
+        nomeOrientador:     oriNomeConvite,
+        emailOrientador:    oriEmailConvite,
         dataInicio:         document.getElementById('data-inicio').value,
         dataTermino:        document.getElementById('data-termino').value,
         cargaHoraria:       document.getElementById('carga-horaria').value,
@@ -1082,18 +1194,27 @@
       if (arqBol) dados.docBoletim    = arqBol;
 
       let _enviado = false;
-      await submitWithFeedback(
-        () => apiSolicitarEstagio(dados),
-        btnEnviar,
-        'form-feedback',
-        'Solicitação enviada com sucesso!',
-        'Sua solicitação foi recebida. Você receberá instruções sobre o envio dos documentos físicos e os próximos passos por e-mail.',
-        () => {
-          _enviado = true;
-          form.querySelectorAll('input,select,textarea,button').forEach(el => el.disabled = true);
-        }
-      );
-      // submitWithFeedback re-enables the button in finally; keep disabled permanently after success
+      // Submissão manual para usar a mensagem contextual do backend (oriConvidado)
+      btnEnviar.classList.add('is-loading');
+      btnEnviar.disabled = true;
+      hideFormFeedback('form-feedback');
+      try {
+        const result = await apiSolicitarEstagio(dados);
+        _enviado = true;
+        const titulo = result.orientadorConvidado
+          ? '✉️ Solicitação enviada — convite de orientador disparado!'
+          : '✅ Solicitação enviada com sucesso!';
+        const detalhe = result.mensagem ||
+          'Sua solicitação foi recebida. Você receberá notificações por e-mail sobre os próximos passos.';
+        showFormFeedback('form-feedback', 'success', titulo, detalhe);
+        form.querySelectorAll('input,select,textarea,button').forEach(el => el.disabled = true);
+      } catch (err) {
+        showFormFeedback('form-feedback', 'error',
+          'Erro ao enviar solicitação',
+          err.message || 'Tente novamente ou entre em contato com o setor.');
+        btnEnviar.classList.remove('is-loading');
+        btnEnviar.disabled = false;
+      }
       if (_enviado) {
         btnEnviar.disabled = true;
         btnEnviar.style.cursor = 'not-allowed';

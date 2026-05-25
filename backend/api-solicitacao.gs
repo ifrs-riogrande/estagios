@@ -220,6 +220,17 @@ function solicitarEstagio_(dados) {
   if (!nomeEmpresa)    return jsonError_('Empresa é obrigatória.', 'VALIDATION');
   if (!nomeSupervisor) return jsonError_('Supervisor é obrigatório.', 'VALIDATION');
   if (!nomeOrientador) return jsonError_('Orientador é obrigatório.', 'VALIDATION');
+
+  // Valida domínio do e-mail do orientador (deve ser servidor institucional)
+  if (emailOrientador) {
+    if (!validarEmail_(emailOrientador)) {
+      return jsonError_('E-mail do orientador inválido.', 'VALIDATION');
+    }
+    var emailOriDomain = emailOrientador.split('@')[1] || '';
+    if (emailOriDomain !== 'riogrande.ifrs.edu.br') {
+      return jsonError_('O e-mail do orientador deve ser institucional (@riogrande.ifrs.edu.br).', 'VALIDATION');
+    }
+  }
   if (!dataInicio)     return jsonError_('Data de início é obrigatória.', 'VALIDATION');
   if (!dataTermino)    return jsonError_('Data de término é obrigatória.', 'VALIDATION');
   if (!cargaHor)       return jsonError_('Carga horária é obrigatória.', 'VALIDATION');
@@ -252,6 +263,22 @@ function solicitarEstagio_(dados) {
     }
     idEstagio = gerarIdEstagio_(); // fallback final (colisão improvável)
   })();
+
+  // ── Orientador: cria entrada provisional se ainda não cadastrado ────────────
+  var oriConvidado = false;
+  if (emailOrientador) {
+    try {
+      var oriExistente = verificarOrientadorPorEmail_(emailOrientador);
+      if (!oriExistente) {
+        criarOrientadorConvidado_(emailOrientador, nomeOrientador);
+        oriConvidado = true;
+      } else {
+        // Considera 'Convidado' como ainda não cadastrado (cadastro incompleto)
+        var oriStatus = String(oriExistente.data[COL_ORI.STATUS] || '').trim();
+        if (oriStatus === 'Convidado') oriConvidado = true;
+      }
+    } catch (eOri) { logErro_('solicitarEstagio_.verificarOrientador', eOri); }
+  }
 
   // Cria pasta no Drive imediatamente para armazenar os documentos de admissão.
   // Estrutura: Estágios / [Ano] / [ID — Nome]
@@ -394,8 +421,11 @@ function solicitarEstagio_(dados) {
   } catch (e) { logErro_('solicitarEstagio_.mailEstudante', e); }
 
   return jsonOk_({
-    idEstagio: idEstagio,
-    mensagem:  'Solicitação enviada! O orientador ' + nomeOrientador + ' receberá um e-mail para revisar e validar o checklist. Você será notificado(a) assim que ele responder.',
+    idEstagio:          idEstagio,
+    orientadorConvidado: oriConvidado,
+    mensagem: oriConvidado
+      ? 'Solicitação enviada! Um convite foi enviado para ' + emailOrientador + ' para que o(a) professor(a) complete o cadastro e revise o checklist. Você será notificado(a) assim que ele(a) responder.'
+      : 'Solicitação enviada! O(a) orientador(a) ' + nomeOrientador + ' receberá um e-mail para revisar e validar o checklist. Você será notificado(a) assim que ele(a) responder.',
   });
 }
 
@@ -661,6 +691,18 @@ function verificarAceiteOrientador_(e) {
     var _curso    = String(dados[i][COL_SOL.CURSO]            || '');
     var _cnpj     = String(dados[i][COL_SOL.CNPJ_EMPRESA]     || '');
     var _emailSup = String(dados[i][COL_SOL.EMAIL_SUPERVISOR]  || '');
+
+    // Verifica se o orientador ainda precisa completar o cadastro
+    var _emailOri = String(dados[i][COL_SOL.EMAIL_ORIENTADOR] || '').toLowerCase().trim();
+    var _oriPrecisaCadastro = false;
+    if (_emailOri) {
+      try {
+        var _oriEntry  = verificarOrientadorPorEmail_(_emailOri);
+        var _oriStatus = _oriEntry ? String(_oriEntry.data[COL_ORI.STATUS] || '').trim() : '';
+        _oriPrecisaCadastro = (!_oriEntry || _oriStatus === 'Convidado');
+      } catch (_eOri) { /* ignora — não bloqueia o aceite */ }
+    }
+
     return jsonOk_({
       idEstagio:          idEstagio,
       // ── Estudante ─────────────────────────────────────────────
@@ -696,8 +738,11 @@ function verificarAceiteOrientador_(e) {
       horario:            String(dados[i][COL_SOL.HORARIO]          || ''),
       planoAtividades:    String(dados[i][COL_SOL.PLANO_ATIVIDADES] || ''),
       // Itens do checklist do orientador para renderização na página
-      checklistItens:     ck.orientador.itens || [],
-      prazoVencimento:    ck.orientador.prazoVencimento || '',
+      checklistItens:         ck.orientador.itens || [],
+      prazoVencimento:        ck.orientador.prazoVencimento || '',
+      // Flag: orientador ainda não completou o cadastro (status 'Convidado' ou inexistente)
+      orientadorPrecisaCadastro: _oriPrecisaCadastro,
+      emailOrientador:           _emailOri,
     });
   }
   return jsonError_('Link inválido ou expirado.', 'NOT_FOUND');

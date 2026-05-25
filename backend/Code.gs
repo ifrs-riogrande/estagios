@@ -44,6 +44,7 @@ var GET_ROUTES = {
   'obterMeuCadastroCoordenador':     doGetServidores,
   'listarMeusOrientandos':           doGetServidores,
   'listarEstagiosCoordenador':       doGetServidores,
+  'verificarCadastroOrientador':     doGetServidores,
 
   // Agentes
   'listarAgentes':           doGetAgentes,
@@ -112,6 +113,7 @@ var POST_ROUTES = {
   'atualizarMeuCadastroOrientador':    doPostServidores,
   'cadastrarCoordenador':              doPostServidores,
   'atualizarMeuCadastroCoordenador':   doPostServidores,
+  'registrarOrientadorConvidado':      doPostServidores,
 
   // SolicitaÃ§Ãµes (estudante + DG)
   'solicitarEstagio':          doPostSolicitacao,
@@ -257,6 +259,7 @@ function doGetServidores(e) {
   if (action === 'obterMeuCadastroCoordenador')  return obterMeuCadastroCoordenador_(e);
   if (action === 'listarMeusOrientandos')        return listarMeusOrientandos_(e);
   if (action === 'listarEstagiosCoordenador')    return listarEstagiosCoordenador_(e);
+  if (action === 'verificarCadastroOrientador')  return verificarCadastroOrientador_(e);
   return jsonError_('AÃ§Ã£o nÃ£o implementada: ' + action, 'NOT_IMPLEMENTED');
 }
 
@@ -267,6 +270,7 @@ function doPostServidores(e) {
   if (action === 'atualizarMeuCadastroOrientador')  return atualizarMeuCadastroOrientador_(body);
   if (action === 'cadastrarCoordenador')            return cadastrarCoordenador_(body);
   if (action === 'atualizarMeuCadastroCoordenador') return atualizarMeuCadastroCoordenador_(body);
+  if (action === 'registrarOrientadorConvidado')    return registrarOrientadorConvidado_(body);
   return jsonError_('AÃ§Ã£o nÃ£o implementada: ' + action, 'NOT_IMPLEMENTED');
 }
 
