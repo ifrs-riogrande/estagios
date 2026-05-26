@@ -98,6 +98,37 @@
         </div>
         <div style="display:flex;gap:var(--space-2);align-items:flex-end;">
           <button id="btn-atualizar" class="btn btn-secondary btn-sm">Atualizar</button>
+          <button id="btn-convidar-empresa" class="btn btn-ghost btn-sm" title="Enviar convite de cadastro a uma empresa">
+            <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"/><path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"/></svg>
+            Convidar empresa
+          </button>
+        </div>
+      </div>
+
+      <!-- Modal de convite para empresa -->
+      <div id="modal-convidar-empresa" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;display:none;align-items:center;justify-content:center;">
+        <div style="background:#fff;border-radius:var(--radius-lg);padding:var(--space-6);max-width:460px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,.3);">
+          <h3 style="margin-bottom:var(--space-4);">Convidar empresa para cadastro</h3>
+          <p style="font-size:var(--font-size-sm);color:var(--color-text-secondary);margin-bottom:var(--space-4);">Informe os dados da empresa. Será enviado um e-mail com o link para preenchimento do cadastro.</p>
+          <div style="display:flex;flex-direction:column;gap:var(--space-3);">
+            <div>
+              <label style="font-size:var(--font-size-sm);font-weight:600;display:block;margin-bottom:4px;">E-mail da empresa *</label>
+              <input type="email" id="convite-emp-email" class="form-control" placeholder="contato@empresa.com.br">
+            </div>
+            <div>
+              <label style="font-size:var(--font-size-sm);font-weight:600;display:block;margin-bottom:4px;">CNPJ (opcional)</label>
+              <input type="text" id="convite-emp-cnpj" class="form-control" placeholder="00.000.000/0001-00" maxlength="18">
+            </div>
+            <div>
+              <label style="font-size:var(--font-size-sm);font-weight:600;display:block;margin-bottom:4px;">Nome do contato (opcional)</label>
+              <input type="text" id="convite-emp-nome" class="form-control" placeholder="Nome do responsável">
+            </div>
+          </div>
+          <div id="convite-emp-feedback" style="display:none;margin-top:var(--space-3);font-size:var(--font-size-sm);padding:var(--space-2) var(--space-3);border-radius:var(--radius-md);"></div>
+          <div style="display:flex;gap:var(--space-3);margin-top:var(--space-5);justify-content:flex-end;">
+            <button class="btn btn-ghost" onclick="fecharModalConviteEmp()">Cancelar</button>
+            <button class="btn btn-primary" id="btn-enviar-convite-emp" onclick="enviarConviteEmpresa()">Enviar convite</button>
+          </div>
         </div>
       </div>
 
@@ -451,6 +482,55 @@
       el.textContent = msg;
       document.body.appendChild(el);
       setTimeout(() => el.remove(), 4000);
+    }
+
+    // ── Convite de cadastro para empresa ─────────────────────────────────────
+    document.getElementById('btn-convidar-empresa').addEventListener('click', () => {
+      document.getElementById('modal-convidar-empresa').style.display = 'flex';
+    });
+
+    function fecharModalConviteEmp() {
+      document.getElementById('modal-convidar-empresa').style.display = 'none';
+      document.getElementById('convite-emp-email').value = '';
+      document.getElementById('convite-emp-cnpj').value = '';
+      document.getElementById('convite-emp-nome').value = '';
+      document.getElementById('convite-emp-feedback').style.display = 'none';
+    }
+
+    async function enviarConviteEmpresa() {
+      const email = document.getElementById('convite-emp-email').value.trim();
+      const cnpj  = document.getElementById('convite-emp-cnpj').value.trim();
+      const nome  = document.getElementById('convite-emp-nome').value.trim();
+      const fb    = document.getElementById('convite-emp-feedback');
+      const btn   = document.getElementById('btn-enviar-convite-emp');
+
+      if (!email) {
+        fb.style.display = 'block';
+        fb.style.background = '#fff1f2';
+        fb.style.color = '#9f1239';
+        fb.textContent = 'Informe o e-mail da empresa.';
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'Enviando…';
+      fb.style.display = 'none';
+      try {
+        await apiEnviarMagicLinkEmpresa({ email, cnpj, nome });
+        fb.style.display = 'block';
+        fb.style.background = '#f0fdf4';
+        fb.style.color = '#166534';
+        fb.textContent = 'Convite enviado para ' + email + '.';
+        btn.textContent = 'Enviado ✓';
+        setTimeout(fecharModalConviteEmp, 2500);
+      } catch(err) {
+        fb.style.display = 'block';
+        fb.style.background = '#fff1f2';
+        fb.style.color = '#9f1239';
+        fb.textContent = 'Erro: ' + (err.message || 'Falha no envio.');
+        btn.disabled = false;
+        btn.textContent = 'Enviar convite';
+      }
     }
   </script>
 </body>

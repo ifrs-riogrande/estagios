@@ -56,6 +56,7 @@ var COL_EMP = {
   TEL_EMPRESA: 12, EMAIL_EMPRESA:13, SITE:    14,
   NOME_REP:    15, CARGO_REP:  16, EMAIL_REP: 17, CPF_REP:      18,
   STATUS:      19, CODIGO_ACESSO: 20, DRIVE_DOCS: 21, OBSERVACOES: 22,
+  EMAIL_ESTUDANTE_REF: 23,
 };
 
 // Colunas da planilha de supervisores (base 0)
@@ -67,6 +68,7 @@ var COL_SUP = {
   INSTITUICAO: 15, TEMPO_EXP: 16, DESC_EXP: 17, DECLARACAO: 18,
   STATUS: 19, VALIDADO_POR: 20, DATA_VALIDACAO: 21,
   OBSERVACOES: 22, DATA_ULT_ATZ: 23, CODIGO_ACESSO: 24,
+  EMAIL_ESTUDANTE_REF: 25,
 };
 
 // ─────────────────────────────────────────
@@ -168,6 +170,7 @@ function cadastrarEmpresa_(dados) {
   var emailRep    = sanitizar_(dados.emailRep).toLowerCase();
   var cpfRep      = sanitizar_(dados.cpfRep);
   var declaracao  = sanitizar_(dados.declaracao);
+  var emailEstRef = sanitizar_(dados.emailEstudanteRef || '', 150).toLowerCase();
 
   // Validações críticas (o frontend já valida, mas nunca confie só nele)
   if (!razaoSocial) throw new Error('Razão social é obrigatória.');
@@ -195,7 +198,7 @@ function cadastrarEmpresa_(dados) {
 
   var timestamp = new Date();
 
-  // Linha alinhada com COL_EMP (colunas A–T da aba Empresas)
+  // Linha alinhada com COL_EMP (colunas A–X da aba Empresas)
   var novaLinha = [
     timestamp,                      // 0  A — Timestamp
     emailRep,                       // 1  B — E-mail Form.
@@ -217,6 +220,10 @@ function cadastrarEmpresa_(dados) {
     emailRep,                       // 17 R — E-mail Representante
     cpfRep,                         // 18 S — CPF Representante
     'Pendente',                     // 19 T — Status
+    '',                             // 20 U — Código Acesso
+    '',                             // 21 V — Drive Docs
+    '',                             // 22 W — Observações
+    emailEstRef,                    // 23 X — E-mail Estudante Ref.
   ];
 
   // Para atualização: verifica se empresa existe e marca linha antiga
@@ -296,6 +303,7 @@ function cadastrarSupervisor_(dados) {
   var tempoExp      = sanitizar_(dados.tempoExperiencia);
   var descExp       = sanitizar_(dados.descExperiencia);
   var declaracao    = sanitizar_(dados.declaracao);
+  var emailEstRef   = sanitizar_(dados.emailEstudanteRef || '', 150).toLowerCase();
 
   if (!nome)     throw new Error('Nome do supervisor é obrigatório.');
   if (!validarCPF_(cpf)) throw new Error('CPF do supervisor inválido.');
@@ -338,6 +346,8 @@ function cadastrarSupervisor_(dados) {
     'Pendente',
     '', '', '',
     timestamp,
+    '',              // 24 — CODIGO_ACESSO (preenchido na aprovação)
+    emailEstRef,     // 25 — EMAIL_ESTUDANTE_REF
   ];
 
   // Verifica duplicata de CPF
@@ -1182,6 +1192,63 @@ function jsonOk_(data) {
   return ContentService
     .createTextOutput(JSON.stringify({ ok: true, data: data }))
     .setMimeType(ContentService.MimeType.JSON);
+}
+
+// ─────────────────────────────────────────
+//  GET: verificarStatusConcedente
+//  Verifica o status de empresa (por CNPJ) e supervisor (por CPF)
+//  Usado pelo pré-check da solicitação de estágio
+// ─────────────────────────────────────────
+function verificarStatusConcedente_(e) {
+  var cnpj = sanitizar_((e.parameter && e.parameter.cnpj) || '', 30);
+  var cpf  = sanitizar_((e.parameter && e.parameter.cpf)  || '', 20);
+
+  var cnpjNorm = cnpj.replace(/\D/g, '');
+  var cpfNorm  = cpf.replace(/\D/g, '');
+
+  var resultado = {
+    empresa:    { encontrada: false, status: '', razaoSocial: '' },
+    supervisor: { encontrado: false, status: '', nome: '' },
+  };
+
+  // Verifica empresa
+  if (cnpjNorm) {
+    var ssEmp = SpreadsheetApp.openById(CFG.ID_EMPRESAS);
+    var abaEmp = ssEmp.getSheetByName(CFG.ABA_EMPRESAS);
+    if (abaEmp) {
+      var dadosEmp = abaEmp.getDataRange().getValues();
+      for (var i = 1; i < dadosEmp.length; i++) {
+        var docLinha = String(dadosEmp[i][COL_EMP.CNPJ] || '').replace(/\D/g, '');
+        if (docLinha !== cnpjNorm) continue;
+        var statusEmp = String(dadosEmp[i][COL_EMP.STATUS] || '').trim();
+        if (statusEmp.indexOf('Processada') > -1) continue;
+        resultado.empresa.encontrada  = true;
+        resultado.empresa.status      = statusEmp;
+        resultado.empresa.razaoSocial = String(dadosEmp[i][COL_EMP.RAZAO_SOCIAL] || '').trim();
+        break;
+      }
+    }
+  }
+
+  // Verifica supervisor
+  if (cpfNorm) {
+    var ssSup = SpreadsheetApp.openById(CFG.ID_SUPERVISORES);
+    var abaSup = ssSup.getSheetByName(CFG.ABA_SUP_RESPOSTAS);
+    if (abaSup) {
+      var dadosSup = abaSup.getDataRange().getValues();
+      for (var j = 1; j < dadosSup.length; j++) {
+        var cpfLinha = String(dadosSup[j][COL_SUP.CPF] || '').replace(/\D/g, '');
+        if (cpfLinha !== cpfNorm) continue;
+        var statusSup = String(dadosSup[j][COL_SUP.STATUS] || '').trim();
+        resultado.supervisor.encontrado = true;
+        resultado.supervisor.status     = statusSup;
+        resultado.supervisor.nome       = String(dadosSup[j][COL_SUP.NOME] || '').trim();
+        break;
+      }
+    }
+  }
+
+  return jsonOk_(resultado);
 }
 
 function jsonError_(msg, code) {

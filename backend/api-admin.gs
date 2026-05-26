@@ -191,6 +191,9 @@ function doPostAdmin(e) {
       case 'excluirOrientador':         return excluirOrientador_(body);
       case 'editarCoordenadorAdmin':    return editarCoordenadorAdmin_(body);
       case 'excluirCoordenador':        return excluirCoordenador_(body);
+      // Magic links para empresa/supervisor
+      case 'enviarMagicLinkEmpresa':    return enviarMagicLinkEmpresa_(body);
+      case 'enviarMagicLinkSupervisor': return enviarMagicLinkSupervisor_(body);
       // Estudantes — validação de cadastro e reenvio de código
       case 'validarCadastroAdmin':   return validarCadastroAdmin_(body);
       case 'reenviarCodigoAdmin':    return reenviarCodigoAdmin_(body);
@@ -785,6 +788,12 @@ function alterarStatusEmpresa_(cnpj, novoStatus) {
 
       try { if (emailRep) MailApp.sendEmail({ to: emailRep, subject: assunto, body: corpo }); } catch(e2) {}
       try { if (emailEmp && emailEmp !== emailRep) MailApp.sendEmail({ to: emailEmp, subject: assunto, body: corpo }); } catch(e2) {}
+
+      // Notifica estudante que aguarda aprovação desta empresa
+      try { notificarEstudanteRefEmpresa_(cnpjLimpo, razaoSocial); } catch(eRef) {
+        logErro_('alterarStatusEmpresa_.notificarEstudante', eRef);
+      }
+
       return jsonOk_({ status: novoStatus, codigo: codigo });
     }
 
@@ -2148,6 +2157,14 @@ function alterarStatusSupervisor_(cpf, novoStatus) {
           );
         } catch(mailErr) { logErro_('alterarStatusSupervisor_.email', mailErr); }
       }
+
+      // Notifica estudante que aguarda aprovação deste supervisor
+      try {
+        var emailEstRef = String(dados[i][25] || '').trim(); // COL_SUP.EMAIL_ESTUDANTE_REF=25
+        var empresaStr  = String(dados[i][3]  || '').trim(); // COL_SUP.EMPRESA=3
+        var cnpjEmp     = empresaStr.split('—')[0].replace(/\D/g, '').trim();
+        notificarEstudanteRefSupervisor_(emailEstRef, nome, cnpjEmp);
+      } catch(eRef) { logErro_('alterarStatusSupervisor_.notificarEstudante', eRef); }
     }
     found = true;
     break;
@@ -2269,6 +2286,202 @@ function excluirSupervisor_(body) {
 // DIAGNÓSTICO — Rode esta função diretamente no editor do GAS
 // para verificar se MailApp está autorizado e funcionando.
 // ─────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────
+// Notificação ao estudante — empresa aprovada
+// Verifica se há supervisor "Validado" vinculado a esta empresa
+// que tenha emailEstudanteRef → envia notificação se ambos prontos
+// ─────────────────────────────────────────────────────────────────
+function notificarEstudanteRefEmpresa_(cnpjNorm, razaoSocial) {
+  if (!cnpjNorm) return;
+
+  var ss        = SpreadsheetApp.openById(CFG_ADMIN.SS_ID);
+  var sheetSup  = ss.getSheetByName('Supervisores');
+  if (!sheetSup) return;
+
+  var dadosSup = sheetSup.getDataRange().getValues();
+  var notificados = {};
+
+  for (var i = 1; i < dadosSup.length; i++) {
+    // COL_SUP: EMPRESA=3, STATUS=19, EMAIL_ESTUDANTE_REF=25
+    var empStr   = String(dadosSup[i][3]  || '');
+    var cnpjSup  = empStr.split('—')[0].replace(/\D/g, '').trim();
+    if (cnpjSup !== cnpjNorm) continue;
+
+    var statusSup   = String(dadosSup[i][19] || '').trim();
+    if (statusSup !== 'Validado') continue;
+
+    var emailEst = String(dadosSup[i][25] || '').trim();
+    if (!emailEst || notificados[emailEst]) continue;
+
+    notificados[emailEst] = true;
+    try {
+      MailApp.sendEmail({
+        to:      emailEst,
+        subject: '[IFRS Estágios] Empresa e supervisor aprovados — você já pode solicitar estágio',
+        body: [
+          'Olá,',
+          '',
+          'A empresa "' + razaoSocial + '" e o(a) supervisor(a) vinculado(a) já foram aprovados pelo setor de estágios.',
+          '',
+          'Você já pode retornar ao portal e concluir sua solicitação de estágio:',
+          'https://ifrs-riogrande.github.io/estagios/estudantes/solicitacao.html',
+          '',
+          'Dúvidas: estagios@riogrande.ifrs.edu.br',
+          '',
+          'Atenciosamente,',
+          'Central de Estágios — IFRS Campus Rio Grande',
+        ].join('\n'),
+      });
+    } catch(mailErr) { logErro_('notificarEstudanteRefEmpresa_', mailErr); }
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────
+// Notificação ao estudante — supervisor aprovado
+// Verifica se a empresa vinculada também está "Validada"
+// e envia notificação ao estudante de referência
+// ─────────────────────────────────────────────────────────────────
+function notificarEstudanteRefSupervisor_(emailEst, nomeSup, cnpjEmpNorm) {
+  if (!emailEst || !cnpjEmpNorm) return;
+
+  var ss       = SpreadsheetApp.openById(CFG_ADMIN.SS_ID);
+  var sheetEmp = ss.getSheetByName(CFG_ADMIN.ABA_EMPRESAS);
+  if (!sheetEmp) return;
+
+  var dadosEmp = sheetEmp.getDataRange().getValues();
+  var empAprovada = false;
+  var razaoSocial = '';
+
+  for (var i = 1; i < dadosEmp.length; i++) {
+    // COL_EMP: CNPJ=5, STATUS=19, RAZAO_SOCIAL=3
+    var cnpjLinha = String(dadosEmp[i][5] || '').replace(/\D/g, '');
+    if (cnpjLinha !== cnpjEmpNorm) continue;
+    var statusEmp = String(dadosEmp[i][19] || '').trim();
+    if (statusEmp.indexOf('Processada') > -1) continue;
+    if (statusEmp === 'Validada') {
+      empAprovada = true;
+      razaoSocial = String(dadosEmp[i][3] || '').trim();
+    }
+    break;
+  }
+
+  if (!empAprovada) return; // Empresa ainda não aprovada — aguarda
+
+  try {
+    MailApp.sendEmail({
+      to:      emailEst,
+      subject: '[IFRS Estágios] Empresa e supervisor aprovados — você já pode solicitar estágio',
+      body: [
+        'Olá,',
+        '',
+        'O(a) supervisor(a) "' + nomeSup + '" e a empresa "' + razaoSocial + '" já foram aprovados pelo setor de estágios.',
+        '',
+        'Você já pode retornar ao portal e concluir sua solicitação de estágio:',
+        'https://ifrs-riogrande.github.io/estagios/estudantes/solicitacao.html',
+        '',
+        'Dúvidas: estagios@riogrande.ifrs.edu.br',
+        '',
+        'Atenciosamente,',
+        'Central de Estágios — IFRS Campus Rio Grande',
+      ].join('\n'),
+    });
+  } catch(mailErr) { logErro_('notificarEstudanteRefSupervisor_', mailErr); }
+}
+
+// ─────────────────────────────────────────────────────────────────
+// POST — Enviar magic link de cadastro para empresa
+// Admin informa e-mail da empresa; sistema envia convite com link
+// ─────────────────────────────────────────────────────────────────
+function enviarMagicLinkEmpresa_(body) {
+  validarTokenServidor_(body.authToken);
+  var email = sanitizar_(body.email || '', 150).toLowerCase();
+  var cnpj  = sanitizar_(body.cnpj  || '', 30).replace(/\D/g, '');
+  var nome  = sanitizar_(body.nome  || '', 200);
+
+  if (!validarEmail_(email)) return jsonError_('E-mail inválido.', 'VALIDATION');
+
+  var link = 'https://ifrs-riogrande.github.io/estagios/empresas/cadastro.html';
+  if (cnpj) link += '?cnpj=' + cnpj;
+
+  try {
+    MailApp.sendEmail({
+      to:      email,
+      subject: '[IFRS Estágios] Convite para cadastro de empresa concedente',
+      body: [
+        'Olá' + (nome ? ', ' + nome : '') + ',',
+        '',
+        'O setor de estágios do IFRS Campus Rio Grande convida sua empresa a se cadastrar no portal de estágios.',
+        '',
+        'Acesse o formulário de cadastro pelo link abaixo:',
+        link,
+        '',
+        cnpj ? 'CNPJ informado: ' + cnpj : '',
+        '',
+        'Após o envio, o setor analisará e aprovará o cadastro em até 1 dia útil.',
+        '',
+        'Dúvidas: estagios@riogrande.ifrs.edu.br',
+        '',
+        'Atenciosamente,',
+        'Central de Estágios — IFRS Campus Rio Grande',
+      ].filter(function(l) { return l !== undefined; }).join('\n'),
+    });
+  } catch(mailErr) {
+    logErro_('enviarMagicLinkEmpresa_', mailErr);
+    return jsonError_('Falha ao enviar e-mail.', 'MAIL_ERROR');
+  }
+
+  return jsonOk_({ enviado: true, email: email });
+}
+
+// ─────────────────────────────────────────────────────────────────
+// POST — Enviar magic link de cadastro para supervisor
+// Admin informa e-mail do supervisor; sistema envia convite com link
+// ─────────────────────────────────────────────────────────────────
+function enviarMagicLinkSupervisor_(body) {
+  validarTokenServidor_(body.authToken);
+  var email = sanitizar_(body.email || '', 150).toLowerCase();
+  var cpf   = sanitizar_(body.cpf   || '', 20).replace(/\D/g, '');
+  var nome  = sanitizar_(body.nome  || '', 200);
+  var cnpjEmp = sanitizar_(body.cnpjEmpresa || '', 30).replace(/\D/g, '');
+
+  if (!validarEmail_(email)) return jsonError_('E-mail inválido.', 'VALIDATION');
+
+  var link = 'https://ifrs-riogrande.github.io/estagios/empresas/supervisor.html';
+  var params = [];
+  if (cpf) params.push('cpf=' + cpf);
+  if (cnpjEmp) params.push('empresa=' + cnpjEmp);
+  if (params.length) link += '?' + params.join('&');
+
+  try {
+    MailApp.sendEmail({
+      to:      email,
+      subject: '[IFRS Estágios] Convite para cadastro de supervisor de estágio',
+      body: [
+        'Olá' + (nome ? ', ' + nome : '') + ',',
+        '',
+        'O setor de estágios do IFRS Campus Rio Grande convida você a se cadastrar como supervisor de estágio no portal.',
+        '',
+        'Acesse o formulário de cadastro pelo link abaixo:',
+        link,
+        '',
+        cpf ? 'CPF informado: ' + cpf : '',
+        '',
+        'Após o envio, o setor analisará e aprovará o cadastro em até 1 dia útil.',
+        '',
+        'Dúvidas: estagios@riogrande.ifrs.edu.br',
+        '',
+        'Atenciosamente,',
+        'Central de Estágios — IFRS Campus Rio Grande',
+      ].filter(function(l) { return l !== undefined; }).join('\n'),
+    });
+  } catch(mailErr) {
+    logErro_('enviarMagicLinkSupervisor_', mailErr);
+    return jsonError_('Falha ao enviar e-mail.', 'MAIL_ERROR');
+  }
+
+  return jsonOk_({ enviado: true, email: email });
+}
+
 function testarEnvioEmail() {
   var destinatario = Session.getActiveUser().getEmail();
   Logger.log('Testando envio para: ' + destinatario);

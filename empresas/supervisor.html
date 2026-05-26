@@ -337,6 +337,24 @@
     const btnLimpar = document.getElementById('btn-limpar');
     const selectEmpresa = document.getElementById('empresa');
 
+    // Referência do estudante que originou este cadastro (vinda via ?ref= na URL)
+    const _emailEstudanteRef = (new URLSearchParams(window.location.search)).get('ref') || '';
+
+    // Pré-seleciona empresa se vier via ?empresa=CNPJ (magic link do admin)
+    (function() {
+      const empParam = (new URLSearchParams(window.location.search)).get('empresa') || '';
+      if (empParam && selectEmpresa) {
+        // Tenta selecionar assim que as opções carregarem
+        window._preSelectEmpresa = empParam.replace(/\D/g, '');
+      }
+      // Pré-preenche CPF se vier via ?cpf=
+      const cpfParam = (new URLSearchParams(window.location.search)).get('cpf') || '';
+      if (cpfParam) {
+        const el = document.getElementById('cpf');
+        if (el) { el.value = cpfParam; }
+      }
+    })();
+
     // ── Carrega lista de empresas validadas ──
 
     async function carregarEmpresas() {
@@ -357,6 +375,18 @@
           );
         }
         selectEmpresa.disabled = false;
+
+        // Pré-seleciona empresa se veio via URL
+        if (window._preSelectEmpresa) {
+          const cnpjNorm = window._preSelectEmpresa.replace(/\D/g, '');
+          for (const opt of selectEmpresa.options) {
+            if (opt.value.replace(/\D/g, '') === cnpjNorm) {
+              selectEmpresa.value = opt.value;
+              selectEmpresa.dispatchEvent(new Event('change'));
+              break;
+            }
+          }
+        }
       } catch (err) {
         document.getElementById('loading-empresas').style.display = 'none';
         document.getElementById('erro-empresas').style.display = 'flex';
@@ -476,6 +506,7 @@
         tempoExperiencia: document.getElementById('tempo-experiencia').value,
         descExperiencia:  document.getElementById('desc-experiencia').value.trim(),
         declaracao:       'Sim',
+        emailEstudanteRef: _emailEstudanteRef,
       };
 
       await submitWithFeedback(

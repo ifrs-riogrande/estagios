@@ -350,6 +350,18 @@
     const btnEnviar = document.getElementById('btn-enviar');
     const btnLimpar = document.getElementById('btn-limpar');
 
+    // Referência do estudante que originou este cadastro (vinda via ?ref= na URL)
+    const _emailEstudanteRef = (new URLSearchParams(window.location.search)).get('ref') || '';
+
+    // Pré-preenche CNPJ se vier via ?cnpj= (magic link do admin)
+    (function() {
+      const cnpjParam = (new URLSearchParams(window.location.search)).get('cnpj') || '';
+      if (cnpjParam) {
+        const el = document.getElementById('cnpj');
+        if (el) { el.value = cnpjParam; el.dispatchEvent(new Event('input')); }
+      }
+    })();
+
     // ── Validação em tempo real ──
 
     // CNPJ: valida ao sair do campo (blur)
@@ -536,6 +548,7 @@
         emailRep:      document.getElementById('email-rep').value.trim(),
         cpfRep:        document.getElementById('cpf-rep').value.trim(),
         declaracao:    'Sim',
+        emailEstudanteRef: _emailEstudanteRef,
       };
 
       await submitWithFeedback(

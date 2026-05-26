@@ -171,6 +171,14 @@ async function apiListarEmpresas() {
   return API.get('listarEmpresas');
 }
 
+/**
+ * Verifica o status de empresa (por CNPJ) e supervisor (por CPF) antes da solicitação.
+ * Retorna { empresa: { encontrada, status, razaoSocial }, supervisor: { encontrado, status, nome } }
+ */
+async function apiVerificarStatusConcedente(cnpj, cpf) {
+  return API.get('verificarStatusConcedente', { cnpj: cnpj || '', cpf: cpf || '' });
+}
+
 /** Lista supervisores de uma empresa específica (CNPJ normalizado). */
 async function apiListarSupervisores(cnpjEmpresa) {
   return API.get('listarSupervisores', { empresa: cnpjEmpresa });
@@ -430,6 +438,16 @@ async function apiListarAlunosAdmin(filtros = {}) {
 /** Lista empresas (admin). */
 async function apiListarEmpresasAdmin(filtros = {}) {
   return API.get('listarEmpresasAdmin', { authToken: getAccessToken(), ...filtros });
+}
+
+/** Envia magic link de convite para cadastro de empresa (admin). */
+async function apiEnviarMagicLinkEmpresa(dados) {
+  return API.post('enviarMagicLinkEmpresa', { authToken: getAccessToken(), ...dados });
+}
+
+/** Envia magic link de convite para cadastro de supervisor (admin). */
+async function apiEnviarMagicLinkSupervisor(dados) {
+  return API.post('enviarMagicLinkSupervisor', { authToken: getAccessToken(), ...dados });
 }
 
 /** Lista orientadores (admin). */

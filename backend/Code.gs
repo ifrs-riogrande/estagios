@@ -25,11 +25,12 @@
 // â”€â”€ Mapeamento action â†’ mÃ³dulo (GET) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 var GET_ROUTES = {
   // Empresas
-  'listarEmpresas':           doGetEmpresas,
-  'listarSupervisores':       doGetEmpresas,
-  'obterCadastroEmpresa':     doGetEmpresas,
-  'obterCadastroSupervisor':  doGetEmpresas,
-  'listarOportunidades':     doGetOportunidades,
+  'listarEmpresas':               doGetEmpresas,
+  'listarSupervisores':           doGetEmpresas,
+  'obterCadastroEmpresa':         doGetEmpresas,
+  'obterCadastroSupervisor':      doGetEmpresas,
+  'verificarStatusConcedente':    doGetEmpresas,
+  'listarOportunidades':          doGetOportunidades,
 
   // Estudantes
   'listarMeusEstagios':      doGetEstudantes,
@@ -174,6 +175,8 @@ var POST_ROUTES = {
   'excluirOrientador':         doPostAdmin,
   'editarCoordenadorAdmin':    doPostAdmin,
   'excluirCoordenador':        doPostAdmin,
+  'enviarMagicLinkEmpresa':    doPostAdmin,
+  'enviarMagicLinkSupervisor': doPostAdmin,
 
   // Checklist
   'salvarRespostaAdmin':             doPostChecklist,
@@ -334,7 +337,8 @@ function doGetEmpresas(e) {
       case 'listarEmpresas':          return jsonOk_(listarEmpresas_());
       case 'listarSupervisores':      return jsonOk_(listarSupervisores_(e.parameter.empresa || ''));
       case 'obterCadastroEmpresa':    return jsonOk_(obterCadastroEmpresa_(e.parameter.cnpjCpf || '', e.parameter.codigo || ''));
-      case 'obterCadastroSupervisor': return jsonOk_(obterCadastroSupervisor_(e.parameter.cpf || '', e.parameter.codigo || ''));
+      case 'obterCadastroSupervisor':   return jsonOk_(obterCadastroSupervisor_(e.parameter.cpf || '', e.parameter.codigo || ''));
+      case 'verificarStatusConcedente': return verificarStatusConcedente_(e);
       default: return jsonError_('Ação GET não reconhecida em empresas: ' + action, 'NOT_IMPLEMENTED');
     }
   } catch (err) {

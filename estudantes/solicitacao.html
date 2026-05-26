@@ -129,7 +129,70 @@
           </ul>
         </div>
 
-        <form id="form-solicitacao" novalidate>
+        <!-- ══════════════════════════════════════════════════════════
+             PRÉ-VERIFICAÇÃO DE CONCEDENTE
+             Exibida antes do formulário se empresa/supervisor não estiverem prontos.
+             Oculta quando ambos estão validados.
+        ══════════════════════════════════════════════════════════ -->
+        <div id="painel-precheck" style="display:none;">
+          <div class="form-section" style="border:2px solid var(--color-warning,#f59e0b);border-radius:var(--radius-md);padding:var(--space-6);background:#fffbeb;">
+            <h2 class="form-section-title" style="color:var(--color-warning-dark,#92400e);">
+              <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" style="width:20px;height:20px;"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+              Verificação de Empresa e Supervisor
+            </h2>
+            <p style="margin-bottom:var(--space-4);">
+              Para solicitar o estágio, a <strong>empresa concedente</strong> e o <strong>supervisor de estágio</strong> devem estar cadastrados e aprovados pelo setor de estágios.
+              Informe os dados abaixo para verificar a situação.
+            </p>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="precheck-cnpj">CNPJ da Empresa</label>
+                <input type="text" id="precheck-cnpj" class="form-control" placeholder="00.000.000/0001-00"
+                       maxlength="18" autocomplete="off" inputmode="numeric">
+                <span class="form-hint">CNPJ da empresa onde realizará o estágio.</span>
+                <span id="precheck-cnpj-status" class="form-hint" style="display:none;"></span>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="precheck-cpf">CPF do Supervisor</label>
+                <input type="text" id="precheck-cpf" class="form-control" placeholder="000.000.000-00"
+                       maxlength="14" autocomplete="off" inputmode="numeric">
+                <span class="form-hint">CPF do responsável que supervisionará seu estágio.</span>
+                <span id="precheck-cpf-status" class="form-hint" style="display:none;"></span>
+              </div>
+            </div>
+
+            <button type="button" id="btn-verificar-concedente" class="btn btn-primary">
+              <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/></svg>
+              Verificar Situação
+            </button>
+
+            <!-- Resultado da verificação -->
+            <div id="precheck-resultado" style="display:none;margin-top:var(--space-5);">
+
+              <!-- Status empresa -->
+              <div id="precheck-emp-bloco" class="info-banner" style="margin-bottom:var(--space-3);">
+                <div id="precheck-emp-msg"></div>
+              </div>
+
+              <!-- Status supervisor -->
+              <div id="precheck-sup-bloco" class="info-banner" style="margin-bottom:var(--space-3);">
+                <div id="precheck-sup-msg"></div>
+              </div>
+
+              <!-- Ação: redirecionar para cadastro -->
+              <div id="precheck-acoes" style="display:none;margin-top:var(--space-4);"></div>
+
+              <!-- Botão prosseguir (quando tudo está OK) -->
+              <button type="button" id="btn-precheck-prosseguir" class="btn btn-primary" style="display:none;margin-top:var(--space-4);">
+                <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                Prosseguir com a solicitação
+              </button>
+            </div>
+          </div>
+        </div><!-- /painel-precheck -->
+
+        <form id="form-solicitacao" novalidate style="display:none;">
 
           <!-- ── Seção 1: Identificação ── -->
           <div class="form-section">
@@ -653,8 +716,205 @@
     }
 
     // ── Autenticação ──
+    // ── E-mail do estudante logado (preenchido após auth) ──────────────────────
+    let _emailEstudanteLogado = '';
+
+    // ── Pré-verificação de concedente ─────────────────────────────────────────
+
+    function precheckMascara(el, tipo) {
+      el.addEventListener('input', function() {
+        let v = this.value.replace(/\D/g, '');
+        if (tipo === 'cnpj') {
+          v = v.slice(0, 14);
+          if (v.length > 12) v = v.slice(0,2)+'.'+v.slice(2,5)+'.'+v.slice(5,8)+'/'+v.slice(8,12)+'-'+v.slice(12);
+          else if (v.length > 8) v = v.slice(0,2)+'.'+v.slice(2,5)+'.'+v.slice(5,8)+'/'+v.slice(8);
+          else if (v.length > 5) v = v.slice(0,2)+'.'+v.slice(2,5)+'.'+v.slice(5);
+          else if (v.length > 2) v = v.slice(0,2)+'.'+v.slice(2);
+        } else {
+          v = v.slice(0, 11);
+          if (v.length > 9) v = v.slice(0,3)+'.'+v.slice(3,6)+'.'+v.slice(6,9)+'-'+v.slice(9);
+          else if (v.length > 6) v = v.slice(0,3)+'.'+v.slice(3,6)+'.'+v.slice(6);
+          else if (v.length > 3) v = v.slice(0,3)+'.'+v.slice(3);
+        }
+        this.value = v;
+      });
+    }
+
+    function precheckBadge(elId, tipo) {
+      // tipo: 'ok'|'pendente'|'nao-encontrado'|'recusado'|'inativo'
+      const el = document.getElementById(elId);
+      if (!el) return;
+      const map = {
+        'ok':           { bg: '#dcfce7', cor: '#166534', txt: '✓ Aprovado(a)' },
+        'pendente':     { bg: '#fef9c3', cor: '#854d0e', txt: '⏳ Em análise pelo setor' },
+        'nao-encontrado':{ bg:'#fff1f2', cor:'#9f1239', txt: '✗ Não cadastrado(a)' },
+        'recusado':     { bg: '#fff1f2', cor: '#9f1239', txt: '✗ Cadastro recusado' },
+        'inativo':      { bg: '#f3f4f6', cor: '#374151', txt: '— Inativo(a)' },
+      };
+      const s = map[tipo] || map['nao-encontrado'];
+      el.style.display = 'inline-block';
+      el.style.padding = '2px 10px';
+      el.style.borderRadius = '999px';
+      el.style.background = s.bg;
+      el.style.color = s.cor;
+      el.style.fontWeight = '600';
+      el.style.fontSize = 'var(--font-size-sm)';
+      el.textContent = s.txt;
+    }
+
+    async function executarPrecheck() {
+      const cnpj = document.getElementById('precheck-cnpj').value.trim();
+      const cpf  = document.getElementById('precheck-cpf').value.trim();
+
+      const cnpjNum = cnpj.replace(/\D/g, '');
+      const cpfNum  = cpf.replace(/\D/g, '');
+
+      if (!cnpjNum || cnpjNum.length !== 14) {
+        showFieldError('precheck-cnpj', 'Informe o CNPJ completo (14 dígitos).');
+        return;
+      }
+      if (!cpfNum || cpfNum.length !== 11) {
+        showFieldError('precheck-cpf', 'Informe o CPF completo (11 dígitos).');
+        return;
+      }
+
+      const btn = document.getElementById('btn-verificar-concedente');
+      btn.disabled = true;
+      btn.textContent = 'Verificando…';
+      document.getElementById('precheck-resultado').style.display = 'none';
+
+      try {
+        const res = await apiVerificarStatusConcedente(cnpjNum, cpfNum);
+        const emp = res.empresa;
+        const sup = res.supervisor;
+
+        // Exibe bloco de resultado
+        document.getElementById('precheck-resultado').style.display = 'block';
+
+        function setBannerStyle(el, tipo) {
+          // tipo: 'success' | 'warning' | 'danger'
+          const cores = {
+            success: { bg: '#f0fdf4', border: '#86efac', cor: '#166534' },
+            warning: { bg: '#fefce8', border: '#fde047', cor: '#854d0e' },
+            danger:  { bg: '#fff1f2', border: '#fca5a5', cor: '#9f1239' },
+          };
+          const c = cores[tipo] || cores['danger'];
+          el.style.background    = c.bg;
+          el.style.border        = '1px solid ' + c.border;
+          el.style.borderRadius  = 'var(--radius-md, 8px)';
+          el.style.padding       = 'var(--space-3) var(--space-4)';
+          el.style.color         = c.cor;
+          el.style.display       = 'block';
+          el.style.marginBottom  = 'var(--space-3)';
+        }
+
+        // --- Empresa ---
+        const empBloco = document.getElementById('precheck-emp-bloco');
+        const empMsg   = document.getElementById('precheck-emp-msg');
+        let empOk = false;
+        if (!emp.encontrada) {
+          setBannerStyle(empBloco, 'danger');
+          empMsg.innerHTML = '🏢 <strong>Empresa não encontrada.</strong> Esta empresa ainda não está cadastrada no sistema.';
+        } else if (emp.status === 'Validada') {
+          empOk = true;
+          setBannerStyle(empBloco, 'success');
+          empMsg.innerHTML = '✅ <strong>' + emp.razaoSocial + '</strong> — cadastro aprovado.';
+        } else if (emp.status === 'Pendente' || emp.status === 'Pendente de correção') {
+          setBannerStyle(empBloco, 'warning');
+          empMsg.innerHTML = '⏳ <strong>' + (emp.razaoSocial || 'Empresa') + '</strong> — cadastro em análise pelo setor. Você será notificado quando aprovado.';
+        } else {
+          setBannerStyle(empBloco, 'danger');
+          empMsg.innerHTML = '⚠️ <strong>' + (emp.razaoSocial || 'Empresa') + '</strong> — status: ' + emp.status + '. Entre em contato com o setor.';
+        }
+
+        // --- Supervisor ---
+        const supBloco = document.getElementById('precheck-sup-bloco');
+        const supMsg   = document.getElementById('precheck-sup-msg');
+        let supOk = false;
+        if (!sup.encontrado) {
+          setBannerStyle(supBloco, 'danger');
+          supMsg.innerHTML = '👤 <strong>Supervisor não encontrado.</strong> Este CPF ainda não está cadastrado no sistema.';
+        } else if (sup.status === 'Validado') {
+          supOk = true;
+          setBannerStyle(supBloco, 'success');
+          supMsg.innerHTML = '✅ <strong>' + sup.nome + '</strong> — cadastro aprovado.';
+        } else if (sup.status === 'Pendente') {
+          setBannerStyle(supBloco, 'warning');
+          supMsg.innerHTML = '⏳ <strong>' + (sup.nome || 'Supervisor') + '</strong> — cadastro em análise pelo setor. Você será notificado quando aprovado.';
+        } else {
+          setBannerStyle(supBloco, 'danger');
+          supMsg.innerHTML = '⚠️ <strong>' + (sup.nome || 'Supervisor') + '</strong> — status: ' + sup.status + '. Entre em contato com o setor.';
+        }
+
+        // --- Ações ---
+        const acoesDiv = document.getElementById('precheck-acoes');
+        const prosseguirBtn = document.getElementById('btn-precheck-prosseguir');
+
+        if (empOk && supOk) {
+          // Tudo certo — pode prosseguir
+          acoesDiv.style.display = 'none';
+          prosseguirBtn.style.display = 'inline-flex';
+          prosseguirBtn.onclick = function() {
+            document.getElementById('painel-precheck').style.display = 'none';
+            document.getElementById('form-solicitacao').style.display = '';
+          };
+        } else {
+          // Falta algum cadastro — monta botões de ação
+          prosseguirBtn.style.display = 'none';
+          acoesDiv.style.display = 'block';
+          let html = '<p style="margin-bottom:var(--space-3);color:var(--color-text-secondary);font-size:var(--font-size-sm);">Após o cadastro, o setor de estágios analisará e aprovará os dados. Você receberá um e-mail quando ambos estiverem aprovados e poderá retornar para concluir a solicitação.</p>';
+          html += '<div style="display:flex;flex-wrap:wrap;gap:var(--space-3);">';
+          if (!emp.encontrada) {
+            const refParam = _emailEstudanteLogado ? '?ref=' + encodeURIComponent(_emailEstudanteLogado) : '';
+            const cnpjParam = cnpjNum ? (refParam ? '&cnpj=' : '?cnpj=') + cnpjNum : '';
+            html += '<a href="../empresas/cadastro.html' + refParam + cnpjParam + '" class="btn btn-secondary" target="_blank">Cadastrar empresa</a>';
+          }
+          if (!sup.encontrado) {
+            const refParam = _emailEstudanteLogado ? '?ref=' + encodeURIComponent(_emailEstudanteLogado) : '';
+            const empParam = cnpjNum ? (refParam ? '&empresa=' : '?empresa=') + cnpjNum : '';
+            html += '<a href="../empresas/supervisor.html' + refParam + empParam + '" class="btn btn-secondary" target="_blank">Cadastrar supervisor</a>';
+          }
+          html += '</div>';
+          acoesDiv.innerHTML = html;
+        }
+      } catch (err) {
+        const errBloco = document.getElementById('precheck-emp-bloco');
+        document.getElementById('precheck-resultado').style.display = 'block';
+        errBloco.style.background = '#fff1f2';
+        errBloco.style.border = '1px solid #fca5a5';
+        errBloco.style.borderRadius = 'var(--radius-md,8px)';
+        errBloco.style.padding = 'var(--space-3) var(--space-4)';
+        errBloco.style.color = '#9f1239';
+        errBloco.style.display = 'block';
+        document.getElementById('precheck-emp-msg').textContent = 'Erro ao verificar dados. Tente novamente.';
+        document.getElementById('precheck-sup-bloco').style.display = 'none';
+        console.error('[precheck]', err);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/></svg> Verificar Situação';
+      }
+    }
+
+    // Inicializa máscaras e evento do botão de verificação
+    (function() {
+      const cnpjEl = document.getElementById('precheck-cnpj');
+      const cpfEl  = document.getElementById('precheck-cpf');
+      if (cnpjEl) precheckMascara(cnpjEl, 'cnpj');
+      if (cpfEl)  precheckMascara(cpfEl, 'cpf');
+      document.getElementById('btn-verificar-concedente')?.addEventListener('click', executarPrecheck);
+    })();
+
     document.addEventListener('DOMContentLoaded', async function () {
       if (!requireStudentAuth()) return;
+
+      // Captura e-mail do estudante logado para referenciar nos cadastros
+      try {
+        const em = getCurrentUserEmail ? getCurrentUserEmail() : null;
+        if (em) _emailEstudanteLogado = em;
+      } catch(e) {}
+
+      // Mostra painel de pré-verificação antes do formulário
+      document.getElementById('painel-precheck').style.display = 'block';
 
       // Data início: mínimo = hoje + 7 dias corridos
       const inputInicio  = document.getElementById('data-inicio');
