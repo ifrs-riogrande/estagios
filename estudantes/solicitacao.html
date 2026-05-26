@@ -835,9 +835,19 @@
           setBannerStyle(supBloco, 'danger');
           supMsg.innerHTML = '👤 <strong>Supervisor não encontrado.</strong> Este CPF ainda não está cadastrado no sistema.';
         } else if (sup.status === 'Validado') {
-          supOk = true;
-          setBannerStyle(supBloco, 'success');
-          supMsg.innerHTML = '✅ <strong>' + sup.nome + '</strong> — cadastro aprovado.';
+          // Verifica se o supervisor está vinculado à empresa informada
+          const cnpjVinc = (sup.cnpjEmpresaVinculada || '').replace(/\D/g, '');
+          if (cnpjVinc && cnpjVinc !== cnpjNum) {
+            // Supervisor aprovado, mas para outra empresa
+            setBannerStyle(supBloco, 'danger');
+            supMsg.innerHTML = '⚠️ <strong>' + sup.nome + '</strong> — cadastro aprovado, mas este supervisor está vinculado a <strong>outra empresa</strong>. '
+              + 'Um supervisor só pode atuar na empresa à qual está cadastrado. '
+              + 'Verifique o CPF ou cadastre o supervisor novamente vinculando-o à empresa correta.';
+          } else {
+            supOk = true;
+            setBannerStyle(supBloco, 'success');
+            supMsg.innerHTML = '✅ <strong>' + sup.nome + '</strong> — cadastro aprovado e vinculado a esta empresa.';
+          }
         } else if (sup.status === 'Pendente') {
           setBannerStyle(supBloco, 'warning');
           supMsg.innerHTML = '⏳ <strong>' + (sup.nome || 'Supervisor') + '</strong> — cadastro em análise pelo setor. Você será notificado quando aprovado.';
@@ -865,14 +875,18 @@
           let html = '<p style="margin-bottom:var(--space-3);color:var(--color-text-secondary);font-size:var(--font-size-sm);">Após o cadastro, o setor de estágios analisará e aprovará os dados. Você receberá um e-mail quando ambos estiverem aprovados e poderá retornar para concluir a solicitação.</p>';
           html += '<div style="display:flex;flex-wrap:wrap;gap:var(--space-3);">';
           if (!emp.encontrada) {
-            const refParam = _emailEstudanteLogado ? '?ref=' + encodeURIComponent(_emailEstudanteLogado) : '';
+            const refParam  = _emailEstudanteLogado ? '?ref=' + encodeURIComponent(_emailEstudanteLogado) : '';
             const cnpjParam = cnpjNum ? (refParam ? '&cnpj=' : '?cnpj=') + cnpjNum : '';
             html += '<a href="../empresas/cadastro.html' + refParam + cnpjParam + '" class="btn btn-secondary" target="_blank">Cadastrar empresa</a>';
           }
-          if (!sup.encontrado) {
+          // Supervisor não cadastrado OU cadastrado mas vinculado a outra empresa
+          const supVinculadoOutraEmp = sup.encontrado && sup.status === 'Validado'
+            && (sup.cnpjEmpresaVinculada || '').replace(/\D/g,'') !== cnpjNum;
+          if (!sup.encontrado || supVinculadoOutraEmp) {
             const refParam = _emailEstudanteLogado ? '?ref=' + encodeURIComponent(_emailEstudanteLogado) : '';
             const empParam = cnpjNum ? (refParam ? '&empresa=' : '?empresa=') + cnpjNum : '';
-            html += '<a href="../empresas/supervisor.html' + refParam + empParam + '" class="btn btn-secondary" target="_blank">Cadastrar supervisor</a>';
+            const label    = supVinculadoOutraEmp ? 'Cadastrar supervisor nesta empresa' : 'Cadastrar supervisor';
+            html += '<a href="../empresas/supervisor.html' + refParam + empParam + '" class="btn btn-secondary" target="_blank">' + label + '</a>';
           }
           html += '</div>';
           acoesDiv.innerHTML = html;

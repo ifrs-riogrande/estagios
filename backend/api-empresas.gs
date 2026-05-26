@@ -1208,7 +1208,7 @@ function verificarStatusConcedente_(e) {
 
   var resultado = {
     empresa:    { encontrada: false, status: '', razaoSocial: '' },
-    supervisor: { encontrado: false, status: '', nome: '' },
+    supervisor: { encontrado: false, status: '', nome: '', cnpjEmpresaVinculada: '' },
   };
 
   // Verifica empresa
@@ -1239,10 +1239,13 @@ function verificarStatusConcedente_(e) {
       for (var j = 1; j < dadosSup.length; j++) {
         var cpfLinha = String(dadosSup[j][COL_SUP.CPF] || '').replace(/\D/g, '');
         if (cpfLinha !== cpfNorm) continue;
-        var statusSup = String(dadosSup[j][COL_SUP.STATUS] || '').trim();
-        resultado.supervisor.encontrado = true;
-        resultado.supervisor.status     = statusSup;
-        resultado.supervisor.nome       = String(dadosSup[j][COL_SUP.NOME] || '').trim();
+        var statusSup  = String(dadosSup[j][COL_SUP.STATUS]  || '').trim();
+        var empresaStr = String(dadosSup[j][COL_SUP.EMPRESA] || '');
+        var cnpjVinc   = empresaStr.split('—')[0].replace(/\D/g, '').trim();
+        resultado.supervisor.encontrado           = true;
+        resultado.supervisor.status               = statusSup;
+        resultado.supervisor.nome                 = String(dadosSup[j][COL_SUP.NOME] || '').trim();
+        resultado.supervisor.cnpjEmpresaVinculada = cnpjVinc;
         break;
       }
     }
