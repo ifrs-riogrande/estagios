@@ -1481,6 +1481,7 @@
         const detalhe = result.mensagem ||
           'Sua solicitação foi recebida. Você receberá notificações por e-mail sobre os próximos passos.';
         showFormFeedback('form-feedback', 'success', titulo, detalhe);
+        btnEnviar.classList.remove('is-loading');
         form.querySelectorAll('input,select,textarea,button').forEach(el => el.disabled = true);
       } catch (err) {
         showFormFeedback('form-feedback', 'error',
