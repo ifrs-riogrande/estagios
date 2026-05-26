@@ -1014,7 +1014,7 @@
       try {
         const empresas = await apiListarEmpresas();
         if (empresas && empresas.length > 0) {
-          populateSelect('empresa', empresas.map(e => ({ value: e.cnpj, label: e.razaoSocial })), 'Selecione a empresa...');
+          populateSelect('empresa', empresas.map(e => ({ value: e.cnpj, label: e.razaoSocial + ' — ' + e.cnpj })), 'Selecione a empresa...');
           select.disabled = false;
         } else {
           populateSelect('empresa', [], 'Nenhuma empresa validada disponível');
