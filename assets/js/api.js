@@ -179,6 +179,16 @@ async function apiVerificarStatusConcedente(cnpj, cpf) {
   return API.get('verificarStatusConcedente', { cnpj: cnpj || '', cpf: cpf || '' });
 }
 
+/** Lista todas as empresas cadastradas (com status) para o pré-check em cascata. */
+async function apiListarEmpresasPrecheck() {
+  return API.get('listarEmpresasPrecheck');
+}
+
+/** Lista todos os supervisores de uma empresa (com status) para o pré-check. */
+async function apiListarSupervisoresPrecheck(cnpj) {
+  return API.get('listarSupervisoresPrecheck', { cnpj: cnpj });
+}
+
 /** Lista supervisores de uma empresa específica (CNPJ normalizado). */
 async function apiListarSupervisores(cnpjEmpresa) {
   return API.get('listarSupervisores', { empresa: cnpjEmpresa });

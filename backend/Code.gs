@@ -30,6 +30,8 @@ var GET_ROUTES = {
   'obterCadastroEmpresa':         doGetEmpresas,
   'obterCadastroSupervisor':      doGetEmpresas,
   'verificarStatusConcedente':    doGetEmpresas,
+  'listarEmpresasPrecheck':       doGetEmpresas,
+  'listarSupervisoresPrecheck':   doGetEmpresas,
   'listarOportunidades':          doGetOportunidades,
 
   // Estudantes
@@ -338,7 +340,9 @@ function doGetEmpresas(e) {
       case 'listarSupervisores':      return jsonOk_(listarSupervisores_(e.parameter.empresa || ''));
       case 'obterCadastroEmpresa':    return jsonOk_(obterCadastroEmpresa_(e.parameter.cnpjCpf || '', e.parameter.codigo || ''));
       case 'obterCadastroSupervisor':   return jsonOk_(obterCadastroSupervisor_(e.parameter.cpf || '', e.parameter.codigo || ''));
-      case 'verificarStatusConcedente': return verificarStatusConcedente_(e);
+      case 'verificarStatusConcedente':  return verificarStatusConcedente_(e);
+      case 'listarEmpresasPrecheck':     return listarEmpresasPrecheck_();
+      case 'listarSupervisoresPrecheck': return listarSupervisoresPrecheck_(e.parameter.cnpj || '');
       default: return jsonError_('Ação GET não reconhecida em empresas: ' + action, 'NOT_IMPLEMENTED');
     }
   } catch (err) {

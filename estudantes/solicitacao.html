@@ -140,55 +140,38 @@
               <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" style="width:20px;height:20px;"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
               Verificação de Empresa e Supervisor
             </h2>
-            <p style="margin-bottom:var(--space-4);">
-              Para solicitar o estágio, a <strong>empresa concedente</strong> e o <strong>supervisor de estágio</strong> devem estar cadastrados e aprovados pelo setor de estágios.
-              Informe os dados abaixo para verificar a situação.
+            <p style="margin-bottom:var(--space-5);">
+              Selecione a <strong>empresa concedente</strong> onde realizará o estágio. Se não encontrar sua empresa na lista, clique em <em>"Não encontrei minha empresa"</em> para cadastrá-la.
             </p>
 
-            <div class="form-row">
+            <!-- Passo 1: Empresa -->
+            <div class="form-group">
+              <label class="form-label required" for="precheck-empresa-select">Empresa concedente</label>
+              <select id="precheck-empresa-select" class="form-control">
+                <option value="">Carregando empresas…</option>
+              </select>
+            </div>
+            <div id="precheck-emp-status" style="display:none;margin-top:var(--space-2);margin-bottom:var(--space-4);"></div>
+
+            <!-- Passo 2: Supervisor (aparece após empresa Validada) -->
+            <div id="precheck-grupo-supervisor" style="display:none;">
               <div class="form-group">
-                <label class="form-label" for="precheck-cnpj">CNPJ da Empresa</label>
-                <input type="text" id="precheck-cnpj" class="form-control" placeholder="00.000.000/0001-00"
-                       maxlength="18" autocomplete="off" inputmode="numeric">
-                <span class="form-hint">CNPJ da empresa onde realizará o estágio.</span>
-                <span id="precheck-cnpj-status" class="form-hint" style="display:none;"></span>
+                <label class="form-label required" for="precheck-supervisor-select">Supervisor de estágio</label>
+                <select id="precheck-supervisor-select" class="form-control">
+                  <option value="">Selecione o supervisor…</option>
+                </select>
               </div>
-              <div class="form-group">
-                <label class="form-label" for="precheck-cpf">CPF do Supervisor</label>
-                <input type="text" id="precheck-cpf" class="form-control" placeholder="000.000.000-00"
-                       maxlength="14" autocomplete="off" inputmode="numeric">
-                <span class="form-hint">CPF do responsável que supervisionará seu estágio.</span>
-                <span id="precheck-cpf-status" class="form-hint" style="display:none;"></span>
-              </div>
+              <div id="precheck-sup-status" style="display:none;margin-top:var(--space-2);margin-bottom:var(--space-4);"></div>
             </div>
 
-            <button type="button" id="btn-verificar-concedente" class="btn btn-primary">
-              <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/></svg>
-              Verificar Situação
+            <!-- Ações (cadastrar empresa/supervisor) -->
+            <div id="precheck-acoes" style="display:none;margin-top:var(--space-4);"></div>
+
+            <!-- Botão prosseguir -->
+            <button type="button" id="btn-precheck-prosseguir" class="btn btn-primary" style="display:none;margin-top:var(--space-4);">
+              <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+              Prosseguir com a solicitação
             </button>
-
-            <!-- Resultado da verificação -->
-            <div id="precheck-resultado" style="display:none;margin-top:var(--space-5);">
-
-              <!-- Status empresa -->
-              <div id="precheck-emp-bloco" class="info-banner" style="margin-bottom:var(--space-3);">
-                <div id="precheck-emp-msg"></div>
-              </div>
-
-              <!-- Status supervisor -->
-              <div id="precheck-sup-bloco" class="info-banner" style="margin-bottom:var(--space-3);">
-                <div id="precheck-sup-msg"></div>
-              </div>
-
-              <!-- Ação: redirecionar para cadastro -->
-              <div id="precheck-acoes" style="display:none;margin-top:var(--space-4);"></div>
-
-              <!-- Botão prosseguir (quando tudo está OK) -->
-              <button type="button" id="btn-precheck-prosseguir" class="btn btn-primary" style="display:none;margin-top:var(--space-4);">
-                <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
-                Prosseguir com a solicitação
-              </button>
-            </div>
           </div>
         </div><!-- /painel-precheck -->
 
@@ -719,204 +702,199 @@
     // ── E-mail do estudante logado (preenchido após auth) ──────────────────────
     let _emailEstudanteLogado = '';
 
-    // ── Pré-verificação de concedente ─────────────────────────────────────────
+    // ── Pré-verificação de concedente (cascata empresa → supervisor) ───────────
 
-    function precheckMascara(el, tipo) {
-      el.addEventListener('input', function() {
-        let v = this.value.replace(/\D/g, '');
-        if (tipo === 'cnpj') {
-          v = v.slice(0, 14);
-          if (v.length > 12) v = v.slice(0,2)+'.'+v.slice(2,5)+'.'+v.slice(5,8)+'/'+v.slice(8,12)+'-'+v.slice(12);
-          else if (v.length > 8) v = v.slice(0,2)+'.'+v.slice(2,5)+'.'+v.slice(5,8)+'/'+v.slice(8);
-          else if (v.length > 5) v = v.slice(0,2)+'.'+v.slice(2,5)+'.'+v.slice(5);
-          else if (v.length > 2) v = v.slice(0,2)+'.'+v.slice(2);
-        } else {
-          v = v.slice(0, 11);
-          if (v.length > 9) v = v.slice(0,3)+'.'+v.slice(3,6)+'.'+v.slice(6,9)+'-'+v.slice(9);
-          else if (v.length > 6) v = v.slice(0,3)+'.'+v.slice(3,6)+'.'+v.slice(6);
-          else if (v.length > 3) v = v.slice(0,3)+'.'+v.slice(3);
-        }
-        this.value = v;
-      });
-    }
-
-    function precheckBadge(elId, tipo) {
-      // tipo: 'ok'|'pendente'|'nao-encontrado'|'recusado'|'inativo'
-      const el = document.getElementById(elId);
-      if (!el) return;
-      const map = {
-        'ok':           { bg: '#dcfce7', cor: '#166534', txt: '✓ Aprovado(a)' },
-        'pendente':     { bg: '#fef9c3', cor: '#854d0e', txt: '⏳ Em análise pelo setor' },
-        'nao-encontrado':{ bg:'#fff1f2', cor:'#9f1239', txt: '✗ Não cadastrado(a)' },
-        'recusado':     { bg: '#fff1f2', cor: '#9f1239', txt: '✗ Cadastro recusado' },
-        'inativo':      { bg: '#f3f4f6', cor: '#374151', txt: '— Inativo(a)' },
+    function precheckBanner(el, tipo, html) {
+      const cores = {
+        success: { bg: '#f0fdf4', border: '#86efac', cor: '#166534' },
+        warning: { bg: '#fefce8', border: '#fde047', cor: '#854d0e' },
+        danger:  { bg: '#fff1f2', border: '#fca5a5', cor: '#9f1239' },
       };
-      const s = map[tipo] || map['nao-encontrado'];
-      el.style.display = 'inline-block';
-      el.style.padding = '2px 10px';
-      el.style.borderRadius = '999px';
-      el.style.background = s.bg;
-      el.style.color = s.cor;
-      el.style.fontWeight = '600';
-      el.style.fontSize = 'var(--font-size-sm)';
-      el.textContent = s.txt;
+      const c = cores[tipo] || cores['danger'];
+      el.style.cssText = 'background:' + c.bg + ';border:1px solid ' + c.border
+        + ';border-radius:var(--radius-md,8px);padding:var(--space-3) var(--space-4)'
+        + ';color:' + c.cor + ';display:block;font-size:var(--font-size-sm);';
+      el.innerHTML = html;
     }
 
-    async function executarPrecheck() {
-      const cnpj = document.getElementById('precheck-cnpj').value.trim();
-      const cpf  = document.getElementById('precheck-cpf').value.trim();
+    function precheckReset() {
+      const empSt  = document.getElementById('precheck-emp-status');
+      const supGrp = document.getElementById('precheck-grupo-supervisor');
+      const supSt  = document.getElementById('precheck-sup-status');
+      const acoes  = document.getElementById('precheck-acoes');
+      const btn    = document.getElementById('btn-precheck-prosseguir');
+      if (empSt)  { empSt.style.display  = 'none'; empSt.innerHTML  = ''; }
+      if (supGrp) { supGrp.style.display = 'none'; }
+      if (supSt)  { supSt.style.display  = 'none'; supSt.innerHTML  = ''; }
+      if (acoes)  { acoes.style.display  = 'none'; acoes.innerHTML  = ''; }
+      if (btn)    { btn.style.display    = 'none'; }
+      // Limpa select supervisor
+      const selSup = document.getElementById('precheck-supervisor-select');
+      if (selSup) selSup.innerHTML = '<option value="">Selecione o supervisor…</option>';
+    }
 
-      const cnpjNum = cnpj.replace(/\D/g, '');
-      const cpfNum  = cpf.replace(/\D/g, '');
-
-      if (!cnpjNum || cnpjNum.length !== 14) {
-        showFieldError('precheck-cnpj', 'Informe o CNPJ completo (14 dígitos).');
-        return;
+    function precheckAcoes(cnpjNum, mostrarEmp, mostrarSup) {
+      const acoesDiv = document.getElementById('precheck-acoes');
+      acoesDiv.style.display = 'block';
+      const ref = _emailEstudanteLogado ? '?ref=' + encodeURIComponent(_emailEstudanteLogado) : '';
+      let html = '<p style="margin-bottom:var(--space-3);font-size:var(--font-size-sm);">'
+        + 'Após o cadastro, o setor analisará e aprovará os dados. Você receberá um e-mail quando ambos estiverem aprovados.</p>'
+        + '<div style="display:flex;flex-wrap:wrap;gap:var(--space-3);">';
+      if (mostrarEmp) {
+        const cnpjP = cnpjNum ? (ref ? '&cnpj=' : '?cnpj=') + cnpjNum : '';
+        html += '<a href="../empresas/cadastro.html' + ref + cnpjP + '" class="btn btn-secondary" target="_blank">Cadastrar empresa</a>';
       }
-      if (!cpfNum || cpfNum.length !== 11) {
-        showFieldError('precheck-cpf', 'Informe o CPF completo (11 dígitos).');
-        return;
+      if (mostrarSup) {
+        const empP = cnpjNum ? (ref ? '&empresa=' : '?empresa=') + cnpjNum : '';
+        html += '<a href="../empresas/supervisor.html' + ref + empP + '" class="btn btn-secondary" target="_blank">Cadastrar supervisor</a>';
       }
+      html += '</div>';
+      acoesDiv.innerHTML = html;
+    }
 
-      const btn = document.getElementById('btn-verificar-concedente');
-      btn.disabled = true;
-      btn.textContent = 'Verificando…';
-      document.getElementById('precheck-resultado').style.display = 'none';
-
+    // Carrega lista de empresas no select do pré-check
+    async function precheckCarregarEmpresas() {
+      const sel = document.getElementById('precheck-empresa-select');
       try {
-        const res = await apiVerificarStatusConcedente(cnpjNum, cpfNum);
-        const emp = res.empresa;
-        const sup = res.supervisor;
-
-        // Exibe bloco de resultado
-        document.getElementById('precheck-resultado').style.display = 'block';
-
-        function setBannerStyle(el, tipo) {
-          // tipo: 'success' | 'warning' | 'danger'
-          const cores = {
-            success: { bg: '#f0fdf4', border: '#86efac', cor: '#166534' },
-            warning: { bg: '#fefce8', border: '#fde047', cor: '#854d0e' },
-            danger:  { bg: '#fff1f2', border: '#fca5a5', cor: '#9f1239' },
-          };
-          const c = cores[tipo] || cores['danger'];
-          el.style.background    = c.bg;
-          el.style.border        = '1px solid ' + c.border;
-          el.style.borderRadius  = 'var(--radius-md, 8px)';
-          el.style.padding       = 'var(--space-3) var(--space-4)';
-          el.style.color         = c.cor;
-          el.style.display       = 'block';
-          el.style.marginBottom  = 'var(--space-3)';
-        }
-
-        // --- Empresa ---
-        const empBloco = document.getElementById('precheck-emp-bloco');
-        const empMsg   = document.getElementById('precheck-emp-msg');
-        let empOk = false;
-        if (!emp.encontrada) {
-          setBannerStyle(empBloco, 'danger');
-          empMsg.innerHTML = '🏢 <strong>Empresa não encontrada.</strong> Esta empresa ainda não está cadastrada no sistema.';
-        } else if (emp.status === 'Validada') {
-          empOk = true;
-          setBannerStyle(empBloco, 'success');
-          empMsg.innerHTML = '✅ <strong>' + emp.razaoSocial + '</strong> — cadastro aprovado.';
-        } else if (emp.status === 'Pendente' || emp.status === 'Pendente de correção') {
-          setBannerStyle(empBloco, 'warning');
-          empMsg.innerHTML = '⏳ <strong>' + (emp.razaoSocial || 'Empresa') + '</strong> — cadastro em análise pelo setor. Você será notificado quando aprovado.';
-        } else {
-          setBannerStyle(empBloco, 'danger');
-          empMsg.innerHTML = '⚠️ <strong>' + (emp.razaoSocial || 'Empresa') + '</strong> — status: ' + emp.status + '. Entre em contato com o setor.';
-        }
-
-        // --- Supervisor ---
-        const supBloco = document.getElementById('precheck-sup-bloco');
-        const supMsg   = document.getElementById('precheck-sup-msg');
-        let supOk = false;
-        if (!sup.encontrado) {
-          setBannerStyle(supBloco, 'danger');
-          supMsg.innerHTML = '👤 <strong>Supervisor não encontrado.</strong> Este CPF ainda não está cadastrado no sistema.';
-        } else if (sup.status === 'Validado') {
-          // Verifica se o supervisor está vinculado à empresa informada
-          const cnpjVinc = (sup.cnpjEmpresaVinculada || '').replace(/\D/g, '');
-          if (cnpjVinc && cnpjVinc !== cnpjNum) {
-            // Supervisor aprovado, mas para outra empresa
-            setBannerStyle(supBloco, 'danger');
-            supMsg.innerHTML = '⚠️ <strong>' + sup.nome + '</strong> — cadastro aprovado, mas este supervisor está vinculado a <strong>outra empresa</strong>. '
-              + 'Um supervisor só pode atuar na empresa à qual está cadastrado. '
-              + 'Verifique o CPF ou cadastre o supervisor novamente vinculando-o à empresa correta.';
-          } else {
-            supOk = true;
-            setBannerStyle(supBloco, 'success');
-            supMsg.innerHTML = '✅ <strong>' + sup.nome + '</strong> — cadastro aprovado e vinculado a esta empresa.';
-          }
-        } else if (sup.status === 'Pendente') {
-          setBannerStyle(supBloco, 'warning');
-          supMsg.innerHTML = '⏳ <strong>' + (sup.nome || 'Supervisor') + '</strong> — cadastro em análise pelo setor. Você será notificado quando aprovado.';
-        } else {
-          setBannerStyle(supBloco, 'danger');
-          supMsg.innerHTML = '⚠️ <strong>' + (sup.nome || 'Supervisor') + '</strong> — status: ' + sup.status + '. Entre em contato com o setor.';
-        }
-
-        // --- Ações ---
-        const acoesDiv = document.getElementById('precheck-acoes');
-        const prosseguirBtn = document.getElementById('btn-precheck-prosseguir');
-
-        if (empOk && supOk) {
-          // Tudo certo — pode prosseguir
-          acoesDiv.style.display = 'none';
-          prosseguirBtn.style.display = 'inline-flex';
-          prosseguirBtn.onclick = function() {
-            document.getElementById('painel-precheck').style.display = 'none';
-            document.getElementById('form-solicitacao').style.display = '';
-          };
-        } else {
-          // Falta algum cadastro — monta botões de ação
-          prosseguirBtn.style.display = 'none';
-          acoesDiv.style.display = 'block';
-          let html = '<p style="margin-bottom:var(--space-3);color:var(--color-text-secondary);font-size:var(--font-size-sm);">Após o cadastro, o setor de estágios analisará e aprovará os dados. Você receberá um e-mail quando ambos estiverem aprovados e poderá retornar para concluir a solicitação.</p>';
-          html += '<div style="display:flex;flex-wrap:wrap;gap:var(--space-3);">';
-          if (!emp.encontrada) {
-            const refParam  = _emailEstudanteLogado ? '?ref=' + encodeURIComponent(_emailEstudanteLogado) : '';
-            const cnpjParam = cnpjNum ? (refParam ? '&cnpj=' : '?cnpj=') + cnpjNum : '';
-            html += '<a href="../empresas/cadastro.html' + refParam + cnpjParam + '" class="btn btn-secondary" target="_blank">Cadastrar empresa</a>';
-          }
-          // Supervisor não cadastrado OU cadastrado mas vinculado a outra empresa
-          const supVinculadoOutraEmp = sup.encontrado && sup.status === 'Validado'
-            && (sup.cnpjEmpresaVinculada || '').replace(/\D/g,'') !== cnpjNum;
-          if (!sup.encontrado || supVinculadoOutraEmp) {
-            const refParam = _emailEstudanteLogado ? '?ref=' + encodeURIComponent(_emailEstudanteLogado) : '';
-            const empParam = cnpjNum ? (refParam ? '&empresa=' : '?empresa=') + cnpjNum : '';
-            const label    = supVinculadoOutraEmp ? 'Cadastrar supervisor nesta empresa' : 'Cadastrar supervisor';
-            html += '<a href="../empresas/supervisor.html' + refParam + empParam + '" class="btn btn-secondary" target="_blank">' + label + '</a>';
-          }
-          html += '</div>';
-          acoesDiv.innerHTML = html;
-        }
-      } catch (err) {
-        const errBloco = document.getElementById('precheck-emp-bloco');
-        document.getElementById('precheck-resultado').style.display = 'block';
-        errBloco.style.background = '#fff1f2';
-        errBloco.style.border = '1px solid #fca5a5';
-        errBloco.style.borderRadius = 'var(--radius-md,8px)';
-        errBloco.style.padding = 'var(--space-3) var(--space-4)';
-        errBloco.style.color = '#9f1239';
-        errBloco.style.display = 'block';
-        document.getElementById('precheck-emp-msg').textContent = 'Erro ao verificar dados. Tente novamente.';
-        document.getElementById('precheck-sup-bloco').style.display = 'none';
-        console.error('[precheck]', err);
-      } finally {
-        btn.disabled = false;
-        btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/></svg> Verificar Situação';
+        const lista = await apiListarEmpresasPrecheck();
+        sel.innerHTML = '<option value="">Selecione a empresa…</option>';
+        lista.forEach(function(e) {
+          const opt = document.createElement('option');
+          opt.value = e.cnpj.replace(/\D/g, '');
+          opt.dataset.status = e.status;
+          opt.dataset.nome   = e.razaoSocial;
+          opt.textContent    = e.razaoSocial + ' — ' + e.cnpj;
+          sel.appendChild(opt);
+        });
+        // Opção "não encontrei"
+        const optNao = document.createElement('option');
+        optNao.value = '__NAO__';
+        optNao.textContent = '— Não encontrei minha empresa';
+        sel.appendChild(optNao);
+        sel.disabled = false;
+      } catch(err) {
+        sel.innerHTML = '<option value="">Erro ao carregar — recarregue a página</option>';
+        console.error('[precheck empresas]', err);
       }
     }
 
-    // Inicializa máscaras e evento do botão de verificação
-    (function() {
-      const cnpjEl = document.getElementById('precheck-cnpj');
-      const cpfEl  = document.getElementById('precheck-cpf');
-      if (cnpjEl) precheckMascara(cnpjEl, 'cnpj');
-      if (cpfEl)  precheckMascara(cpfEl, 'cpf');
-      document.getElementById('btn-verificar-concedente')?.addEventListener('click', executarPrecheck);
-    })();
+    // Carrega supervisores da empresa selecionada
+    async function precheckCarregarSupervisores(cnpjNum) {
+      const sel = document.getElementById('precheck-supervisor-select');
+      sel.innerHTML = '<option value="">Carregando supervisores…</option>';
+      sel.disabled = true;
+      try {
+        const lista = await apiListarSupervisoresPrecheck(cnpjNum);
+        sel.innerHTML = '<option value="">Selecione o supervisor…</option>';
+        if (lista.length === 0) {
+          // Nenhum supervisor — mostra ação de cadastro direto
+          document.getElementById('precheck-grupo-supervisor').style.display = 'none';
+          precheckAcoes(cnpjNum, false, true);
+          return;
+        }
+        lista.forEach(function(s, idx) {
+          const opt = document.createElement('option');
+          opt.value = idx;
+          opt.dataset.status = s.status;
+          opt.dataset.nome   = s.nome;
+          opt.textContent    = s.nome + (s.cargo ? ' — ' + s.cargo : '');
+          sel.appendChild(opt);
+        });
+        // Opção "não encontrei"
+        const optNao = document.createElement('option');
+        optNao.value = '__NAO__';
+        optNao.textContent = '— Não encontrei meu supervisor';
+        sel.appendChild(optNao);
+        sel.disabled = false;
+      } catch(err) {
+        sel.innerHTML = '<option value="">Erro ao carregar supervisores</option>';
+        console.error('[precheck supervisores]', err);
+      }
+    }
+
+    // Evento: mudança na empresa
+    document.getElementById('precheck-empresa-select')?.addEventListener('change', async function() {
+      precheckReset();
+      const val    = this.value;
+      const empSt  = document.getElementById('precheck-emp-status');
+
+      if (!val) return;
+
+      if (val === '__NAO__') {
+        // Empresa não encontrada → cadastrar empresa (supervisor virá depois)
+        empSt.style.display = 'block';
+        precheckBanner(empSt, 'danger',
+          '🏢 <strong>Empresa não encontrada.</strong> Clique abaixo para cadastrá-la. '
+          + 'O supervisor poderá ser cadastrado logo em seguida.');
+        precheckAcoes('', true, false);
+        return;
+      }
+
+      const opt    = this.options[this.selectedIndex];
+      const status = opt.dataset.status || '';
+      const nome   = opt.dataset.nome   || opt.textContent;
+
+      empSt.style.display = 'block';
+
+      if (status === 'Validada') {
+        precheckBanner(empSt, 'success', '✅ <strong>' + nome + '</strong> — cadastro aprovado.');
+        // Carrega supervisores
+        document.getElementById('precheck-grupo-supervisor').style.display = 'block';
+        await precheckCarregarSupervisores(val);
+      } else if (status === 'Pendente' || status === 'Pendente de correção') {
+        precheckBanner(empSt, 'warning',
+          '⏳ <strong>' + nome + '</strong> — cadastro em análise pelo setor. '
+          + 'Você receberá um e-mail quando aprovado e poderá retornar para concluir a solicitação.');
+      } else {
+        precheckBanner(empSt, 'danger',
+          '⚠️ <strong>' + nome + '</strong> — status: ' + status + '. Entre em contato com o setor.');
+      }
+    });
+
+    // Evento: mudança no supervisor
+    document.getElementById('precheck-supervisor-select')?.addEventListener('change', function() {
+      const supSt  = document.getElementById('precheck-sup-status');
+      const acoes  = document.getElementById('precheck-acoes');
+      const btnPro = document.getElementById('btn-precheck-prosseguir');
+      supSt.style.display = 'none'; supSt.innerHTML = '';
+      acoes.style.display = 'none'; acoes.innerHTML = '';
+      btnPro.style.display = 'none';
+
+      const val = this.value;
+      if (!val) return;
+
+      const empCnpj = document.getElementById('precheck-empresa-select').value;
+
+      if (val === '__NAO__') {
+        supSt.style.display = 'block';
+        precheckBanner(supSt, 'danger',
+          '👤 <strong>Supervisor não encontrado.</strong> Clique abaixo para cadastrá-lo nesta empresa.');
+        precheckAcoes(empCnpj, false, true);
+        return;
+      }
+
+      const opt    = this.options[this.selectedIndex];
+      const status = opt.dataset.status || '';
+      const nome   = opt.dataset.nome   || opt.textContent;
+
+      supSt.style.display = 'block';
+
+      if (status === 'Validado') {
+        precheckBanner(supSt, 'success', '✅ <strong>' + nome + '</strong> — cadastro aprovado.');
+        btnPro.style.display = 'inline-flex';
+        btnPro.onclick = function() {
+          document.getElementById('painel-precheck').style.display = 'none';
+          document.getElementById('form-solicitacao').style.display = '';
+        };
+      } else if (status === 'Pendente') {
+        precheckBanner(supSt, 'warning',
+          '⏳ <strong>' + nome + '</strong> — cadastro em análise pelo setor. '
+          + 'Você receberá um e-mail quando aprovado e poderá retornar para concluir a solicitação.');
+      } else {
+        precheckBanner(supSt, 'danger',
+          '⚠️ <strong>' + nome + '</strong> — status: ' + status + '. Entre em contato com o setor.');
+      }
+    });
 
     document.addEventListener('DOMContentLoaded', async function () {
       if (!requireStudentAuth()) return;

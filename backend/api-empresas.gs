@@ -1195,6 +1195,80 @@ function jsonOk_(data) {
 }
 
 // ─────────────────────────────────────────
+//  GET: listarEmpresasPrecheck
+//  Todas as empresas cadastradas (exceto Excluída/Processada)
+//  com status — usado no pré-check em cascata da solicitação
+// ─────────────────────────────────────────
+function listarEmpresasPrecheck_() {
+  var ss  = SpreadsheetApp.openById(CFG.ID_EMPRESAS);
+  var aba = ss.getSheetByName(CFG.ABA_EMPRESAS);
+  if (!aba) return jsonOk_([]);
+
+  var dados = aba.getDataRange().getValues();
+  var lista = [];
+  var vistas = {}; // evita duplicatas de CNPJ (mantém a mais recente com status relevante)
+
+  for (var i = 1; i < dados.length; i++) {
+    var status = String(dados[i][COL_EMP.STATUS] || '').trim();
+    if (status.indexOf('Processada') > -1) continue;
+    if (status === 'Excluída' || status === 'Inativa') continue;
+
+    var cnpj        = String(dados[i][COL_EMP.CNPJ]        || '').trim();
+    var razaoSocial = String(dados[i][COL_EMP.RAZAO_SOCIAL] || '').trim();
+    if (!cnpj || !razaoSocial) continue;
+
+    var cnpjNorm = cnpj.replace(/\D/g, '');
+    // Se já vimos esse CNPJ e a entrada anterior era 'Validada', mantém
+    if (vistas[cnpjNorm] && vistas[cnpjNorm] === 'Validada') continue;
+    vistas[cnpjNorm] = status;
+
+    // Substitui entrada anterior se existir
+    var idx = lista.findIndex(function(e) { return e.cnpj.replace(/\D/g,'') === cnpjNorm; });
+    var item = { cnpj: cnpj, razaoSocial: razaoSocial, status: status };
+    if (idx > -1) lista[idx] = item;
+    else lista.push(item);
+  }
+
+  lista.sort(function(a, b) { return a.razaoSocial.localeCompare(b.razaoSocial, 'pt-BR'); });
+  return jsonOk_(lista);
+}
+
+// ─────────────────────────────────────────
+//  GET: listarSupervisoresPrecheck
+//  Todos os supervisores de uma empresa (por CNPJ) com status
+//  Não expõe CPF — usado apenas para visualização no pré-check
+// ─────────────────────────────────────────
+function listarSupervisoresPrecheck_(cnpjBusca) {
+  if (!cnpjBusca) return jsonOk_([]);
+
+  var cnpjNorm = String(cnpjBusca).replace(/\D/g, '');
+  var ss  = SpreadsheetApp.openById(CFG.ID_SUPERVISORES);
+  var aba = ss.getSheetByName(CFG.ABA_SUP_RESPOSTAS);
+  if (!aba) return jsonOk_([]);
+
+  var dados = aba.getDataRange().getValues();
+  var lista = [];
+
+  for (var i = 1; i < dados.length; i++) {
+    var status = String(dados[i][COL_SUP.STATUS] || '').trim();
+    if (status === 'Recusado' || status === 'Inativo' || status === 'Excluído') continue;
+
+    var empLinha = String(dados[i][COL_SUP.EMPRESA] || '');
+    var cnpjLinha = empLinha.split('—')[0].replace(/\D/g, '').trim();
+    if (cnpjLinha !== cnpjNorm) continue;
+
+    lista.push({
+      nome:  String(dados[i][COL_SUP.NOME]  || '').trim(),
+      cargo: String(dados[i][COL_SUP.CARGO] || '').trim(),
+      status: status,
+    });
+  }
+
+  lista.sort(function(a, b) { return a.nome.localeCompare(b.nome, 'pt-BR'); });
+  return jsonOk_(lista);
+}
+
+// ─────────────────────────────────────────
 //  GET: verificarStatusConcedente
 //  Verifica o status de empresa (por CNPJ) e supervisor (por CPF)
 //  Usado pelo pré-check da solicitação de estágio
