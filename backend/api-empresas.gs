@@ -57,6 +57,8 @@ var COL_EMP = {
   NOME_REP:    15, CARGO_REP:  16, EMAIL_REP: 17, CPF_REP:      18,
   STATUS:      19, CODIGO_ACESSO: 20, DRIVE_DOCS: 21, OBSERVACOES: 22,
   EMAIL_ESTUDANTE_REF: 23,
+  POSSUI_CONVENIO: 24, DRIVE_CONVENIO: 25,
+  DRIVE_CDN_EMPRESA: 26, DRIVE_CDN_SIGNATARIO: 27,
 };
 
 // Colunas da planilha de supervisores (base 0)
@@ -169,8 +171,10 @@ function cadastrarEmpresa_(dados) {
   var cargoRep    = sanitizar_(dados.cargoRep);
   var emailRep    = sanitizar_(dados.emailRep).toLowerCase();
   var cpfRep      = sanitizar_(dados.cpfRep);
-  var declaracao  = sanitizar_(dados.declaracao);
-  var emailEstRef = sanitizar_(dados.emailEstudanteRef || '', 150).toLowerCase();
+  var declaracao      = sanitizar_(dados.declaracao);
+  var emailEstRef     = sanitizar_(dados.emailEstudanteRef || '', 150).toLowerCase();
+  var possuiConvenio  = sanitizar_(dados.possuiConvenio || '');
+  if (possuiConvenio !== 'Sim' && possuiConvenio !== 'Não') possuiConvenio = '';
 
   // Validações críticas (o frontend já valida, mas nunca confie só nele)
   if (!razaoSocial) throw new Error('Razão social é obrigatória.');
@@ -224,6 +228,10 @@ function cadastrarEmpresa_(dados) {
     '',                             // 21 V — Drive Docs
     '',                             // 22 W — Observações
     emailEstRef,                    // 23 X — E-mail Estudante Ref.
+    possuiConvenio,                 // 24 Y — Possui Convênio
+    '',                             // 25 Z — Drive Convênio
+    '',                             // 26 AA — Drive CDN Empresa
+    '',                             // 27 AB — Drive CDN Signatário
   ];
 
   // Para atualização: verifica se empresa existe e marca linha antiga
@@ -245,13 +253,15 @@ function cadastrarEmpresa_(dados) {
         {col: COL_EMP.SITE,           val: site          },
         {col: COL_EMP.NOME_REP,       val: nomeRep       },
         {col: COL_EMP.CARGO_REP,      val: cargoRep      },
-        {col: COL_EMP.EMAIL_REP,      val: emailRep      },
+        {col: COL_EMP.EMAIL_REP,       val: emailRep       },
+        {col: COL_EMP.POSSUI_CONVENIO, val: possuiConvenio },
       ];
       campos.forEach(function(c) {
         aba.getRange(linhaExistente, c.col + 1).setValue(c.val);
       });
       aba.getRange(linhaExistente, COL_EMP.STATUS + 1).setValue('Pendente');
-      notificarSetor_(razaoSocial, cnpj, emailRep, 'Atualização de cadastro');
+      var notaConvenio = possuiConvenio ? 'Possui Convênio com IFRS: ' + possuiConvenio : '';
+      notificarSetor_(razaoSocial, cnpj, emailRep, 'Atualização de cadastro', notaConvenio);
       enviarConfirmacao_(emailEmp, emailRep, nomeRep, razaoSocial, 'atualizacao');
       return { mensagem: 'Atualização recebida. Seus dados serão verificados em até 1 dia útil.' };
     }
@@ -273,7 +283,8 @@ function cadastrarEmpresa_(dados) {
   aba.getRange(ultimaLinha, 1, 1, aba.getLastColumn()).setBackground(cor);
 
   // Notificações
-  notificarSetor_(razaoSocial, cnpj, emailRep, tipo);
+  var _notaConvenio = possuiConvenio ? 'Possui Convênio com IFRS: ' + possuiConvenio : '';
+  notificarSetor_(razaoSocial, cnpj, emailRep, tipo, _notaConvenio);
   if (novaLinha[COL_EMP.STATUS] !== 'Pendente de correção') {
     enviarConfirmacao_(emailEmp, emailRep, nomeRep, razaoSocial, 'novo');
   }
@@ -1027,12 +1038,13 @@ function buscarSupervisorPorCPF_(aba, cpfNorm, linhaAtual) {
 //  AUXILIARES — NOTIFICAÇÕES
 // ─────────────────────────────────────────
 
-function notificarSetor_(razaoSocial, cnpj, emailRep, tipo) {
+function notificarSetor_(razaoSocial, cnpj, emailRep, tipo, notaExtra) {
   GmailApp.sendEmail(
     CFG.EMAIL_SETOR,
     '[CADASTRO EMPRESA] ' + tipo + ' — ' + razaoSocial,
     'Nova atividade via formulário web.\n\nTipo: ' + tipo +
-    '\nEmpresa: ' + razaoSocial + '\nCNPJ: ' + cnpj + '\nE-mail rep.: ' + emailRep,
+    '\nEmpresa: ' + razaoSocial + '\nCNPJ: ' + cnpj + '\nE-mail rep.: ' + emailRep +
+    (notaExtra ? '\n' + notaExtra : ''),
     { name: 'Sistema de Estágios IFRS' }
   );
 }
@@ -1124,6 +1136,13 @@ function enviarDocumentosEmpresa_(body) {
   var pasta = obterPastaEmpresa_(cnpj, razaoSocial);
   var links = [];
 
+  // Mapa: tipo do documento → coluna da planilha para salvar URL específica
+  var colPorTipo = {
+    'convenio':      COL_EMP.DRIVE_CONVENIO,        // 25
+    'cdnEmpresa':    COL_EMP.DRIVE_CDN_EMPRESA,      // 26
+    'cdnSignatario': COL_EMP.DRIVE_CDN_SIGNATARIO,   // 27
+  };
+
   documentos.forEach(function(doc) {
     var tipo     = sanitizar_(doc.tipo  || 'Documento');
     var nome     = sanitizar_(doc.nome  || 'arquivo');
@@ -1150,15 +1169,23 @@ function enviarDocumentosEmpresa_(body) {
     }
   });
 
-  // Registra URL da pasta na planilha (coluna DRIVE_DOCS = índice 21 / col V)
+  // Registra URL da pasta e URLs dos documentos específicos na planilha
   try {
-    var ss  = SpreadsheetApp.openById(CFG.ID_EMPRESAS);
-    var aba = ss.getSheetByName(CFG.ABA_EMPRESAS);
-    if (aba) {
-      var dados = aba.getDataRange().getValues();
-      for (var i = 1; i < dados.length; i++) {
-        if (String(dados[i][COL_EMP.CNPJ] || '').replace(/\D/g, '') === cnpj) {
-          aba.getRange(i + 1, COL_EMP.DRIVE_DOCS + 1).setValue(pasta.getUrl());
+    var ss2  = SpreadsheetApp.openById(CFG.ID_EMPRESAS);
+    var aba2 = ss2.getSheetByName(CFG.ABA_EMPRESAS);
+    if (aba2) {
+      var dadosPlanilha = aba2.getDataRange().getValues();
+      for (var i = 1; i < dadosPlanilha.length; i++) {
+        if (String(dadosPlanilha[i][COL_EMP.CNPJ] || '').replace(/\D/g, '') === cnpj) {
+          var linhaNum = i + 1;
+          aba2.getRange(linhaNum, COL_EMP.DRIVE_DOCS + 1).setValue(pasta.getUrl());
+          // Salva URLs específicas por tipo (convenio, cdnEmpresa, cdnSignatario)
+          links.forEach(function(lnk) {
+            var col = colPorTipo[lnk.tipo];
+            if (col !== undefined) {
+              aba2.getRange(linhaNum, col + 1).setValue(lnk.url);
+            }
+          });
           break;
         }
       }

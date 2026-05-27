@@ -437,6 +437,10 @@ function listarEmpresasAdmin_() {
       estagiosAtivos:     ativosPorEmpresa[cnpjNorm] || 0,
       driveDocs:          String(r[21] || ''),
       obs:                String(r[22] || ''),
+      possuiConvenio:     String(r[24] || ''),
+      driveConvenio:      String(r[25] || ''),
+      driveCdnEmpresa:    String(r[26] || ''),
+      driveCdnSignatario: String(r[27] || ''),
     });
   }
   return jsonOk_(lista);

@@ -282,7 +282,17 @@
           <div class="detail-item"><label>CPF Rep.</label><p>${escapeHtml(e.cpfRep||'—')}</p></div>
           <div class="detail-item"><label>Status</label><p>${badgeEmpresa(e.status)}</p></div>
           <div class="detail-item"><label>Estágios Ativos</label><p>${e.estagiosAtivos||0}</p></div>
-          ${e.driveDocs ? `<div class="detail-item detail-full"><label>Documentos</label><p><a href="${escapeHtml(e.driveDocs)}" target="_blank" rel="noopener" style="color:var(--color-primary);text-decoration:underline;">Ver pasta no Google Drive ↗</a></p></div>` : ''}
+          ${(e.possuiConvenio || e.driveConvenio || e.driveCdnEmpresa || e.driveCdnSignatario || e.driveDocs) ? `
+          <div class="detail-item detail-full">
+            <label>Convênio e Documentos</label>
+            <div style="display:flex;flex-wrap:wrap;gap:var(--space-2);margin-top:var(--space-1);align-items:center;">
+              ${e.possuiConvenio ? `<span style="font-size:var(--font-size-xs);background:var(--color-bg);padding:3px 10px;border-radius:9999px;border:1px solid var(--color-border);">Convênio IFRS: <strong>${escapeHtml(e.possuiConvenio)}</strong></span>` : ''}
+              ${e.driveConvenio ? `<a href="${escapeHtml(e.driveConvenio)}" target="_blank" rel="noopener" class="btn btn-ghost btn-sm">📄 Convênio</a>` : ''}
+              ${e.driveCdnEmpresa ? `<a href="${escapeHtml(e.driveCdnEmpresa)}" target="_blank" rel="noopener" class="btn btn-ghost btn-sm">📄 CDN Empresa</a>` : ''}
+              ${e.driveCdnSignatario ? `<a href="${escapeHtml(e.driveCdnSignatario)}" target="_blank" rel="noopener" class="btn btn-ghost btn-sm">📄 CDN Signatário</a>` : ''}
+              ${e.driveDocs ? `<a href="${escapeHtml(e.driveDocs)}" target="_blank" rel="noopener" class="btn btn-ghost btn-sm">📁 Pasta Drive</a>` : ''}
+            </div>
+          </div>` : ''}
         </div>`;
 
       const footer = document.getElementById('modal-footer');

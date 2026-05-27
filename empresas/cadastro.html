@@ -274,13 +274,66 @@
             </div>
           </div>
 
-          <!-- ── Seção 6: Declaração ── -->
+          <!-- ── Seção 6: Convênio e Documentos ── -->
+          <div class="form-section">
+            <h2 class="form-section-title">
+              <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"/>
+              </svg>
+              Seção 6 — Convênio e Documentos
+            </h2>
+
+            <div class="form-group">
+              <label class="form-label required" for="possui-convenio">Sua empresa possui convênio com o IFRS Campus Rio Grande?</label>
+              <select id="possui-convenio" name="possuiConvenio" class="form-control" required aria-required="true"
+                aria-describedby="possui-convenio-error">
+                <option value="">Selecione...</option>
+                <option value="Não">Não</option>
+                <option value="Sim">Sim</option>
+              </select>
+              <span id="possui-convenio-error" class="form-error hidden" role="alert"></span>
+            </div>
+
+            <!-- Upload do convênio — exibido apenas se "Sim" -->
+            <div id="campo-arquivo-convenio" class="form-group" style="display:none;">
+              <label class="form-label" for="arquivo-convenio">Arquivo do Convênio (PDF)</label>
+              <input type="file" id="arquivo-convenio" name="arquivoConvenio" class="form-control"
+                accept="application/pdf" aria-describedby="arquivo-convenio-hint arquivo-convenio-error">
+              <span id="arquivo-convenio-hint" class="form-hint">Opcional. Somente PDF, até 5 MB.</span>
+              <span id="arquivo-convenio-error" class="form-error hidden" role="alert"></span>
+            </div>
+
+            <hr style="border:none;border-top:1px solid var(--color-border);margin:var(--space-4) 0;">
+
+            <p style="font-size:var(--font-size-sm);color:var(--color-text-muted);margin-bottom:var(--space-3);">
+              Documentos complementares <strong>opcionais</strong> — envie se disponíveis. Podem ser adicionados ou substituídos posteriormente.
+            </p>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="arquivo-cdn-empresa">CDN da Empresa (PDF)</label>
+                <input type="file" id="arquivo-cdn-empresa" name="arquivoCdnEmpresa" class="form-control"
+                  accept="application/pdf" aria-describedby="arquivo-cdn-empresa-hint arquivo-cdn-empresa-error">
+                <span id="arquivo-cdn-empresa-hint" class="form-hint">Capacidade de Nomeação e Delegação da empresa. PDF, até 5 MB.</span>
+                <span id="arquivo-cdn-empresa-error" class="form-error hidden" role="alert"></span>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="arquivo-cdn-signatario">CDN de Quem Assina (PDF)</label>
+                <input type="file" id="arquivo-cdn-signatario" name="arquivoCdnSignatario" class="form-control"
+                  accept="application/pdf" aria-describedby="arquivo-cdn-signatario-hint arquivo-cdn-signatario-error">
+                <span id="arquivo-cdn-signatario-hint" class="form-hint">Capacidade de Nomeação e Delegação do signatário. PDF, até 5 MB.</span>
+                <span id="arquivo-cdn-signatario-error" class="form-error hidden" role="alert"></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- ── Seção 7: Declaração ── -->
           <div class="form-section">
             <h2 class="form-section-title">
               <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                 <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
               </svg>
-              Seção 6 — Declaração
+              Seção 7 — Declaração
             </h2>
 
             <div class="declaration-box">
@@ -408,6 +461,19 @@
       });
     });
 
+    // Convênio: exibe/oculta campo de arquivo
+    document.getElementById('possui-convenio').addEventListener('change', function () {
+      const campo = document.getElementById('campo-arquivo-convenio');
+      if (this.value === 'Sim') {
+        campo.style.display = '';
+      } else {
+        campo.style.display = 'none';
+        document.getElementById('arquivo-convenio').value = '';
+        clearFieldError('arquivo-convenio');
+      }
+      if (this.value) clearFieldError('possui-convenio');
+    });
+
     // ── Validação completa no submit ──
 
     /**
@@ -506,6 +572,29 @@
         fail('cpf-rep', 'CPF inválido. Verifique os dígitos informados.');
       }
 
+      // Convênio IFRS
+      if (!document.getElementById('possui-convenio').value) {
+        fail('possui-convenio', 'Informe se sua empresa possui convênio com o IFRS.');
+      }
+
+      // Valida arquivos se fornecidos (PDF, 5 MB)
+      const _MAX_FILE = 5 * 1024 * 1024;
+      function validarArquivo(inputId, errorId) {
+        const el = document.getElementById(inputId);
+        if (!el || !el.files || !el.files[0]) return; // opcional — ignora se vazio
+        const f = el.files[0];
+        if (f.type !== 'application/pdf') {
+          fail(errorId, 'O arquivo deve estar no formato PDF.');
+        } else if (f.size > _MAX_FILE) {
+          fail(errorId, 'O arquivo excede o limite de 5 MB.');
+        }
+      }
+      if (document.getElementById('possui-convenio').value === 'Sim') {
+        validarArquivo('arquivo-convenio', 'arquivo-convenio');
+      }
+      validarArquivo('arquivo-cdn-empresa', 'arquivo-cdn-empresa');
+      validarArquivo('arquivo-cdn-signatario', 'arquivo-cdn-signatario');
+
       // Declaração
       if (!document.getElementById('declaracao').checked) {
         fail('declaracao', 'É necessário aceitar a declaração de veracidade para enviar o formulário.');
@@ -521,6 +610,34 @@
       return valid;
     }
 
+    // ── Lê arquivo como base64 (sem prefixo data:...) ──
+    async function lerArquivoBase64_(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload  = () => resolve(reader.result.split(',')[1]);
+        reader.onerror = () => reject(new Error('Falha ao ler o arquivo "' + file.name + '"'));
+        reader.readAsDataURL(file);
+      });
+    }
+
+    // ── Coleta arquivos para upload ──
+    async function coletarDocumentos_() {
+      const docs = [];
+      async function add(inputId, tipo) {
+        const el = document.getElementById(inputId);
+        if (!el || !el.files || !el.files[0]) return;
+        const file = el.files[0];
+        const b64 = await lerArquivoBase64_(file);
+        docs.push({ tipo, nome: file.name, conteudo: b64, mimeType: 'application/pdf' });
+      }
+      if (document.getElementById('possui-convenio').value === 'Sim') {
+        await add('arquivo-convenio', 'convenio');
+      }
+      await add('arquivo-cdn-empresa',    'cdnEmpresa');
+      await add('arquivo-cdn-signatario', 'cdnSignatario');
+      return docs;
+    }
+
     // ── Envio ──
 
     form.addEventListener('submit', async function (e) {
@@ -530,44 +647,82 @@
       if (!validateForm()) return;
 
       const dados = {
-        tipo:          document.getElementById('tipo').value,
-        razaoSocial:   document.getElementById('razao-social').value.trim(),
-        nomeFantasia:  document.getElementById('nome-fantasia').value.trim(),
-        cnpj:          document.getElementById('cnpj').value.trim(),
-        ramo:          document.getElementById('ramo').value.trim(),
-        endereco:      document.getElementById('endereco').value.trim(),
-        bairro:        document.getElementById('bairro').value.trim(),
-        municipio:     document.getElementById('municipio').value.trim(),
-        uf:            document.getElementById('uf').value,
-        cep:           document.getElementById('cep').value.trim(),
-        telEmpresa:    document.getElementById('tel-empresa').value.trim(),
-        emailEmpresa:  document.getElementById('email-empresa').value.trim(),
-        site:          document.getElementById('site').value.trim(),
-        nomeRep:       document.getElementById('nome-rep').value.trim(),
-        cargoRep:      document.getElementById('cargo-rep').value.trim(),
-        emailRep:      document.getElementById('email-rep').value.trim(),
-        cpfRep:        document.getElementById('cpf-rep').value.trim(),
-        declaracao:    'Sim',
+        tipo:             document.getElementById('tipo').value,
+        razaoSocial:      document.getElementById('razao-social').value.trim(),
+        nomeFantasia:     document.getElementById('nome-fantasia').value.trim(),
+        cnpj:             document.getElementById('cnpj').value.trim(),
+        ramo:             document.getElementById('ramo').value.trim(),
+        endereco:         document.getElementById('endereco').value.trim(),
+        bairro:           document.getElementById('bairro').value.trim(),
+        municipio:        document.getElementById('municipio').value.trim(),
+        uf:               document.getElementById('uf').value,
+        cep:              document.getElementById('cep').value.trim(),
+        telEmpresa:       document.getElementById('tel-empresa').value.trim(),
+        emailEmpresa:     document.getElementById('email-empresa').value.trim(),
+        site:             document.getElementById('site').value.trim(),
+        nomeRep:          document.getElementById('nome-rep').value.trim(),
+        cargoRep:         document.getElementById('cargo-rep').value.trim(),
+        emailRep:         document.getElementById('email-rep').value.trim(),
+        cpfRep:           document.getElementById('cpf-rep').value.trim(),
+        declaracao:       'Sim',
         emailEstudanteRef: _emailEstudanteRef,
+        possuiConvenio:   document.getElementById('possui-convenio').value,
       };
 
-      await submitWithFeedback(
-        () => apiCadastrarEmpresa(dados),
-        btnEnviar,
-        'form-feedback',
-        'Cadastro enviado com sucesso!',
-        'Seu cadastro foi recebido pela Central de Estágios. Após validação (prazo: 1 dia útil), você receberá uma confirmação por e-mail.',
-        () => {
-          // Desabilita o form após sucesso para evitar reenvio
-          form.querySelectorAll('input, select, textarea, button').forEach(el => el.disabled = true);
-          btnLimpar.disabled = true;
+      btnEnviar.classList.add('is-loading');
+      btnEnviar.disabled = true;
+
+      try {
+        // Passo 1 — envia dados textuais do cadastro
+        await apiCadastrarEmpresa(dados);
+
+        // Passo 2 — envia arquivos, se houver
+        const documentos = await coletarDocumentos_();
+
+        if (documentos.length > 0) {
+          showFormFeedback('form-feedback', 'info', 'Enviando documentos…', 'Aguarde enquanto os arquivos são enviados.');
+          try {
+            await apiEnviarDocumentosEmpresa({
+              cnpj:        dados.cnpj,
+              razaoSocial: dados.razaoSocial,
+              documentos,
+            });
+            showFormFeedback('form-feedback', 'success',
+              'Cadastro e documentos enviados!',
+              'Seus dados e documentos foram recebidos pela Central de Estágios. Após validação (prazo: 1 dia útil), você receberá uma confirmação por e-mail.'
+            );
+          } catch (fileErr) {
+            showFormFeedback('form-feedback', 'warning',
+              'Cadastro enviado — documentos com falha.',
+              'Seus dados cadastrais foram recebidos, porém não foi possível enviar os documentos (' + (fileErr.message || 'erro desconhecido') + '). Tente novamente mais tarde ou entre em contato: estagios@riogrande.ifrs.edu.br.'
+            );
+          }
+        } else {
+          showFormFeedback('form-feedback', 'success',
+            'Cadastro enviado com sucesso!',
+            'Seus dados foram recebidos pela Central de Estágios. Após validação (prazo: 1 dia útil), você receberá uma confirmação por e-mail.'
+          );
         }
-      );
+
+        // Desabilita o form após sucesso para evitar reenvio
+        form.querySelectorAll('input, select, textarea, button').forEach(el => el.disabled = true);
+        btnLimpar.disabled = true;
+
+      } catch (err) {
+        showFormFeedback('form-feedback', 'error',
+          'Erro ao enviar cadastro',
+          err.message || 'Tente novamente ou entre em contato: estagios@riogrande.ifrs.edu.br.'
+        );
+        btnEnviar.classList.remove('is-loading');
+        btnEnviar.disabled = false;
+      }
     });
 
     // ── Limpar formulário ──
     btnLimpar.addEventListener('click', function () {
       form.reset();
+      // Oculta campo de upload do convênio (resetado pelo form.reset)
+      document.getElementById('campo-arquivo-convenio').style.display = 'none';
       // Remove estados de validação de todos os campos
       form.querySelectorAll('.form-control').forEach(el => {
         el.classList.remove('is-invalid', 'is-valid');
