@@ -887,6 +887,7 @@ function editarEmpresaAdmin_(body) {
       { col: 15, val: san(body.nomeRep)                 }, // P — Nome Rep
       { col: 16, val: san(body.cargoRep)                }, // Q — Cargo Rep
       { col: 17, val: san(body.emailRep).toLowerCase()  }, // R — E-mail Rep
+      { col: 24, val: san(body.possuiConvenio)          }, // Y — Possui Convênio
     ];
     campos.forEach(function(c) {
       if (c.val !== undefined && c.val !== null) {

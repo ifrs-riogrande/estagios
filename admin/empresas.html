@@ -345,50 +345,124 @@
           <div class="form-group"><label class="form-label">Representante</label><input id="fe-nome-rep" class="form-control" value="${escapeHtml(e.nomeRepresentante||'')}"></div>
           <div class="form-group"><label class="form-label">Cargo Rep.</label><input id="fe-cargo-rep" class="form-control" value="${escapeHtml(e.cargoRepresentante||'')}"></div>
           <div class="form-group"><label class="form-label">E-mail Rep.</label><input id="fe-email-rep" type="email" class="form-control" value="${escapeHtml(e.emailRep||'')}"></div>
+
+          <div style="grid-column:1/-1;border-top:1px solid var(--color-border);padding-top:var(--space-4);margin-top:var(--space-1);">
+            <p style="font-size:var(--font-size-xs);color:var(--color-text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:var(--space-3);">Convênio e Documentos</p>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3) var(--space-4);">
+              <div class="form-group" style="grid-column:1/-1;">
+                <label class="form-label">Possui Convênio com IFRS</label>
+                <select id="fe-convenio" class="form-control">
+                  <option value="" ${!e.possuiConvenio ? 'selected' : ''}>Não informado</option>
+                  <option value="Não" ${e.possuiConvenio === 'Não' ? 'selected' : ''}>Não</option>
+                  <option value="Sim" ${e.possuiConvenio === 'Sim' ? 'selected' : ''}>Sim</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Convênio (PDF)${e.driveConvenio ? ` — <a href="${escapeHtml(e.driveConvenio)}" target="_blank" rel="noopener" style="font-weight:400;font-size:11px;color:var(--color-primary);">ver atual ↗</a>` : ''}</label>
+                <input type="file" id="fe-convenio-file" class="form-control" accept="application/pdf">
+                <span style="font-size:11px;color:var(--color-text-muted);">PDF, máx 5 MB. Vazio = mantém o atual.</span>
+              </div>
+              <div class="form-group">
+                <label class="form-label">CDN da Empresa (PDF)${e.driveCdnEmpresa ? ` — <a href="${escapeHtml(e.driveCdnEmpresa)}" target="_blank" rel="noopener" style="font-weight:400;font-size:11px;color:var(--color-primary);">ver atual ↗</a>` : ''}</label>
+                <input type="file" id="fe-cdn-empresa" class="form-control" accept="application/pdf">
+                <span style="font-size:11px;color:var(--color-text-muted);">PDF, máx 5 MB.</span>
+              </div>
+              <div class="form-group">
+                <label class="form-label">CDN de Quem Assina (PDF)${e.driveCdnSignatario ? ` — <a href="${escapeHtml(e.driveCdnSignatario)}" target="_blank" rel="noopener" style="font-weight:400;font-size:11px;color:var(--color-primary);">ver atual ↗</a>` : ''}</label>
+                <input type="file" id="fe-cdn-signatario" class="form-control" accept="application/pdf">
+                <span style="font-size:11px;color:var(--color-text-muted);">PDF, máx 5 MB.</span>
+              </div>
+            </div>
+          </div>
         </div>`;
       document.getElementById('modal-footer').innerHTML = `
         <button class="btn btn-ghost" onclick="renderVisualizacao()">Cancelar</button>
         <button class="btn btn-primary" id="btn-salvar-edicao" onclick="salvarEdicaoAdmin()">Salvar alterações</button>`;
     }
 
+    // ── Helper: lê arquivo como base64 (sem prefixo data:...) ──
+    async function _lerBase64Admin(file) {
+      return new Promise((resolve, reject) => {
+        const r = new FileReader();
+        r.onload  = () => resolve(r.result.split(',')[1]);
+        r.onerror = () => reject(new Error('Falha ao ler "' + file.name + '"'));
+        r.readAsDataURL(file);
+      });
+    }
+
     async function salvarEdicaoAdmin() {
       const btn = document.getElementById('btn-salvar-edicao');
       btn.classList.add('is-loading'); btn.disabled = true;
       try {
+        // ── Passo 1: salva dados textuais ──────────────────────────────
         await API.post('editarEmpresaAdmin', {
-          authToken:   getAccessToken(),
-          cnpj:        _atual.cnpj,
-          razaoSocial: document.getElementById('fe-razao').value.trim(),
-          nomeFantasia:document.getElementById('fe-fantasia').value.trim(),
-          ramo:        document.getElementById('fe-ramo').value.trim(),
-          telefone:    document.getElementById('fe-tel').value.trim(),
-          email:       document.getElementById('fe-email').value.trim(),
-          site:        document.getElementById('fe-site').value.trim(),
-          endereco:    document.getElementById('fe-end').value.trim(),
-          bairro:      document.getElementById('fe-bairro').value.trim(),
-          municipio:   document.getElementById('fe-mun').value.trim(),
-          uf:          document.getElementById('fe-uf').value.trim(),
-          cep:         document.getElementById('fe-cep').value.trim(),
-          nomeRep:     document.getElementById('fe-nome-rep').value.trim(),
-          cargoRep:    document.getElementById('fe-cargo-rep').value.trim(),
-          emailRep:    document.getElementById('fe-email-rep').value.trim(),
+          authToken:     getAccessToken(),
+          cnpj:          _atual.cnpj,
+          razaoSocial:   document.getElementById('fe-razao').value.trim(),
+          nomeFantasia:  document.getElementById('fe-fantasia').value.trim(),
+          ramo:          document.getElementById('fe-ramo').value.trim(),
+          telefone:      document.getElementById('fe-tel').value.trim(),
+          email:         document.getElementById('fe-email').value.trim(),
+          site:          document.getElementById('fe-site').value.trim(),
+          endereco:      document.getElementById('fe-end').value.trim(),
+          bairro:        document.getElementById('fe-bairro').value.trim(),
+          municipio:     document.getElementById('fe-mun').value.trim(),
+          uf:            document.getElementById('fe-uf').value.trim(),
+          cep:           document.getElementById('fe-cep').value.trim(),
+          nomeRep:       document.getElementById('fe-nome-rep').value.trim(),
+          cargoRep:      document.getElementById('fe-cargo-rep').value.trim(),
+          emailRep:      document.getElementById('fe-email-rep').value.trim(),
+          possuiConvenio:document.getElementById('fe-convenio').value,
         });
-        // Atualiza cache local
-        _atual.razaoSocial       = document.getElementById('fe-razao').value.trim() || _atual.razaoSocial;
-        _atual.nomeFantasia      = document.getElementById('fe-fantasia').value.trim();
-        _atual.ramo              = document.getElementById('fe-ramo').value.trim();
-        _atual.telefone          = document.getElementById('fe-tel').value.trim();
-        _atual.email             = document.getElementById('fe-email').value.trim();
-        _atual.site              = document.getElementById('fe-site').value.trim();
-        _atual.endereco          = document.getElementById('fe-end').value.trim();
-        _atual.bairro            = document.getElementById('fe-bairro').value.trim();
-        _atual.municipio         = document.getElementById('fe-mun').value.trim();
-        _atual.uf                = document.getElementById('fe-uf').value.trim();
-        _atual.cep               = document.getElementById('fe-cep').value.trim();
-        _atual.nomeRepresentante = document.getElementById('fe-nome-rep').value.trim();
-        _atual.cargoRepresentante= document.getElementById('fe-cargo-rep').value.trim();
-        _atual.emailRep          = document.getElementById('fe-email-rep').value.trim();
-        toast('Dados salvos.', 'success');
+
+        // Atualiza cache local (texto)
+        _atual.razaoSocial        = document.getElementById('fe-razao').value.trim() || _atual.razaoSocial;
+        _atual.nomeFantasia       = document.getElementById('fe-fantasia').value.trim();
+        _atual.ramo               = document.getElementById('fe-ramo').value.trim();
+        _atual.telefone           = document.getElementById('fe-tel').value.trim();
+        _atual.email              = document.getElementById('fe-email').value.trim();
+        _atual.site               = document.getElementById('fe-site').value.trim();
+        _atual.endereco           = document.getElementById('fe-end').value.trim();
+        _atual.bairro             = document.getElementById('fe-bairro').value.trim();
+        _atual.municipio          = document.getElementById('fe-mun').value.trim();
+        _atual.uf                 = document.getElementById('fe-uf').value.trim();
+        _atual.cep                = document.getElementById('fe-cep').value.trim();
+        _atual.nomeRepresentante  = document.getElementById('fe-nome-rep').value.trim();
+        _atual.cargoRepresentante = document.getElementById('fe-cargo-rep').value.trim();
+        _atual.emailRep           = document.getElementById('fe-email-rep').value.trim();
+        _atual.possuiConvenio     = document.getElementById('fe-convenio').value;
+
+        // ── Passo 2: envia arquivos, se houver ─────────────────────────
+        const MAX = 5 * 1024 * 1024;
+        const docs = [];
+        async function _addDoc(inputId, tipo) {
+          const el = document.getElementById(inputId);
+          if (!el || !el.files || !el.files[0]) return;
+          const f = el.files[0];
+          if (f.type !== 'application/pdf') throw new Error('Arquivo "' + f.name + '" deve ser PDF.');
+          if (f.size > MAX) throw new Error('Arquivo "' + f.name + '" excede 5 MB.');
+          docs.push({ tipo, nome: f.name, conteudo: await _lerBase64Admin(f), mimeType: 'application/pdf' });
+        }
+        await _addDoc('fe-convenio-file', 'convenio');
+        await _addDoc('fe-cdn-empresa',   'cdnEmpresa');
+        await _addDoc('fe-cdn-signatario','cdnSignatario');
+
+        if (docs.length > 0) {
+          const res = await apiEnviarDocumentosEmpresa({
+            cnpj: _atual.cnpj, razaoSocial: _atual.razaoSocial, documentos: docs,
+          });
+          // Atualiza cache local com URLs dos arquivos enviados
+          if (res && res.arquivos) {
+            res.arquivos.forEach(a => {
+              if (a.tipo === 'convenio')      _atual.driveConvenio      = a.url;
+              if (a.tipo === 'cdnEmpresa')    _atual.driveCdnEmpresa    = a.url;
+              if (a.tipo === 'cdnSignatario') _atual.driveCdnSignatario = a.url;
+            });
+          }
+          if (res && res.pastaUrl) _atual.driveDocs = res.pastaUrl;
+        }
+
+        toast('Dados salvos.' + (docs.length > 0 ? ' ' + docs.length + ' documento(s) enviado(s).' : ''), 'success');
         renderVisualizacao();
         carregar();
       } catch (err) { toast('Erro: ' + err.message, 'error'); }
