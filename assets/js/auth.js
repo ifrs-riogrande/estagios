@@ -213,11 +213,12 @@ function logout(redirectTo = '/') {
  */
 function requireStudentAuth(redirectAfter) {
   const session = getSession();
-  if (session && session.email && session.email.endsWith(AUTH_CONFIG.STUDENT_DOMAIN)) {
+  if (session && session.email && session.token && session.email.endsWith(AUTH_CONFIG.STUDENT_DOMAIN)) {
     // Acesso permitido — atualiza UI com dados do usuário
     updateHeaderUser(session);
     return true;
   }
+  if (session && !session.token) clearSession(); // sessão sem token é inválida
   renderAuthGate(
     'Acesso restrito a estudantes',
     `Esta página é exclusiva para estudantes com e-mail institucional <strong>${AUTH_CONFIG.STUDENT_DOMAIN}</strong>.`,
@@ -232,10 +233,11 @@ function requireStudentAuth(redirectAfter) {
  */
 function requireStaffAuth(redirectAfter) {
   const session = getSession();
-  if (session && session.email && session.email.endsWith(AUTH_CONFIG.STAFF_DOMAIN)) {
+  if (session && session.email && session.token && session.email.endsWith(AUTH_CONFIG.STAFF_DOMAIN)) {
     updateHeaderUser(session);
     return true;
   }
+  if (session && !session.token) clearSession();
   renderAuthGate(
     'Acesso restrito a servidores',
     `Esta página é exclusiva para servidores com e-mail institucional <strong>${AUTH_CONFIG.STAFF_DOMAIN}</strong>.`,
@@ -255,10 +257,11 @@ function requireStaffAuth(redirectAfter) {
  */
 function requireExternalAuth(redirectAfter, title, desc) {
   const session = getSession();
-  if (session && session.email) {
+  if (session && session.email && session.token) {
     updateHeaderUser(session);
     return true;
   }
+  if (session && !session.token) clearSession();
   renderAuthGate(
     title || 'Acesso à área da Empresa',
     desc  || 'Entre com sua conta Google para acessar ou cadastrar os dados da sua empresa.',
@@ -284,10 +287,11 @@ function isAdmin() {
  */
 function requireAdminAuth(redirectAfter) {
   const session = getSession();
-  if (session && session.email && isAdmin()) {
+  if (session && session.email && session.token && isAdmin()) {
     updateHeaderUser(session);
     return true;
   }
+  if (session && !session.token) clearSession(); // sessão sem token é inválida — força novo login
   // Usuário logado mas sem permissão de Admin
   if (session && session.email) {
     const main = document.querySelector('main') || document.body;
@@ -319,10 +323,11 @@ function requireAdminAuth(redirectAfter) {
  */
 function requireDiretorGeralAuth(redirectAfter) {
   const session = getSession();
-  if (session && session.email && session.email.endsWith(AUTH_CONFIG.STAFF_DOMAIN)) {
+  if (session && session.email && session.token && session.email.endsWith(AUTH_CONFIG.STAFF_DOMAIN)) {
     updateHeaderUser(session);
     return true;
   }
+  if (session && !session.token) clearSession();
   renderAuthGate(
     'Acesso restrito — Diretor Geral',
     'Esta área é exclusiva para o Diretor Geral do IFRS Campus Rio Grande.',
