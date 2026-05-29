@@ -72,6 +72,7 @@ var COL_SOL = {
   TEL_RESP:          42,   // Telefone do responsável legal
   NEE:               43,   // Portador de Necessidades Específicas — copiado do cadastro do estudante
   TOKEN_ACEITE_ORI:  44,   // UUID de uso único para aceite/recusa do orientador via magic link
+  IDEMPOTENCY_KEY:   45,   // Chave única gerada no frontend para evitar submissões duplicadas
 };
 
 /** Colunas da aba Relatórios Parciais (base 0). */
@@ -248,6 +249,24 @@ function solicitarEstagio_(dados) {
   // Gera ID único — verifica colisão na planilha (Math.random não é CSPRNG)
   var ss    = SpreadsheetApp.openById(CFG_SOL.SS_ID);
   var sheet = ss.getSheetByName(CFG_SOL.ABA_SOL) || ss.getSheets()[0];
+
+  // ── Idempotência: se a chave já existe, devolve o ID já registrado ──────────
+  var idemKey = sanitizar_(dados.solicitacaoKey || '', 64);
+  if (idemKey) {
+    var idemVals = sheet.getDataRange().getValues();
+    for (var ik = 1; ik < idemVals.length; ik++) {
+      if (String(idemVals[ik][COL_SOL.IDEMPOTENCY_KEY] || '').trim() === idemKey) {
+        var idExist = String(idemVals[ik][COL_SOL.ID_ESTAGIO] || '');
+        return jsonOk_({
+          idEstagio:           idExist,
+          orientadorConvidado: false,
+          mensagem:            'Solicitação já registrada anteriormente (ID: ' + idExist + '). Verifique seu e-mail de confirmação.',
+          idempotente:         true,
+        });
+      }
+    }
+  }
+
   var idEstagio;
   (function gerarIdUnico() {
     for (var t = 0; t < 10; t++) {
@@ -374,7 +393,8 @@ function solicitarEstagio_(dados) {
   linha[COL_SOL.DRIVE_URL]         = driveUrlSol;
   // Token de acesso ao checklist do orientador (magic-link)
   var aceiteToken = Utilities.getUuid();
-  linha[COL_SOL.TOKEN_ACEITE_ORI] = aceiteToken;
+  linha[COL_SOL.TOKEN_ACEITE_ORI]  = aceiteToken;
+  linha[COL_SOL.IDEMPOTENCY_KEY]   = idemKey;
 
   // Persiste na planilha — se falhar, desfaz a pasta Drive criada acima (rollback best-effort)
   try {

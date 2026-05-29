@@ -653,6 +653,14 @@
     const form = document.getElementById('form-solicitacao');
     const btnEnviar = document.getElementById('btn-enviar');
 
+    // ── Proteção contra duplo envio ──────────────────────────────────────────
+    // Chave única gerada uma vez por carregamento da página — enviada ao backend
+    // para detectar reenvios idempotentes (timeout + clique duplo).
+    const _solicitacaoKey = (crypto && crypto.randomUUID)
+      ? crypto.randomUUID()
+      : (Date.now().toString(36) + Math.random().toString(36).slice(2));
+    let _submitting = false;  // trava local para evitar clique duplo
+
     // ── Dados do estudante (carregados ao validar o código) ──────────────────
     let dadosEstudante = null;
     let emailInstEstagio = '';   // e-mail institucional do vínculo selecionado
@@ -1377,6 +1385,7 @@
       e.preventDefault();
       hideFormFeedback('form-feedback');
       if (!validateForm()) return;
+      if (_submitting) return;   // trava local: ignora clique duplo
 
       // Resolve dados do supervisor e orientador a partir dos caches
       const supCpf  = document.getElementById('supervisor').value;
@@ -1427,6 +1436,7 @@
         nomeAgente:         document.getElementById('agente').options[document.getElementById('agente').selectedIndex]?.text || '',
         agente:             document.getElementById('agente').value,
         declaracoes: 'Todas aceitas',
+        solicitacaoKey: _solicitacaoKey,
       };
 
       // Lê arquivos de admissão como base64 e adiciona ao payload
@@ -1447,6 +1457,7 @@
       if (arqBol) dados.docBoletim    = arqBol;
 
       let _enviado = false;
+      _submitting = true;
       // Submissão manual para usar a mensagem contextual do backend (oriConvidado)
       btnEnviar.classList.add('is-loading');
       btnEnviar.disabled = true;
@@ -1456,18 +1467,30 @@
         _enviado = true;
         const titulo = result.orientadorConvidado
           ? '✉️ Solicitação enviada — convite de orientador disparado!'
-          : '✅ Solicitação enviada com sucesso!';
+          : (result.idempotente ? '✅ Solicitação já registrada!' : '✅ Solicitação enviada com sucesso!');
         const detalhe = result.mensagem ||
           'Sua solicitação foi recebida. Você receberá notificações por e-mail sobre os próximos passos.';
         showFormFeedback('form-feedback', 'success', titulo, detalhe);
         btnEnviar.classList.remove('is-loading');
         form.querySelectorAll('input,select,textarea,button').forEach(el => el.disabled = true);
       } catch (err) {
-        showFormFeedback('form-feedback', 'error',
-          'Erro ao enviar solicitação',
-          err.message || 'Tente novamente ou entre em contato com o setor.');
         btnEnviar.classList.remove('is-loading');
-        btnEnviar.disabled = false;
+        const isIncerto = err.code === 'TIMEOUT' || err.code === 'NETWORK';
+        if (isIncerto) {
+          // Não sabemos se o backend processou — mantém botão bloqueado
+          showFormFeedback('form-feedback', 'warning',
+            'Tempo de resposta excedido',
+            'A solicitação pode já ter sido registrada. Aguarde alguns minutos e verifique seu e-mail de confirmação. ' +
+            'Se não receber, entre em contato com o setor de estágios.');
+          // _submitting permanece true → botão permanece desabilitado
+        } else {
+          // Erro claro do backend (validação, auth…) — pode tentar de novo
+          showFormFeedback('form-feedback', 'error',
+            'Erro ao enviar solicitação',
+            err.message || 'Tente novamente ou entre em contato com o setor.');
+          btnEnviar.disabled = false;
+          _submitting = false;
+        }
       }
       if (_enviado) {
         btnEnviar.disabled = true;
