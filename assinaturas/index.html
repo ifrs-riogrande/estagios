@@ -1086,10 +1086,13 @@
   // ── Download de PDF via backend (Drive privado) ───────────────
   async function downloadPdf(etapaNumero) {
     const id = new URLSearchParams(window.location.search).get('id');
-    const token = meuToken;
-    if (!token) { mostrarToast('Token não disponível para download.', 'warning'); return; }
+    const token    = meuToken;
+    const authTk   = !token ? getAccessToken() : null;
+    if (!token && !authTk) { mostrarToast('Token não disponível para download.', 'warning'); return; }
     try {
-      const params = { id, token };
+      const params = { id };
+      if (token)  params.token     = token;
+      if (authTk) params.authToken = authTk;
       if (etapaNumero) params.etapa = etapaNumero;
       const data = await API.get('baixarPdfAssinatura', params);
       if (!data || !data.base64) throw new Error('PDF não disponível.');

@@ -1420,38 +1420,54 @@ function doGetAssinaturas(e) {
 
     case 'baixarPdfAssinatura': {
       if (!id) return jsonError_('Parâmetro id obrigatório.', 'MISSING_PARAM');
-      var token = (e.parameter && e.parameter.token) || '';
-      if (!token) return jsonError_('Parâmetro token obrigatório.', 'MISSING_PARAM');
+      var token    = (e.parameter && e.parameter.token)     || '';
+      var authTkDl = (e.parameter && e.parameter.authToken) || '';
 
-      var fluxo = obterFluxoAssinaturas_(id);
-      if (!fluxo) return jsonError_('Fluxo não encontrado.', 'NOT_FOUND');
+      var fluxoDl = obterFluxoAssinaturas_(id);
+      if (!fluxoDl) return jsonError_('Fluxo não encontrado.', 'NOT_FOUND');
 
-      var etapaDoToken = _validarTokenFluxo_(fluxo, token);
-      if (!etapaDoToken) return jsonError_('Token inválido.', 'AUTH_ERROR');
-
-      // Etapa específica solicitada (opcional) — para download histórico pelo admin
+      var fileIdDl  = null;
       var etapaParam = e.parameter && e.parameter.etapa ? parseInt(e.parameter.etapa, 10) : 0;
 
-      var fileId = null;
-      if (etapaParam > 0 && etapaParam <= fluxo.etapas.length) {
-        // PDF de etapa específica
-        var etSpec = fluxo.etapas[etapaParam - 1];
-        if (etSpec && etSpec.driveUrl) fileId = _extrairFileIdDoUrl_(etSpec.driveUrl);
-      } else {
-        // PDF mais recente antes da etapa do token (ou o original)
-        for (var j = etapaDoToken.numero - 2; j >= 0; j--) {
-          var etJ = fluxo.etapas[j];
-          if (etJ && etJ.driveUrl) { fileId = _extrairFileIdDoUrl_(etJ.driveUrl); break; }
+      if (authTkDl) {
+        // Caminho admin (OAuth): valida authToken e entrega o PDF mais recente disponível
+        try { validarTokenAdmin_(authTkDl); } catch(eAdm) { return jsonError_('Não autorizado: ' + eAdm.message, 'AUTH_ERROR'); }
+        if (etapaParam > 0 && etapaParam <= fluxoDl.etapas.length) {
+          var etAdm = fluxoDl.etapas[etapaParam - 1];
+          if (etAdm && etAdm.driveUrl) fileIdDl = _extrairFileIdDoUrl_(etAdm.driveUrl);
+        } else {
+          // Percorre etapas do fim para o início buscando PDF já gerado
+          for (var ka = fluxoDl.etapas.length - 1; ka >= 0; ka--) {
+            if (fluxoDl.etapas[ka].driveUrl) { fileIdDl = _extrairFileIdDoUrl_(fluxoDl.etapas[ka].driveUrl); break; }
+          }
         }
-        if (!fileId) fileId = _extrairFileIdDoUrl_(fluxo.pdfOriginalUrl);
+        if (!fileIdDl) fileIdDl = _extrairFileIdDoUrl_(fluxoDl.pdfOriginalUrl);
+      } else {
+        // Caminho magic-link (signatário)
+        if (!token) return jsonError_('Parâmetro token obrigatório.', 'MISSING_PARAM');
+        var etapaDoToken = _validarTokenFluxo_(fluxoDl, token);
+        if (!etapaDoToken) return jsonError_('Token inválido.', 'AUTH_ERROR');
+
+        if (etapaParam > 0 && etapaParam <= fluxoDl.etapas.length) {
+          // PDF de etapa específica
+          var etSpec = fluxoDl.etapas[etapaParam - 1];
+          if (etSpec && etSpec.driveUrl) fileIdDl = _extrairFileIdDoUrl_(etSpec.driveUrl);
+        } else {
+          // PDF mais recente antes da etapa do token (ou o original)
+          for (var j = etapaDoToken.numero - 2; j >= 0; j--) {
+            var etJ = fluxoDl.etapas[j];
+            if (etJ && etJ.driveUrl) { fileIdDl = _extrairFileIdDoUrl_(etJ.driveUrl); break; }
+          }
+          if (!fileIdDl) fileIdDl = _extrairFileIdDoUrl_(fluxoDl.pdfOriginalUrl);
+        }
       }
 
-      if (!fileId) return jsonError_('Nenhum PDF disponível para esta etapa.', 'NOT_FOUND');
+      if (!fileIdDl) return jsonError_('Nenhum PDF disponível para esta etapa.', 'NOT_FOUND');
 
       try {
-        var file  = DriveApp.getFileById(fileId);
-        var bytes = file.getBlob().getBytes();
-        return jsonOk_({ base64: Utilities.base64Encode(bytes), nome: file.getName() });
+        var fileDl  = DriveApp.getFileById(fileIdDl);
+        var bytesDl = fileDl.getBlob().getBytes();
+        return jsonOk_({ base64: Utilities.base64Encode(bytesDl), nome: fileDl.getName() });
       } catch (errDrive) {
         logErro_('baixarPdfAssinatura', errDrive);
         return jsonError_('Erro ao acessar arquivo: ' + errDrive.message, 'DRIVE_ERROR');

@@ -1152,9 +1152,8 @@
       btn.disabled = true;
       btn.textContent = 'Enviando…';
       try {
-        // Se o estágio está em checklist, usa a rota específica do checklist
-        const emChecklist = _estagio && _estagio.status === 'Em Checklist';
-        const action = emChecklist ? 'reenviarNotificacaoChecklist' : 'reenviarNotificacaoAssinatura';
+        // Usa rota de assinatura se já há fluxo TCE iniciado; caso contrário, usa checklist
+        const action = _fluxoTCE ? 'reenviarNotificacaoAssinatura' : 'reenviarNotificacaoChecklist';
         const res = await API.post(action, {
           idEstagio: decodeURIComponent(idEstagio),
           authToken: getAccessToken(),
