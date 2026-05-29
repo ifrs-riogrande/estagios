@@ -1085,10 +1085,14 @@
 
   // ── Download de PDF via backend (Drive privado) ───────────────
   async function downloadPdf(etapaNumero) {
-    const id = new URLSearchParams(window.location.search).get('id');
-    const token    = meuToken;
-    const authTk   = !token ? getAccessToken() : null;
-    if (!token && !authTk) { mostrarToast('Token não disponível para download.', 'warning'); return; }
+    const id    = new URLSearchParams(window.location.search).get('id');
+    const token = meuToken;
+    // Sem magic-link: tenta com authToken OAuth (funciona apenas para admins)
+    const authTk = !token ? getAccessToken() : null;
+    if (!token && !authTk) {
+      mostrarToast('Use o link enviado por e-mail para baixar o documento.', 'warning');
+      return;
+    }
     try {
       const params = { id };
       if (token)  params.token     = token;
@@ -1109,7 +1113,12 @@
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
     } catch (err) {
-      mostrarToast('Erro ao baixar PDF: ' + (err.message || 'tente novamente.'), 'error');
+      // Se veio pelo caminho OAuth e não tem permissão de admin, orienta o usuário
+      if (!token && err.message && err.message.includes('Não autorizado')) {
+        mostrarToast('Use o link enviado por e-mail para baixar o documento.', 'warning');
+      } else {
+        mostrarToast('Erro ao baixar PDF: ' + (err.message || 'tente novamente.'), 'error');
+      }
     }
   }
 
