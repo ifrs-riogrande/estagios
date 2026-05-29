@@ -492,7 +492,10 @@ function listarEstagiosCoordenador_(e) {
     return jsonError_('Coordenador não encontrado ou sem curso vinculado.', 'NOT_FOUND');
   }
 
-  // Filtra Solicitações pelo nome do curso
+  // Normaliza: coordenador pode ter vários cursos separados por vírgula
+  var cursosCoord = curso.split(',').map(function(c) { return c.trim().toLowerCase(); }).filter(Boolean);
+
+  // Filtra Solicitações pelo nome do curso (case-insensitive, aceita múltiplos cursos)
   var sheetSol = ss.getSheetByName('Solicitações');
   if (!sheetSol) return jsonOk_({ curso: curso, estagios: [] });
 
@@ -501,8 +504,8 @@ function listarEstagiosCoordenador_(e) {
 
   for (var j = 1; j < dados.length; j++) {
     var linha = dados[j];
-    var cursoBanco = String(linha[COL_SOL.CURSO] || '').trim();
-    if (cursoBanco !== curso) continue;
+    var cursoBanco = String(linha[COL_SOL.CURSO] || '').trim().toLowerCase();
+    if (cursosCoord.indexOf(cursoBanco) === -1) continue;
 
     lista.push({
       id:                  String(linha[COL_SOL.ID_ESTAGIO]      || ''),
