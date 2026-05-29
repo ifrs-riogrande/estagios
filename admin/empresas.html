@@ -297,9 +297,11 @@
 
       const footer = document.getElementById('modal-footer');
       const s = e.status;
+      const btnReceita = `<button class="btn btn-secondary btn-sm" onclick="consultarReceita()" title="Consultar CNPJ na Receita Federal">Receita Federal ↗</button>`;
       if (s === 'Pendente') {
         footer.innerHTML = `
           <button class="btn btn-ghost" onclick="fechar()">Fechar</button>
+          ${btnReceita}
           <button class="btn btn-secondary btn-sm" onclick="abrirEdicao()">Editar</button>
           <button style="background:#dc2626;color:#fff;border:none;" class="btn btn-sm" onclick="confirmarExcluir()">Excluir</button>
           <button class="btn btn-danger btn-sm" onclick="abrirRecusa()">Recusar</button>
@@ -307,22 +309,27 @@
       } else if (s === 'Recusada') {
         footer.innerHTML = `
           <button class="btn btn-ghost" onclick="fechar()">Fechar</button>
+          ${btnReceita}
           <button class="btn btn-secondary btn-sm" onclick="abrirEdicao()">Editar</button>
           <button style="background:#dc2626;color:#fff;border:none;" class="btn btn-sm" onclick="confirmarExcluir()">Excluir</button>
           <button class="btn btn-primary btn-sm" onclick="acaoSimples('validarEmpresa','Empresa validada.')">Validar mesmo assim</button>`;
       } else if (s === 'Validada') {
         footer.innerHTML = `
           <button class="btn btn-ghost" onclick="fechar()">Fechar</button>
+          ${btnReceita}
           <button class="btn btn-secondary btn-sm" onclick="abrirEdicao()">Editar</button>
           <button class="btn btn-danger btn-sm" onclick="acaoSimples('inativarEmpresa','Empresa inativada.')">Inativar</button>`;
       } else if (s === 'Inativa') {
         footer.innerHTML = `
           <button class="btn btn-ghost" onclick="fechar()">Fechar</button>
+          ${btnReceita}
           <button class="btn btn-secondary btn-sm" onclick="abrirEdicao()">Editar</button>
           <button style="background:#dc2626;color:#fff;border:none;" class="btn btn-sm" onclick="confirmarExcluir()">Excluir</button>
           <button class="btn btn-primary btn-sm" onclick="acaoSimples('validarEmpresa','Empresa reativada.')">Reativar</button>`;
       } else {
-        footer.innerHTML = `<button class="btn btn-ghost" onclick="fechar()">Fechar</button>`;
+        footer.innerHTML = `
+          <button class="btn btn-ghost" onclick="fechar()">Fechar</button>
+          ${btnReceita}`;
       }
     }
 
@@ -527,6 +534,17 @@
         carregar();
       } catch (err) { toast('Erro: ' + err.message, 'error'); }
       finally { btn.classList.remove('is-loading'); btn.disabled = false; }
+    }
+
+    // ── Consultar Receita Federal ──────────────────────────────────────────────
+    function consultarReceita() {
+      if (!_atual) return;
+      const cnpj = (_atual.cnpj || '').replace(/\D/g, '');
+      if (cnpj) {
+        navigator.clipboard.writeText(cnpj).catch(() => {});
+        toast('CNPJ copiado — cole no site da Receita Federal.', 'info');
+      }
+      window.open('https://solucoes.receita.fazenda.gov.br/Servicos/cnpjreva/comprovante', '_blank', 'noopener');
     }
 
     // ── Ações simples (validar / inativar) ─────────────────────────────────────
