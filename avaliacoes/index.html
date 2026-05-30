@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Avaliação de Estágio — Central de Estágios IFRS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/base.css">
+  <link rel="stylesheet" href="../assets/css/components.css">
+  <link rel="stylesheet" href="../assets/css/layout.css">
+  <style>
+    .aval-wrap { max-width: 760px; margin: 0 auto; padding-top: var(--space-6); padding-bottom: var(--space-16); }
+
+    /* Info strip */
+    .info-strip {
+      background: var(--color-surface); border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg); padding: var(--space-4) var(--space-5);
+      margin-bottom: var(--space-6);
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: var(--space-3) var(--space-6);
+    }
+    .info-item label {
+      font-size: var(--font-size-xs); color: var(--color-text-muted);
+      text-transform: uppercase; letter-spacing: .04em; font-weight: 500;
+      display: block; margin-bottom: 2px;
+    }
+    .info-item p { font-size: var(--font-size-sm); font-weight: 500; margin: 0; }
+
+    /* Card padrão */
+    .aval-card {
+      background: var(--color-surface); border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg); padding: var(--space-6); margin-bottom: var(--space-4);
+    }
+    .aval-card h2 { font-size: var(--font-size-lg); font-weight: 700; margin-bottom: var(--space-2); }
+    .aval-card .card-desc { font-size: var(--font-size-sm); color: var(--color-text-muted); margin-bottom: var(--space-5); }
+
+    /* Tabela de critérios */
+    .criterios-table { width: 100%; border-collapse: collapse; margin-bottom: var(--space-6); }
+    .criterios-table th {
+      background: var(--color-bg); padding: var(--space-2) var(--space-3);
+      font-size: var(--font-size-xs); color: var(--color-text-muted);
+      text-transform: uppercase; letter-spacing: .04em; font-weight: 600;
+      text-align: center; border-bottom: 2px solid var(--color-border);
+    }
+    .criterios-table th:first-child { text-align: left; }
+    .criterios-table td {
+      padding: var(--space-3); border-bottom: 1px solid var(--color-border);
+      font-size: var(--font-size-sm); vertical-align: middle;
+    }
+    .criterios-table td:not(:first-child) { text-align: center; }
+    .criterios-table tr:last-child td { border-bottom: none; }
+    .criterios-table tr:hover td { background: var(--color-bg); }
+
+    /* Radio visual para critérios */
+    .crit-radio {
+      appearance: none; -webkit-appearance: none; width: 20px; height: 20px;
+      border: 2px solid var(--color-border); border-radius: 50%; cursor: pointer;
+      transition: all .15s; vertical-align: middle; position: relative;
+    }
+    .crit-radio:checked { background: var(--color-primary); border-color: var(--color-primary); }
+    .crit-radio:hover:not(:checked) { border-color: var(--color-primary); }
+
+    /* Seções narrativas */
+    .narrativa-group {
+      background: var(--color-surface); border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg); padding: var(--space-5); margin-bottom: var(--space-4);
+    }
+    .narrativa-label { font-size: var(--font-size-sm); font-weight: 600; margin-bottom: var(--space-1); }
+    .narrativa-hint  { font-size: var(--font-size-xs); color: var(--color-text-muted); margin-bottom: var(--space-3); }
+
+    /* Alterações no estágio */
+    .alteracoes-group {
+      background: var(--color-surface); border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg); padding: var(--space-5); margin-bottom: var(--space-4);
+    }
+    .alteracao-check { display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-3); }
+    .alteracao-check input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; }
+    .alteracao-sub { display: none; margin-top: var(--space-2); margin-left: 30px; }
+    .alteracao-sub.show { display: block; }
+
+    /* Painel readonly (revisor) */
+    .dados-readonly {
+      background: var(--color-bg); border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg); padding: var(--space-5); margin-bottom: var(--space-4);
+    }
+    .readonly-field { margin-bottom: var(--space-4); }
+    .readonly-field label {
+      font-size: var(--font-size-xs); color: var(--color-text-muted);
+      text-transform: uppercase; letter-spacing: .04em; font-weight: 500;
+      display: block; margin-bottom: 4px;
+    }
+    .readonly-field p { font-size: var(--font-size-sm); white-space: pre-wrap; margin: 0; }
+
+    /* Painel de confirmação de assinatura */
+    .sign-confirm-panel {
+      background: var(--color-surface); border: 2px solid var(--color-primary);
+      border-radius: var(--radius-lg); padding: var(--space-6); margin-top: var(--space-6);
+    }
+    .sign-confirm-panel h3 { font-size: var(--font-size-md); font-weight: 700; margin-bottom: var(--space-3); }
+
+    /* Checkbox de confirmação */
+    .confirm-check-row {
+      display: flex; align-items: flex-start; gap: var(--space-3);
+      padding: var(--space-4); background: var(--color-bg);
+      border-radius: var(--radius-md); border: 1px solid var(--color-border);
+      margin-bottom: var(--space-5); cursor: pointer;
+    }
+    .confirm-check-row input[type="checkbox"] { width: 20px; height: 20px; flex-shrink: 0; margin-top: 2px; cursor: pointer; }
+    .confirm-check-row span { font-size: var(--font-size-sm); line-height: 1.5; }
+
+    /* Status panel (espera / concluído) */
+    .status-panel { text-align: center; padding: var(--space-16) var(--space-6); }
+    .status-icon {
+      width: 72px; height: 72px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto var(--space-5);
+    }
+    .status-icon.success { background: var(--color-success-light); color: var(--color-success); }
+    .status-icon.waiting { background: var(--color-info-light);    color: var(--color-info); }
+    .status-icon svg { width: 36px; height: 36px; }
+    .status-title { font-size: var(--font-size-xl); font-weight: 700; margin-bottom: var(--space-2); }
+    .status-desc  { font-size: var(--font-size-sm); color: var(--color-text-muted); max-width: 440px; margin: 0 auto; }
+
+    /* Progresso das assinaturas */
+    .sign-progress {
+      display: flex; gap: 0; margin-bottom: var(--space-6);
+      border: 1px solid var(--color-border); border-radius: var(--radius-lg); overflow: hidden;
+    }
+    .sign-step {
+      flex: 1; padding: var(--space-3) var(--space-2); text-align: center;
+      font-size: var(--font-size-xs); border-right: 1px solid var(--color-border);
+      background: var(--color-bg); color: var(--color-text-muted);
+    }
+    .sign-step:last-child { border-right: none; }
+    .sign-step.done     { background: var(--color-success-light); color: var(--color-success); }
+    .sign-step.active   { background: var(--color-primary); color: #fff; font-weight: 600; }
+    .sign-step .step-label { font-weight: 600; display: block; margin-bottom: 2px; }
+    .sign-step .step-name  { font-size: 11px; opacity: .8; }
+  </style>
+</head>
+<body>
+
+  <header id="app-header">
+    <div class="container">
+      <div class="header-inner">
+        <a href="../index.html" class="header-brand">
+          <div class="header-logo-fallback" aria-hidden="true">IFRS</div>
+          <div class="header-brand-text">
+            <span class="header-brand-name">Central de Estágios</span>
+            <span class="header-brand-sub">IFRS Campus Rio Grande</span>
+          </div>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <main id="main-content">
+    <section class="page-hero">
+      <div class="container">
+        <h1 id="hero-titulo">Avaliação de Estágio</h1>
+        <p id="hero-sub" style="margin-top:4px;color:rgba(255,255,255,.8);font-size:var(--font-size-sm)"></p>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="aval-wrap">
+
+        <div id="estado-carregando" style="text-align:center;padding:var(--space-16);color:var(--color-text-muted);font-size:var(--font-size-sm)">
+          Carregando avaliação…
+        </div>
+
+        <div id="estado-erro" style="display:none;text-align:center;padding:var(--space-16)">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin:0 auto var(--space-4);display:block;opacity:.4">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"/>
+          </svg>
+          <p id="estado-erro-msg" style="color:var(--color-text-muted);margin-bottom:var(--space-4)">Avaliação não encontrada.</p>
+        </div>
+
+        <div id="aval-conteudo" style="display:none"></div>
+
+      </div>
+    </div>
+  </main>
+
+  <footer id="app-footer">
+    <div class="container">
+      <div class="footer-inner">
+        <span class="footer-copy">&copy; <script>document.write(new Date().getFullYear())</script> Central de Estágios — IFRS Campus Rio Grande</span>
+        <nav class="footer-links"><a href="mailto:estagios@riogrande.ifrs.edu.br">estagios@riogrande.ifrs.edu.br</a></nav>
+      </div>
+    </div>
+  </footer>
+
+  <script src="../assets/js/utils.js"></script>
+  <script src="../assets/js/api.js"></script>
+  <script>
+  'use strict';
+
+  /* ── Constantes ── */
+  const CRITERIOS = [
+    { id: 'aprendizado',    label: 'Aprendizado dentro do estágio' },
+    { id: 'seguranca',      label: 'Segurança na execução do trabalho' },
+    { id: 'interesse',      label: 'Interesse pelo trabalho' },
+    { id: 'iniciativa',     label: 'Iniciativa própria' },
+    { id: 'conhecimentos',  label: 'Conhecimentos técnicos' },
+    { id: 'produtividade',  label: 'Produtividade' },
+    { id: 'relacionamento', label: 'Relacionamento social' },
+    { id: 'esforco',        label: 'Esforço para superar falhas' },
+    { id: 'pontualidade',   label: 'Pontualidade/Assiduidade' },
+  ];
+
+  /* ── Estado ── */
+  let _avalId = '';
+  let _token  = '';
+  let _fluxo  = null;
+
+  /* ── Init ── */
+  document.addEventListener('DOMContentLoaded', async () => {
+    const params = new URLSearchParams(window.location.search);
+    _avalId = params.get('aval') || '';
+    _token  = params.get('token') || '';
+    if (!_avalId || !_token) return mostrarErro('Link inválido. Verifique o e-mail que recebeu.');
+    await carregarFluxo();
+  });
+
+  async function carregarFluxo() {
+    document.getElementById('estado-carregando').style.display = '';
+    document.getElementById('aval-conteudo').style.display     = 'none';
+    document.getElementById('estado-erro').style.display       = 'none';
+    try {
+      _fluxo = await API.get('obterFluxoAvaliacao', { avalId: _avalId, token: _token });
+      renderPagina();
+    } catch (err) {
+      mostrarErro(err.message || 'Não foi possível carregar a avaliação.');
+    }
+  }
+
+  function mostrarErro(msg) {
+    document.getElementById('estado-carregando').style.display = 'none';
+    document.getElementById('estado-erro-msg').textContent = msg;
+    document.getElementById('estado-erro').style.display = '';
+  }
+
+  /* ── Render principal ── */
+  function renderPagina() {
+    document.getElementById('estado-carregando').style.display = 'none';
+    document.getElementById('aval-conteudo').style.display = '';
+
+    const f   = _fluxo;
+    const sol = f._sol || {};
+    const tipoLabel = f.tipo === 'concedente' ? 'pela Concedente' : 'pelo Aluno';
+
+    document.getElementById('hero-titulo').textContent = 'Avaliação de Estágio ' + tipoLabel;
+    document.getElementById('hero-sub').textContent =
+      (sol.nomeEstudante ? sol.nomeEstudante + ' · ' : '') +
+      (sol.nomeEmpresa   ? sol.nomeEmpresa   + ' · ' : '') +
+      (f.periodoRef      ? f.periodoRef               : '');
+    document.title = 'Avaliação ' + tipoLabel + ' — ' + (sol.nomeEstudante || f.idEstagio);
+
+    let html = buildInfoStrip(f, sol) + buildSignProgress(f);
+
+    switch (f.statusGeral) {
+
+      /* ── Estado 1: aguardando preenchimento ── */
+      case 'aguardando_preenchimento':
+        if (f._meuPapel !== 'preenchedor') {
+          html += buildStatusPanel('waiting',
+            'Aguardando Preenchimento',
+            'O formulário ainda não foi preenchido. Somente o responsável pelo preenchimento pode agir nesta etapa.');
+        } else {
+          html += (f.tipo === 'concedente') ? buildFormConcedente(f) : buildFormAluno(f);
+        }
+        break;
+
+      /* ── Estado 2: aguardando assinatura do revisor1 ── */
+      case 'aguardando_assinatura_2':
+        if (f._meuPapel !== 'revisor1') {
+          const quemFalta2 = nomeRevisor1Label(f);
+          html += buildStatusPanel('waiting',
+            'Aguardando Assinatura',
+            'O formulário foi preenchido e assinado pelo(a) ' + escapeHtml(f.nomePreenchedor || 'preenchedor') +
+            '. Aguardando a revisão e assinatura de ' + escapeHtml(quemFalta2) + '.');
+        } else {
+          html += buildDadosReadonly(f);
+          html += buildPainelConfirmarAssinatura(f, 'revisor1');
+        }
+        break;
+
+      /* ── Estado 3: aguardando assinatura do revisor2 (orientador) ── */
+      case 'aguardando_assinatura_3':
+        if (f._meuPapel !== 'revisor2') {
+          html += buildStatusPanel('waiting',
+            'Aguardando Assinatura do(a) Orientador(a)',
+            'O formulário está com 2 de 3 assinaturas registradas. Aguardando o(a) orientador(a) ' +
+            escapeHtml(f.nomeRevisor2 || '') + '.');
+        } else {
+          html += buildDadosReadonly(f);
+          html += buildPainelConfirmarAssinatura(f, 'revisor2');
+        }
+        break;
+
+      /* ── Concluído ── */
+      case 'concluido':
+        html += buildStatusPanel('success',
+          'Avaliação Concluída',
+          'Todas as 3 assinaturas foram registradas. O PDF foi gerado e salvo na pasta do estágio. Um e-mail com o documento foi enviado a todos os envolvidos.');
+        if (f.pdfUrl) {
+          html += `<div style="text-align:center;margin-top:var(--space-4)">
+            <a href="${escapeHtml(f.pdfUrl)}" target="_blank" rel="noopener" class="btn btn-primary">
+              <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" style="vertical-align:middle;margin-right:4px">
+                <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"/>
+              </svg>
+              Ver PDF com Assinaturas
+            </a>
+          </div>`;
+        }
+        break;
+
+      default:
+        html += buildStatusPanel('waiting', 'Estado Desconhecido',
+          'Não foi possível determinar o estado desta avaliação. Entre em contato com o setor de estágios.');
+    }
+
+    document.getElementById('aval-conteudo').innerHTML = html;
+    inicializarEventos();
+  }
+
+  /* ── Helpers de label ── */
+  function nomeRevisor1Label(f) {
+    if (f.tipo === 'concedente') return f.nomeRevisor1 || 'Estagiário(a)';
+    return f.nomeRevisor1 || 'Supervisor(a)';
+  }
+
+  /* ── Info Strip ── */
+  function buildInfoStrip(f, sol) {
+    const statusLabel = {
+      aguardando_preenchimento: 'Aguardando Preenchimento',
+      aguardando_assinatura_2:  'Aguardando 2ª Assinatura',
+      aguardando_assinatura_3:  'Aguardando 3ª Assinatura',
+      concluido:                'Concluído ✓',
+    }[f.statusGeral] || f.statusGeral;
+
+    return `<div class="info-strip">
+      <div class="info-item"><label>Estagiário(a)</label><p>${escapeHtml(sol.nomeEstudante || f.idEstagio)}</p></div>
+      <div class="info-item"><label>Concedente</label><p>${escapeHtml(sol.nomeEmpresa || '—')}</p></div>
+      <div class="info-item"><label>Curso</label><p>${escapeHtml(sol.curso || '—')}</p></div>
+      <div class="info-item"><label>Período</label><p>${escapeHtml(f.periodoRef || '—')}</p></div>
+      <div class="info-item"><label>Tipo</label><p>${f.tipo === 'concedente' ? 'Avaliação pela Concedente' : 'Avaliação pelo Aluno'}</p></div>
+      <div class="info-item"><label>Status</label><p>${escapeHtml(statusLabel)}</p></div>
+    </div>`;
+  }
+
+  /* ── Progresso de assinaturas ── */
+  function buildSignProgress(f) {
+    const s = f.statusGeral;
+    const isDone = s => s === 'concluido';
+
+    // Determina labels conforme tipo
+    const label1 = f.tipo === 'concedente' ? 'Supervisor(a)' : 'Estagiário(a)';
+    const label2 = f.tipo === 'concedente' ? 'Estagiário(a)' : 'Supervisor(a)';
+    const label3 = 'Orientador(a)';
+    const nome1  = f.nomePreenchedor || label1;
+    const nome2  = f.nomeRevisor1    || label2;
+    const nome3  = f.nomeRevisor2    || label3;
+
+    const step1 = (s === 'aguardando_preenchimento') ? 'active'
+                : 'done'; // todos os outros estados = preenchedor já assinou
+    const step2 = (s === 'aguardando_assinatura_2') ? 'active'
+                : (s === 'aguardando_preenchimento') ? '' : 'done';
+    const step3 = (s === 'aguardando_assinatura_3') ? 'active'
+                : (s === 'concluido')                ? 'done' : '';
+
+    return `<div class="sign-progress">
+      <div class="sign-step ${step1}">
+        <span class="step-label">${step1 === 'done' ? '✓ ' : ''}1ª Assinatura</span>
+        <span class="step-name">${escapeHtml(nome1)}</span>
+      </div>
+      <div class="sign-step ${step2}">
+        <span class="step-label">${step2 === 'done' ? '✓ ' : ''}2ª Assinatura</span>
+        <span class="step-name">${escapeHtml(nome2)}</span>
+      </div>
+      <div class="sign-step ${step3}">
+        <span class="step-label">${step3 === 'done' ? '✓ ' : ''}3ª Assinatura</span>
+        <span class="step-name">${escapeHtml(nome3)}</span>
+      </div>
+    </div>`;
+  }
+
+  /* ── Status Panel ── */
+  function buildStatusPanel(tipo, titulo, desc) {
+    const icon = tipo === 'success'
+      ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>`
+      : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>`;
+    return `<div class="status-panel">
+      <div class="status-icon ${tipo}">${icon}</div>
+      <div class="status-title">${escapeHtml(titulo)}</div>
+      <p class="status-desc">${escapeHtml(desc)}</p>
+    </div>`;
+  }
+
+  /* ── Formulário Concedente ── */
+  function buildFormConcedente(f) {
+    const sol = f._sol || {};
+    const linhas = CRITERIOS.map(c => `
+      <tr>
+        <td>${escapeHtml(c.label)}</td>
+        ${['MB','B','R'].map(op =>
+          `<td><input type="radio" class="crit-radio" name="crit_${c.id}" value="${op}"></td>`
+        ).join('')}
+      </tr>`).join('');
+
+    return `<div class="aval-card">
+      <h2>Avaliação do Estágio pela Concedente</h2>
+      <p class="card-desc">
+        Preencha os critérios de avaliação do(a) estagiário(a)
+        <strong>${escapeHtml(sol.nomeEstudante || '—')}</strong>
+        no período <strong>${escapeHtml(f.periodoRef || '—')}</strong>.
+        Ao salvar, sua assinatura eletrônica será registrada automaticamente.
+      </p>
+
+      <div id="fb-form"></div>
+
+      <!-- Horas no período -->
+      <div class="form-group" style="margin-bottom:var(--space-5)">
+        <label class="form-label" for="horas-periodo">
+          Total de horas realizadas no período <span style="color:var(--color-error)">*</span>
+        </label>
+        <input type="number" id="horas-periodo" class="form-control"
+          placeholder="Ex.: 120" min="1" max="9999" step="1" style="max-width:200px">
+      </div>
+
+      <!-- Soma total (opcional — para avaliações intermediárias) -->
+      <div class="form-group" style="margin-bottom:var(--space-5)">
+        <label class="form-label" for="horas-totais">
+          Soma total de horas (somando todas as avaliações, se houver mais de uma)
+        </label>
+        <input type="number" id="horas-totais" class="form-control"
+          placeholder="Deixe em branco se for a única avaliação" min="1" max="9999" step="1" style="max-width:200px">
+      </div>
+
+      <!-- Tabela de critérios -->
+      <h3 style="font-size:var(--font-size-sm);font-weight:700;margin-bottom:var(--space-2)">
+        Avaliação de Desempenho
+        <span style="font-size:var(--font-size-xs);color:var(--color-text-muted);font-weight:400;margin-left:var(--space-2)">
+          MB = Muito Bom · B = Bom · R = Razoável
+        </span>
+      </h3>
+      <div style="overflow-x:auto;margin-bottom:var(--space-5)">
+        <table class="criterios-table">
+          <thead>
+            <tr>
+              <th style="min-width:260px">Critério de Avaliação</th>
+              <th>Muito Bom</th>
+              <th>Bom</th>
+              <th>Razoável</th>
+            </tr>
+          </thead>
+          <tbody>${linhas}</tbody>
+        </table>
+      </div>
+
+      <!-- Observações -->
+      <div class="form-group" style="margin-bottom:var(--space-6)">
+        <label class="form-label" for="obs-conced">Observações (opcional)</label>
+        <textarea id="obs-conced" class="form-control" rows="4"
+          placeholder="Observações adicionais sobre o desenvolvimento do estágio…"></textarea>
+      </div>
+
+      <div style="display:flex;justify-content:flex-end">
+        <button class="btn btn-primary" onclick="enviarFormConcedente(this)">
+          Salvar e Registrar Assinatura →
+        </button>
+      </div>
+    </div>`;
+  }
+
+  /* ── Formulário Aluno ── */
+  function buildFormAluno(f) {
+    const sol = f._sol || {};
+    return `<div class="aval-card">
+      <h2>Avaliação do Estágio pelo Aluno</h2>
+      <p class="card-desc">
+        Preencha as informações sobre seu estágio no período
+        <strong>${escapeHtml(f.periodoRef || '—')}</strong>
+        na empresa <strong>${escapeHtml(sol.nomeEmpresa || '—')}</strong>.
+        Ao salvar, sua assinatura eletrônica será registrada automaticamente.
+      </p>
+
+      <div id="fb-form"></div>
+
+      <!-- Horas no período -->
+      <div class="form-group" style="margin-bottom:var(--space-5)">
+        <label class="form-label" for="horas-periodo">
+          Total de horas realizadas no período <span style="color:var(--color-error)">*</span>
+        </label>
+        <input type="number" id="horas-periodo" class="form-control"
+          placeholder="Ex.: 120" min="1" max="9999" step="1" style="max-width:200px">
+      </div>
+
+      <!-- Alterações no estágio -->
+      <div class="alteracoes-group">
+        <p style="font-size:var(--font-size-sm);font-weight:600;margin-bottom:var(--space-3)">
+          Houve rescisão de contrato?
+        </p>
+        <div class="alteracao-check">
+          <input type="checkbox" id="chk-rescisao" onchange="toggleSub('rescisao', this.checked)">
+          <label for="chk-rescisao" style="font-size:var(--font-size-sm);cursor:pointer">Sim, houve rescisão</label>
+        </div>
+        <div class="alteracao-sub" id="sub-rescisao">
+          <label class="form-label" for="rescisao-data">Data da rescisão</label>
+          <input type="date" id="rescisao-data" class="form-control" style="max-width:220px">
+        </div>
+
+        <p style="font-size:var(--font-size-sm);font-weight:600;margin:var(--space-4) 0 var(--space-3)">
+          Houve troca de supervisor(a)?
+        </p>
+        <div class="alteracao-check">
+          <input type="checkbox" id="chk-troca-sup" onchange="toggleSub('troca-sup', this.checked)">
+          <label for="chk-troca-sup" style="font-size:var(--font-size-sm);cursor:pointer">Sim, houve troca de supervisor(a)</label>
+        </div>
+        <div class="alteracao-sub" id="sub-troca-sup">
+          <label class="form-label" for="troca-sup-nome">Nome do(a) novo(a) supervisor(a)</label>
+          <input type="text" id="troca-sup-nome" class="form-control" placeholder="Nome completo" style="max-width:360px">
+        </div>
+
+        <p style="font-size:var(--font-size-sm);font-weight:600;margin:var(--space-4) 0 var(--space-3)">
+          Houve troca de orientador(a)?
+        </p>
+        <div class="alteracao-check">
+          <input type="checkbox" id="chk-troca-ori" onchange="toggleSub('troca-ori', this.checked)">
+          <label for="chk-troca-ori" style="font-size:var(--font-size-sm);cursor:pointer">Sim, houve troca de orientador(a)</label>
+        </div>
+        <div class="alteracao-sub" id="sub-troca-ori">
+          <label class="form-label" for="troca-ori-nome">Nome do(a) novo(a) orientador(a)</label>
+          <input type="text" id="troca-ori-nome" class="form-control" placeholder="Nome completo" style="max-width:360px">
+        </div>
+      </div>
+
+      <!-- Seção 2 -->
+      <div class="narrativa-group">
+        <div class="narrativa-label">
+          Atividades Desenvolvidas pelo Estagiário na Concedente
+          <span style="color:var(--color-error)">*</span>
+        </div>
+        <div class="narrativa-hint">Descreva as principais atividades realizadas durante o estágio.</div>
+        <textarea id="atividades" class="form-control" rows="5"
+          placeholder="Descreva as atividades desenvolvidas na empresa/organização concedente…"></textarea>
+      </div>
+
+      <!-- Seção 3 -->
+      <div class="narrativa-group">
+        <div class="narrativa-label">
+          Dificuldades Encontradas e Pontos Positivos
+          <span style="color:var(--color-error)">*</span>
+        </div>
+        <div class="narrativa-hint">Relate dificuldades e pontos positivos da experiência.</div>
+        <textarea id="dificuldades" class="form-control" rows="4"
+          placeholder="Quais foram as principais dificuldades? Que pontos positivos destacaria?…"></textarea>
+      </div>
+
+      <!-- Seção 4 -->
+      <div class="narrativa-group">
+        <div class="narrativa-label">
+          Sugestões para Aperfeiçoamento do Curso
+          <span style="color:var(--color-error)">*</span>
+        </div>
+        <div class="narrativa-hint">Com base na experiência, que sugestões você teria para o curso?</div>
+        <textarea id="sugestoes" class="form-control" rows="4"
+          placeholder="Disciplinas, conteúdos, mudanças no currículo…"></textarea>
+      </div>
+
+      <!-- Seção 5 -->
+      <div class="narrativa-group">
+        <div class="narrativa-label">
+          Conclusão — Aproveitamento e Relação com as Disciplinas do Curso
+          <span style="color:var(--color-error)">*</span>
+        </div>
+        <div class="narrativa-hint">Como avalia seu aproveitamento e a relação com as disciplinas do curso?</div>
+        <textarea id="conclusao" class="form-control" rows="5"
+          placeholder="Avaliação geral do aproveitamento no estágio e relação com os conteúdos do curso…"></textarea>
+      </div>
+
+      <div style="display:flex;justify-content:flex-end;margin-top:var(--space-4)">
+        <button class="btn btn-primary" onclick="enviarFormAluno(this)">
+          Salvar e Registrar Assinatura →
+        </button>
+      </div>
+    </div>`;
+  }
+
+  /* ── Dados em modo leitura (para revisores) ── */
+  function buildDadosReadonly(f) {
+    const dados = f.dadosFormulario || {};
+    let html = `<div class="dados-readonly">
+      <h3 style="font-size:var(--font-size-sm);font-weight:700;margin-bottom:var(--space-4)">
+        Dados Preenchidos por ${escapeHtml(f.nomePreenchedor || 'Preenchedor')}
+      </h3>`;
+
+    if (dados.horasNoPeriodo) {
+      html += readonlyField('Total de Horas no Período', String(dados.horasNoPeriodo) + 'h');
+    }
+    if (dados.horasTotais) {
+      html += readonlyField('Soma Total de Horas', String(dados.horasTotais) + 'h');
+    }
+
+    if (f.tipo === 'concedente') {
+      if (dados.criterios) {
+        const lbl = { MB: 'Muito Bom', B: 'Bom', R: 'Razoável' };
+        let tbl = `<div class="readonly-field"><label>Avaliação de Desempenho</label>
+          <div style="overflow-x:auto"><table class="criterios-table" style="margin-bottom:0">
+          <thead><tr><th>Critério</th><th>Avaliação</th></tr></thead><tbody>`;
+        CRITERIOS.forEach(c => {
+          const v = dados.criterios[c.id] || '—';
+          tbl += `<tr><td>${escapeHtml(c.label)}</td><td><strong>${escapeHtml(lbl[v] || v)}</strong></td></tr>`;
+        });
+        tbl += '</tbody></table></div></div>';
+        html += tbl;
+      }
+      if (dados.observacoes) html += readonlyField('Observações', dados.observacoes);
+    } else {
+      if (dados.rescisao)        html += readonlyField('Rescisão de Contrato', 'Sim' + (dados.rescisaoData ? ' — ' + dados.rescisaoData : ''));
+      else                       html += readonlyField('Rescisão de Contrato', 'Não');
+      if (dados.trocaSupervisor) html += readonlyField('Troca de Supervisor', 'Sim' + (dados.trocaSupervisorNome ? ' — ' + dados.trocaSupervisorNome : ''));
+      if (dados.trocaOrientador) html += readonlyField('Troca de Orientador', 'Sim' + (dados.trocaOrientadorNome ? ' — ' + dados.trocaOrientadorNome : ''));
+      if (dados.atividadesDesenvolvidas) html += readonlyField('Atividades Desenvolvidas na Concedente', dados.atividadesDesenvolvidas);
+      if (dados.dificuldadesPontos)      html += readonlyField('Dificuldades e Pontos Positivos', dados.dificuldadesPontos);
+      if (dados.sugestoes)               html += readonlyField('Sugestões para o Curso', dados.sugestoes);
+      if (dados.conclusao)               html += readonlyField('Conclusão / Aproveitamento', dados.conclusao);
+    }
+
+    html += '</div>';
+    return html;
+  }
+
+  function readonlyField(label, value) {
+    return `<div class="readonly-field"><label>${escapeHtml(label)}</label><p>${escapeHtml(String(value || '—'))}</p></div>`;
+  }
+
+  /* ── Painel de confirmação de assinatura (botão-clique) ── */
+  function buildPainelConfirmarAssinatura(f, papel) {
+    const isRevisor2 = papel === 'revisor2';
+    const quemSou    = isRevisor2
+      ? 'Orientador(a) de Estágio'
+      : (f.tipo === 'concedente' ? 'Estagiário(a)' : 'Supervisor(a) na Empresa');
+
+    const tipoLabel = f.tipo === 'concedente' ? 'pela Concedente' : 'pelo Aluno';
+
+    return `<div class="sign-confirm-panel">
+      <h3>Confirmar Leitura e Assinar Eletronicamente</h3>
+      <p style="font-size:var(--font-size-sm);color:var(--color-text-muted);margin-bottom:var(--space-5)">
+        Você está acessando como <strong>${escapeHtml(quemSou)}</strong>.
+        Leia os dados preenchidos acima e marque a confirmação abaixo para registrar sua assinatura eletrônica.
+        Após a confirmação, esta ação não poderá ser desfeita.
+      </p>
+
+      <div id="fb-assinar"></div>
+
+      <label class="confirm-check-row" for="chk-confirmar">
+        <input type="checkbox" id="chk-confirmar" onchange="atualizarBtnAssinar()">
+        <span>
+          Li e conferi os dados da <strong>Avaliação ${escapeHtml(tipoLabel)}</strong>
+          e concordo com as informações registradas. Estou ciente de que esta assinatura eletrônica
+          tem validade conforme os termos do SGE — IFRS Campus Rio Grande.
+        </span>
+      </label>
+
+      <div style="display:flex;justify-content:flex-end">
+        <button class="btn btn-primary" id="btn-assinar"
+          onclick="confirmarAssinatura(this, '${escapeHtml(papel)}')" disabled>
+          <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" style="vertical-align:middle;margin-right:4px">
+            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+          </svg>
+          Confirmar e Assinar Eletronicamente
+        </button>
+      </div>
+    </div>`;
+  }
+
+  /* ── Eventos ── */
+  function inicializarEventos() { /* eventos inline via onclick */ }
+
+  function toggleSub(id, show) {
+    const el = document.getElementById('sub-' + id);
+    if (el) el.classList.toggle('show', show);
+  }
+
+  function atualizarBtnAssinar() {
+    const chk = document.getElementById('chk-confirmar');
+    const btn = document.getElementById('btn-assinar');
+    if (chk && btn) btn.disabled = !chk.checked;
+  }
+
+  /* ── Envio: formulário concedente ── */
+  async function enviarFormConcedente(btn) {
+    const fbEl = document.getElementById('fb-form');
+    if (fbEl) fbEl.innerHTML = '';
+
+    const horas = document.getElementById('horas-periodo')?.value?.trim();
+    if (!horas || isNaN(horas) || Number(horas) <= 0) {
+      mostrarFeedback(fbEl, 'Informe o total de horas realizadas no período.'); return;
+    }
+
+    const criterios = {};
+    let todosPreenchidos = true;
+    CRITERIOS.forEach(c => {
+      const r = document.querySelector(`input[name="crit_${c.id}"]:checked`);
+      if (r) criterios[c.id] = r.value;
+      else todosPreenchidos = false;
+    });
+    if (!todosPreenchidos) {
+      mostrarFeedback(fbEl, 'Por favor, avalie todos os 9 critérios antes de salvar.'); return;
+    }
+
+    const horasTotaisRaw = document.getElementById('horas-totais')?.value?.trim();
+    const dados = {
+      horasNoPeriodo: horas,
+      horasTotais:    (horasTotaisRaw && !isNaN(horasTotaisRaw)) ? horasTotaisRaw : '',
+      criterios:      criterios,
+      observacoes:    document.getElementById('obs-conced')?.value?.trim() || '',
+    };
+
+    btn.disabled = true; btn.textContent = 'Salvando e assinando…';
+    try {
+      await API.post('salvarRespostaAvaliacao', { avalId: _avalId, token: _token, dadosFormulario: dados });
+      showToast('Avaliação salva e sua assinatura registrada! Os revisores serão notificados.', 'success');
+      await carregarFluxo();
+    } catch (err) {
+      mostrarFeedback(fbEl, err.message || 'Erro ao salvar. Tente novamente.');
+      btn.disabled = false; btn.textContent = 'Salvar e Registrar Assinatura →';
+    }
+  }
+
+  /* ── Envio: formulário aluno ── */
+  async function enviarFormAluno(btn) {
+    const fbEl = document.getElementById('fb-form');
+    if (fbEl) fbEl.innerHTML = '';
+
+    const horas        = document.getElementById('horas-periodo')?.value?.trim();
+    const atividades   = document.getElementById('atividades')?.value?.trim();
+    const dificuldades = document.getElementById('dificuldades')?.value?.trim();
+    const sugestoes    = document.getElementById('sugestoes')?.value?.trim();
+    const conclusao    = document.getElementById('conclusao')?.value?.trim();
+
+    if (!horas || isNaN(horas) || Number(horas) <= 0) {
+      mostrarFeedback(fbEl, 'Informe o total de horas realizadas no período.'); return;
+    }
+    if (!atividades || !dificuldades || !sugestoes || !conclusao) {
+      mostrarFeedback(fbEl, 'Por favor, preencha todos os campos obrigatórios.'); return;
+    }
+
+    const dados = {
+      horasNoPeriodo:      horas,
+      rescisao:            document.getElementById('chk-rescisao')?.checked || false,
+      rescisaoData:        document.getElementById('rescisao-data')?.value || '',
+      trocaSupervisor:     document.getElementById('chk-troca-sup')?.checked || false,
+      trocaSupervisorNome: document.getElementById('troca-sup-nome')?.value?.trim() || '',
+      trocaOrientador:     document.getElementById('chk-troca-ori')?.checked || false,
+      trocaOrientadorNome: document.getElementById('troca-ori-nome')?.value?.trim() || '',
+      atividadesDesenvolvidas: atividades,
+      dificuldadesPontos:  dificuldades,
+      sugestoes:           sugestoes,
+      conclusao:           conclusao,
+    };
+
+    btn.disabled = true; btn.textContent = 'Salvando e assinando…';
+    try {
+      await API.post('salvarRespostaAvaliacao', { avalId: _avalId, token: _token, dadosFormulario: dados });
+      showToast('Avaliação salva e sua assinatura registrada! Os revisores serão notificados.', 'success');
+      await carregarFluxo();
+    } catch (err) {
+      mostrarFeedback(fbEl, err.message || 'Erro ao salvar. Tente novamente.');
+      btn.disabled = false; btn.textContent = 'Salvar e Registrar Assinatura →';
+    }
+  }
+
+  /* ── Confirmar assinatura (revisor1 ou revisor2) ── */
+  async function confirmarAssinatura(btn, papel) {
+    const fbEl = document.getElementById('fb-assinar');
+    if (fbEl) fbEl.innerHTML = '';
+
+    const chk = document.getElementById('chk-confirmar');
+    if (!chk || !chk.checked) {
+      mostrarFeedback(fbEl, 'Marque a confirmação de leitura antes de assinar.'); return;
+    }
+
+    btn.disabled = true; btn.textContent = 'Registrando assinatura…';
+    try {
+      const res = await API.post('assinarAvaliacao', { avalId: _avalId, token: _token });
+      if (res.concluido) {
+        showToast('Assinatura registrada! PDF gerado e enviado por e-mail a todos os envolvidos.', 'success');
+      } else {
+        showToast('Assinatura registrada! O próximo responsável será notificado por e-mail.', 'success');
+      }
+      await carregarFluxo();
+    } catch (err) {
+      mostrarFeedback(fbEl, err.message || 'Erro ao registrar assinatura. Tente novamente.');
+      btn.disabled = false; btn.textContent = 'Confirmar e Assinar Eletronicamente';
+    }
+  }
+
+  /* ── Helpers ── */
+  function mostrarFeedback(el, msg) {
+    if (!el) { showToast(msg, 'error'); return; }
+    el.innerHTML = `<div class="form-feedback form-feedback--error" style="margin-bottom:var(--space-4)">
+      <strong>Atenção:</strong> ${escapeHtml(msg)}
+    </div>`;
+    el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  function showToast(msg, type = 'success') {
+    const el = document.createElement('div');
+    el.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:9999;max-width:400px;padding:12px 16px;border-radius:8px;font-size:14px;box-shadow:0 4px 16px rgba(0,0,0,.15)';
+    el.style.background = type === 'success' ? 'var(--color-success-light)' : 'var(--color-error-light)';
+    el.style.color       = type === 'success' ? 'var(--color-success)'       : 'var(--color-error)';
+    el.style.border      = `1px solid ${type === 'success' ? 'var(--color-success-border)' : 'var(--color-error-border)'}`;
+    el.textContent = msg;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), type === 'error' ? 10000 : 5000);
+  }
+  </script>
+</body>
+</html>

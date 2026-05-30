@@ -406,6 +406,56 @@ function adicionarColunasNEE() {
   Logger.log('✅ Colunas adicionadas! • Estudantes: Cursos JSON (col 27) e NEE (col 28) • Solicitações: NEE (col 44)');
 }
 
+/**
+ * Adiciona a aba "Avaliações" à planilha existente SEM apagar dados.
+ * Execute manualmente no editor GAS: Executar → adicionarAbaAvaliacoes
+ */
+function adicionarAbaAvaliacoes() {
+  var ss    = SpreadsheetApp.openById('1zVyseifVC6xeMpNjqwYd6jCq9HTJ2NS8BlN1dtM4s7Y');
+  var nome  = 'Avaliações';
+
+  if (ss.getSheetByName(nome)) {
+    Logger.log('⚠️ Aba "' + nome + '" já existe — ignorada.');
+    return;
+  }
+
+  var cabecalho = [
+    'Timestamp',          // 0  TIMESTAMP
+    'Aval ID',            // 1  AVAL_ID
+    'ID Estágio',         // 2  ID_ESTAGIO
+    'Tipo',               // 3  TIPO
+    'Período',            // 4  PERIODO
+    'Período Ref.',       // 5  PERIODO_REF
+    'Status',             // 6  STATUS
+    'E-mail Preenchedor', // 7  EMAIL_PREENCHEDOR
+    'E-mail Revisor',     // 8  EMAIL_REVISOR
+    'Dados Formulário',   // 9  DADOS_FORM   (JSON)
+    'PDF Gerado URL',     // 10 PDF_GERADO_URL
+    'PDF Assinado 1 URL', // 11 PDF_ASSINADO_1_URL
+    'PDF Assinado 2 URL', // 12 PDF_ASSINADO_2_URL
+    'Drive Pasta ID',     // 13 DRIVE_PASTA_ID
+    'Ts Início',          // 14 TS_INICIO
+    'Ts Preenchimento',   // 15 TS_PREENCHIMENTO
+    'Ts Assinatura 1',    // 16 TS_ASSINATURA_1
+    'Ts Assinatura 2',    // 17 TS_ASSINATURA_2
+    'Ts Conclusão',       // 18 TS_CONCLUSAO
+  ];
+
+  var sheet = ss.insertSheet(nome);
+  var range = sheet.getRange(1, 1, 1, cabecalho.length);
+  range.setValues([cabecalho]);
+  range.setFontWeight('bold');
+  range.setBackground('#1a73e8');
+  range.setFontColor('#ffffff');
+  sheet.setFrozenRows(1);
+  sheet.setColumnWidth(1, 160);  // Timestamp
+  sheet.setColumnWidth(2, 220);  // Aval ID
+  sheet.setColumnWidth(3, 160);  // ID Estágio
+
+  Logger.log('✅ Aba "' + nome + '" criada com ' + cabecalho.length + ' colunas.');
+  Logger.log('Execute adicionarAbaAvaliacoes apenas uma vez.');
+}
+
 function _formatarCelulaCabecalho_(sheet, col) {
   var cell = sheet.getRange(1, col);
   cell.setFontWeight('bold');

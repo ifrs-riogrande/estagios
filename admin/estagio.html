@@ -227,6 +227,11 @@
             Adendos
             <span class="tab-count" id="cnt-adendos"></span>
           </button>
+          <button class="ficha-tab" data-tab="avaliacoes" onclick="mudarAba('avaliacoes')" role="tab">
+            <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"/><path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm9.707 5.707a1 1 0 00-1.414-1.414L9 12.586l-1.293-1.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+            Avaliações
+            <span class="tab-count" id="cnt-avaliacoes"></span>
+          </button>
         </div>
 
         <!-- ── Aba: Dados ── -->
@@ -242,6 +247,11 @@
         <!-- ── Aba: Adendos ── -->
         <div id="tab-adendos" hidden>
           <div id="content-adendos"></div>
+        </div>
+
+        <!-- ── Aba: Avaliações ── -->
+        <div id="tab-avaliacoes" hidden>
+          <div id="content-avaliacoes"></div>
         </div>
 
       </div>
@@ -277,6 +287,7 @@
     let _checklistInfo  = null;   // dados do checklist (obterChecklist)
     let _arquivoAvulso  = null;
     let _sensivelVisivel = false;
+    let _avaliacoes     = [];
 
     /* ─── Init ─── */
     document.addEventListener('DOMContentLoaded', async function () {
@@ -295,7 +306,7 @@
 
       try {
         const token = getAccessToken();
-        const [estList, docData, adendoData, digitalRaw, historicoData, ckRaw, tceRaw] = await Promise.all([
+        const [estList, docData, adendoData, digitalRaw, historicoData, ckRaw, tceRaw, avalRaw] = await Promise.all([
           API.get('listarSolicitacoesAdmin', { authToken: token }),
           API.get('listarDocumentosAdmin',   { authToken: token }),
           API.get('listarAdendosAdmin',       { authToken: token }),
@@ -303,6 +314,7 @@
           apiListarHistoricoEstagio(_id).catch(() => null),
           API.get('obterChecklist', { id: _id }).catch(() => null),
           API.get('obterFluxoAssinaturasAdmin', { id: _id, authToken: token }).catch(() => null),
+          API.get('listarAvaliacoesEstagio', { id: _id, authToken: token }).catch(() => []),
         ]);
 
         const lista = Array.isArray(estList) ? estList : (estList.solicitacoes || []);
@@ -318,11 +330,13 @@
         const adLista   = Array.isArray(adendoData) ? adendoData : (adendoData.adendos || []);
         _adendos        = adLista.filter(a => a.idEstagio === _id);
         _docsAvulsos    = (historicoData && historicoData.documentos) || [];
+        _avaliacoes     = Array.isArray(avalRaw) ? avalRaw : [];
 
         renderHero();
         renderDados();
         renderDocumentos();
         renderAdendos();
+        renderAvaliacoes();
 
         document.getElementById('estado-carregando').style.display = 'none';
         document.getElementById('ficha-conteudo').style.display = '';
@@ -1035,7 +1049,7 @@
       document.querySelectorAll('.ficha-tab').forEach(t => {
         t.classList.toggle('active', t.dataset.tab === aba);
       });
-      ['dados', 'documentos', 'adendos'].forEach(t => {
+      ['dados', 'documentos', 'adendos', 'avaliacoes'].forEach(t => {
         document.getElementById('tab-' + t).hidden = (t !== aba);
       });
     }
@@ -1103,6 +1117,168 @@
     function formatarCNPJ(cnpj) {
       const d = String(cnpj).replace(/\D/g, '');
       return d.length === 14 ? d.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5') : cnpj;
+    }
+
+    /* ─── Aba: Avaliações ─── */
+    function renderAvaliacoes() {
+      document.getElementById('cnt-avaliacoes').textContent = _avaliacoes.length > 0 ? String(_avaliacoes.length) : '';
+      const c = document.getElementById('content-avaliacoes');
+
+      const STATUS_LABEL = {
+        aguardando_preenchimento: 'Aguardando Preenchimento',
+        aguardando_assinatura_2:  'Aguardando 2ª Assinatura',
+        aguardando_assinatura_3:  'Aguardando 3ª Assinatura (Orientador)',
+        concluido:                'Concluído ✓',
+      };
+
+      const linhas = _avaliacoes.map(a => {
+        const tipoLabel = a.tipo === 'concedente' ? 'Pela Concedente' : 'Pelo Aluno';
+        const badgeCls  = a.status === 'concluido' ? 'badge-approved'
+          : a.status === 'aguardando_assinatura_3' ? 'badge-dg'
+          : 'badge-analysis';
+        const badgeTxt = STATUS_LABEL[a.status] || a.status;
+
+        const acoes = a.status === 'concluido'
+          ? (a.temPdf ? `<a href="#" class="btn btn-secondary btn-sm" style="pointer-events:none;opacity:.5">PDF gerado ✓</a>` : '')
+          : `<button class="btn btn-secondary btn-sm"
+               onclick="reenviarNotifAvaliacao('${escapeHtml(a.avalId)}', this)">
+               <svg width="12" height="12" viewBox="0 0 20 20" fill="currentColor"><path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"/><path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"/></svg>
+               Reenviar
+             </button>`;
+
+        return `
+          <tr>
+            <td style="font-size:12px">${escapeHtml(tipoLabel)}</td>
+            <td style="font-size:12px">${escapeHtml(a.periodoRef || a.periodo || '—')}</td>
+            <td><span class="badge ${badgeCls}">${escapeHtml(badgeTxt)}</span></td>
+            <td style="font-size:12px">${escapeHtml(a.tsInicio ? new Date(a.tsInicio).toLocaleDateString('pt-BR') : '—')}</td>
+            <td>
+              <div style="display:flex;gap:var(--space-2);flex-wrap:wrap">${acoes}</div>
+            </td>
+          </tr>`;
+      }).join('');
+
+      const tabelaHtml = _avaliacoes.length === 0
+        ? `<div class="empty-state" style="border:1px solid var(--color-border);border-radius:var(--radius-lg)">
+             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+             <p>Nenhuma avaliação iniciada para este estágio.</p>
+           </div>`
+        : `<div class="table-wrap">
+             <table class="data-table">
+               <thead>
+                 <tr>
+                   <th>Tipo</th>
+                   <th>Período</th>
+                   <th>Status</th>
+                   <th>Iniciada em</th>
+                   <th>Ações</th>
+                 </tr>
+               </thead>
+               <tbody>${linhas}</tbody>
+             </table>
+           </div>`;
+
+      c.innerHTML = `
+        ${tabelaHtml}
+
+        <!-- Iniciar nova avaliação -->
+        <div style="margin-top:var(--space-6);background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:var(--space-5)">
+          <h3 style="font-size:var(--font-size-sm);font-weight:700;margin-bottom:var(--space-4)">Iniciar Nova Avaliação</h3>
+          <div id="fb-nova-aval"></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4);margin-bottom:var(--space-4)">
+            <div class="form-group" style="margin-bottom:0">
+              <label class="form-label" for="aval-tipo">Tipo de Avaliação <span style="color:var(--color-error)">*</span></label>
+              <select id="aval-tipo" class="form-control">
+                <option value="">Selecionar…</option>
+                <option value="ambos">Ambas (Concedente + Aluno simultaneamente)</option>
+                <option value="concedente">Somente Avaliação pela Concedente</option>
+                <option value="aluno">Somente Avaliação pelo Aluno</option>
+              </select>
+            </div>
+            <div class="form-group" style="margin-bottom:0">
+              <label class="form-label" for="aval-periodo">Período <span style="color:var(--color-error)">*</span></label>
+              <select id="aval-periodo" class="form-control">
+                <option value="">Selecionar…</option>
+                <option value="final">Final (encerramento do estágio)</option>
+                <option value="semestral_1">Semestral — 1º semestre</option>
+                <option value="semestral_2">Semestral — 2º semestre</option>
+                <option value="semestral_3">Semestral — 3º semestre</option>
+                <option value="semestral_4">Semestral — 4º semestre</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group" style="margin-bottom:var(--space-4)">
+            <label class="form-label" for="aval-periodo-ref">Período de Referência (texto)</label>
+            <input type="text" id="aval-periodo-ref" class="form-control"
+              placeholder="Ex.: 01/01/2025 a 30/06/2025"
+              style="max-width:360px">
+            <small style="font-size:var(--font-size-xs);color:var(--color-text-muted)">Datas de início e fim deste período de avaliação.</small>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="iniciarNovaAvaliacao(this)">
+            Iniciar Avaliação e Notificar Responsável
+          </button>
+        </div>`;
+    }
+
+    async function iniciarNovaAvaliacao(btn) {
+      const fbEl  = document.getElementById('fb-nova-aval');
+      if (fbEl) fbEl.innerHTML = '';
+
+      const tipo       = document.getElementById('aval-tipo')?.value;
+      const periodo    = document.getElementById('aval-periodo')?.value;
+      const periodoRef = document.getElementById('aval-periodo-ref')?.value?.trim();
+
+      if (!tipo)    { mostrarFbErrroAval(fbEl, 'Selecione o tipo de avaliação.'); return; }
+      if (!periodo) { mostrarFbErrroAval(fbEl, 'Selecione o período.'); return; }
+
+      // 'ambos' = dispara concedente + aluno simultaneamente (padrão do sistema)
+      const tipos = tipo === 'ambos' ? ['concedente', 'aluno'] : [tipo];
+
+      btn.disabled = true; btn.textContent = 'Iniciando…';
+      try {
+        const resultados = [];
+        for (const t of tipos) {
+          const res = await API.post('iniciarAvaliacao', {
+            idEstagio:  _id,
+            tipo:       t,
+            periodo:    periodo,
+            periodoRef: periodoRef || '',
+            authToken:  getAccessToken(),
+          });
+          resultados.push(res);
+        }
+        const msg = tipos.length > 1
+          ? '✅ Ambas as avaliações iniciadas! Responsáveis notificados por e-mail.'
+          : '✅ Avaliação iniciada! Responsável notificado por e-mail.';
+        showToast(msg, 'success');
+        await carregarTudo();
+        mudarAba('avaliacoes');
+      } catch (err) {
+        mostrarFbErrroAval(fbEl, err.message || 'Erro ao iniciar avaliação.');
+        btn.disabled = false;
+        btn.textContent = 'Iniciar Avaliação e Notificar Responsável';
+      }
+    }
+
+    async function reenviarNotifAvaliacao(avalId, btn) {
+      if (!confirm('Reenviar notificação para o responsável pela etapa atual?')) return;
+      const orig = btn.textContent;
+      btn.disabled = true; btn.textContent = 'Enviando…';
+      try {
+        await API.post('reenviarNotificacaoAvaliacao', { avalId: avalId, authToken: getAccessToken() });
+        showToast('✉️ Notificação reenviada com sucesso.', 'success');
+      } catch (err) {
+        showToast('Erro: ' + err.message, 'error');
+      } finally {
+        btn.disabled = false; btn.textContent = orig;
+      }
+    }
+
+    function mostrarFbErrroAval(el, msg) {
+      if (!el) { showToast(msg, 'error'); return; }
+      el.innerHTML = `<div class="form-feedback form-feedback--error" style="margin-bottom:var(--space-3)">
+        <strong>Atenção:</strong> ${escapeHtml(msg)}
+      </div>`;
     }
 
     /* ─── Regenerar TCE inicial (gera PDF e atualiza pdfOriginalUrl no fluxo) ─── */

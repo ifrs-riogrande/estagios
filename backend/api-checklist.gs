@@ -728,6 +728,7 @@ function _notificarAdminAjusteChecklist_(idEstagio, ator, obs) {
 function verificarPrazos() {
   _verificarPrazosChecklist_();
   _verificarPrazosAssinaturas_();
+  try { verificarAvaliacoesDevidas(); } catch (eAv) { logErro_('verificarPrazos.avaliacoes', eAv); }
 }
 
 function _diasUteisAte_(dataISO) {

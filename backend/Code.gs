@@ -93,6 +93,11 @@ var GET_ROUTES = {
   'listarFluxosPendentesEtapa':   doGetAssinaturas,
   'baixarPdfAssinatura':          doGetAssinaturas,
 
+  // Avaliações
+  'obterFluxoAvaliacao':          doGetAvaliacoes,
+  'baixarPdfAvaliacao':           doGetAvaliacoes,
+  'listarAvaliacoesEstagio':      doGetAvaliacoes,
+
 };
 
 // â”€â”€ Mapeamento action â†’ mÃ³dulo (POST) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -193,6 +198,12 @@ var POST_ROUTES = {
   'uploadPdfAssinado':                doPostAssinaturas,
   'reenviarNotificacaoAssinatura':    doPostAssinaturas,
   'regenerarTCEInicial':              doPostAssinaturas,
+
+  // Avaliações
+  'iniciarAvaliacao':                 doPostAvaliacoes,
+  'salvarRespostaAvaliacao':          doPostAvaliacoes,
+  'assinarAvaliacao':                 doPostAvaliacoes,
+  'reenviarNotificacaoAvaliacao':     doPostAvaliacoes,
 };
 
 // â”€â”€ Ponto de entrada GET â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -234,6 +245,7 @@ function doPost(e) {
 //   doGetDash(e)
 //   doGetAgentes(e), doPostAgentes(e)
 //   doGetOportunidades(e), doPostOportunidades(e)
+//   doGetAvaliacoes(e), doPostAvaliacoes(e)  ← api-avaliacoes.gs
 //
 // Se um mÃ³dulo ainda nÃ£o implementar sua funÃ§Ã£o, use o stub abaixo
 // para evitar erros em runtime:
