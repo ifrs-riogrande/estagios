@@ -13,10 +13,11 @@
  *     → revisor1 revisa e assina
  *   aguardando_assinatura_3
  *     → revisor2 revisa e assina
- *     → PDF gerado com QR code → salvo na pasta → concluido
+ *   aguardando_aprovacao_admin
+ *     → admin revisa e aprova → PDF gerado com QR code → concluido
  *
- * Para concedente: preenchedor=Supervisor, revisor1=Aluno, revisor2=Orientador
- * Para aluno:      preenchedor=Aluno,      revisor1=Supervisor, revisor2=Orientador
+ * Para concedente: preenchedor=Supervisor(Concedente), revisor1=Estagiário, revisor2=Coordenador de Curso
+ * Para aluno:      preenchedor=Estagiário,             revisor1=Supervisor(Concedente), revisor2=Coordenador de Curso
  *
  * Armazenamento:
  *   PropertiesService  → "avaliacao_[avalId]"  (estado JSON completo)
@@ -35,10 +36,11 @@ var AVAL_SHEET_NAME = 'Avaliações';
 // ── Status ────────────────────────────────────────────────────────────────────
 
 var AVAL_ST = {
-  AGUARDANDO_PREENCHIMENTO: 'aguardando_preenchimento',
-  AGUARDANDO_ASSINATURA_2:  'aguardando_assinatura_2',
-  AGUARDANDO_ASSINATURA_3:  'aguardando_assinatura_3',
-  CONCLUIDO:                'concluido',
+  AGUARDANDO_PREENCHIMENTO:  'aguardando_preenchimento',
+  AGUARDANDO_ASSINATURA_2:   'aguardando_assinatura_2',
+  AGUARDANDO_ASSINATURA_3:   'aguardando_assinatura_3',
+  AGUARDANDO_APROVACAO_ADMIN:'aguardando_aprovacao_admin',
+  CONCLUIDO:                 'concluido',
 };
 
 // ── Colunas da aba "Avaliações" (0-based) ────────────────────────────────────
@@ -321,32 +323,22 @@ function assinarAvaliacao_(avalId, token) {
     } catch (eN) { logErro_('assinarAvaliacao_.notifRevisor2', eN); }
 
   } else {
-    // revisor2 — última assinatura: gera PDF e conclui
+    // revisor2 — 3ª assinatura: aguarda aprovação do admin antes de gerar PDF
     fluxo.assinaturaRevisor2 = sig;
     fluxo.tsAssinatura3      = agora;
-    fluxo.statusGeral        = AVAL_ST.CONCLUIDO;
-    fluxo.tsConclusao        = agora;
-
-    // Gera PDF com QR code
-    try {
-      var solFinal = _obterDadosSolicitacaoCompleto_(fluxo.idEstagio);
-      var urlPdf   = gerarPdfAvaliacao_(fluxo, solFinal);
-      fluxo.pdfUrl = urlPdf;
-    } catch (ePdf) {
-      logErro_('assinarAvaliacao_.gerarPdf', ePdf);
-    }
+    fluxo.statusGeral        = AVAL_ST.AGUARDANDO_APROVACAO_ADMIN;
 
     salvarFluxoAvaliacao_(avalId, fluxo);
     _atualizarAvaliacaoNaPlanilha_(avalId, fluxo);
 
-    // Notifica todos (e-mail com link para o PDF)
+    // Notifica admin para aprovar
     try {
-      var solNotif = _obterDadosSolicitacaoCompleto_(fluxo.idEstagio);
-      _notificarConclusao_(fluxo, solNotif);
-    } catch (eN2) { logErro_('assinarAvaliacao_.notifConclusao', eN2); }
+      var solAdm = _obterDadosSolicitacaoCompleto_(fluxo.idEstagio);
+      _notificarAdminParaAprovar_(fluxo, solAdm);
+    } catch (eN2) { logErro_('assinarAvaliacao_.notifAdmin', eN2); }
   }
 
-  return jsonOk_({ status: fluxo.statusGeral, concluido: fluxo.statusGeral === AVAL_ST.CONCLUIDO });
+  return jsonOk_({ status: fluxo.statusGeral, concluido: false });
 }
 
 // ── Monta assinatura eletrônica do ator ──────────────────────────────────────
@@ -392,6 +384,52 @@ function _buildAssinaturaAvaliacao_(fluxo, papel, dataHora) {
   }
 }
 
+// ── Aprovar (Admin) → gera PDF ────────────────────────────────────────────────
+
+/**
+ * Admin revisa todas as assinaturas e aprova → gera PDF com QR code → concluido.
+ */
+function aprovarAvaliacao_(avalId, authToken) {
+  try { validarTokenAdmin_(authToken); } catch (eA) {
+    return jsonError_('Não autorizado: ' + eA.message, 'AUTH_ERROR');
+  }
+
+  var fluxo = obterFluxoAvaliacao_(avalId);
+  if (!fluxo) return jsonError_('Avaliação não encontrada.', 'NOT_FOUND');
+
+  if (fluxo.statusGeral !== AVAL_ST.AGUARDANDO_APROVACAO_ADMIN) {
+    return jsonError_(
+      'Avaliação não está aguardando aprovação do admin (status: ' + fluxo.statusGeral + ').',
+      'INVALID_STATE'
+    );
+  }
+
+  var agora = new Date().toISOString();
+  fluxo.statusGeral = AVAL_ST.CONCLUIDO;
+  fluxo.tsConclusao = agora;
+
+  // Gera PDF com QR code
+  try {
+    var sol    = _obterDadosSolicitacaoCompleto_(fluxo.idEstagio);
+    var urlPdf = gerarPdfAvaliacao_(fluxo, sol);
+    fluxo.pdfUrl = urlPdf;
+  } catch (ePdf) {
+    logErro_('aprovarAvaliacao_.gerarPdf', ePdf);
+    return jsonError_('Avaliação aprovada, mas houve erro ao gerar o PDF: ' + ePdf.message, 'PDF_ERROR');
+  }
+
+  salvarFluxoAvaliacao_(avalId, fluxo);
+  _atualizarAvaliacaoNaPlanilha_(avalId, fluxo);
+
+  // Notifica todos com link do PDF
+  try {
+    var solN = _obterDadosSolicitacaoCompleto_(fluxo.idEstagio);
+    _notificarConclusao_(fluxo, solN);
+  } catch (eN) { logErro_('aprovarAvaliacao_.notifConclusao', eN); }
+
+  return jsonOk_({ avalId: avalId, status: fluxo.statusGeral, pdfUrl: fluxo.pdfUrl || '' });
+}
+
 // ── Reenviar Notificação ──────────────────────────────────────────────────────
 
 function reenviarNotificacaoAvaliacao_(avalId, authToken) {
@@ -416,6 +454,9 @@ function reenviarNotificacaoAvaliacao_(avalId, authToken) {
       case AVAL_ST.AGUARDANDO_ASSINATURA_3:
         _notificarRevisor_(fluxo, sol, 2);
         return jsonOk_({ reenviado: true, para: fluxo.emailRevisor2, status: fluxo.statusGeral });
+      case AVAL_ST.AGUARDANDO_APROVACAO_ADMIN:
+        _notificarAdminParaAprovar_(fluxo, sol);
+        return jsonOk_({ reenviado: true, para: 'estagios@riogrande.ifrs.edu.br', status: fluxo.statusGeral });
       default:
         return jsonError_('Avaliação já concluída — nada a reenviar.', 'INVALID_STATE');
     }
@@ -994,6 +1035,30 @@ function _notificarRevisor_(fluxo, sol, qual) {
   );
 }
 
+function _notificarAdminParaAprovar_(fluxo, sol) {
+  var tipoLabel = fluxo.tipo === 'concedente' ? 'pela Concedente' : 'pelo Aluno';
+  var adminUrl  = BASE_URL + '/admin/estagio.html?id=' + encodeURIComponent(fluxo.idEstagio) + '#avaliacoes';
+  var html = _avalHtmlBase_(
+    'Avaliação ' + tipoLabel + ' — Aguardando sua Aprovação',
+    '<p>Todas as 3 assinaturas foram coletadas. A avaliação aguarda sua revisão e aprovação para geração do PDF.</p>'
+    + '<p><strong>Estágio:</strong> ' + fluxo.idEstagio + '<br>'
+    + '<strong>Estagiário(a):</strong> ' + ((sol && sol.nomeEstudante) || '—') + '<br>'
+    + '<strong>Tipo:</strong> Avaliação ' + tipoLabel + '<br>'
+    + '<strong>Período:</strong> ' + (fluxo.periodoRef || '—') + '</p>'
+    + '<p>Signatários: '
+    + '<br>1. ' + (fluxo.nomePreenchedor || '—') + ' — ' + (fluxo.assinaturaPreenchedor ? '✓ ' + fluxo.assinaturaPreenchedor.dataHora : 'pendente')
+    + '<br>2. ' + (fluxo.nomeRevisor1    || '—') + ' — ' + (fluxo.assinaturaRevisor1  ? '✓ ' + fluxo.assinaturaRevisor1.dataHora  : 'pendente')
+    + '<br>3. ' + (fluxo.nomeRevisor2    || '—') + ' — ' + (fluxo.assinaturaRevisor2  ? '✓ ' + fluxo.assinaturaRevisor2.dataHora  : 'pendente')
+    + '</p>'
+    + '<a href="' + adminUrl + '" class="btn">Revisar e Aprovar no Admin</a>'
+  );
+  _avalEnviarEmail_(
+    'estagios@riogrande.ifrs.edu.br',
+    '[SGE] Avaliação pronta para aprovação — ' + ((sol && sol.nomeEstudante) || fluxo.idEstagio),
+    html
+  );
+}
+
 function _notificarConclusao_(fluxo, sol) {
   var tipoLabel = fluxo.tipo === 'concedente' ? 'pela Concedente' : 'pelo Aluno';
   var urlPdf    = fluxo.pdfUrl || '';
@@ -1090,13 +1155,15 @@ function doGetAvaliacoes(e) {
       try {
         var solI = _obterDadosSolicitacaoCompleto_(fluxoG.idEstagio);
         pubG._sol = {
-          nomeEstudante:  solI.nomeEstudante  || '',
-          nomeEmpresa:    solI.nomeEmpresa    || '',
-          curso:          solI.curso          || '',
-          nomeSupervisor: solI.nomeSupervisor || '',
-          nomeOrientador: solI.nomeOrientador || '',
-          tipoEstagio:    solI.tipoEstagio    || '',
-          matricula:      solI.matricula      || '',
+          nomeEstudante:  solI.nomeEstudante   || '',
+          nomeEmpresa:    solI.nomeEmpresa     || '',
+          curso:          solI.curso           || '',
+          nomeSupervisor: solI.nomeSupervisor  || '',
+          nomeOrientador: solI.nomeOrientador  || '',
+          tipoEstagio:    solI.tipoEstagio     || '',
+          matricula:      solI.matricula       || '',
+          horasSemanais:  solI.horasSemanais   || solI.cargaHoraria || '',
+          horasDiarias:   solI.horasDiarias    || '',
         };
       } catch (_) {}
 
@@ -1145,6 +1212,9 @@ function doPostAvaliacoes(e) {
         body.avalId || '',
         body.token  || ''
       );
+
+    case 'aprovarAvaliacao':
+      return aprovarAvaliacao_(body.avalId || '', body.authToken || '');
 
     case 'reenviarNotificacaoAvaliacao':
       return reenviarNotificacaoAvaliacao_(body.avalId || '', body.authToken || '');

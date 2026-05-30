@@ -1125,26 +1125,37 @@
       const c = document.getElementById('content-avaliacoes');
 
       const STATUS_LABEL = {
-        aguardando_preenchimento: 'Aguardando Preenchimento',
-        aguardando_assinatura_2:  'Aguardando 2ª Assinatura',
-        aguardando_assinatura_3:  'Aguardando 3ª Assinatura (Orientador)',
-        concluido:                'Concluído ✓',
+        aguardando_preenchimento:  'Aguardando Preenchimento',
+        aguardando_assinatura_2:   'Aguardando 2ª Assinatura',
+        aguardando_assinatura_3:   'Aguardando 3ª Assinatura',
+        aguardando_aprovacao_admin:'⏳ Aguardando Aprovação da Central',
+        concluido:                 'Concluído ✓',
       };
 
       const linhas = _avaliacoes.map(a => {
         const tipoLabel = a.tipo === 'concedente' ? 'Pela Concedente' : 'Pelo Aluno';
-        const badgeCls  = a.status === 'concluido' ? 'badge-approved'
-          : a.status === 'aguardando_assinatura_3' ? 'badge-dg'
+        const badgeCls  = a.status === 'concluido'                 ? 'badge-approved'
+          : a.status === 'aguardando_aprovacao_admin'               ? 'badge-dg'
+          : a.status === 'aguardando_assinatura_3'                  ? 'badge-analysis'
           : 'badge-analysis';
         const badgeTxt = STATUS_LABEL[a.status] || a.status;
 
         const acoes = a.status === 'concluido'
-          ? (a.temPdf ? `<a href="#" class="btn btn-secondary btn-sm" style="pointer-events:none;opacity:.5">PDF gerado ✓</a>` : '')
-          : `<button class="btn btn-secondary btn-sm"
-               onclick="reenviarNotifAvaliacao('${escapeHtml(a.avalId)}', this)">
-               <svg width="12" height="12" viewBox="0 0 20 20" fill="currentColor"><path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"/><path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"/></svg>
-               Reenviar
-             </button>`;
+          ? (a.temPdf ? `<span style="font-size:12px;color:var(--color-success)">✓ PDF gerado</span>` : '')
+          : a.status === 'aguardando_aprovacao_admin'
+            ? `<button class="btn btn-primary btn-sm"
+                 onclick="aprovarAvaliacao('${escapeHtml(a.avalId)}', this)">
+                 ✓ Aprovar e Gerar PDF
+               </button>
+               <button class="btn btn-secondary btn-sm"
+                 onclick="reenviarNotifAvaliacao('${escapeHtml(a.avalId)}', this)">
+                 Reenviar
+               </button>`
+            : `<button class="btn btn-secondary btn-sm"
+                 onclick="reenviarNotifAvaliacao('${escapeHtml(a.avalId)}', this)">
+                 <svg width="12" height="12" viewBox="0 0 20 20" fill="currentColor"><path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"/><path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"/></svg>
+                 Reenviar
+               </button>`;
 
         return `
           <tr>
@@ -1257,6 +1268,21 @@
         mostrarFbErrroAval(fbEl, err.message || 'Erro ao iniciar avaliação.');
         btn.disabled = false;
         btn.textContent = 'Iniciar Avaliação e Notificar Responsável';
+      }
+    }
+
+    async function aprovarAvaliacao(avalId, btn) {
+      if (!confirm('Confirmar aprovação e geração do PDF para "' + avalId + '"?\nTodos os envolvidos receberão o documento por e-mail.')) return;
+      const orig = btn.textContent;
+      btn.disabled = true; btn.textContent = 'Gerando PDF…';
+      try {
+        const res = await API.post('aprovarAvaliacao', { avalId: avalId, authToken: getAccessToken() });
+        showToast('✅ Avaliação aprovada! PDF gerado e enviado por e-mail.', 'success');
+        await carregarTudo();
+        mudarAba('avaliacoes');
+      } catch (err) {
+        showToast('Erro: ' + (err.message || err), 'error');
+        btn.disabled = false; btn.textContent = orig;
       }
     }
 

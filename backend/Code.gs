@@ -203,6 +203,7 @@ var POST_ROUTES = {
   'iniciarAvaliacao':                 doPostAvaliacoes,
   'salvarRespostaAvaliacao':          doPostAvaliacoes,
   'assinarAvaliacao':                 doPostAvaliacoes,
+  'aprovarAvaliacao':                 doPostAvaliacoes,
   'reenviarNotificacaoAvaliacao':     doPostAvaliacoes,
 };
 

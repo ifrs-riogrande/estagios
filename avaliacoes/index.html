@@ -301,6 +301,13 @@
         }
         break;
 
+      /* ── Aguardando aprovação do admin ── */
+      case 'aguardando_aprovacao_admin':
+        html += buildStatusPanel('waiting',
+          'Aguardando Aprovação da Central de Estágios',
+          'Todas as 3 assinaturas foram registradas. O setor de estágios irá revisar e aprovar a avaliação. O PDF será gerado e enviado por e-mail após a aprovação.');
+        break;
+
       /* ── Concluído ── */
       case 'concluido':
         html += buildStatusPanel('success',
@@ -336,10 +343,11 @@
   /* ── Info Strip ── */
   function buildInfoStrip(f, sol) {
     const statusLabel = {
-      aguardando_preenchimento: 'Aguardando Preenchimento',
-      aguardando_assinatura_2:  'Aguardando 2ª Assinatura',
-      aguardando_assinatura_3:  'Aguardando 3ª Assinatura',
-      concluido:                'Concluído ✓',
+      aguardando_preenchimento:  'Aguardando Preenchimento',
+      aguardando_assinatura_2:   'Aguardando 2ª Assinatura',
+      aguardando_assinatura_3:   'Aguardando 3ª Assinatura',
+      aguardando_aprovacao_admin:'Aguardando Aprovação da Central',
+      concluido:                 'Concluído ✓',
     }[f.statusGeral] || f.statusGeral;
 
     return `<div class="info-strip">
@@ -355,34 +363,32 @@
   /* ── Progresso de assinaturas ── */
   function buildSignProgress(f) {
     const s = f.statusGeral;
-    const isDone = s => s === 'concluido';
 
-    // Determina labels conforme tipo
-    const label1 = f.tipo === 'concedente' ? 'Supervisor(a)' : 'Estagiário(a)';
-    const label2 = f.tipo === 'concedente' ? 'Estagiário(a)' : 'Supervisor(a)';
-    const label3 = 'Orientador(a)';
-    const nome1  = f.nomePreenchedor || label1;
-    const nome2  = f.nomeRevisor1    || label2;
-    const nome3  = f.nomeRevisor2    || label3;
+    // Papel de cada ator conforme o tipo de avaliação
+    const papel1 = f.tipo === 'concedente' ? 'Supervisor(a) na Concedente' : 'Estagiário(a)';
+    const papel2 = f.tipo === 'concedente' ? 'Estagiário(a)'               : 'Supervisor(a) na Concedente';
+    const papel3 = 'Coordenador(a) de Curso';
+    const nome1  = f.nomePreenchedor || papel1;
+    const nome2  = f.nomeRevisor1    || papel2;
+    const nome3  = f.nomeRevisor2    || papel3;
 
-    const step1 = (s === 'aguardando_preenchimento') ? 'active'
-                : 'done'; // todos os outros estados = preenchedor já assinou
-    const step2 = (s === 'aguardando_assinatura_2') ? 'active'
-                : (s === 'aguardando_preenchimento') ? '' : 'done';
-    const step3 = (s === 'aguardando_assinatura_3') ? 'active'
-                : (s === 'concluido')                ? 'done' : '';
+    const step1 = (s === 'aguardando_preenchimento') ? 'active' : 'done';
+    const step2 = (s === 'aguardando_assinatura_2')  ? 'active'
+                : (s === 'aguardando_preenchimento')  ? ''       : 'done';
+    const step3 = (s === 'aguardando_assinatura_3')  ? 'active'
+                : (s === 'aguardando_aprovacao_admin' || s === 'concluido') ? 'done' : '';
 
     return `<div class="sign-progress">
       <div class="sign-step ${step1}">
-        <span class="step-label">${step1 === 'done' ? '✓ ' : ''}1ª Assinatura</span>
+        <span class="step-label">${step1 === 'done' ? '✓ ' : ''}1ª Assinatura — ${escapeHtml(papel1)}</span>
         <span class="step-name">${escapeHtml(nome1)}</span>
       </div>
       <div class="sign-step ${step2}">
-        <span class="step-label">${step2 === 'done' ? '✓ ' : ''}2ª Assinatura</span>
+        <span class="step-label">${step2 === 'done' ? '✓ ' : ''}2ª Assinatura — ${escapeHtml(papel2)}</span>
         <span class="step-name">${escapeHtml(nome2)}</span>
       </div>
       <div class="sign-step ${step3}">
-        <span class="step-label">${step3 === 'done' ? '✓ ' : ''}3ª Assinatura</span>
+        <span class="step-label">${step3 === 'done' ? '✓ ' : ''}3ª Assinatura — ${escapeHtml(papel3)}</span>
         <span class="step-name">${escapeHtml(nome3)}</span>
       </div>
     </div>`;
@@ -400,9 +406,27 @@
     </div>`;
   }
 
+  /* ── Cálculo automático de horas do período ── */
+  function calcularHorasPeriodo(periodoRef, horasSemanais, horasDiarias) {
+    const m = (periodoRef || '').match(/(\d{2})\/(\d{2})\/(\d{4})/g);
+    if (!m || m.length < 2) return '';
+    const [d1,mo1,y1] = m[0].split('/'); const [d2,mo2,y2] = m[1].split('/');
+    const start = new Date(y1, mo1-1, d1);
+    const end   = new Date(y2, mo2-1, d2);
+    if (isNaN(start) || isNaN(end) || end < start) return '';
+    // Conta dias úteis (seg-sex)
+    let diasUteis = 0;
+    const cur = new Date(start);
+    while (cur <= end) { const d = cur.getDay(); if (d !== 0 && d !== 6) diasUteis++; cur.setDate(cur.getDate()+1); }
+    // Horas por dia: usa horasDiarias direto, ou deduz de horasSemanais/5
+    const hDia = parseFloat(horasDiarias) || (parseFloat(horasSemanais) ? parseFloat(horasSemanais)/5 : 4);
+    return Math.round(diasUteis * hDia);
+  }
+
   /* ── Formulário Concedente ── */
   function buildFormConcedente(f) {
     const sol = f._sol || {};
+    const horasCalc = calcularHorasPeriodo(f.periodoRef, sol.horasSemanais, sol.horasDiarias);
     const linhas = CRITERIOS.map(c => `
       <tr>
         <td>${escapeHtml(c.label)}</td>
@@ -414,9 +438,10 @@
     return `<div class="aval-card">
       <h2>Avaliação do Estágio pela Concedente</h2>
       <p class="card-desc">
-        Preencha os critérios de avaliação do(a) estagiário(a)
+        Preencha a avaliação do(a) estagiário(a)
         <strong>${escapeHtml(sol.nomeEstudante || '—')}</strong>
-        no período <strong>${escapeHtml(f.periodoRef || '—')}</strong>.
+        referente ao período de avaliação <strong>${escapeHtml(f.periodoRef || '—')}</strong>
+        (este é o período desta avaliação, não o total do estágio).
         Ao salvar, sua assinatura eletrônica será registrada automaticamente.
       </p>
 
@@ -425,26 +450,32 @@
       <!-- Horas no período -->
       <div class="form-group" style="margin-bottom:var(--space-5)">
         <label class="form-label" for="horas-periodo">
-          Total de horas realizadas no período <span style="color:var(--color-error)">*</span>
+          Total de horas realizadas neste período de avaliação <span style="color:var(--color-error)">*</span>
         </label>
         <input type="number" id="horas-periodo" class="form-control"
-          placeholder="Ex.: 120" min="1" max="9999" step="1" style="max-width:200px">
+          value="${horasCalc || ''}"
+          placeholder="Calculado automaticamente — pode ser ajustado"
+          min="1" max="9999" step="1" style="max-width:220px">
+        ${horasCalc ? `<small style="font-size:var(--font-size-xs);color:var(--color-text-muted);display:block;margin-top:4px">Calculado automaticamente com base nos dias úteis do período. Ajuste se necessário.</small>` : ''}
       </div>
 
-      <!-- Soma total (opcional — para avaliações intermediárias) -->
+      <!-- Soma total -->
       <div class="form-group" style="margin-bottom:var(--space-5)">
         <label class="form-label" for="horas-totais">
-          Soma total de horas (somando todas as avaliações, se houver mais de uma)
+          Soma total de horas acumuladas (somando todas as avaliações anteriores + esta) <span style="color:var(--color-error)">*</span>
         </label>
         <input type="number" id="horas-totais" class="form-control"
-          placeholder="Deixe em branco se for a única avaliação" min="1" max="9999" step="1" style="max-width:200px">
+          value="${horasCalc || ''}"
+          placeholder="Ex.: 240 (total acumulado)"
+          min="1" max="9999" step="1" style="max-width:220px">
+        <small style="font-size:var(--font-size-xs);color:var(--color-text-muted);display:block;margin-top:4px">Se for a primeira e única avaliação, repita o valor acima.</small>
       </div>
 
       <!-- Tabela de critérios -->
       <h3 style="font-size:var(--font-size-sm);font-weight:700;margin-bottom:var(--space-2)">
-        Avaliação de Desempenho
+        Avaliação de Desempenho <span style="color:var(--color-error)">*</span>
         <span style="font-size:var(--font-size-xs);color:var(--color-text-muted);font-weight:400;margin-left:var(--space-2)">
-          MB = Muito Bom · B = Bom · R = Razoável
+          Todos os critérios são obrigatórios — MB = Muito Bom · B = Bom · R = Razoável
         </span>
       </h3>
       <div style="overflow-x:auto;margin-bottom:var(--space-5)">
@@ -463,9 +494,11 @@
 
       <!-- Observações -->
       <div class="form-group" style="margin-bottom:var(--space-6)">
-        <label class="form-label" for="obs-conced">Observações (opcional)</label>
+        <label class="form-label" for="obs-conced">
+          Observações <span style="color:var(--color-error)">*</span>
+        </label>
         <textarea id="obs-conced" class="form-control" rows="4"
-          placeholder="Observações adicionais sobre o desenvolvimento do estágio…"></textarea>
+          placeholder="Observações adicionais sobre o desenvolvimento do estágio no período…"></textarea>
       </div>
 
       <div style="display:flex;justify-content:flex-end">
@@ -479,12 +512,14 @@
   /* ── Formulário Aluno ── */
   function buildFormAluno(f) {
     const sol = f._sol || {};
+    const horasCalc = calcularHorasPeriodo(f.periodoRef, sol.horasSemanais, sol.horasDiarias);
     return `<div class="aval-card">
       <h2>Avaliação do Estágio pelo Aluno</h2>
       <p class="card-desc">
-        Preencha as informações sobre seu estágio no período
+        Preencha as informações referentes ao período de avaliação
         <strong>${escapeHtml(f.periodoRef || '—')}</strong>
-        na empresa <strong>${escapeHtml(sol.nomeEmpresa || '—')}</strong>.
+        na empresa <strong>${escapeHtml(sol.nomeEmpresa || '—')}</strong>
+        (este é o período desta avaliação, não o total do estágio).
         Ao salvar, sua assinatura eletrônica será registrada automaticamente.
       </p>
 
@@ -493,10 +528,13 @@
       <!-- Horas no período -->
       <div class="form-group" style="margin-bottom:var(--space-5)">
         <label class="form-label" for="horas-periodo">
-          Total de horas realizadas no período <span style="color:var(--color-error)">*</span>
+          Total de horas realizadas neste período de avaliação <span style="color:var(--color-error)">*</span>
         </label>
         <input type="number" id="horas-periodo" class="form-control"
-          placeholder="Ex.: 120" min="1" max="9999" step="1" style="max-width:200px">
+          value="${horasCalc || ''}"
+          placeholder="Calculado automaticamente — pode ser ajustado"
+          min="1" max="9999" step="1" style="max-width:220px">
+        ${horasCalc ? `<small style="font-size:var(--font-size-xs);color:var(--color-text-muted);display:block;margin-top:4px">Calculado automaticamente com base nos dias úteis do período. Ajuste se necessário.</small>` : ''}
       </div>
 
       <!-- Alterações no estágio -->
@@ -714,11 +752,18 @@
     }
 
     const horasTotaisRaw = document.getElementById('horas-totais')?.value?.trim();
+    if (!horasTotaisRaw || isNaN(horasTotaisRaw) || Number(horasTotaisRaw) <= 0) {
+      mostrarFeedback(fbEl, 'Informe a soma total de horas acumuladas.'); return;
+    }
+    const observacoes = document.getElementById('obs-conced')?.value?.trim();
+    if (!observacoes) {
+      mostrarFeedback(fbEl, 'O campo Observações é obrigatório.'); return;
+    }
     const dados = {
       horasNoPeriodo: horas,
-      horasTotais:    (horasTotaisRaw && !isNaN(horasTotaisRaw)) ? horasTotaisRaw : '',
+      horasTotais:    horasTotaisRaw,
       criterios:      criterios,
-      observacoes:    document.getElementById('obs-conced')?.value?.trim() || '',
+      observacoes:    observacoes,
     };
 
     btn.disabled = true; btn.textContent = 'Salvando e assinando…';
