@@ -304,6 +304,7 @@
             ${s.semestreAtual ? infoRow('Semestre', escapeHtml(s.semestreAtual)) : ''}
             ${s.formando ? infoRow('Formando', escapeHtml(s.formando)) : ''}
           </div>
+          ${buildAvaliacoesPrevistasHtml(s.dataInicio, s.dataTermino)}
 
           <p class="info-section-title">Empresa &amp; Supervisor</p>
           <div class="info-grid">

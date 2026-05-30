@@ -433,6 +433,120 @@ function getCurrentSemester() {
 }
 
 // ─────────────────────────────────────────
+//  PERÍODOS DE AVALIAÇÃO
+// ─────────────────────────────────────────
+
+/**
+ * Calcula os períodos de avaliação a partir das datas de início e fim do estágio.
+ * Mesma lógica do backend (_calcularPeriodosAvaliacao_ em api-avaliacoes.gs).
+ *
+ * @param {string|Date} dataInicio  Data de início (DD/MM/YYYY ou ISO)
+ * @param {string|Date} dataTermino Data de término (DD/MM/YYYY ou ISO)
+ * @returns {Array<{tipo:string, label:string, dataDisparo:Date}>}
+ */
+function calcularPeriodosAvaliacao(dataInicio, dataTermino) {
+  function parseData(v) {
+    if (!v) return null;
+    if (v instanceof Date) return v;
+    // DD/MM/YYYY
+    const m = String(v).match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    if (m) return new Date(m[3], m[2] - 1, m[1]);
+    // ISO ou qualquer outro formato reconhecível
+    const d = new Date(v);
+    return isNaN(d.getTime()) ? null : d;
+  }
+
+  const dInicio = parseData(dataInicio);
+  const dFim    = parseData(dataTermino);
+  if (!dInicio || !dFim || dFim <= dInicio) return [];
+
+  const diasTotal  = (dFim - dInicio) / 86400000;
+  const mesesTotal = diasTotal / 30.44;
+  const periodos   = [];
+
+  if (mesesTotal <= 6) {
+    periodos.push({ tipo: 'final', label: 'Final', dataDisparo: new Date(dFim) });
+    return periodos;
+  }
+
+  let sem = 1;
+  while (true) {
+    const dSem = new Date(dInicio);
+    dSem.setMonth(dSem.getMonth() + sem * 6);
+    if (dSem >= dFim) break;
+    periodos.push({ tipo: 'semestral_' + sem, label: 'Semestral ' + sem, dataDisparo: new Date(dSem) });
+    sem++;
+  }
+  periodos.push({ tipo: 'final', label: 'Final', dataDisparo: new Date(dFim) });
+  return periodos;
+}
+
+/**
+ * Renderiza o bloco HTML de "Avaliações Previstas" para exibir em qualquer tela.
+ *
+ * @param {string|Date} dataInicio
+ * @param {string|Date} dataTermino
+ * @param {Array}       avaliacoes  Lista de avaliações já criadas (opcional — para mostrar status)
+ * @returns {string} HTML pronto
+ */
+function buildAvaliacoesPrevistasHtml(dataInicio, dataTermino, avaliacoes) {
+  const periodos = calcularPeriodosAvaliacao(dataInicio, dataTermino);
+  if (!periodos.length) return '';
+
+  const avals = avaliacoes || [];
+  const hoje  = new Date(); hoje.setHours(0,0,0,0);
+
+  // Status labels
+  const STATUS = {
+    aguardando_preenchimento:  { label: 'Aguardando preenchimento', cls: 'badge-analysis' },
+    aguardando_assinatura_2:   { label: 'Aguardando 2ª assinatura',  cls: 'badge-analysis' },
+    aguardando_assinatura_3:   { label: 'Aguardando 3ª assinatura',  cls: 'badge-analysis' },
+    aguardando_aprovacao_admin:{ label: 'Aguardando aprovação',       cls: 'badge-dg'       },
+    concluido:                 { label: 'Concluída',                  cls: 'badge-approved' },
+  };
+
+  // Tipos de avaliação que podem existir
+  const TIPOS = ['concedente', 'aluno'];
+
+  let linhas = '';
+  periodos.forEach(per => {
+    const dtStr   = per.dataDisparo.toLocaleDateString('pt-BR');
+    const futura  = per.dataDisparo > hoje;
+
+    TIPOS.forEach(tipo => {
+      const tipoLabel = tipo === 'concedente' ? 'Concedente' : 'Aluno';
+      // Procura avaliação correspondente
+      const aval = avals.find(a => a.tipo === tipo &&
+        (a.periodo === per.tipo || a.avalId && a.avalId.indexOf('_' + per.tipo) > -1));
+
+      let statusHtml = '';
+      if (aval) {
+        const st = STATUS[aval.status] || { label: aval.status, cls: 'badge-analysis' };
+        statusHtml = `<span class="badge ${st.cls}" style="font-size:10px">${escapeHtml(st.label)}</span>`;
+      } else if (futura) {
+        statusHtml = `<span style="font-size:11px;color:var(--color-text-muted)">Não iniciada</span>`;
+      } else {
+        statusHtml = `<span style="font-size:11px;color:var(--color-warning)">Não iniciada</span>`;
+      }
+
+      linhas += `<div style="display:flex;align-items:center;gap:var(--space-3);padding:var(--space-2) 0;border-bottom:1px solid var(--color-border);">
+        <div style="flex:1;min-width:0">
+          <span style="font-size:var(--font-size-xs);font-weight:600">${escapeHtml(per.label)} — ${escapeHtml(tipoLabel)}</span>
+          <span style="font-size:11px;color:var(--color-text-muted);margin-left:var(--space-2)">${escapeHtml(dtStr)}</span>
+        </div>
+        <div>${statusHtml}</div>
+      </div>`;
+    });
+  });
+
+  return `<div style="margin-top:var(--space-5)">
+    <p style="font-size:var(--font-size-xs);font-weight:600;text-transform:uppercase;letter-spacing:.04em;
+       color:var(--color-text-muted);margin-bottom:var(--space-2)">Avaliações Previstas</p>
+    ${linhas}
+  </div>`;
+}
+
+// ─────────────────────────────────────────
 //  INICIALIZAÇÃO AUTOMÁTICA
 //  Chamada ao carregar o DOM em qualquer página.
 // ─────────────────────────────────────────

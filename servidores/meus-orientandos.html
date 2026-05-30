@@ -336,6 +336,15 @@
         if (s.dataInicio || s.dataTermino) {
           periodo = (s.dataInicio ? formatarData(s.dataInicio) : '?') + ' – ' + (s.dataTermino ? formatarData(s.dataTermino) : '?');
         }
+        var periodoAvals = '';
+        if (s.dataInicio && s.dataTermino) {
+          var pAvs = calcularPeriodosAvaliacao(s.dataInicio, s.dataTermino);
+          if (pAvs.length) {
+            periodoAvals = '<div style="font-size:10px;color:var(--color-text-muted);margin-top:2px">Avals.: '
+              + pAvs.map(function(p){ return p.label + ' ' + p.dataDisparo.toLocaleDateString('pt-BR'); }).join(' · ')
+              + '</div>';
+          }
+        }
 
         var links = buildLinks(s);
 
@@ -348,7 +357,7 @@
           '<td style="max-width:160px;white-space:normal">' + escapeHtml(s.curso || '—') + '</td>' +
           '<td style="max-width:180px;white-space:normal">' + escapeHtml(s.empresa || '—') + '</td>' +
           '<td style="white-space:nowrap">' + escapeHtml(s.tipoEstagio || '—') + '</td>' +
-          '<td style="white-space:nowrap;font-size:12px">' + escapeHtml(periodo || '—') + '</td>' +
+          '<td style="white-space:nowrap;font-size:12px">' + escapeHtml(periodo || '—') + periodoAvals + '</td>' +
           '<td>' + badgeStatus(s.status) + '</td>' +
           '<td><div class="action-links">' + links + '</div></td>' +
           '</tr>';
