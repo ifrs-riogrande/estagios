@@ -533,8 +533,12 @@
       const c = document.getElementById('content-documentos');
       const sec = (titulo, conteudo) =>
         `<div style="margin-bottom:var(--space-6)">
-           <h3 style="font-size:var(--font-size-md);font-weight:600;margin-bottom:var(--space-4);
-                      padding-bottom:var(--space-2);border-bottom:2px solid var(--color-border)">${titulo}</h3>
+           <h3 style="font-size:var(--font-size-sm);font-weight:600;margin-bottom:var(--space-4);
+                      padding:var(--space-2) var(--space-4);
+                      background:var(--color-bg);
+                      border-left:3px solid var(--color-primary);
+                      border-radius:0 var(--radius-md) var(--radius-md) 0;
+                      color:var(--color-text)">${titulo}</h3>
            ${conteudo}
          </div>`;
       const vazio = (msg) =>
@@ -544,7 +548,7 @@
 
       // ── 1. Pasta do Estágio no Drive ─────────────────────────────────────────
       if (_estagio && _estagio.driveUrl) {
-        html += sec('📁 Pasta do Estágio no Drive',
+        html += sec('1. 📁 Pasta do Estágio no Drive',
           `<div class="avulso-list">
             <div class="avulso-item">
               <div class="avulso-item-info">
@@ -573,7 +577,7 @@
               </div>
               <a href="${escapeHtml(d.url)}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">Abrir ↗</a>
             </div>`).join('');
-          html += sec('📄 Documentos de Admissão', `<div class="avulso-list">${itens}</div>`);
+          html += sec('2. 📄 Documentos de Admissão', `<div class="avulso-list">${itens}</div>`);
         }
       }
 
@@ -611,7 +615,7 @@
           </div>`;
         }
 
-        html += sec('📄 Documentos do Fluxo',
+        html += sec('3. 📄 Documentos do Fluxo',
           fluxoHtml || vazio('Nenhum documento do fluxo de aprovação para este estágio.')
         );
       }
@@ -660,7 +664,7 @@
           : vazio('Avaliação final ainda não concluída.');
         avalHtml += subsec('4.2 Avaliação Final', finaisHtml);
 
-        html += sec('📄 Avaliações de Estágio', avalHtml);
+        html += sec('4. 📄 Avaliações de Estágio', avalHtml);
       }
 
       // ── 5. Parecer Final ──────────────────────────────────────────────────────
@@ -683,7 +687,7 @@
         } else {
           parecerHtml = vazio('Parecer final ainda não concluído.');
         }
-        html += sec('📄 Parecer Final', parecerHtml);
+        html += sec('5. 📄 Parecer Final', parecerHtml);
       }
 
       // ── 6. Demais Documentos ──────────────────────────────────────────────────
@@ -707,7 +711,7 @@
           demaisHtml = vazio('Nenhum documento adicional enviado ainda.');
         }
 
-        html += sec('📄 Demais Documentos',
+        html += sec('6. 📄 Demais Documentos',
           demaisHtml +
           `<div style="margin-top:var(--space-5);background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:var(--space-5)">
             <h4 style="font-size:var(--font-size-sm);font-weight:600;margin-bottom:var(--space-4)">Enviar documento para este estágio</h4>
