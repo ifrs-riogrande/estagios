@@ -80,6 +80,8 @@ var GET_ROUTES = {
   // Cursos + TCE config — admin
   'listarTodosCursos':       doGetAdmin,
   'obterDiretorGeral':       doGetAdmin,
+  'obterDiretoriaDEN':       doGetAdmin,
+  'obterDiretoriaDEX':       doGetAdmin,
   'obterConfigTCE':          doGetAdmin,
 
   // Checklist
@@ -149,6 +151,8 @@ var POST_ROUTES = {
   'salvarConfigCursos':        doPostAdmin,
   'salvarConfigTCE':           doPostAdmin,
   'salvarDiretorGeral':        doPostAdmin,
+  'salvarDiretoriaDEN':        doPostAdmin,
+  'salvarDiretoriaDEX':        doPostAdmin,
   'salvarCurso':               doPostAdmin,
   'deletarCurso':              doPostAdmin,
 

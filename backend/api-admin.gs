@@ -140,6 +140,8 @@ function doGetAdmin(e) {
       case 'listarAgentesAdmin':       return listarAgentesAdmin_();
       case 'listarTodosCursos':        return listarTodosCursos_();
       case 'obterDiretorGeral':        return jsonOk_(obterDadosDiretorGeralAdmin_());
+      case 'obterDiretoriaDEN':        return jsonOk_(_obterDiretoriaAdmin_('DEN'));
+      case 'obterDiretoriaDEX':        return jsonOk_(_obterDiretoriaAdmin_('DEX'));
       case 'obterConfigTCE':           return obterConfigTCE_();
       default: return jsonError_('Ação GET não reconhecida: ' + action, 'UNKNOWN_ACTION');
     }
@@ -204,6 +206,8 @@ function doPostAdmin(e) {
       case 'salvarConfigTCE':        return salvarConfigTCE_(body);
       // Diretor Geral
       case 'salvarDiretorGeral':     return salvarDiretorGeral_(body);
+      case 'salvarDiretoriaDEN':     return _salvarDiretoria_(body, 'DEN');
+      case 'salvarDiretoriaDEX':     return _salvarDiretoria_(body, 'DEX');
       default: return jsonError_('Ação POST não reconhecida: ' + action, 'UNKNOWN_ACTION');
     }
   } catch (err) {
@@ -1396,6 +1400,91 @@ function _obterOuCriarAbaDG_() {
   var sh = ss.getSheetByName('Diretor Geral');
   if (!sh) {
     sh = ss.insertSheet('Diretor Geral');
+    sh.getRange(1, 1, 1, 5).setValues([['Nome', 'SIAPE', 'CPF', 'E-mail', 'Status']]);
+  }
+  return sh;
+}
+
+// ── Diretoria DEN / DEX ───────────────────────────────────────────────────────
+
+/**
+ * Retorna dados da Diretoria (DEN ou DEX) para o painel admin.
+ * @param {string} sigla 'DEN' | 'DEX'
+ */
+function _obterDiretoriaAdmin_(sigla) {
+  try {
+    var sh    = _obterOuCriarAbaDiretoria_(sigla);
+    var dados = sh.getDataRange().getValues();
+    for (var i = 1; i < dados.length; i++) {
+      if (String(dados[i][4] || '').trim() === 'Ativo') {
+        return {
+          nome:   String(dados[i][0] || ''),
+          siape:  String(dados[i][1] || ''),
+          cpf:    String(dados[i][2] || ''),
+          email:  String(dados[i][3] || ''),
+          status: 'Ativo',
+        };
+      }
+    }
+    return { nome:'', siape:'', cpf:'', email:'', status:'' };
+  } catch (e) {
+    logErro_('_obterDiretoriaAdmin_.' + sigla, e);
+    return { nome:'', siape:'', cpf:'', email:'', status:'' };
+  }
+}
+
+/**
+ * Retorna dados públicos da Diretoria (nome + email) para uso interno.
+ * Fallback para o e-mail institucional se não configurado.
+ */
+function obterDadosDiretoria_(sigla) {
+  try {
+    var sh    = _obterOuCriarAbaDiretoria_(sigla);
+    var dados = sh.getDataRange().getValues();
+    for (var i = 1; i < dados.length; i++) {
+      if (String(dados[i][4] || '').trim() === 'Ativo') {
+        var nome  = String(dados[i][0] || '').trim();
+        var email = String(dados[i][3] || '').trim();
+        if (email) return { nome: nome || (sigla === 'DEN' ? 'Diretoria de Ensino' : 'Diretoria de Extensão'), email: email };
+      }
+    }
+  } catch (_) {}
+  // Fallback: e-mail institucional padrão
+  return {
+    nome:  sigla === 'DEN' ? 'Diretoria de Ensino — IFRS Campus Rio Grande' : 'Diretoria de Extensão — IFRS Campus Rio Grande',
+    email: sigla === 'DEN' ? EMAIL_DEN : EMAIL_DEX,
+  };
+}
+
+/**
+ * Salva (substitui) os dados da Diretoria na planilha.
+ */
+function _salvarDiretoria_(body, sigla) {
+  var nome  = sanitizar_(body.nome,  100);
+  var siape = sanitizar_(body.siape,  20);
+  var cpf   = sanitizar_(body.cpf,    20);
+  var email = sanitizar_(body.email, 200);
+  if (!nome || !email) return jsonError_('Nome e e-mail são obrigatórios.', 'VALIDATION');
+
+  var sh    = _obterOuCriarAbaDiretoria_(sigla);
+  var dados = sh.getDataRange().getValues();
+  var found = false;
+  for (var i = 1; i < dados.length; i++) {
+    if (String(dados[i][4] || '').trim() === 'Ativo') {
+      sh.getRange(i + 1, 1, 1, 5).setValues([[nome, siape, cpf, email, 'Ativo']]);
+      found = true; break;
+    }
+  }
+  if (!found) sh.appendRow([nome, siape, cpf, email, 'Ativo']);
+  return jsonOk_({ mensagem: 'Dados da ' + sigla + ' salvos com sucesso.' });
+}
+
+function _obterOuCriarAbaDiretoria_(sigla) {
+  var ss   = SpreadsheetApp.openById(CFG_ADMIN.SS_ID);
+  var nome = sigla === 'DEN' ? 'Diretoria Ensino' : 'Diretoria Extensão';
+  var sh   = ss.getSheetByName(nome);
+  if (!sh) {
+    sh = ss.insertSheet(nome);
     sh.getRange(1, 1, 1, 5).setValues([['Nome', 'SIAPE', 'CPF', 'E-mail', 'Status']]);
   }
   return sh;

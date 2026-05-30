@@ -112,10 +112,9 @@ function iniciarParecerFinal_(idEstagio, authToken) {
   var tipoEstagio   = String(sol.tipoEstagio || '').toLowerCase();
   var isObrigatorio = tipoEstagio.indexOf('não') === -1 && tipoEstagio.indexOf('nao') === -1;
   var tipoDiretoria = isObrigatorio ? 'DEN' : 'DEX';
-  var emailDiretoria = isObrigatorio ? EMAIL_DEN : EMAIL_DEX;
-  var nomeDiretoria  = isObrigatorio
-    ? 'Diretoria de Ensino — IFRS Campus Rio Grande'
-    : 'Diretoria de Extensão — IFRS Campus Rio Grande';
+  var dadosDiretoria = obterDadosDiretoria_(tipoDiretoria);
+  var emailDiretoria = dadosDiretoria.email;
+  var nomeDiretoria  = dadosDiretoria.nome;
 
   var emailCoordenador = _ckObterEmailCoordenador_(sol.curso || '');
   var nomeCoordenador  = _ckObterNomeCoordenador_(sol.curso || '');
