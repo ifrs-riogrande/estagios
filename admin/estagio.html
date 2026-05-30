@@ -568,12 +568,12 @@
           const itens = docs.map(d => `
             <div class="avulso-item">
               <div class="avulso-item-info">
-                <div class="avulso-item-title">${escapeHtml(d.label)}</div>
+                <div class="avulso-item-title">📄 ${escapeHtml(d.label)}</div>
                 <div class="avulso-item-meta">Enviado pelo estudante na solicitação</div>
               </div>
               <a href="${escapeHtml(d.url)}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">Abrir ↗</a>
             </div>`).join('');
-          html += sec('2. Documentos de Admissão', `<div class="avulso-list">${itens}</div>`);
+          html += sec('📄 Documentos de Admissão', `<div class="avulso-list">${itens}</div>`);
         }
       }
 
@@ -591,7 +591,7 @@
           fluxoHtml += `<div style="margin-bottom:var(--space-4)">
             <div style="font-size:var(--font-size-xs);font-weight:600;text-transform:uppercase;
                         color:var(--color-text-muted);letter-spacing:.04em;margin-bottom:var(--space-3)">
-              3.1 Solicitação de Estágio
+              📄 3.1 Solicitação de Estágio
             </div>
             ${solHtml}
           </div>`;
@@ -605,13 +605,13 @@
           fluxoHtml += `<div>
             <div style="font-size:var(--font-size-xs);font-weight:600;text-transform:uppercase;
                         color:var(--color-text-muted);letter-spacing:.04em;margin-bottom:var(--space-3)">
-              3.2 TCE — Termo de Compromisso de Estágio
+              📄 3.2 TCE — Termo de Compromisso de Estágio
             </div>
             ${tceHtml}
           </div>`;
         }
 
-        html += sec('3. Documentos do Fluxo',
+        html += sec('📄 Documentos do Fluxo',
           fluxoHtml || vazio('Nenhum documento do fluxo de aprovação para este estágio.')
         );
       }
@@ -625,7 +625,7 @@
             const dtConc    = a.tsConclusao ? new Date(a.tsConclusao).toLocaleDateString('pt-BR') : '—';
             return `<div class="avulso-item">
               <div class="avulso-item-info">
-                <div class="avulso-item-title">📋 ${escapeHtml(tipoLabel)}</div>
+                <div class="avulso-item-title">📄 ${escapeHtml(tipoLabel)}</div>
                 <div class="avulso-item-meta">Período: ${escapeHtml(a.periodoRef||a.periodo||'—')} · Concluída em: ${escapeHtml(dtConc)}</div>
               </div>
               <div style="display:flex;gap:var(--space-2)">
@@ -638,7 +638,7 @@
         } else {
           avalHtml = vazio('Nenhuma avaliação concluída ainda.');
         }
-        html += sec('4. Avaliações de Estágio', avalHtml);
+        html += sec('📄 Avaliações de Estágio', avalHtml);
       }
 
       // ── 5. Parecer Final ──────────────────────────────────────────────────────
@@ -649,7 +649,7 @@
           parecerHtml = `<div class="avulso-list">
             <div class="avulso-item">
               <div class="avulso-item-info">
-                <div class="avulso-item-title">📋 Parecer Final de Estágio</div>
+                <div class="avulso-item-title">📄 Parecer Final de Estágio</div>
                 <div class="avulso-item-meta">${escapeHtml(_parecer.tipoDiretoria||'')} · Aprovado em: ${escapeHtml(dtConc)}</div>
               </div>
               <div style="display:flex;gap:var(--space-2)">
@@ -661,7 +661,7 @@
         } else {
           parecerHtml = vazio('Parecer final ainda não concluído.');
         }
-        html += sec('5. Parecer Final', parecerHtml);
+        html += sec('📄 Parecer Final', parecerHtml);
       }
 
       // ── 6. Demais Documentos ──────────────────────────────────────────────────
@@ -672,7 +672,7 @@
             _docsAvulsos.map(d => `
               <div class="avulso-item">
                 <div class="avulso-item-info">
-                  <div class="avulso-item-title">${escapeHtml(d.titulo||'—')}</div>
+                  <div class="avulso-item-title">📄 ${escapeHtml(d.titulo||'—')}</div>
                   <div class="avulso-item-meta">
                     ${escapeHtml(d.data||'—')} · Por: ${escapeHtml(d.perfil==='Admin'?'Setor de Estágios':'Estudante')}
                     ${d.nomeArquivo ? ' · ' + escapeHtml(d.nomeArquivo) : ''}
@@ -685,7 +685,7 @@
           demaisHtml = vazio('Nenhum documento adicional enviado ainda.');
         }
 
-        html += sec('6. Demais Documentos',
+        html += sec('📄 Demais Documentos',
           demaisHtml +
           `<div style="margin-top:var(--space-5);background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:var(--space-5)">
             <h4 style="font-size:var(--font-size-sm);font-weight:600;margin-bottom:var(--space-4)">Enviar documento para este estágio</h4>
