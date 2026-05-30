@@ -597,7 +597,7 @@
                         color:var(--color-text-muted);letter-spacing:.04em;margin-bottom:var(--space-3)">
               📄 3.1 Solicitação de Estágio
             </div>
-            ${solHtml}
+            <div class="avulso-list">${solHtml}</div>
           </div>`;
         }
 
@@ -611,7 +611,7 @@
                         color:var(--color-text-muted);letter-spacing:.04em;margin-bottom:var(--space-3)">
               📄 3.2 TCE — Termo de Compromisso de Estágio
             </div>
-            ${tceHtml}
+            <div class="avulso-list">${tceHtml}</div>
           </div>`;
         }
 
@@ -898,18 +898,12 @@
       }
 
       return `
-        <div class="doc-card" style="margin-bottom:var(--space-4)">
-          <div class="doc-card-header">
-            <div>
-              <div class="doc-card-title">📋 Solicitação de Estágio</div>
-              <div style="font-size:12px;color:var(--color-text-muted)">${escapeHtml(etapaLabel)}</div>
-            </div>
-            <span class="badge ${badgeCls}">${badgeTxt}</span>
+        <div class="avulso-item">
+          <div class="avulso-item-info">
+            <div class="avulso-item-title">📄 Solicitação de Estágio</div>
+            <div class="avulso-item-meta">${escapeHtml(etapaLabel)} · <span class="badge ${badgeCls}" style="font-size:11px">${badgeTxt}</span></div>
           </div>
-          <div class="doc-actions">
-            <div class="doc-actions-left"></div>
-            <div class="doc-actions-right">${acoesHtml}</div>
-          </div>
+          <div style="display:flex;gap:var(--space-2);flex-wrap:wrap">${acoesHtml}</div>
         </div>`;
     }
 
@@ -932,30 +926,17 @@
         : (_estagio && _estagio.driveUrl ? _estagio.driveUrl : '');
 
       return `
-        <div class="doc-card" style="margin-bottom:var(--space-4)">
-          <div class="doc-card-header">
-            <div>
-              <div class="doc-card-title">📄 Termo de Compromisso de Estágio (TCE)</div>
-              <div style="font-size:12px;color:var(--color-text-muted)">${escapeHtml(etapaLabel)}</div>
-            </div>
-            <span class="badge ${badgeCls}">${badgeTxt}</span>
+        <div class="avulso-item">
+          <div class="avulso-item-info">
+            <div class="avulso-item-title">📄 Termo de Compromisso de Estágio (TCE)</div>
+            <div class="avulso-item-meta">${escapeHtml(etapaLabel)} · <span class="badge ${badgeCls}" style="font-size:11px">${badgeTxt}</span></div>
           </div>
-          <div class="doc-actions">
-            <div class="doc-actions-left"></div>
-            <div class="doc-actions-right">
-              <button class="btn btn-secondary btn-sm" onclick="regenerarTCEInicial('${escapeHtml(_id)}', this)">
-                <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"/></svg>
-                Regenerar TCE
-              </button>
-              <a href="https://validar.iti.gov.br/" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">
-                <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                Validador ITI ↗
-              </a>
-              ${pastaUrl ? `<a href="${escapeHtml(pastaUrl)}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">
-                <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"/></svg>
-                Pasta no Drive ↗
-              </a>` : ''}
-            </div>
+          <div style="display:flex;gap:var(--space-2);flex-wrap:wrap">
+            <button class="btn btn-secondary btn-sm" onclick="regenerarTCEInicial('${escapeHtml(_id)}', this)">
+              🔄 Regenerar TCE
+            </button>
+            <a href="https://validar.iti.gov.br/" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">Validador ITI ↗</a>
+            ${pastaUrl ? `<a href="${escapeHtml(pastaUrl)}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">📁 Drive ↗</a>` : ''}
           </div>
         </div>`;
     }
