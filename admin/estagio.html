@@ -565,10 +565,10 @@
           { label: 'Boletim / Histórico',      url: _estagio.linkDocBoletim },
         ].filter(d => d.url);
         if (docs.length) {
-          const itens = docs.map(d => `
+          const itens = docs.map((d, i) => `
             <div class="avulso-item">
               <div class="avulso-item-info">
-                <div class="avulso-item-title">📄 ${escapeHtml(d.label)}</div>
+                <div class="avulso-item-title">📄 2.${i+1}. ${escapeHtml(d.label)}</div>
                 <div class="avulso-item-meta">Enviado pelo estudante na solicitação</div>
               </div>
               <a href="${escapeHtml(d.url)}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">Abrir ↗</a>
@@ -618,26 +618,48 @@
 
       // ── 4. Avaliações ─────────────────────────────────────────────────────────
       {
+        const subsec = (titulo, conteudo) =>
+          `<div style="margin-bottom:var(--space-5)">
+             <div style="font-size:var(--font-size-xs);font-weight:600;text-transform:uppercase;
+                         color:var(--color-text-muted);letter-spacing:.04em;margin-bottom:var(--space-3)">
+               ${titulo}
+             </div>
+             ${conteudo}
+           </div>`;
+
+        const buildAvalItem = a => {
+          const tipoLabel = a.tipo === 'concedente' ? 'Avaliação pela Concedente' : 'Avaliação pelo Aluno';
+          const perLabel  = a.periodoRef || a.periodo || '—';
+          const dtConc    = a.tsConclusao ? new Date(a.tsConclusao).toLocaleDateString('pt-BR') : '—';
+          return `<div class="avulso-item">
+            <div class="avulso-item-info">
+              <div class="avulso-item-title">📄 ${escapeHtml(tipoLabel)}</div>
+              <div class="avulso-item-meta">Período: ${escapeHtml(perLabel)} · Concluída em: ${escapeHtml(dtConc)}</div>
+            </div>
+            <div style="display:flex;gap:var(--space-2)">
+              <a href="${escapeHtml(a.pdfUrl)}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">Abrir PDF ↗</a>
+              <button class="btn btn-secondary btn-sm" onclick="regenerarPdfAvaliacao('${escapeHtml(a.avalId)}', this)">🔄 Regenerar</button>
+            </div>
+          </div>`;
+        };
+
+        const parciais = avalConc.filter(a => a.periodo !== 'final');
+        const finais   = avalConc.filter(a => a.periodo === 'final');
+
         let avalHtml = '';
-        if (avalConc.length) {
-          const itens = avalConc.map(a => {
-            const tipoLabel = a.tipo === 'concedente' ? 'Avaliação pela Concedente' : 'Avaliação pelo Aluno';
-            const dtConc    = a.tsConclusao ? new Date(a.tsConclusao).toLocaleDateString('pt-BR') : '—';
-            return `<div class="avulso-item">
-              <div class="avulso-item-info">
-                <div class="avulso-item-title">📄 ${escapeHtml(tipoLabel)}</div>
-                <div class="avulso-item-meta">Período: ${escapeHtml(a.periodoRef||a.periodo||'—')} · Concluída em: ${escapeHtml(dtConc)}</div>
-              </div>
-              <div style="display:flex;gap:var(--space-2)">
-                <a href="${escapeHtml(a.pdfUrl)}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">📄 Abrir PDF ↗</a>
-                <button class="btn btn-secondary btn-sm" onclick="regenerarPdfAvaliacao('${escapeHtml(a.avalId)}', this)">🔄 Regenerar</button>
-              </div>
-            </div>`;
-          }).join('');
-          avalHtml = `<div class="avulso-list">${itens}</div>`;
-        } else {
-          avalHtml = vazio('Nenhuma avaliação concluída ainda.');
-        }
+
+        // 4.1 Avaliações Parciais
+        const parciaisHtml = parciais.length
+          ? `<div class="avulso-list">${parciais.map(buildAvalItem).join('')}</div>`
+          : vazio('Nenhuma avaliação parcial concluída.');
+        avalHtml += subsec('4.1 Avaliações Parciais', parciaisHtml);
+
+        // 4.2 Avaliação Final
+        const finaisHtml = finais.length
+          ? `<div class="avulso-list">${finais.map(buildAvalItem).join('')}</div>`
+          : vazio('Avaliação final ainda não concluída.');
+        avalHtml += subsec('4.2 Avaliação Final', finaisHtml);
+
         html += sec('📄 Avaliações de Estágio', avalHtml);
       }
 
@@ -649,7 +671,7 @@
           parecerHtml = `<div class="avulso-list">
             <div class="avulso-item">
               <div class="avulso-item-info">
-                <div class="avulso-item-title">📄 Parecer Final de Estágio</div>
+                <div class="avulso-item-title">📄 5.1. Parecer Final de Estágio</div>
                 <div class="avulso-item-meta">${escapeHtml(_parecer.tipoDiretoria||'')} · Aprovado em: ${escapeHtml(dtConc)}</div>
               </div>
               <div style="display:flex;gap:var(--space-2)">
@@ -669,10 +691,10 @@
         let demaisHtml = '';
         if (_docsAvulsos.length) {
           demaisHtml = `<div class="avulso-list">` +
-            _docsAvulsos.map(d => `
+            _docsAvulsos.map((d, i) => `
               <div class="avulso-item">
                 <div class="avulso-item-info">
-                  <div class="avulso-item-title">📄 ${escapeHtml(d.titulo||'—')}</div>
+                  <div class="avulso-item-title">📄 6.${i+1}. ${escapeHtml(d.titulo||'—')}</div>
                   <div class="avulso-item-meta">
                     ${escapeHtml(d.data||'—')} · Por: ${escapeHtml(d.perfil==='Admin'?'Setor de Estágios':'Estudante')}
                     ${d.nomeArquivo ? ' · ' + escapeHtml(d.nomeArquivo) : ''}
