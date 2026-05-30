@@ -76,6 +76,7 @@ var GET_ROUTES = {
   // ConfiguraÃ§Ãµes (pÃºblico â€" sem auth)
   'obterConfigCursos':       doGetPublicConfig,
   'listarCursos':            doGetPublicConfig,
+  'contarEstagiosAtivos':    doGetPublicConfig,
 
   // Cursos + TCE config — admin
   'listarTodosCursos':       doGetAdmin,
@@ -403,8 +404,9 @@ function doPostEmpresas(e) {
 
 function doGetPublicConfig(e) {
   var action = e.parameter && e.parameter.action;
-  if (action === 'obterConfigCursos') return obterConfigCursos_();
-  if (action === 'listarCursos')      return listarCursos_();
+  if (action === 'obterConfigCursos')    return obterConfigCursos_();
+  if (action === 'listarCursos')         return listarCursos_();
+  if (action === 'contarEstagiosAtivos') return contarEstagiosAtivos_();
   return jsonError_('AÃ§Ã£o nÃ£o implementada.', 'NOT_IMPLEMENTED');
 }
 

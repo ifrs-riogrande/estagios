@@ -1865,3 +1865,51 @@ function marcarDocumentoRevisado_(body) {
     return jsonError_('Erro ao atualizar documento.', 'INTERNAL');
   }
 }
+
+// ── Contador público de estágios ativos (sem autenticação) ────────────────────
+
+/**
+ * Retorna contagem de estágios ativos por tipo de estágio.
+ * Endpoint público — não requer autenticação.
+ *
+ * @returns {{ obrigatorio: number, naoObrigatorio: number, total: number }}
+ */
+function contarEstagiosAtivos_() {
+  try {
+    var sheet = SpreadsheetApp.openById(SS_ID).getSheetByName('Solicitações');
+    if (!sheet) return jsonOk_({ obrigatorio: 0, naoObrigatorio: 0, total: 0 });
+
+    // Status que indicam estágio em andamento (não terminais)
+    var statusAtivos = {
+      'Em análise':               true,
+      'Aguardando Documentos':    true,
+      'Docs Enviados':            true,
+      'Aguardando DG':            true,
+      'Aguardando Validação Final': true,
+      'Em Checklist':             true,
+      'Em Assinaturas':           true,
+      'Ativo':                    true,
+      'Em execução':              true,
+    };
+
+    var dados = sheet.getDataRange().getValues();
+    var obrig = 0, naoObrig = 0;
+
+    for (var i = 1; i < dados.length; i++) {
+      var status = String(dados[i][COL_SOL.STATUS] || '').trim();
+      if (!statusAtivos[status]) continue;
+
+      var tipo = String(dados[i][COL_SOL.TIPO_ESTAGIO] || '').toLowerCase().trim();
+      if (tipo.indexOf('não') > -1 || tipo.indexOf('nao') > -1) {
+        naoObrig++;
+      } else if (tipo.indexOf('obrigat') > -1) {
+        obrig++;
+      }
+    }
+
+    return jsonOk_({ obrigatorio: obrig, naoObrigatorio: naoObrig, total: obrig + naoObrig });
+  } catch (e) {
+    logErro_('contarEstagiosAtivos_', e);
+    return jsonOk_({ obrigatorio: 0, naoObrigatorio: 0, total: 0 });
+  }
+}
