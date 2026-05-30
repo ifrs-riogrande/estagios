@@ -534,6 +534,30 @@
         html += `</div>`;
       }
 
+      // ── Avaliações concluídas ──
+      const avalConcluidas = _avaliacoes.filter(a => a.status === 'concluido' && a.pdfUrl);
+      if (avalConcluidas.length > 0) {
+        html += `<div style="margin-top:var(--space-6);border-top:1px solid var(--color-border);padding-top:var(--space-6)">
+          <h3 style="font-size:var(--font-size-md);font-weight:600;margin-bottom:var(--space-4)">Avaliações de Estágio</h3>
+          <div class="avulso-list">`;
+        avalConcluidas.forEach(a => {
+          const tipoLabel = a.tipo === 'concedente' ? 'Avaliação pela Concedente' : 'Avaliação pelo Aluno';
+          const perLabel  = a.periodoRef || a.periodo || '—';
+          const dtConc    = a.tsConclusao ? new Date(a.tsConclusao).toLocaleDateString('pt-BR') : '—';
+          html += `<div class="avulso-item">
+            <div class="avulso-item-info">
+              <div class="avulso-item-title">📋 ${escapeHtml(tipoLabel)}</div>
+              <div class="avulso-item-meta">Período: ${escapeHtml(perLabel)} · Concluída em: ${escapeHtml(dtConc)}</div>
+            </div>
+            <div style="display:flex;gap:var(--space-2)">
+              <a href="${escapeHtml(a.pdfUrl)}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">📄 Abrir PDF ↗</a>
+              <button class="btn btn-secondary btn-sm" onclick="regenerarPdfAvaliacao('${escapeHtml(a.avalId)}', this)">🔄 Regenerar</button>
+            </div>
+          </div>`;
+        });
+        html += `</div></div>`;
+      }
+
       // ── Documentos Avulsos ── (sempre visível)
       html += buildDocAvulsosSection();
 
@@ -1141,7 +1165,10 @@
         const badgeTxt = STATUS_LABEL[a.status] || a.status;
 
         const acoes = a.status === 'concluido'
-          ? (a.temPdf ? `<span style="font-size:12px;color:var(--color-success)">✓ PDF gerado</span>` : '')
+          ? `<div style="display:flex;gap:var(--space-2);flex-wrap:wrap">
+               ${a.pdfUrl ? `<a href="${escapeHtml(a.pdfUrl)}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">📄 Abrir PDF ↗</a>` : '<span style="font-size:12px;color:var(--color-text-muted)">PDF não disponível</span>'}
+               <button class="btn btn-secondary btn-sm" onclick="regenerarPdfAvaliacao('${escapeHtml(a.avalId)}', this)">🔄 Regenerar</button>
+             </div>`
           : a.status === 'aguardando_aprovacao_admin'
             ? `<button class="btn btn-primary btn-sm"
                  onclick="aprovarAvaliacao('${escapeHtml(a.avalId)}', this)">
@@ -1268,6 +1295,22 @@
         mostrarFbErrroAval(fbEl, err.message || 'Erro ao iniciar avaliação.');
         btn.disabled = false;
         btn.textContent = 'Iniciar Avaliação e Notificar Responsável';
+      }
+    }
+
+    async function regenerarPdfAvaliacao(avalId, btn) {
+      if (!confirm('Regenerar o PDF da avaliação "' + avalId + '"?\nUm novo arquivo será criado na pasta do estágio.')) return;
+      const orig = btn.textContent.trim();
+      btn.disabled = true; btn.textContent = 'Gerando…';
+      try {
+        const res = await API.post('regenerarPdfAvaliacao', { avalId: avalId, authToken: getAccessToken() });
+        showToast('✅ PDF regenerado com sucesso!', 'success');
+        if (res.pdfUrl) window.open(res.pdfUrl, '_blank');
+        await carregarTudo();
+        mudarAba('avaliacoes');
+      } catch (err) {
+        showToast('Erro ao regenerar: ' + (err.message || err), 'error');
+        btn.disabled = false; btn.textContent = orig;
       }
     }
 

@@ -204,6 +204,7 @@ var POST_ROUTES = {
   'salvarRespostaAvaliacao':          doPostAvaliacoes,
   'assinarAvaliacao':                 doPostAvaliacoes,
   'aprovarAvaliacao':                 doPostAvaliacoes,
+  'regenerarPdfAvaliacao':            doPostAvaliacoes,
   'reenviarNotificacaoAvaliacao':     doPostAvaliacoes,
 };
 

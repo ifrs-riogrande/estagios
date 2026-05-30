@@ -430,6 +430,44 @@ function aprovarAvaliacao_(avalId, authToken) {
   return jsonOk_({ avalId: avalId, status: fluxo.statusGeral, pdfUrl: fluxo.pdfUrl || '' });
 }
 
+// ── Regenerar PDF da Avaliação (admin) ───────────────────────────────────────
+
+/**
+ * Regenera o PDF de uma avaliação já concluída.
+ * Gera novo PDF, atualiza pdfUrl no fluxo e na planilha.
+ */
+function regenerarPdfAvaliacao_(avalId, authToken) {
+  try { validarTokenAdmin_(authToken); } catch (eA) {
+    return jsonError_('Não autorizado: ' + eA.message, 'AUTH_ERROR');
+  }
+
+  var fluxo = obterFluxoAvaliacao_(avalId);
+  if (!fluxo) return jsonError_('Avaliação não encontrada.', 'NOT_FOUND');
+
+  if (fluxo.statusGeral !== AVAL_ST.CONCLUIDO) {
+    return jsonError_(
+      'Só é possível regenerar PDFs de avaliações concluídas (status: ' + fluxo.statusGeral + ').',
+      'INVALID_STATE'
+    );
+  }
+
+  try {
+    var sol    = _obterDadosSolicitacaoCompleto_(fluxo.idEstagio);
+    // Gera novo token de validação para o PDF regenerado
+    fluxo.tokenValidacao = Utilities.getUuid();
+    var urlPdf = gerarPdfAvaliacao_(fluxo, sol);
+    fluxo.pdfUrl = urlPdf;
+  } catch (ePdf) {
+    logErro_('regenerarPdfAvaliacao_', ePdf);
+    return jsonError_('Erro ao regenerar PDF: ' + ePdf.message, 'PDF_ERROR');
+  }
+
+  salvarFluxoAvaliacao_(avalId, fluxo);
+  _atualizarAvaliacaoNaPlanilha_(avalId, fluxo);
+
+  return jsonOk_({ avalId: avalId, pdfUrl: fluxo.pdfUrl });
+}
+
 // ── Reenviar Notificação ──────────────────────────────────────────────────────
 
 function reenviarNotificacaoAvaliacao_(avalId, authToken) {
@@ -493,6 +531,7 @@ function listarAvaliacoesEstagio_(idEstagio, authToken) {
         tsAssinatura1:   String(row[COL_AVAL.TS_ASSINATURA_1]   || ''),
         tsAssinatura2:   String(row[COL_AVAL.TS_ASSINATURA_2]   || ''),
         tsConclusao:     String(row[COL_AVAL.TS_CONCLUSAO]      || ''),
+        pdfUrl:          String(row[COL_AVAL.PDF_GERADO_URL]    || ''),
         temPdf:          !!(row[COL_AVAL.PDF_GERADO_URL]),
       });
     }
@@ -1215,6 +1254,9 @@ function doPostAvaliacoes(e) {
 
     case 'aprovarAvaliacao':
       return aprovarAvaliacao_(body.avalId || '', body.authToken || '');
+
+    case 'regenerarPdfAvaliacao':
+      return regenerarPdfAvaliacao_(body.avalId || '', body.authToken || '');
 
     case 'reenviarNotificacaoAvaliacao':
       return reenviarNotificacaoAvaliacao_(body.avalId || '', body.authToken || '');
