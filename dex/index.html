@@ -22,7 +22,7 @@
             <span class="header-brand-sub">IFRS Campus Rio Grande</span>
           </div>
         </a>
-        <div style="display:flex;align-items:center;gap:var(--space-3);">
+        <div style="display:flex;align-items:center;gap:var(--space-3)">
           <div id="header-user-area"></div>
           <a href="../institucional/index.html" class="back-link">
             <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd"/></svg>
@@ -37,25 +37,15 @@
     <section class="page-hero">
       <div class="container">
         <h1>Diretoria de Extensão — DEX</h1>
-        <p>Portal da Diretoria de Extensão do IFRS Campus Rio Grande.</p>
+        <p>Pareceres finais de estágio não obrigatório aguardando assinatura.</p>
       </div>
     </section>
 
-    <div class="container" style="padding-top:var(--space-6);padding-bottom:var(--space-12);">
-      <div id="portal-content">
-        <div style="text-align:center;padding:var(--space-16) var(--space-6);color:var(--color-text-muted);">
-          <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" style="margin:0 auto var(--space-4);opacity:.25;display:block;">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M11.42 15.17L17.25 21A2.652 2.652 0 0021 17.25l-5.877-5.877M11.42 15.17l2.496-3.03c.317-.384.74-.626 1.208-.766M11.42 15.17l-4.655 5.653a2.548 2.548 0 11-3.586-3.586l6.837-5.63m5.108-.233c.55-.164 1.163-.188 1.743-.14a4.5 4.5 0 004.486-6.336l-3.276 3.277a3.004 3.004 0 01-2.25-2.25l3.276-3.276a4.5 4.5 0 00-6.336 4.486c.091 1.076-.071 2.264-.904 2.95l-.102.085m-1.745 1.437L5.909 7.5H4.5L2.25 3.75l1.5-1.5L7.5 4.5v1.409l4.26 4.26m-1.745 1.437l1.745-1.437m6.615 8.206L15.75 15.75M4.867 19.125h.008v.008h-.008v-.008z"/>
-          </svg>
-          <h2 style="font-size:var(--font-size-lg);margin-bottom:var(--space-2);">Módulo em desenvolvimento</h2>
-          <p style="font-size:var(--font-size-sm);max-width:400px;margin:0 auto;">
-            O portal da DEX está sendo desenvolvido. Em breve estará disponível aqui o acompanhamento dos estágios e funcionalidades específicas da Diretoria de Extensão.
-          </p>
-          <p style="margin-top:var(--space-6);">
-            <a href="../admin/dashboard.html" class="btn btn-secondary">Ver painel administrativo</a>
-          </p>
-        </div>
+    <div class="container" style="padding-top:var(--space-6);padding-bottom:var(--space-12)">
+      <div id="estado-carregando" style="text-align:center;padding:var(--space-16);color:var(--color-text-muted);font-size:var(--font-size-sm)">
+        Carregando pareceres…
       </div>
+      <div id="lista-pareceres" style="display:none"></div>
     </div>
   </main>
 
@@ -71,9 +61,66 @@
   <script src="https://accounts.google.com/gsi/client" async></script>
   <script src="../assets/js/utils.js"></script>
   <script src="../assets/js/auth.js"></script>
+  <script src="../assets/js/api.js"></script>
   <script>
-    'use strict';
-    document.addEventListener('DOMContentLoaded', function () { requireStaffAuth(); });
+  'use strict';
+
+  document.addEventListener('DOMContentLoaded', async function () {
+    requireStaffAuth();
+    await carregarPareceres();
+  });
+
+  async function carregarPareceres() {
+    try {
+      const lista = await API.get('listarPareceresPendentes', { papel: 'diretoria', ref: 'DEX' });
+      renderLista(lista || []);
+    } catch (err) {
+      document.getElementById('estado-carregando').innerHTML =
+        '<p style="color:var(--color-error)">Erro ao carregar: ' + escapeHtml(err.message || String(err)) + '</p>';
+    }
+  }
+
+  function renderLista(lista) {
+    document.getElementById('estado-carregando').style.display = 'none';
+    const el = document.getElementById('lista-pareceres');
+    el.style.display = '';
+
+    if (!lista.length) {
+      el.innerHTML = `<div class="empty-state" style="border:1px solid var(--color-border);border-radius:var(--radius-lg)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        <p>Nenhum parecer pendente para a Diretoria de Extensão.</p>
+      </div>`;
+      return;
+    }
+
+    const linhas = lista.map(p => `
+      <tr>
+        <td style="font-weight:500">${escapeHtml(p.nomeAluno || '—')}</td>
+        <td>${escapeHtml(p.curso || '—')}</td>
+        <td>${escapeHtml(p.matricula || '—')}</td>
+        <td>${escapeHtml(String(p.totalHoras || 0))}h</td>
+        <td>${escapeHtml(p.modalidade || '—')}</td>
+        <td>
+          <a href="../parecer/?id=${encodeURIComponent(p.idEstagio)}&token=${encodeURIComponent(p.tokenDiretoria)}"
+             class="btn btn-primary btn-sm">
+            Preencher Parecer →
+          </a>
+        </td>
+      </tr>`).join('');
+
+    el.innerHTML = `
+      <h2 style="font-size:var(--font-size-lg);font-weight:700;margin-bottom:var(--space-4)">
+        Pareceres Pendentes — Diretoria de Extensão (${lista.length})
+      </h2>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr><th>Aluno(a)</th><th>Curso</th><th>Matrícula</th><th>Horas</th><th>Modalidade</th><th>Ação</th></tr>
+          </thead>
+          <tbody>${linhas}</tbody>
+        </table>
+      </div>`;
+  }
   </script>
 </body>
 </html>

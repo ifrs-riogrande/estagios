@@ -232,6 +232,11 @@
             Avaliações
             <span class="tab-count" id="cnt-avaliacoes"></span>
           </button>
+          <button class="ficha-tab" data-tab="parecer" onclick="mudarAba('parecer')" role="tab">
+            <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+            Parecer Final
+            <span class="tab-count" id="cnt-parecer"></span>
+          </button>
         </div>
 
         <!-- ── Aba: Dados ── -->
@@ -252,6 +257,11 @@
         <!-- ── Aba: Avaliações ── -->
         <div id="tab-avaliacoes" hidden>
           <div id="content-avaliacoes"></div>
+        </div>
+
+        <!-- ── Aba: Parecer Final ── -->
+        <div id="tab-parecer" hidden>
+          <div id="content-parecer"></div>
         </div>
 
       </div>
@@ -288,6 +298,7 @@
     let _arquivoAvulso  = null;
     let _sensivelVisivel = false;
     let _avaliacoes     = [];
+    let _parecer        = null;
 
     /* ─── Init ─── */
     document.addEventListener('DOMContentLoaded', async function () {
@@ -306,7 +317,7 @@
 
       try {
         const token = getAccessToken();
-        const [estList, docData, adendoData, digitalRaw, historicoData, ckRaw, tceRaw, avalRaw] = await Promise.all([
+        const [estList, docData, adendoData, digitalRaw, historicoData, ckRaw, tceRaw, avalRaw, parecerRaw] = await Promise.all([
           API.get('listarSolicitacoesAdmin', { authToken: token }),
           API.get('listarDocumentosAdmin',   { authToken: token }),
           API.get('listarAdendosAdmin',       { authToken: token }),
@@ -315,6 +326,7 @@
           API.get('obterChecklist', { id: _id }).catch(() => null),
           API.get('obterFluxoAssinaturasAdmin', { id: _id, authToken: token }).catch(() => null),
           API.get('listarAvaliacoesEstagio', { id: _id, authToken: token }).catch(() => []),
+          API.get('obterParecerFinal', { id: _id, authToken: token }).catch(() => null),
         ]);
 
         const lista = Array.isArray(estList) ? estList : (estList.solicitacoes || []);
@@ -331,12 +343,14 @@
         _adendos        = adLista.filter(a => a.idEstagio === _id);
         _docsAvulsos    = (historicoData && historicoData.documentos) || [];
         _avaliacoes     = Array.isArray(avalRaw) ? avalRaw : [];
+        _parecer        = (parecerRaw && !parecerRaw.error) ? parecerRaw : null;
 
         renderHero();
         renderDados();
         renderDocumentos();
         renderAdendos();
         renderAvaliacoes();
+        renderParecer();
 
         document.getElementById('estado-carregando').style.display = 'none';
         document.getElementById('ficha-conteudo').style.display = '';
@@ -536,6 +550,25 @@
         _validacaoFinal.forEach((s, idx)=> { html += buildDocCard(s, 'validacao-final', 'v' + idx); });
         _fluxoDigital.forEach((item, idx)=>{ html += buildDocCardDigital(item, idx); });
         html += `</div>`;
+      }
+
+      // ── Parecer Final (se aprovado) ──
+      if (_parecer && _parecer.statusGeral === 'aprovado' && _parecer.pdfUrl) {
+        html += `<div style="margin-top:var(--space-6);border-top:1px solid var(--color-border);padding-top:var(--space-6)">
+          <h3 style="font-size:var(--font-size-md);font-weight:600;margin-bottom:var(--space-4)">Parecer Final</h3>
+          <div class="avulso-list">
+            <div class="avulso-item">
+              <div class="avulso-item-info">
+                <div class="avulso-item-title">📋 Parecer Final de Estágio</div>
+                <div class="avulso-item-meta">${escapeHtml(_parecer.tipoDiretoria || '')} · Concluído em ${_parecer.tsConclusao ? new Date(_parecer.tsConclusao).toLocaleDateString('pt-BR') : '—'}</div>
+              </div>
+              <div style="display:flex;gap:var(--space-2)">
+                <a href="${escapeHtml(_parecer.pdfUrl)}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">📄 Abrir PDF ↗</a>
+                <button class="btn btn-secondary btn-sm" onclick="regenerarPdfParecerAdmin(this)">🔄 Regenerar</button>
+              </div>
+            </div>
+          </div>
+        </div>`;
       }
 
       // ── Avaliações concluídas ──
@@ -1077,7 +1110,7 @@
       document.querySelectorAll('.ficha-tab').forEach(t => {
         t.classList.toggle('active', t.dataset.tab === aba);
       });
-      ['dados', 'documentos', 'adendos', 'avaliacoes'].forEach(t => {
+      ['dados', 'documentos', 'adendos', 'avaliacoes', 'parecer'].forEach(t => {
         document.getElementById('tab-' + t).hidden = (t !== aba);
       });
     }
@@ -1352,6 +1385,204 @@
       el.innerHTML = `<div class="form-feedback form-feedback--error" style="margin-bottom:var(--space-3)">
         <strong>Atenção:</strong> ${escapeHtml(msg)}
       </div>`;
+    }
+
+    /* ─── Aba: Parecer Final ─── */
+    function renderParecer() {
+      const p = _parecer;
+      const c = document.getElementById('content-parecer');
+
+      // Badge na aba
+      const badgeEl = document.getElementById('cnt-parecer');
+      if (p && p.statusGeral !== 'aprovado') badgeEl.textContent = '!';
+      else badgeEl.textContent = '';
+
+      const STATUS_LABEL_P = {
+        aguardando_coordenador: 'Aguardando Coordenador',
+        aguardando_diretoria:   'Aguardando Diretoria',
+        aguardando_admin:       '⏳ Aguardando Aprovação',
+        aprovado:               'Aprovado ✓',
+      };
+
+      let html = '';
+
+      if (!p) {
+        // Verifica se todas as avaliações estão concluídas para habilitar
+        const todasConcluidas = _avaliacoes.length > 0 && _avaliacoes.every(a => a.status === 'concluido');
+        html += `<div style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:var(--space-6);margin-bottom:var(--space-4)">
+          <h3 style="font-size:var(--font-size-md);font-weight:700;margin-bottom:var(--space-2)">Parecer Final de Estágio</h3>
+          <p style="font-size:var(--font-size-sm);color:var(--color-text-muted);margin-bottom:var(--space-4)">
+            Disponível ao final do estágio, após todas as avaliações concluídas.
+            O coordenador de curso e o diretor da área correspondente assinarão eletronicamente.
+          </p>
+          ${!todasConcluidas ? `<p style="font-size:var(--font-size-xs);color:var(--color-warning);margin-bottom:var(--space-4)">⚠️ Ainda há avaliações pendentes. Conclua todas antes de iniciar o parecer.</p>` : ''}
+          <div id="fb-parecer-inicio"></div>
+          <button class="btn btn-primary btn-sm" onclick="iniciarParecerFinal(this)"
+            ${!todasConcluidas ? '' : ''}>
+            Iniciar Parecer Final
+          </button>
+        </div>`;
+      } else {
+        const badgeCls = p.statusGeral === 'aprovado' ? 'badge-approved'
+          : p.statusGeral === 'aguardando_admin' ? 'badge-dg' : 'badge-analysis';
+        const stLabel  = STATUS_LABEL_P[p.statusGeral] || p.statusGeral;
+
+        html += `<div style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:var(--space-5);margin-bottom:var(--space-4)">
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:var(--space-3)">
+            <div>
+              <div style="font-size:var(--font-size-xs);color:var(--color-text-muted);margin-bottom:4px">PARECER FINAL</div>
+              <div style="display:flex;align-items:center;gap:var(--space-3)">
+                <span class="badge ${badgeCls}">${escapeHtml(stLabel)}</span>
+                <span style="font-size:var(--font-size-xs);color:var(--color-text-muted)">
+                  Ciclo ${p.ciclo || 1} · ${p.tipoDiretoria || '—'} · ${p.totalHoras || 0}h
+                </span>
+              </div>
+            </div>
+            <div style="display:flex;gap:var(--space-2);flex-wrap:wrap">
+              ${p.statusGeral === 'aguardando_admin'
+                ? `<button class="btn btn-primary btn-sm" onclick="aprovarParecer(this)">✓ Aprovar e Gerar PDF</button>
+                   <button class="btn btn-secondary btn-sm" onclick="reprovarParecer(this)">✗ Reprovar</button>`
+                : ''}
+              ${p.statusGeral !== 'aprovado'
+                ? `<button class="btn btn-secondary btn-sm" onclick="reenviarNotifParecer(this)">
+                     <svg width="12" height="12" viewBox="0 0 20 20" fill="currentColor"><path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"/><path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"/></svg>
+                     Reenviar
+                   </button>`
+                : ''}
+              ${p.statusGeral === 'aprovado' && p.pdfUrl
+                ? `<a href="${escapeHtml(p.pdfUrl)}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">📄 Abrir PDF ↗</a>
+                   <button class="btn btn-secondary btn-sm" onclick="regenerarPdfParecerAdmin(this)">🔄 Regenerar</button>`
+                : ''}
+            </div>
+          </div>
+        </div>
+
+        <!-- Detalhes dos pareceres -->
+        ${p.parecerCoordenador ? `
+        <div style="background:var(--color-bg);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:var(--space-4);margin-bottom:var(--space-3)">
+          <div style="font-size:var(--font-size-xs);font-weight:600;text-transform:uppercase;color:var(--color-text-muted);margin-bottom:var(--space-2)">Parecer do Coordenador — ${escapeHtml(p.nomeCoordenador || '')}</div>
+          <div style="display:flex;gap:var(--space-3);align-items:flex-start">
+            <span class="badge ${p.parecerCoordenador.resultado === 'aprovado' ? 'badge-approved' : 'badge-rejected'}">${escapeHtml(p.parecerCoordenador.resultado || '—')}</span>
+            <p style="font-size:var(--font-size-sm);flex:1;margin:0;white-space:pre-wrap">${escapeHtml(p.parecerCoordenador.texto || '—')}</p>
+          </div>
+        </div>` : ''}
+        ${p.parecerDiretoria ? `
+        <div style="background:var(--color-bg);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:var(--space-4);margin-bottom:var(--space-3)">
+          <div style="font-size:var(--font-size-xs);font-weight:600;text-transform:uppercase;color:var(--color-text-muted);margin-bottom:var(--space-2)">Parecer da ${escapeHtml(p.tipoDiretoria || 'Diretoria')}</div>
+          <div style="display:flex;gap:var(--space-3);align-items:flex-start">
+            <span class="badge ${p.parecerDiretoria.resultado === 'aprovado' ? 'badge-approved' : 'badge-rejected'}">${escapeHtml(p.parecerDiretoria.resultado || '—')}</span>
+            <p style="font-size:var(--font-size-sm);flex:1;margin:0;white-space:pre-wrap">${escapeHtml(p.parecerDiretoria.texto || '—')}</p>
+          </div>
+        </div>` : ''}
+
+        <!-- Histórico de reprovações -->
+        ${p.historico && p.historico.length ? p.historico.map(h => `
+        <div style="background:var(--color-warning-light);border:1px solid #fbbf24;border-radius:var(--radius-md);padding:var(--space-3);margin-bottom:var(--space-2);font-size:12px">
+          <strong>Ciclo ${h.ciclo} devolvido</strong> — ${h.dataHora ? new Date(h.dataHora).toLocaleDateString('pt-BR') : '—'}
+          <br>Motivo: ${escapeHtml(h.motivo || '—')}
+        </div>`).join('') : ''}`;
+
+        // Botão Estágio Concluído — só quando parecer aprovado e estágio não concluído
+        if (p.statusGeral === 'aprovado' && _estagio && _estagio.status !== 'Concluído') {
+          html += `<div style="margin-top:var(--space-6);padding:var(--space-5);background:var(--color-success-light);border:1px solid var(--color-success-border,#86efac);border-radius:var(--radius-lg)">
+            <h3 style="font-size:var(--font-size-md);font-weight:700;margin-bottom:var(--space-2);color:var(--color-success)">Estágio Pronto para Conclusão</h3>
+            <p style="font-size:var(--font-size-sm);margin-bottom:var(--space-4)">O parecer final foi aprovado. Clique abaixo para marcar o estágio como concluído.</p>
+            <button class="btn btn-primary" onclick="concluirEstagio(this)" style="background:var(--color-success);border-color:var(--color-success)">
+              ✓ Marcar Estágio como Concluído
+            </button>
+          </div>`;
+        }
+      }
+
+      c.innerHTML = html;
+    }
+
+    async function iniciarParecerFinal(btn) {
+      const fbEl = document.getElementById('fb-parecer-inicio');
+      if (fbEl) fbEl.innerHTML = '';
+      btn.disabled = true; btn.textContent = 'Iniciando…';
+      try {
+        await API.post('iniciarParecerFinal', { idEstagio: _id, authToken: getAccessToken() });
+        showToast('✅ Parecer iniciado! Coordenador notificado por e-mail.', 'success');
+        await carregarTudo();
+        mudarAba('parecer');
+      } catch (err) {
+        if (fbEl) fbEl.innerHTML = `<div class="form-feedback form-feedback--error" style="margin-bottom:var(--space-3)"><strong>Erro:</strong> ${escapeHtml(err.message)}</div>`;
+        btn.disabled = false; btn.textContent = 'Iniciar Parecer Final';
+      }
+    }
+
+    async function aprovarParecer(btn) {
+      if (!confirm('Aprovar o parecer final e gerar o PDF? Todos os envolvidos receberão por e-mail.')) return;
+      const orig = btn.textContent;
+      btn.disabled = true; btn.textContent = 'Gerando PDF…';
+      try {
+        await API.post('aprovarParecerAdmin', { idEstagio: _id, authToken: getAccessToken() });
+        showToast('✅ Parecer aprovado! PDF gerado e enviado.', 'success');
+        await carregarTudo(); mudarAba('parecer');
+      } catch (err) {
+        showToast('Erro: ' + err.message, 'error');
+        btn.disabled = false; btn.textContent = orig;
+      }
+    }
+
+    async function reprovarParecer(btn) {
+      const motivo = prompt('Informe o motivo da reprovação (obrigatório):');
+      if (!motivo || !motivo.trim()) return;
+      const orig = btn.textContent;
+      btn.disabled = true; btn.textContent = 'Reprovando…';
+      try {
+        await API.post('reprovarParecerAdmin', { idEstagio: _id, authToken: getAccessToken(), motivo: motivo.trim() });
+        showToast('⚠️ Parecer reprovado. Coordenador notificado para novo ciclo.', 'success');
+        await carregarTudo(); mudarAba('parecer');
+      } catch (err) {
+        showToast('Erro: ' + err.message, 'error');
+        btn.disabled = false; btn.textContent = orig;
+      }
+    }
+
+    async function reenviarNotifParecer(btn) {
+      if (!confirm('Reenviar notificação para o responsável pela etapa atual?')) return;
+      const orig = btn.textContent;
+      btn.disabled = true; btn.textContent = 'Enviando…';
+      try {
+        // Reenvio via iniciarParecerFinal (que notifica conforme status atual — simplificado)
+        await API.post('iniciarParecerFinal', { idEstagio: _id, authToken: getAccessToken() });
+        showToast('✉️ Notificação reenviada.', 'success');
+      } catch (err) {
+        showToast('Erro: ' + err.message, 'error');
+      } finally {
+        btn.disabled = false; btn.textContent = orig;
+      }
+    }
+
+    async function regenerarPdfParecerAdmin(btn) {
+      if (!confirm('Regenerar o PDF do parecer final?')) return;
+      const orig = btn.textContent;
+      btn.disabled = true; btn.textContent = 'Gerando…';
+      try {
+        const res = await API.post('regenerarPdfParecer', { idEstagio: _id, authToken: getAccessToken() });
+        showToast('✅ PDF regenerado!', 'success');
+        if (res.pdfUrl) window.open(res.pdfUrl, '_blank');
+        await carregarTudo(); mudarAba('parecer');
+      } catch (err) {
+        showToast('Erro: ' + err.message, 'error');
+        btn.disabled = false; btn.textContent = orig;
+      }
+    }
+
+    async function concluirEstagio(btn) {
+      if (!confirm('Marcar este estágio como CONCLUÍDO? Esta ação é definitiva.')) return;
+      const orig = btn.textContent;
+      btn.disabled = true; btn.textContent = 'Concluindo…';
+      try {
+        await API.post('concluirEstagio', { idEstagio: _id, authToken: getAccessToken() });
+        showToast('✅ Estágio marcado como Concluído!', 'success');
+        await carregarTudo(); mudarAba('dados');
+      } catch (err) {
+        showToast('Erro: ' + err.message, 'error');
+        btn.disabled = false; btn.textContent = orig;
+      }
     }
 
     /* ─── Regenerar TCE inicial (gera PDF e atualiza pdfOriginalUrl no fluxo) ─── */

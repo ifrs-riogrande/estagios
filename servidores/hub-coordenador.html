@@ -77,6 +77,15 @@
         </a>
 
       </div>
+
+      <!-- Pareceres Pendentes -->
+      <div style="max-width:720px;margin-top:var(--space-8)" id="pareceres-section" hidden>
+        <h2 style="font-size:var(--font-size-lg);font-weight:700;margin-bottom:var(--space-4)">
+          📋 Pareceres Finais Pendentes
+        </h2>
+        <div id="lista-pareceres-coord"></div>
+      </div>
+
     </div>
   </main>
 
@@ -92,11 +101,35 @@
   <script src="https://accounts.google.com/gsi/client" async></script>
   <script src="../assets/js/utils.js"></script>
   <script src="../assets/js/auth.js"></script>
+  <script src="../assets/js/api.js"></script>
   <script>
     'use strict';
-    document.addEventListener('DOMContentLoaded', function () {
-      requireStaffAuth();
+    document.addEventListener('DOMContentLoaded', async function () {
+      const user = requireStaffAuth();
+      if (!user || !user.email) return;
+      await carregarPareceres(user.email);
     });
+
+    async function carregarPareceres(email) {
+      try {
+        const lista = await API.get('listarPareceresPendentes', { papel: 'coordenador', ref: email });
+        if (!lista || !lista.length) return;
+        const sec = document.getElementById('pareceres-section');
+        sec.hidden = false;
+        const el  = document.getElementById('lista-pareceres-coord');
+        el.innerHTML = lista.map(p => `
+          <div style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:var(--space-4);margin-bottom:var(--space-3);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:var(--space-3)">
+            <div>
+              <div style="font-weight:600;margin-bottom:2px">${escapeHtml(p.nomeAluno || '—')}</div>
+              <div style="font-size:var(--font-size-xs);color:var(--color-text-muted)">${escapeHtml(p.curso || '—')} · ${escapeHtml(String(p.totalHoras || 0))}h · ${escapeHtml(p.modalidade || '—')}</div>
+            </div>
+            <a href="../parecer/?id=${encodeURIComponent(p.idEstagio)}&token=${encodeURIComponent(p.tokenCoordenador)}"
+               class="btn btn-primary btn-sm">
+              Preencher Parecer →
+            </a>
+          </div>`).join('');
+      } catch (_) { /* falha silenciosa — pareceres não são críticos para o hub */ }
+    }
   </script>
 </body>
 </html>

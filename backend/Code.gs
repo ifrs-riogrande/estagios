@@ -98,6 +98,10 @@ var GET_ROUTES = {
   'baixarPdfAvaliacao':           doGetAvaliacoes,
   'listarAvaliacoesEstagio':      doGetAvaliacoes,
 
+  // Parecer Final
+  'obterParecerFinal':            doGetParecer,
+  'listarPareceresPendentes':     doGetParecer,
+
 };
 
 // â”€â”€ Mapeamento action â†’ mÃ³dulo (POST) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -198,6 +202,15 @@ var POST_ROUTES = {
   'uploadPdfAssinado':                doPostAssinaturas,
   'reenviarNotificacaoAssinatura':    doPostAssinaturas,
   'regenerarTCEInicial':              doPostAssinaturas,
+
+  // Parecer Final
+  'iniciarParecerFinal':              doPostParecer,
+  'salvarParecerCoordenador':         doPostParecer,
+  'salvarParecerDiretoria':           doPostParecer,
+  'aprovarParecerAdmin':              doPostParecer,
+  'reprovarParecerAdmin':             doPostParecer,
+  'regenerarPdfParecer':              doPostParecer,
+  'concluirEstagio':                  doPostParecer,
 
   // Avaliações
   'iniciarAvaliacao':                 doPostAvaliacoes,

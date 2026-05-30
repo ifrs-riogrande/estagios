@@ -578,3 +578,25 @@ function adicionarColunaTokenAceite() {
   _formatarCelulaCabecalho_(sheet, 45);
   Logger.log('✅ Coluna "Token Aceite Orientador" adicionada na col 45 da aba Solicitações.');
 }
+
+/**
+ * Cria a aba "Pareceres" na planilha.
+ * Execute manualmente no editor GAS: Executar → adicionarAbaPareceres
+ */
+function adicionarAbaPareceres() {
+  var ss   = SpreadsheetApp.openById('1zVyseifVC6xeMpNjqwYd6jCq9HTJ2NS8BlN1dtM4s7Y');
+  var nome = 'Pareceres';
+  if (ss.getSheetByName(nome)) { Logger.log('⚠️ Aba "' + nome + '" já existe.'); return; }
+  var sheet = ss.insertSheet(nome);
+  var cab   = [
+    'Timestamp','Parecer ID','ID Estágio','Status','Tipo Diretoria','Ciclo',
+    'Aluno','Curso','Total Horas','Modalidade',
+    'E-mail Coordenador','E-mail Diretoria',
+    'Parecer Coordenador','Parecer Diretoria',
+    'PDF URL','Ts Início','Ts Coord.','Ts Diretoria','Ts Conclusão'
+  ];
+  sheet.getRange(1, 1, 1, cab.length).setValues([cab]);
+  cab.forEach(function(_, i) { _formatarCelulaCabecalho_(sheet, i + 1); });
+  sheet.setFrozenRows(1);
+  Logger.log('✅ Aba "' + nome + '" criada com ' + cab.length + ' colunas.');
+}

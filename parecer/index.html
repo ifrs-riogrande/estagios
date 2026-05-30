@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Parecer Final de Estágio — Central de Estágios IFRS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/base.css">
+  <link rel="stylesheet" href="../assets/css/components.css">
+  <link rel="stylesheet" href="../assets/css/layout.css">
+  <style>
+    .parecer-wrap { max-width: 720px; margin: 0 auto; padding-top: var(--space-6); padding-bottom: var(--space-16); }
+
+    .info-strip {
+      background: var(--color-surface); border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg); padding: var(--space-4) var(--space-5);
+      margin-bottom: var(--space-6);
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: var(--space-3) var(--space-5);
+    }
+    .info-item label { font-size: var(--font-size-xs); color: var(--color-text-muted); text-transform: uppercase; letter-spacing:.04em; font-weight:500; display:block; margin-bottom:2px; }
+    .info-item p { font-size: var(--font-size-sm); font-weight: 500; margin: 0; }
+
+    .parecer-card {
+      background: var(--color-surface); border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg); padding: var(--space-6); margin-bottom: var(--space-4);
+    }
+    .parecer-card h2 { font-size: var(--font-size-lg); font-weight: 700; margin-bottom: var(--space-2); }
+    .parecer-card .card-desc { font-size: var(--font-size-sm); color: var(--color-text-muted); margin-bottom: var(--space-5); }
+
+    /* Radio resultado */
+    .resultado-group { display: flex; gap: var(--space-6); margin-bottom: var(--space-5); }
+    .resultado-option { display: flex; align-items: center; gap: var(--space-2); cursor: pointer; }
+    .resultado-option input[type="radio"] { width: 18px; height: 18px; cursor: pointer; accent-color: var(--color-primary); }
+    .resultado-option label { font-size: var(--font-size-sm); font-weight: 500; cursor: pointer; }
+
+    /* Readonly view */
+    .dados-readonly {
+      background: var(--color-bg); border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg); padding: var(--space-5); margin-bottom: var(--space-4);
+    }
+    .readonly-field { margin-bottom: var(--space-3); }
+    .readonly-field label { font-size: var(--font-size-xs); color: var(--color-text-muted); text-transform: uppercase; letter-spacing:.04em; font-weight:500; display:block; margin-bottom:3px; }
+    .readonly-field p { font-size: var(--font-size-sm); white-space: pre-wrap; margin:0; }
+
+    /* Confirm panel */
+    .sign-confirm-panel {
+      background: var(--color-surface); border: 2px solid var(--color-primary);
+      border-radius: var(--radius-lg); padding: var(--space-6); margin-top: var(--space-4);
+    }
+    .confirm-check-row {
+      display: flex; align-items: flex-start; gap: var(--space-3);
+      padding: var(--space-4); background: var(--color-bg);
+      border-radius: var(--radius-md); border: 1px solid var(--color-border);
+      margin-bottom: var(--space-5); cursor: pointer;
+    }
+    .confirm-check-row input[type="checkbox"] { width: 20px; height: 20px; flex-shrink: 0; margin-top:2px; cursor:pointer; }
+    .confirm-check-row span { font-size: var(--font-size-sm); line-height: 1.5; }
+
+    /* Status panel */
+    .status-panel { text-align:center; padding: var(--space-16) var(--space-6); }
+    .status-icon { width:72px; height:72px; border-radius:50%; display:flex; align-items:center; justify-content:center; margin: 0 auto var(--space-5); }
+    .status-icon.success { background: var(--color-success-light); color: var(--color-success); }
+    .status-icon.waiting { background: var(--color-info-light);    color: var(--color-info); }
+    .status-icon svg { width: 36px; height: 36px; }
+    .status-title { font-size: var(--font-size-xl); font-weight:700; margin-bottom: var(--space-2); }
+    .status-desc  { font-size: var(--font-size-sm); color: var(--color-text-muted); max-width:420px; margin:0 auto; }
+
+    /* Histórico de reprovações */
+    .historico-item {
+      background: var(--color-warning-light); border: 1px solid var(--color-warning-border, #fbbf24);
+      border-radius: var(--radius-md); padding: var(--space-3) var(--space-4); margin-bottom: var(--space-3);
+      font-size: var(--font-size-xs);
+    }
+  </style>
+</head>
+<body>
+
+  <header id="app-header">
+    <div class="container">
+      <div class="header-inner">
+        <a href="../index.html" class="header-brand">
+          <div class="header-logo-fallback" aria-hidden="true">IFRS</div>
+          <div class="header-brand-text">
+            <span class="header-brand-name">Central de Estágios</span>
+            <span class="header-brand-sub">IFRS Campus Rio Grande</span>
+          </div>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <main id="main-content">
+    <section class="page-hero">
+      <div class="container">
+        <h1 id="hero-titulo">Parecer Final de Estágio</h1>
+        <p id="hero-sub" style="margin-top:4px;color:rgba(255,255,255,.8);font-size:var(--font-size-sm)"></p>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="parecer-wrap">
+
+        <div id="estado-carregando" style="text-align:center;padding:var(--space-16);color:var(--color-text-muted);font-size:var(--font-size-sm)">
+          Carregando parecer…
+        </div>
+
+        <div id="estado-erro" style="display:none;text-align:center;padding:var(--space-16)">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin:0 auto var(--space-4);display:block;opacity:.4">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"/>
+          </svg>
+          <p id="estado-erro-msg" style="color:var(--color-text-muted)">Parecer não encontrado.</p>
+        </div>
+
+        <div id="parecer-conteudo" style="display:none"></div>
+
+      </div>
+    </div>
+  </main>
+
+  <footer id="app-footer">
+    <div class="container">
+      <div class="footer-inner">
+        <span class="footer-copy">&copy; <script>document.write(new Date().getFullYear())</script> Central de Estágios — IFRS Campus Rio Grande</span>
+        <nav class="footer-links"><a href="mailto:estagios@riogrande.ifrs.edu.br">estagios@riogrande.ifrs.edu.br</a></nav>
+      </div>
+    </div>
+  </footer>
+
+  <script src="../assets/js/utils.js"></script>
+  <script src="../assets/js/api.js"></script>
+  <script>
+  'use strict';
+
+  let _idEstagio = '';
+  let _token     = '';
+  let _parecer   = null;
+
+  document.addEventListener('DOMContentLoaded', async () => {
+    const p = new URLSearchParams(window.location.search);
+    _idEstagio = p.get('id')    || '';
+    _token     = p.get('token') || '';
+    if (!_idEstagio || !_token) return mostrarErro('Link inválido. Verifique o e-mail que recebeu.');
+    await carregar();
+  });
+
+  async function carregar() {
+    document.getElementById('estado-carregando').style.display = '';
+    document.getElementById('parecer-conteudo').style.display  = 'none';
+    document.getElementById('estado-erro').style.display       = 'none';
+    try {
+      _parecer = await API.get('obterParecerFinal', { id: _idEstagio, token: _token });
+      renderPagina();
+    } catch (err) {
+      mostrarErro(err.message || 'Não foi possível carregar o parecer.');
+    }
+  }
+
+  function mostrarErro(msg) {
+    document.getElementById('estado-carregando').style.display = 'none';
+    document.getElementById('estado-erro-msg').textContent = msg;
+    document.getElementById('estado-erro').style.display = '';
+  }
+
+  function renderPagina() {
+    document.getElementById('estado-carregando').style.display = 'none';
+    document.getElementById('parecer-conteudo').style.display  = '';
+
+    const p   = _parecer;
+    const sol = p._sol || {};
+    document.getElementById('hero-titulo').textContent = 'Parecer Final de Estágio';
+    document.getElementById('hero-sub').textContent    =
+      (p.nomeAluno ? p.nomeAluno + ' · ' : '') + (p.curso || '');
+    document.title = 'Parecer Final — ' + (p.nomeAluno || _idEstagio);
+
+    let html = buildInfoStrip(p);
+
+    // Histórico de reprovações
+    if (p.historico && p.historico.length) {
+      html += buildHistorico(p.historico);
+    }
+
+    switch (p.statusGeral) {
+      case 'aguardando_coordenador':
+        if (p._meuPapel !== 'coordenador') {
+          html += buildStatus('waiting', 'Aguardando o Coordenador de Curso',
+            'O parecer aguarda o preenchimento do(a) coordenador(a) do curso.');
+        } else {
+          html += buildFormCoordenador(p);
+        }
+        break;
+
+      case 'aguardando_diretoria':
+        if (p._meuPapel !== 'diretoria') {
+          html += buildDadosReadonlyCoordenador(p);
+          html += buildStatus('waiting',
+            'Aguardando a ' + (p.tipoDiretoria === 'DEN' ? 'Diretoria de Ensino' : 'Diretoria de Extensão'),
+            'O parecer do coordenador foi registrado. Aguardando a diretoria.');
+        } else {
+          html += buildDadosReadonlyCoordenador(p);
+          html += buildFormDiretoria(p);
+        }
+        break;
+
+      case 'aguardando_admin':
+        html += buildDadosReadonlyCoordenador(p);
+        html += buildDadosReadonlyDiretoria(p);
+        html += buildStatus('waiting', 'Aguardando Aprovação da Central de Estágios',
+          'Ambos os pareceres foram registrados. A Central de Estágios irá revisar e aprovar.');
+        break;
+
+      case 'aprovado':
+        html += buildDadosReadonlyCoordenador(p);
+        html += buildDadosReadonlyDiretoria(p);
+        html += buildStatus('success', 'Parecer Aprovado', 'O parecer final foi aprovado. O PDF foi gerado e enviado por e-mail.');
+        if (p.pdfUrl) {
+          html += `<div style="text-align:center;margin-top:var(--space-4)">
+            <a href="${escapeHtml(p.pdfUrl)}" target="_blank" rel="noopener" class="btn btn-primary">📄 Abrir PDF ↗</a>
+          </div>`;
+        }
+        break;
+
+      default:
+        html += buildStatus('waiting', 'Estado Desconhecido', 'Entre em contato com o setor de estágios.');
+    }
+
+    document.getElementById('parecer-conteudo').innerHTML = html;
+  }
+
+  /* ── Info Strip ── */
+  function buildInfoStrip(p) {
+    const stLabel = {
+      aguardando_coordenador: 'Aguardando Coordenador',
+      aguardando_diretoria:   'Aguardando ' + (p.tipoDiretoria || 'Diretoria'),
+      aguardando_admin:       'Aguardando Central',
+      aprovado:               'Aprovado ✓',
+    }[p.statusGeral] || p.statusGeral;
+
+    return `<div class="info-strip">
+      <div class="info-item"><label>Aluno(a)</label><p>${escapeHtml(p.nomeAluno || '—')}</p></div>
+      <div class="info-item"><label>Curso</label><p>${escapeHtml(p.curso || '—')}</p></div>
+      <div class="info-item"><label>Matrícula</label><p>${escapeHtml(p.matricula || '—')}</p></div>
+      <div class="info-item"><label>Total de Horas</label><p>${escapeHtml(String(p.totalHoras || 0))}h</p></div>
+      <div class="info-item"><label>Modalidade</label><p>${escapeHtml(p.modalidade || '—')}</p></div>
+      <div class="info-item"><label>Status</label><p>${escapeHtml(stLabel)}</p></div>
+    </div>`;
+  }
+
+  /* ── Histórico de reprovações ── */
+  function buildHistorico(historico) {
+    const itens = historico.map(h =>
+      `<div class="historico-item">
+        <strong>Ciclo ${h.ciclo} devolvido pela Central</strong> em ${h.dataHora ? new Date(h.dataHora).toLocaleDateString('pt-BR') : '—'}
+        <br>Motivo: ${escapeHtml(h.motivo || '—')}
+      </div>`
+    ).join('');
+    return `<div style="margin-bottom:var(--space-4)">${itens}</div>`;
+  }
+
+  /* ── Status Panel ── */
+  function buildStatus(tipo, titulo, desc) {
+    const icon = tipo === 'success'
+      ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>`
+      : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>`;
+    return `<div class="status-panel">
+      <div class="status-icon ${tipo}">${icon}</div>
+      <div class="status-title">${escapeHtml(titulo)}</div>
+      <p class="status-desc">${escapeHtml(desc)}</p>
+    </div>`;
+  }
+
+  /* ── Formulário do Coordenador ── */
+  function buildFormCoordenador(p) {
+    return `<div class="parecer-card">
+      <h2>Parecer do(a) Coordenador(a) do Curso</h2>
+      <p class="card-desc">
+        Preencha o parecer em relação ao término do estágio do(a) aluno(a)
+        <strong>${escapeHtml(p.nomeAluno || '—')}</strong>.
+        Ao salvar, sua assinatura eletrônica será registrada automaticamente.
+      </p>
+
+      <div id="fb-form"></div>
+
+      <div class="form-group" style="margin-bottom:var(--space-4)">
+        <label class="form-label">
+          Total de Horas <span style="color:var(--color-error)">*</span>
+          <small style="font-weight:400;color:var(--color-text-muted)"> — calculado automaticamente, ajuste se necessário</small>
+        </label>
+        <input type="number" id="total-horas" class="form-control" value="${escapeHtml(String(p.totalHoras || 0))}" min="1" max="9999" style="max-width:200px">
+      </div>
+
+      <div class="form-group" style="margin-bottom:var(--space-5)">
+        <label class="form-label">
+          Resultado do Parecer <span style="color:var(--color-error)">*</span>
+        </label>
+        <div class="resultado-group">
+          <label class="resultado-option">
+            <input type="radio" name="resultado-coord" value="aprovado" id="res-coord-ap">
+            <label for="res-coord-ap">Aprovado</label>
+          </label>
+          <label class="resultado-option">
+            <input type="radio" name="resultado-coord" value="reprovado" id="res-coord-rp">
+            <label for="res-coord-rp">Reprovado</label>
+          </label>
+        </div>
+      </div>
+
+      <div class="form-group" style="margin-bottom:var(--space-6)">
+        <label class="form-label" for="texto-coord">
+          Texto do Parecer <span style="color:var(--color-error)">*</span>
+        </label>
+        <textarea id="texto-coord" class="form-control" rows="5"
+          placeholder="Descreva o parecer em relação ao desempenho e aproveitamento do estágio…"></textarea>
+      </div>
+
+      <div class="sign-confirm-panel">
+        <h3 style="font-size:var(--font-size-md);font-weight:700;margin-bottom:var(--space-3)">Confirmar e Assinar Eletronicamente</h3>
+        <label class="confirm-check-row" for="chk-coord">
+          <input type="checkbox" id="chk-coord" onchange="document.getElementById('btn-coord').disabled = !this.checked">
+          <span>Confirmo que preenchi o parecer acima e estou ciente de que minha assinatura eletrônica será registrada pelo sistema SGE.</span>
+        </label>
+        <div style="display:flex;justify-content:flex-end">
+          <button class="btn btn-primary" id="btn-coord" onclick="enviarParecerCoordenador(this)" disabled>
+            ✓ Salvar Parecer e Assinar Eletronicamente
+          </button>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  /* ── Formulário da Diretoria ── */
+  function buildFormDiretoria(p) {
+    const dirLabel = p.tipoDiretoria === 'DEN' ? 'Diretoria de Ensino' : 'Diretoria de Extensão';
+    return `<div class="parecer-card">
+      <h2>Parecer Final — ${escapeHtml(dirLabel)}</h2>
+      <p class="card-desc">
+        Preencha o parecer final quanto à documentação do estágio de
+        <strong>${escapeHtml(p.nomeAluno || '—')}</strong>.
+        Ao salvar, a assinatura eletrônica será registrada automaticamente.
+      </p>
+
+      <div id="fb-form-dir"></div>
+
+      <div class="form-group" style="margin-bottom:var(--space-5)">
+        <label class="form-label">
+          Resultado do Parecer <span style="color:var(--color-error)">*</span>
+        </label>
+        <div class="resultado-group">
+          <label class="resultado-option">
+            <input type="radio" name="resultado-dir" value="aprovado" id="res-dir-ap">
+            <label for="res-dir-ap">Aprovado</label>
+          </label>
+          <label class="resultado-option">
+            <input type="radio" name="resultado-dir" value="reprovado" id="res-dir-rp">
+            <label for="res-dir-rp">Reprovado</label>
+          </label>
+        </div>
+      </div>
+
+      <div class="form-group" style="margin-bottom:var(--space-6)">
+        <label class="form-label" for="texto-dir">
+          Texto do Parecer <span style="color:var(--color-error)">*</span>
+        </label>
+        <textarea id="texto-dir" class="form-control" rows="5"
+          placeholder="Descreva o parecer final quanto à documentação e regularidade do estágio…"></textarea>
+      </div>
+
+      <div class="sign-confirm-panel">
+        <h3 style="font-size:var(--font-size-md);font-weight:700;margin-bottom:var(--space-3)">Confirmar e Assinar Eletronicamente</h3>
+        <label class="confirm-check-row" for="chk-dir">
+          <input type="checkbox" id="chk-dir" onchange="document.getElementById('btn-dir').disabled = !this.checked">
+          <span>Confirmo que preenchi o parecer acima e estou ciente de que a assinatura eletrônica será registrada em nome da ${escapeHtml(dirLabel)}.</span>
+        </label>
+        <div style="display:flex;justify-content:flex-end">
+          <button class="btn btn-primary" id="btn-dir" onclick="enviarParecerDiretoria(this)" disabled>
+            ✓ Salvar Parecer e Assinar Eletronicamente
+          </button>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  /* ── Dados readonly: coordenador ── */
+  function buildDadosReadonlyCoordenador(p) {
+    if (!p.parecerCoordenador) return '';
+    const res = p.parecerCoordenador.resultado === 'aprovado'
+      ? '<span style="color:var(--color-success);font-weight:600">✓ Aprovado</span>'
+      : '<span style="color:var(--color-error);font-weight:600">✗ Reprovado</span>';
+    return `<div class="dados-readonly">
+      <h3 style="font-size:var(--font-size-sm);font-weight:700;margin-bottom:var(--space-3)">
+        Parecer do(a) Coordenador(a) — ${escapeHtml(p.nomeCoordenador || '')}
+      </h3>
+      <div class="readonly-field"><label>Resultado</label><p>${res}</p></div>
+      <div class="readonly-field"><label>Texto</label><p>${escapeHtml(p.parecerCoordenador.texto || '—')}</p></div>
+      ${p.assinaturaCoordenador ? `<div class="readonly-field"><label>Assinatura registrada em</label><p>${escapeHtml(new Date(p.assinaturaCoordenador.dataHora).toLocaleString('pt-BR'))}</p></div>` : ''}
+    </div>`;
+  }
+
+  /* ── Dados readonly: diretoria ── */
+  function buildDadosReadonlyDiretoria(p) {
+    if (!p.parecerDiretoria) return '';
+    const res = p.parecerDiretoria.resultado === 'aprovado'
+      ? '<span style="color:var(--color-success);font-weight:600">✓ Aprovado</span>'
+      : '<span style="color:var(--color-error);font-weight:600">✗ Reprovado</span>';
+    const dirLabel = p.tipoDiretoria === 'DEN' ? 'Diretoria de Ensino' : 'Diretoria de Extensão';
+    return `<div class="dados-readonly">
+      <h3 style="font-size:var(--font-size-sm);font-weight:700;margin-bottom:var(--space-3)">
+        Parecer da ${escapeHtml(dirLabel)}
+      </h3>
+      <div class="readonly-field"><label>Resultado</label><p>${res}</p></div>
+      <div class="readonly-field"><label>Texto</label><p>${escapeHtml(p.parecerDiretoria.texto || '—')}</p></div>
+      ${p.assinaturaDiretoria ? `<div class="readonly-field"><label>Assinatura registrada em</label><p>${escapeHtml(new Date(p.assinaturaDiretoria.dataHora).toLocaleString('pt-BR'))}</p></div>` : ''}
+    </div>`;
+  }
+
+  /* ── Envios ── */
+  async function enviarParecerCoordenador(btn) {
+    const fbEl     = document.getElementById('fb-form');
+    if (fbEl) fbEl.innerHTML = '';
+    const horas    = document.getElementById('total-horas')?.value?.trim();
+    const resultado = document.querySelector('input[name="resultado-coord"]:checked')?.value;
+    const texto    = document.getElementById('texto-coord')?.value?.trim();
+
+    if (!horas || Number(horas) <= 0) { mostrarFb(fbEl, 'Informe o total de horas.'); return; }
+    if (!resultado) { mostrarFb(fbEl, 'Selecione o resultado do parecer (Aprovado ou Reprovado).'); return; }
+    if (!texto)     { mostrarFb(fbEl, 'O texto do parecer é obrigatório.'); return; }
+
+    btn.disabled = true; btn.textContent = 'Salvando e assinando…';
+    try {
+      await API.post('salvarParecerCoordenador', {
+        idEstagio: _idEstagio, token: _token,
+        dados: { resultado, texto, totalHoras: horas },
+      });
+      showToast('Parecer salvo e assinatura registrada! A diretoria será notificada.', 'success');
+      await carregar();
+    } catch (err) {
+      mostrarFb(fbEl, err.message || 'Erro ao salvar. Tente novamente.');
+      btn.disabled = false; btn.textContent = '✓ Salvar Parecer e Assinar Eletronicamente';
+    }
+  }
+
+  async function enviarParecerDiretoria(btn) {
+    const fbEl     = document.getElementById('fb-form-dir');
+    if (fbEl) fbEl.innerHTML = '';
+    const resultado = document.querySelector('input[name="resultado-dir"]:checked')?.value;
+    const texto    = document.getElementById('texto-dir')?.value?.trim();
+
+    if (!resultado) { mostrarFb(fbEl, 'Selecione o resultado do parecer (Aprovado ou Reprovado).'); return; }
+    if (!texto)     { mostrarFb(fbEl, 'O texto do parecer é obrigatório.'); return; }
+
+    btn.disabled = true; btn.textContent = 'Salvando e assinando…';
+    try {
+      await API.post('salvarParecerDiretoria', {
+        idEstagio: _idEstagio, token: _token,
+        dados: { resultado, texto },
+      });
+      showToast('Parecer salvo e assinatura registrada! A Central de Estágios será notificada.', 'success');
+      await carregar();
+    } catch (err) {
+      mostrarFb(fbEl, err.message || 'Erro ao salvar. Tente novamente.');
+      btn.disabled = false; btn.textContent = '✓ Salvar Parecer e Assinar Eletronicamente';
+    }
+  }
+
+  /* ── Helpers ── */
+  function mostrarFb(el, msg) {
+    if (!el) { showToast(msg, 'error'); return; }
+    el.innerHTML = `<div class="form-feedback form-feedback--error" style="margin-bottom:var(--space-4)"><strong>Atenção:</strong> ${escapeHtml(msg)}</div>`;
+    el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  function showToast(msg, type = 'success') {
+    const el = document.createElement('div');
+    el.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:9999;max-width:400px;padding:12px 16px;border-radius:8px;font-size:14px;box-shadow:0 4px 16px rgba(0,0,0,.15)';
+    el.style.background = type === 'success' ? 'var(--color-success-light)' : 'var(--color-error-light)';
+    el.style.color       = type === 'success' ? 'var(--color-success)'       : 'var(--color-error)';
+    el.style.border      = `1px solid ${type === 'success' ? 'var(--color-success-border)' : 'var(--color-error-border)'}`;
+    el.textContent = msg;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), type === 'error' ? 10000 : 5000);
+  }
+  </script>
+</body>
+</html>
