@@ -69,6 +69,7 @@ var GET_ROUTES = {
   'listarCadastrosPendentes': doGetAdmin,
   'listarAdendosAdmin':       doGetAdmin,
   'listarAgentesAdmin':       doGetAdmin,
+  'listarOportunidadesAdmin': doGetAdmin,
 
   // Dashboard
   'dashboard':               doGetDash,
@@ -77,6 +78,7 @@ var GET_ROUTES = {
   'obterConfigCursos':       doGetPublicConfig,
   'listarCursos':            doGetPublicConfig,
   'contarEstagiosAtivos':    doGetPublicConfig,
+  'validarTokenOportunidade':doGetPublicConfig,
 
   // Cursos + TCE config — admin
   'listarTodosCursos':       doGetAdmin,
@@ -193,6 +195,11 @@ var POST_ROUTES = {
   'excluirCoordenador':        doPostAdmin,
   'enviarMagicLinkEmpresa':    doPostAdmin,
   'enviarMagicLinkSupervisor': doPostAdmin,
+  'aprovarOportunidade':       doPostAdmin,
+  'reprovarOportunidade':      doPostAdmin,
+  'encerrarOportunidade':      doPostAdmin,
+  'enviarMagicLinkOportunidade': doPostAdmin,
+  'cadastrarOportunidadeAdmin':  doPostAdmin,
 
   // Checklist
   'salvarRespostaAdmin':             doPostChecklist,
@@ -406,7 +413,8 @@ function doGetPublicConfig(e) {
   var action = e.parameter && e.parameter.action;
   if (action === 'obterConfigCursos')    return obterConfigCursos_();
   if (action === 'listarCursos')         return listarCursos_();
-  if (action === 'contarEstagiosAtivos') return contarEstagiosAtivos_();
+  if (action === 'contarEstagiosAtivos')     return contarEstagiosAtivos_();
+  if (action === 'validarTokenOportunidade') return validarTokenOportunidade_((e.parameter && e.parameter.token) || '');
   return jsonError_('AÃ§Ã£o nÃ£o implementada.', 'NOT_IMPLEMENTED');
 }
 

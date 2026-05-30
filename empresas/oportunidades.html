@@ -23,11 +23,11 @@
             <span class="header-brand-sub">IFRS Campus Rio Grande</span>
           </div>
         </a>
-        <a href="index.html" class="back-link">
+        <a id="back-link" href="index.html" class="back-link">
           <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
             <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd"/>
           </svg>
-          Empresas
+          <span id="back-link-text">Empresas</span>
         </a>
       </div>
     </div>
@@ -433,6 +433,20 @@
         errEl.classList.add('hidden');
       }
     });
+
+    // Magic link via ?token= (empresa acessa pelo link enviado pelo admin)
+    const _token = new URLSearchParams(window.location.search).get('token');
+    if (_token) {
+      // Valida token e pré-preenche e-mail se disponível
+      API.get('validarTokenOportunidade', { token: _token }).then(res => {
+        if (res && res.valido && res.email) {
+          document.getElementById('email-contato').value = res.email;
+        }
+      }).catch(() => {});
+      // Ajusta back link para não ter destino (é um link externo)
+      const bl = document.getElementById('back-link');
+      if (bl) { bl.removeAttribute('href'); bl.style.display = 'none'; }
+    }
 
     carregarSelectEmpresas();
 

@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Oportunidades — Admin · Central de Estágios IFRS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/base.css">
+  <link rel="stylesheet" href="../assets/css/components.css">
+  <link rel="stylesheet" href="../assets/css/layout.css">
+  <style>
+    .opp-filters {
+      display:flex; flex-wrap:wrap; gap:var(--space-3); align-items:center;
+      margin-bottom:var(--space-5);
+    }
+    .opp-filters select {
+      padding:var(--space-2) var(--space-3); border:1px solid var(--color-border);
+      border-radius:var(--radius-md); font-size:var(--font-size-sm);
+      background:var(--color-surface); color:var(--color-text);
+    }
+    .opp-card {
+      background:var(--color-surface); border:1px solid var(--color-border);
+      border-radius:var(--radius-lg); padding:var(--space-5);
+      margin-bottom:var(--space-4);
+    }
+    .opp-card-header {
+      display:flex; align-items:flex-start; justify-content:space-between;
+      gap:var(--space-4); flex-wrap:wrap; margin-bottom:var(--space-3);
+    }
+    .opp-card-title { font-size:var(--font-size-md); font-weight:700; margin-bottom:2px; }
+    .opp-card-meta  { font-size:var(--font-size-xs); color:var(--color-text-muted); }
+    .opp-card-body  { font-size:var(--font-size-sm); color:var(--color-text-muted); margin-bottom:var(--space-4); }
+    .opp-card-actions { display:flex; gap:var(--space-2); flex-wrap:wrap; }
+
+    /* Modal */
+    .modal-overlay {
+      display:none; position:fixed; inset:0; background:rgba(0,0,0,.4);
+      z-index:1000; align-items:center; justify-content:center; padding:var(--space-4);
+    }
+    .modal-overlay.open { display:flex; }
+    .modal-box {
+      background:var(--color-surface); border-radius:var(--radius-xl);
+      max-width:520px; width:100%; padding:var(--space-6);
+      box-shadow:0 20px 60px rgba(0,0,0,.2); max-height:90vh; overflow-y:auto;
+    }
+    .modal-title { font-size:var(--font-size-lg); font-weight:700; margin-bottom:var(--space-5); }
+    .empty-state { text-align:center; padding:var(--space-16) var(--space-6); color:var(--color-text-muted); }
+  </style>
+</head>
+<body>
+
+  <header id="app-header">
+    <div class="container">
+      <div class="header-inner">
+        <a href="../index.html" class="header-brand">
+          <div class="header-logo-fallback" aria-hidden="true">IFRS</div>
+          <div class="header-brand-text">
+            <span class="header-brand-name">Central de Estágios</span>
+            <span class="header-brand-sub">IFRS Campus Rio Grande</span>
+          </div>
+        </a>
+        <div style="display:flex;align-items:center;gap:var(--space-3)">
+          <div id="header-user-area"></div>
+          <a href="index.html" class="back-link">
+            <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd"/></svg>
+            Admin
+          </a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main id="main-content">
+    <section class="page-hero">
+      <div class="container">
+        <h1>Portal de Oportunidades</h1>
+        <p>Gerencie vagas de estágio e emprego cadastradas pelas empresas.</p>
+      </div>
+    </section>
+
+    <div class="container" style="padding-top:var(--space-6);padding-bottom:var(--space-12)">
+
+      <!-- Barra de ações -->
+      <div style="display:flex;gap:var(--space-3);flex-wrap:wrap;margin-bottom:var(--space-6)">
+        <button class="btn btn-primary" onclick="abrirModalNovaOportunidade()">
+          + Nova Oportunidade
+        </button>
+        <button class="btn btn-secondary" onclick="abrirModalMagicLink()">
+          ✉️ Enviar link para empresa
+        </button>
+      </div>
+
+      <!-- Filtros -->
+      <div class="opp-filters">
+        <select id="filtro-status" onchange="renderLista()">
+          <option value="">Todos os status</option>
+          <option value="Pendente" selected>Pendentes</option>
+          <option value="Aprovada">Aprovadas</option>
+          <option value="Reprovada">Reprovadas</option>
+          <option value="Encerrada">Encerradas</option>
+        </select>
+        <input type="text" id="filtro-busca" class="form-control" placeholder="Buscar por empresa ou título…"
+          style="max-width:300px;padding:var(--space-2) var(--space-3);font-size:var(--font-size-sm)"
+          oninput="renderLista()">
+      </div>
+
+      <!-- Carregando -->
+      <div id="estado-carregando" style="text-align:center;padding:var(--space-16);color:var(--color-text-muted)">
+        Carregando oportunidades…
+      </div>
+
+      <!-- Lista -->
+      <div id="lista-oportunidades" style="display:none"></div>
+
+    </div>
+  </main>
+
+  <!-- Modal: Magic Link -->
+  <div class="modal-overlay" id="modal-magic-link">
+    <div class="modal-box">
+      <div class="modal-title">✉️ Enviar Link para Empresa</div>
+      <p style="font-size:var(--font-size-sm);color:var(--color-text-muted);margin-bottom:var(--space-5)">
+        A empresa receberá um e-mail com o link para preencher o formulário de oportunidade.
+        A vaga ficará com status <strong>Pendente</strong> até sua aprovação.
+      </p>
+      <div id="fb-magic-link"></div>
+      <div class="form-group" style="margin-bottom:var(--space-5)">
+        <label class="form-label" for="ml-email">E-mail da empresa <span style="color:var(--color-error)">*</span></label>
+        <input type="email" id="ml-email" class="form-control" placeholder="rh@empresa.com.br">
+      </div>
+      <div style="display:flex;gap:var(--space-3);justify-content:flex-end">
+        <button class="btn btn-ghost" onclick="fecharModais()">Cancelar</button>
+        <button class="btn btn-primary" onclick="enviarMagicLink(this)">Enviar Link</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Nova Oportunidade (direto pelo admin) -->
+  <div class="modal-overlay" id="modal-nova-opp">
+    <div class="modal-box" style="max-width:700px">
+      <div class="modal-title">+ Nova Oportunidade</div>
+      <p style="font-size:var(--font-size-sm);color:var(--color-text-muted);margin-bottom:var(--space-4)">
+        Oportunidade cadastrada pelo admin será <strong>aprovada automaticamente</strong>.
+      </p>
+      <div id="fb-nova-opp"></div>
+
+      <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4)">
+        <div class="form-group">
+          <label class="form-label">Empresa <span style="color:var(--color-error)">*</span></label>
+          <input type="text" id="opp-empresa" class="form-control" placeholder="Nome da empresa">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Responsável <span style="color:var(--color-error)">*</span></label>
+          <input type="text" id="opp-responsavel" class="form-control" placeholder="Nome do responsável">
+        </div>
+      </div>
+      <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4)">
+        <div class="form-group">
+          <label class="form-label">E-mail de contato <span style="color:var(--color-error)">*</span></label>
+          <input type="email" id="opp-email" class="form-control" placeholder="rh@empresa.com.br">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Telefone</label>
+          <input type="text" id="opp-telefone" class="form-control" placeholder="(53) 99999-9999">
+        </div>
+      </div>
+      <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4)">
+        <div class="form-group">
+          <label class="form-label">Tipo de vaga <span style="color:var(--color-error)">*</span></label>
+          <select id="opp-tipo" class="form-control">
+            <option value="">Selecione…</option>
+            <option value="Estágio Obrigatório">Estágio Obrigatório</option>
+            <option value="Estágio Não Obrigatório">Estágio Não Obrigatório</option>
+            <option value="Emprego">Emprego (CLT/Contrato)</option>
+            <option value="Jovem Aprendiz">Jovem Aprendiz</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Nº de vagas</label>
+          <input type="number" id="opp-num-vagas" class="form-control" placeholder="1" min="1" value="1">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Título da vaga <span style="color:var(--color-error)">*</span></label>
+        <input type="text" id="opp-titulo" class="form-control" placeholder="Ex.: Estagiário de Desenvolvimento">
+      </div>
+      <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4)">
+        <div class="form-group">
+          <label class="form-label">Área / Curso <span style="color:var(--color-error)">*</span></label>
+          <input type="text" id="opp-area" class="form-control" placeholder="Ex.: Análise e Desenvolvimento de Sistemas">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Modalidade <span style="color:var(--color-error)">*</span></label>
+          <select id="opp-modalidade" class="form-control">
+            <option value="">Selecione…</option>
+            <option value="Presencial">Presencial</option>
+            <option value="Híbrido">Híbrido</option>
+            <option value="Remoto">Remoto</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4)">
+        <div class="form-group">
+          <label class="form-label">Cidade <span style="color:var(--color-error)">*</span></label>
+          <input type="text" id="opp-cidade" class="form-control" value="Rio Grande">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Carga horária <span style="color:var(--color-error)">*</span></label>
+          <input type="text" id="opp-carga" class="form-control" placeholder="Ex.: 20h semanais">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Atividades <span style="color:var(--color-error)">*</span></label>
+        <textarea id="opp-atividades" class="form-control" rows="3" placeholder="Descreva as atividades…"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Requisitos <span style="color:var(--color-error)">*</span></label>
+        <textarea id="opp-requisitos" class="form-control" rows="2" placeholder="Requisitos básicos…"></textarea>
+      </div>
+      <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4)">
+        <div class="form-group">
+          <label class="form-label">Remuneração <span style="color:var(--color-error)">*</span></label>
+          <input type="text" id="opp-remuneracao" class="form-control" placeholder="R$ 800,00 ou Não se aplica">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Prazo para candidatura <span style="color:var(--color-error)">*</span></label>
+          <input type="date" id="opp-prazo" class="form-control">
+        </div>
+      </div>
+      <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4)">
+        <div class="form-group">
+          <label class="form-label">Como se candidatar</label>
+          <select id="opp-como" class="form-control">
+            <option value="E-mail">E-mail</option>
+            <option value="WhatsApp">WhatsApp</option>
+            <option value="Link (site/formulário)">Link</option>
+            <option value="Presencialmente">Presencialmente</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Contato para candidatura</label>
+          <input type="text" id="opp-contato-cand" class="form-control" placeholder="E-mail ou link">
+        </div>
+      </div>
+
+      <div style="display:flex;gap:var(--space-3);justify-content:flex-end;margin-top:var(--space-4)">
+        <button class="btn btn-ghost" onclick="fecharModais()">Cancelar</button>
+        <button class="btn btn-primary" onclick="cadastrarOportunidadeAdmin(this)">✓ Cadastrar e Aprovar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Reprovar -->
+  <div class="modal-overlay" id="modal-reprovar">
+    <div class="modal-box">
+      <div class="modal-title">Reprovar Oportunidade</div>
+      <div id="fb-reprovar"></div>
+      <div class="form-group" style="margin-bottom:var(--space-5)">
+        <label class="form-label">Motivo da reprovação <span style="color:var(--color-error)">*</span></label>
+        <textarea id="motivo-reprovacao" class="form-control" rows="3"
+          placeholder="Explique o motivo para que a empresa possa corrigir e reenviar…"></textarea>
+      </div>
+      <input type="hidden" id="reprovar-opp-id">
+      <div style="display:flex;gap:var(--space-3);justify-content:flex-end">
+        <button class="btn btn-ghost" onclick="fecharModais()">Cancelar</button>
+        <button class="btn btn-danger" onclick="confirmarReprovacao(this)" style="background:var(--color-error);color:#fff;border:none;padding:var(--space-2) var(--space-5);border-radius:var(--radius-md);font-weight:600;cursor:pointer">Reprovar</button>
+      </div>
+    </div>
+  </div>
+
+  <footer id="app-footer">
+    <div class="container">
+      <div class="footer-inner">
+        <span class="footer-copy">&copy; <script>document.write(new Date().getFullYear())</script> Central de Estágios — IFRS Campus Rio Grande</span>
+        <nav class="footer-links"><a href="mailto:estagios@riogrande.ifrs.edu.br">estagios@riogrande.ifrs.edu.br</a></nav>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://accounts.google.com/gsi/client" async></script>
+  <script src="../assets/js/utils.js"></script>
+  <script src="../assets/js/auth.js"></script>
+  <script src="../assets/js/api.js"></script>
+  <script>
+  'use strict';
+
+  let _lista = [];
+
+  document.addEventListener('DOMContentLoaded', async () => {
+    if (!requireAdminAuth()) return;
+    // Prazo mínimo amanhã
+    const prazoEl = document.getElementById('opp-prazo');
+    if (prazoEl) prazoEl.min = new Date(Date.now() + 86400000).toISOString().split('T')[0];
+    await carregar();
+  });
+
+  async function carregar() {
+    document.getElementById('estado-carregando').style.display = '';
+    document.getElementById('lista-oportunidades').style.display = 'none';
+    try {
+      _lista = await API.get('listarOportunidadesAdmin', { authToken: getAccessToken() });
+      renderLista();
+    } catch (err) {
+      document.getElementById('estado-carregando').innerHTML =
+        `<p style="color:var(--color-error)">Erro ao carregar: ${escapeHtml(err.message)}</p>`;
+    }
+  }
+
+  function renderLista() {
+    const filtroStatus = document.getElementById('filtro-status').value;
+    const filtroBusca  = (document.getElementById('filtro-busca').value || '').toLowerCase();
+
+    const filtrada = _lista.filter(o => {
+      if (filtroStatus && o.status !== filtroStatus) return false;
+      if (filtroBusca && !o.titulo.toLowerCase().includes(filtroBusca)
+                      && !o.nomeEmpresa.toLowerCase().includes(filtroBusca)) return false;
+      return true;
+    });
+
+    document.getElementById('estado-carregando').style.display = 'none';
+    const el = document.getElementById('lista-oportunidades');
+    el.style.display = '';
+
+    if (!filtrada.length) {
+      el.innerHTML = `<div class="empty-state">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin:0 auto var(--space-4);display:block;opacity:.3">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 14.15v4.25c0 1.094-.787 2.036-1.872 2.18-2.087.277-4.216.42-6.378.42s-4.291-.143-6.378-.42c-1.085-.144-1.872-1.086-1.872-2.18v-4.25m16.5 0a2.18 2.18 0 00.75-1.661V8.706c0-1.081-.768-2.015-1.837-2.175a48.114 48.114 0 00-3.413-.387m4.5 8.006c-.194.165-.42.295-.673.38A23.978 23.978 0 0112 15.75c-2.648 0-5.195-.429-7.577-1.22A2.016 2.016 0 013 14.489V8.706c0-1.081.768-2.015 1.837-2.175a48.111 48.111 0 013.413-.387"/>
+        </svg>
+        <p>Nenhuma oportunidade encontrada com os filtros aplicados.</p>
+      </div>`;
+      return;
+    }
+
+    const STATUS_BADGE = {
+      'Pendente':  'badge-analysis',
+      'Aprovada':  'badge-approved',
+      'Reprovada': 'badge-rejected',
+      'Encerrada': 'badge-closed',
+    };
+
+    el.innerHTML = filtrada.map(o => {
+      const badgeCls = STATUS_BADGE[o.status] || 'badge-analysis';
+      const dataStr  = o.timestamp ? new Date(o.timestamp).toLocaleDateString('pt-BR') : '—';
+      const prazoStr = o.prazo    ? new Date(o.prazo + 'T00:00:00').toLocaleDateString('pt-BR') : '—';
+
+      let acoes = '';
+      if (o.status === 'Pendente') {
+        acoes += `<button class="btn btn-primary btn-sm" onclick="aprovar(${o.oppId}, this)">✓ Aprovar</button>`;
+        acoes += `<button class="btn btn-secondary btn-sm" onclick="abrirModalReprovar(${o.oppId})">✗ Reprovar</button>`;
+      }
+      if (o.status === 'Aprovada') {
+        acoes += `<button class="btn btn-secondary btn-sm" onclick="encerrar(${o.oppId}, this)">Encerrar</button>`;
+      }
+      if (o.status === 'Reprovada') {
+        acoes += `<button class="btn btn-primary btn-sm" onclick="aprovar(${o.oppId}, this)">✓ Aprovar mesmo assim</button>`;
+      }
+
+      return `<div class="opp-card">
+        <div class="opp-card-header">
+          <div>
+            <div class="opp-card-title">${escapeHtml(o.titulo || '—')}</div>
+            <div class="opp-card-meta">
+              ${escapeHtml(o.nomeEmpresa || '—')} · ${escapeHtml(o.tipoVaga || '—')} ·
+              ${escapeHtml(o.cidade || '—')} · ${escapeHtml(o.modalidade || '—')} ·
+              Prazo: ${escapeHtml(prazoStr)} · Cadastrado: ${escapeHtml(dataStr)}
+            </div>
+          </div>
+          <span class="badge ${badgeCls}">${escapeHtml(o.status)}</span>
+        </div>
+        <div class="opp-card-body">
+          <strong>Área:</strong> ${escapeHtml(o.area || '—')} ·
+          <strong>Vagas:</strong> ${escapeHtml(String(o.numVagas || '1'))} ·
+          <strong>Remuneração:</strong> ${escapeHtml(o.remuneracao || '—')} ·
+          <strong>Contato:</strong> ${escapeHtml(o.emailContato || '—')}
+        </div>
+        <div class="opp-card-actions">${acoes}</div>
+      </div>`;
+    }).join('');
+  }
+
+  /* ── Ações ── */
+  async function aprovar(oppId, btn) {
+    if (!confirm('Aprovar esta oportunidade? Ela ficará visível no portal.')) return;
+    const orig = btn.textContent; btn.disabled = true; btn.textContent = 'Aprovando…';
+    try {
+      await API.post('aprovarOportunidade', { oppId, authToken: getAccessToken() });
+      showToast('✅ Oportunidade aprovada!', 'success');
+      await carregar();
+    } catch (err) {
+      showToast('Erro: ' + err.message, 'error');
+      btn.disabled = false; btn.textContent = orig;
+    }
+  }
+
+  function abrirModalReprovar(oppId) {
+    document.getElementById('reprovar-opp-id').value = oppId;
+    document.getElementById('motivo-reprovacao').value = '';
+    document.getElementById('fb-reprovar').innerHTML = '';
+    document.getElementById('modal-reprovar').classList.add('open');
+  }
+
+  async function confirmarReprovacao(btn) {
+    const oppId  = document.getElementById('reprovar-opp-id').value;
+    const motivo = document.getElementById('motivo-reprovacao').value.trim();
+    const fbEl   = document.getElementById('fb-reprovar');
+    if (!motivo) {
+      fbEl.innerHTML = `<div class="form-feedback form-feedback--error" style="margin-bottom:var(--space-3)">Informe o motivo da reprovação.</div>`;
+      return;
+    }
+    const orig = btn.textContent; btn.disabled = true; btn.textContent = 'Reprovando…';
+    try {
+      await API.post('reprovarOportunidade', { oppId, motivo, authToken: getAccessToken() });
+      fecharModais();
+      showToast('Oportunidade reprovada.', 'success');
+      await carregar();
+    } catch (err) {
+      showToast('Erro: ' + err.message, 'error');
+      btn.disabled = false; btn.textContent = orig;
+    }
+  }
+
+  async function encerrar(oppId, btn) {
+    if (!confirm('Encerrar esta oportunidade? Ela deixará de aparecer no portal.')) return;
+    const orig = btn.textContent; btn.disabled = true; btn.textContent = 'Encerrando…';
+    try {
+      await API.post('encerrarOportunidade', { oppId, authToken: getAccessToken() });
+      showToast('Oportunidade encerrada.', 'success');
+      await carregar();
+    } catch (err) {
+      showToast('Erro: ' + err.message, 'error');
+      btn.disabled = false; btn.textContent = orig;
+    }
+  }
+
+  /* ── Magic Link ── */
+  function abrirModalMagicLink() {
+    document.getElementById('ml-email').value = '';
+    document.getElementById('fb-magic-link').innerHTML = '';
+    document.getElementById('modal-magic-link').classList.add('open');
+  }
+
+  async function enviarMagicLink(btn) {
+    const email = document.getElementById('ml-email').value.trim();
+    const fbEl  = document.getElementById('fb-magic-link');
+    fbEl.innerHTML = '';
+    if (!email || !email.includes('@')) {
+      fbEl.innerHTML = `<div class="form-feedback form-feedback--error" style="margin-bottom:var(--space-3)">Informe um e-mail válido.</div>`;
+      return;
+    }
+    const orig = btn.textContent; btn.disabled = true; btn.textContent = 'Enviando…';
+    try {
+      await API.post('enviarMagicLinkOportunidade', { email, authToken: getAccessToken() });
+      fecharModais();
+      showToast(`✅ Link enviado para ${email}!`, 'success');
+    } catch (err) {
+      showToast('Erro: ' + err.message, 'error');
+      btn.disabled = false; btn.textContent = orig;
+    }
+  }
+
+  /* ── Nova Oportunidade (admin direto) ── */
+  function abrirModalNovaOportunidade() {
+    document.getElementById('fb-nova-opp').innerHTML = '';
+    document.getElementById('modal-nova-opp').classList.add('open');
+  }
+
+  async function cadastrarOportunidadeAdmin(btn) {
+    const fbEl = document.getElementById('fb-nova-opp');
+    fbEl.innerHTML = '';
+
+    const campos = {
+      nomeEmpresa:       document.getElementById('opp-empresa').value.trim(),
+      responsavelVaga:   document.getElementById('opp-responsavel').value.trim(),
+      emailContato:      document.getElementById('opp-email').value.trim(),
+      telContato:        document.getElementById('opp-telefone').value.trim(),
+      tipoVaga:          document.getElementById('opp-tipo').value,
+      numVagas:          document.getElementById('opp-num-vagas').value || '1',
+      tituloVaga:        document.getElementById('opp-titulo').value.trim(),
+      areaCurso:         document.getElementById('opp-area').value.trim(),
+      atividades:        document.getElementById('opp-atividades').value.trim(),
+      requisitos:        document.getElementById('opp-requisitos').value.trim(),
+      cidadeVaga:        document.getElementById('opp-cidade').value.trim(),
+      modalidade:        document.getElementById('opp-modalidade').value,
+      cargaHoraria:      document.getElementById('opp-carga').value.trim(),
+      remuneracao:       document.getElementById('opp-remuneracao').value.trim(),
+      prazoCandidatura:  document.getElementById('opp-prazo').value,
+      comoCandidatar:    document.getElementById('opp-como').value,
+      contatoCandidatura:document.getElementById('opp-contato-cand').value.trim(),
+      declaracao:        'Sim',
+    };
+
+    const obrigatorios = ['nomeEmpresa','responsavelVaga','emailContato','tipoVaga','tituloVaga','areaCurso','atividades','requisitos','cidadeVaga','modalidade','cargaHoraria','remuneracao','prazoCandidatura'];
+    const vazio = obrigatorios.find(k => !campos[k]);
+    if (vazio) {
+      fbEl.innerHTML = `<div class="form-feedback form-feedback--error" style="margin-bottom:var(--space-3)">Preencha todos os campos obrigatórios.</div>`;
+      return;
+    }
+
+    const orig = btn.textContent; btn.disabled = true; btn.textContent = 'Cadastrando…';
+    try {
+      await API.post('cadastrarOportunidadeAdmin', { dados: campos, authToken: getAccessToken() });
+      fecharModais();
+      showToast('✅ Oportunidade cadastrada e aprovada!', 'success');
+      document.getElementById('filtro-status').value = 'Aprovada';
+      await carregar();
+    } catch (err) {
+      fbEl.innerHTML = `<div class="form-feedback form-feedback--error" style="margin-bottom:var(--space-3)">${escapeHtml(err.message)}</div>`;
+      btn.disabled = false; btn.textContent = orig;
+    }
+  }
+
+  /* ── Helpers ── */
+  function fecharModais() {
+    document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('open'));
+  }
+  document.querySelectorAll('.modal-overlay').forEach(m => {
+    m.addEventListener('click', e => { if (e.target === m) fecharModais(); });
+  });
+
+  function showToast(msg, type = 'success') {
+    const el = document.createElement('div');
+    el.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:9999;max-width:400px;padding:12px 16px;border-radius:8px;font-size:14px;box-shadow:0 4px 16px rgba(0,0,0,.15)';
+    el.style.background = type === 'success' ? 'var(--color-success-light)' : 'var(--color-error-light)';
+    el.style.color       = type === 'success' ? 'var(--color-success)'       : 'var(--color-error)';
+    el.style.border      = `1px solid ${type === 'success' ? 'var(--color-success-border)' : 'var(--color-error-border)'}`;
+    el.textContent = msg;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), type === 'error' ? 10000 : 5000);
+  }
+  </script>
+</body>
+</html>

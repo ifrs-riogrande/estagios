@@ -138,6 +138,7 @@ function doGetAdmin(e) {
       case 'listarCadastrosPendentes': return listarCadastrosPendentes_();
       case 'listarAdendosAdmin':       return listarAdendosAdmin_();
       case 'listarAgentesAdmin':       return listarAgentesAdmin_();
+      case 'listarOportunidadesAdmin': return listarOportunidadesAdmin_(authToken);
       case 'listarTodosCursos':        return listarTodosCursos_();
       case 'obterDiretorGeral':        return jsonOk_(obterDadosDiretorGeralAdmin_());
       case 'obterDiretoriaDEN':        return jsonOk_(_obterDiretoriaAdmin_('DEN'));
@@ -195,7 +196,12 @@ function doPostAdmin(e) {
       case 'excluirCoordenador':        return excluirCoordenador_(body);
       // Magic links para empresa/supervisor
       case 'enviarMagicLinkEmpresa':    return enviarMagicLinkEmpresa_(body);
-      case 'enviarMagicLinkSupervisor': return enviarMagicLinkSupervisor_(body);
+      case 'enviarMagicLinkSupervisor':    return enviarMagicLinkSupervisor_(body);
+      case 'aprovarOportunidade':          return aprovarOportunidade_(body.oppId, body.authToken);
+      case 'reprovarOportunidade':         return reprovarOportunidade_(body.oppId, body.authToken, body.motivo || '');
+      case 'encerrarOportunidade':         return encerrarOportunidade_(body.oppId, body.authToken);
+      case 'enviarMagicLinkOportunidade':  return enviarMagicLinkOportunidade_(body.email, body.authToken);
+      case 'cadastrarOportunidadeAdmin':   return cadastrarOportunidadeAdmin_(body.dados || {}, body.authToken);
       // Estudantes — validação de cadastro e reenvio de código
       case 'validarCadastroAdmin':   return validarCadastroAdmin_(body);
       case 'reenviarCodigoAdmin':    return reenviarCodigoAdmin_(body);

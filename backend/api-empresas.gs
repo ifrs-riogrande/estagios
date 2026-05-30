@@ -1355,6 +1355,159 @@ function verificarStatusConcedente_(e) {
   return jsonOk_(resultado);
 }
 
+// ── Admin: Gestão de Oportunidades ───────────────────────────────────────────
+
+/**
+ * Lista todas as oportunidades para o admin (todos os status).
+ * Retorna rowNum como oppId para operações de atualização.
+ */
+function listarOportunidadesAdmin_(authToken) {
+  try { validarTokenAdmin_(authToken); } catch (e) {
+    return jsonError_('Não autorizado: ' + e.message, 'AUTH_ERROR');
+  }
+  try {
+    var ss    = SpreadsheetApp.openById(CFG_OPP.SS_ID || CFG.ID_OPORTUNIDADES || CFG.ID_EMPRESAS);
+    var sheet = ss.getSheetByName(CFG.ABA_OPP);
+    if (!sheet) return jsonOk_([]);
+    var dados = sheet.getDataRange().getValues();
+    var lista = [];
+    for (var i = 1; i < dados.length; i++) {
+      var row = dados[i];
+      if (!row[COL_OPP.TIMESTAMP] && !row[COL_OPP.TITULO]) continue;
+      var prazoVal = row[COL_OPP.PRAZO];
+      var prazoISO = '';
+      if (prazoVal) {
+        var dp = prazoVal instanceof Date ? prazoVal : new Date(prazoVal);
+        if (!isNaN(dp.getTime())) prazoISO = dp.toISOString().split('T')[0];
+      }
+      lista.push({
+        oppId:          i + 1, // rowNum base-1 para getRange
+        timestamp:      String(row[COL_OPP.TIMESTAMP] || ''),
+        nomeEmpresa:    String(row[COL_OPP.NOME_EMPRESA]    || ''),
+        responsavel:    String(row[COL_OPP.RESPONSAVEL]     || ''),
+        emailContato:   String(row[COL_OPP.EMAIL_CONTATO]   || ''),
+        tipoVaga:       String(row[COL_OPP.TIPO_VAGA]       || ''),
+        numVagas:       String(row[COL_OPP.NUM_VAGAS]       || ''),
+        titulo:         String(row[COL_OPP.TITULO]          || ''),
+        area:           String(row[COL_OPP.AREA]            || ''),
+        cidade:         String(row[COL_OPP.CIDADE]          || ''),
+        modalidade:     String(row[COL_OPP.MODALIDADE]      || ''),
+        cargaHoraria:   String(row[COL_OPP.CARGA_HOR]       || ''),
+        remuneracao:    String(row[COL_OPP.REMUNERACAO]     || ''),
+        prazo:          prazoISO,
+        status:         String(row[COL_OPP.STATUS]          || 'Pendente'),
+      });
+    }
+    lista.reverse();
+    return jsonOk_(lista);
+  } catch (e) {
+    logErro_('listarOportunidadesAdmin_', e);
+    return jsonError_('Erro ao listar oportunidades.', 'INTERNAL');
+  }
+}
+
+/**
+ * Atualiza o status de uma oportunidade pelo número da linha.
+ */
+function _atualizarStatusOportunidade_(oppId, novoStatus, authToken, obs) {
+  try { validarTokenAdmin_(authToken); } catch (e) {
+    return jsonError_('Não autorizado: ' + e.message, 'AUTH_ERROR');
+  }
+  if (!oppId) return jsonError_('oppId obrigatório.', 'MISSING_PARAM');
+  try {
+    var ss    = SpreadsheetApp.openById(CFG_OPP.SS_ID || CFG.ID_OPORTUNIDADES || CFG.ID_EMPRESAS);
+    var sheet = ss.getSheetByName(CFG.ABA_OPP);
+    if (!sheet) return jsonError_('Aba Oportunidades não encontrada.', 'NOT_FOUND');
+    var rowNum = parseInt(oppId, 10);
+    if (isNaN(rowNum) || rowNum < 2) return jsonError_('oppId inválido.', 'INVALID_PARAM');
+    sheet.getRange(rowNum, COL_OPP.STATUS + 1).setValue(novoStatus);
+    if (obs) sheet.getRange(rowNum, 25).setValue(String(obs)); // coluna Observações
+    return jsonOk_({ oppId: oppId, status: novoStatus });
+  } catch (e) {
+    logErro_('_atualizarStatusOportunidade_', e);
+    return jsonError_('Erro ao atualizar status.', 'INTERNAL');
+  }
+}
+
+function aprovarOportunidade_(oppId, authToken) {
+  return _atualizarStatusOportunidade_(oppId, 'Aprovada', authToken);
+}
+
+function reprovarOportunidade_(oppId, authToken, motivo) {
+  return _atualizarStatusOportunidade_(oppId, 'Reprovada', authToken, motivo || '');
+}
+
+function encerrarOportunidade_(oppId, authToken) {
+  return _atualizarStatusOportunidade_(oppId, 'Encerrada', authToken);
+}
+
+/**
+ * Gera e envia magic link para empresa cadastrar oportunidade.
+ */
+function enviarMagicLinkOportunidade_(email, authToken) {
+  try { validarTokenAdmin_(authToken); } catch (e) {
+    return jsonError_('Não autorizado: ' + e.message, 'AUTH_ERROR');
+  }
+  if (!email || !validarEmail_(email)) return jsonError_('E-mail inválido.', 'INVALID_PARAM');
+  try {
+    var token = Utilities.getUuid();
+    PropertiesService.getScriptProperties().setProperty('opp_token_' + token, email.toLowerCase().trim());
+    var url   = BASE_URL + '/empresas/oportunidades.html?token=' + token;
+    var html  = '<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body style="font-family:Arial,sans-serif;color:#374151;max-width:600px;margin:0 auto;padding:32px">'
+      + '<h2 style="color:#1d4ed8">Cadastro de Oportunidade — IFRS Campus Rio Grande</h2>'
+      + '<p>Você foi convidado(a) a cadastrar uma vaga de estágio ou emprego no Portal de Oportunidades do IFRS Campus Rio Grande.</p>'
+      + '<p>Clique no botão abaixo para acessar o formulário:</p>'
+      + '<a href="' + url + '" style="display:inline-block;background:#1d4ed8;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:600;margin:16px 0">Cadastrar Oportunidade</a>'
+      + '<p style="font-size:12px;color:#6b7280;margin-top:24px">Ou copie o link: ' + url + '</p>'
+      + '<p style="font-size:12px;color:#6b7280">Este link é de uso único. Em caso de dúvidas, entre em contato: <a href="mailto:estagios@riogrande.ifrs.edu.br">estagios@riogrande.ifrs.edu.br</a></p>'
+      + '</body></html>';
+    GmailApp.sendEmail(email, '[IFRS] Link para cadastro de oportunidade de estágio', '', {
+      htmlBody: html,
+      name: 'Central de Estágios IFRS Campus Rio Grande',
+    });
+    return jsonOk_({ enviado: true, email: email });
+  } catch (e) {
+    logErro_('enviarMagicLinkOportunidade_', e);
+    return jsonError_('Erro ao enviar magic link: ' + e.message, 'INTERNAL');
+  }
+}
+
+/**
+ * Valida token de magic link de oportunidade (GET público).
+ */
+function validarTokenOportunidade_(token) {
+  if (!token) return jsonError_('Token obrigatório.', 'MISSING_PARAM');
+  var email = PropertiesService.getScriptProperties().getProperty('opp_token_' + token);
+  if (!email) return jsonError_('Token inválido ou expirado.', 'AUTH_ERROR');
+  return jsonOk_({ valido: true, email: email });
+}
+
+/**
+ * Admin cadastra oportunidade diretamente (status Aprovada automaticamente).
+ */
+function cadastrarOportunidadeAdmin_(dados, authToken) {
+  try { validarTokenAdmin_(authToken); } catch (e) {
+    return jsonError_('Não autorizado: ' + e.message, 'AUTH_ERROR');
+  }
+  // Reutiliza função existente mas força status Aprovada
+  dados.declaracao = 'Sim';
+  dados._adminDirect = true;
+  try {
+    var result = cadastrarOportunidade_(dados);
+    // Aprova automaticamente: a última linha inserida
+    var ss    = SpreadsheetApp.openById(CFG_OPP.SS_ID || CFG.ID_OPORTUNIDADES || CFG.ID_EMPRESAS);
+    var sheet = ss.getSheetByName(CFG.ABA_OPP);
+    if (sheet) {
+      var lastRow = sheet.getLastRow();
+      sheet.getRange(lastRow, COL_OPP.STATUS + 1).setValue('Aprovada');
+    }
+    return jsonOk_({ mensagem: 'Oportunidade cadastrada e aprovada com sucesso.' });
+  } catch (e) {
+    logErro_('cadastrarOportunidadeAdmin_', e);
+    return jsonError_('Erro ao cadastrar: ' + e.message, 'INTERNAL');
+  }
+}
+
 function jsonError_(msg, code) {
   return ContentService
     .createTextOutput(JSON.stringify({ ok: false, error: msg, code: code || 500 }))
