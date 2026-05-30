@@ -371,9 +371,9 @@
 
       // Drive — pasta do estágio
       if (s.driveUrl && safeUrl(s.driveUrl)) {
-        links += '<a href="' + escapeHtml(safeUrl(s.driveUrl)) + '" target="_blank" rel="noopener" title="Pasta no Drive">Drive ↗</a>';
+        links += '<a href="' + escapeHtml(safeUrl(s.driveUrl)) + '" target="_blank" rel="noopener" title="Pasta no Drive">📁 Abrir pasta ↗</a>';
       } else {
-        links += '<a class="disabled" title="Pasta no Drive não disponível">Drive</a>';
+        links += '<a class="disabled" title="Pasta no Drive não disponível">📁 Pasta</a>';
       }
 
       // Checklist (usa o mesmo endpoint do admin — requer authToken do orientador, mas o link abre na página do checklist)

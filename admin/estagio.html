@@ -500,8 +500,7 @@
         <div class="fluxo-links">
           ${s.driveUrl ? `
           <a href="${escapeHtml(s.driveUrl)}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">
-            <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"/></svg>
-            Pasta no Drive ↗
+            📁 Abrir pasta ↗
           </a>` : ''}
           <a href="../checklist/?id=${escapeHtml(s.id)}" class="btn btn-secondary btn-sm">
             <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
@@ -561,7 +560,7 @@
                 <div class="avulso-item-title">Pasta do Estágio</div>
                 <div class="avulso-item-meta">Todos os documentos gerados são salvos aqui</div>
               </div>
-              <a href="${escapeHtml(_estagio.driveUrl)}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">Abrir pasta ↗</a>
+              <a href="${escapeHtml(_estagio.driveUrl)}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">📁 Abrir pasta ↗</a>
             </div>
           </div>`
         );
@@ -826,7 +825,7 @@
           <div class="doc-actions">
             <div class="doc-actions-left">Aguardando download, assinatura e reenvio pelo Diretor Geral.</div>
             <div class="doc-actions-right">
-              ${s.driveUrl ? `<a href="${escapeHtml(s.driveUrl)}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">Abrir pasta no Drive ↗</a>` : ''}
+              ${s.driveUrl ? `<a href="${escapeHtml(s.driveUrl)}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">📁 Abrir pasta ↗</a>` : ''}
             </div>
           </div>`;
       } else if (aba === 'validacao-final') {
@@ -942,7 +941,7 @@
               🔄 Regenerar TCE
             </button>
             <a href="https://validar.iti.gov.br/" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">Validador ITI ↗</a>
-            ${pastaUrl ? `<a href="${escapeHtml(pastaUrl)}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">📁 Drive ↗</a>` : ''}
+            ${pastaUrl ? `<a href="${escapeHtml(pastaUrl)}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">📁 Abrir pasta ↗</a>` : ''}
           </div>
         </div>`;
     }
