@@ -585,8 +585,7 @@
       html += `<div class="ass-info-item">
         <span class="ass-info-label">TCE original</span>
         <button type="button" onclick="downloadPdf()" class="tl-pdf-link" style="background:none;border:none;padding:0;cursor:pointer;">
-          <svg width="12" height="12" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7.414A2 2 0 0015.414 6L12 2.586A2 2 0 0010.586 2H6zm5 6a1 1 0 10-2 0v3.586l-1.293-1.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V8z" clip-rule="evenodd"/></svg>
-          Baixar PDF
+          📄 Abrir PDF
         </button>
       </div>`;
     }
@@ -810,7 +809,7 @@
             <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
               <path fill-rule="evenodd" d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7.414A2 2 0 0015.414 6L12 2.586A2 2 0 0010.586 2H6zm5 6a1 1 0 10-2 0v3.586l-1.293-1.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V8z" clip-rule="evenodd"/>
             </svg>
-            Baixar PDF atual
+            📄 Abrir PDF ↗
           </button>
           <a href="https://validar.iti.gov.br/" target="_blank" rel="noopener noreferrer"
              class="btn btn-secondary" title="Validar assinatura digital no portal ITI Gov.br">
@@ -1044,8 +1043,7 @@
             ${dataStr  ? `<span>📅 ${dataStr}</span>` : ''}
             ${prazoStr ? `<span>⏰ ${prazoStr}</span>` : ''}
             ${temPdf && meuToken ? `<button type="button" onclick="downloadPdf(${etapa.numero})" class="tl-pdf-link" style="background:none;border:none;padding:0;cursor:pointer;">
-              <svg width="12" height="12" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7.414A2 2 0 0015.414 6L12 2.586A2 2 0 0010.586 2H6zm5 6a1 1 0 10-2 0v3.586l-1.293-1.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V8z" clip-rule="evenodd"/></svg>
-              Baixar PDF
+              📄 Abrir PDF
             </button>` : ''}
             ${etapa.obs ? `<span title="${escapeHtml(etapa.obs)}">📝 Obs: ${escapeHtml(etapa.obs.substring(0,50))}${etapa.obs.length>50?'…':''}</span>` : ''}
           </div>` : ''}

@@ -525,7 +525,13 @@
       const temTCE       = !!_fluxoTCE;
       const avalConc     = _avaliacoes.filter(a => a.status === 'concluido' && a.pdfUrl);
       const temParecer   = !!(_parecer && _parecer.statusGeral === 'aprovado' && _parecer.pdfUrl);
-      const totalDocs    = (temChecklist?1:0) + (temTCE?1:0)
+      const admissaoDocs = _estagio ? [
+        _estagio.linkDocMatricula,
+        _estagio.linkDocIdentidade,
+        _estagio.linkDocBoletim,
+      ].filter(Boolean).length : 0;
+      const totalDocs    = admissaoDocs
+        + (temChecklist?1:0) + (temTCE?1:0)
         + _docsEnviados.length + _aguardandoDG.length + _validacaoFinal.length + _fluxoDigital.length
         + avalConc.length + (temParecer?1:0) + _docsAvulsos.length;
       document.getElementById('cnt-docs').textContent = totalDocs > 0 ? String(totalDocs) : '';
@@ -641,7 +647,7 @@
               <div class="avulso-item-meta">Período: ${escapeHtml(perLabel)} · Concluída em: ${escapeHtml(dtConc)}</div>
             </div>
             <div style="display:flex;gap:var(--space-2)">
-              <a href="${escapeHtml(a.pdfUrl)}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">Abrir PDF ↗</a>
+              <a href="${escapeHtml(a.pdfUrl)}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">📄 Abrir PDF ↗</a>
               <button class="btn btn-secondary btn-sm" onclick="regenerarPdfAvaliacao('${escapeHtml(a.avalId)}', this)">🔄 Regenerar</button>
             </div>
           </div>`;
