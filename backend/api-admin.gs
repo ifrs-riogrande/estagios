@@ -138,7 +138,7 @@ function doGetAdmin(e) {
       case 'listarCadastrosPendentes': return listarCadastrosPendentes_();
       case 'listarAdendosAdmin':       return listarAdendosAdmin_();
       case 'listarAgentesAdmin':       return listarAgentesAdmin_();
-      case 'listarOportunidadesAdmin': return listarOportunidadesAdmin_(authToken);
+      case 'listarOportunidadesAdmin': return listarOportunidadesAdmin_(token);
       case 'listarTodosCursos':        return listarTodosCursos_();
       case 'obterDiretorGeral':        return jsonOk_(obterDadosDiretorGeralAdmin_());
       case 'obterDiretoriaDEN':        return jsonOk_(_obterDiretoriaAdmin_('DEN'));
