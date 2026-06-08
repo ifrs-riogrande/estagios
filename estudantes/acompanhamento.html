@@ -187,6 +187,7 @@
     let _atual = null;
     let _historico = null;
     let _avaliacoes = [];
+    let _meuperfil = null;  // cache de obterMeuCadastro
 
     const _arquivos = { solicitacao: null, tce: null, tce_nao_obrig: null };
 
@@ -2115,13 +2116,20 @@
         <p style="margin-top:48px;text-align:center;font-family:Arial,sans-serif;font-size:7pt;font-style:italic;color:#777;border-top:1px solid #ccc;padding-top:6px">SGE · IFRS Campus Rio Grande · Visualização gerada em ${_dataEmissao} · ID: ${_idEstagio}</p>`;
     }
 
-    function previewAdendo() {
+    async function previewAdendo() {
       const tipo = document.getElementById('adendo-tipoAdendo')?.value;
       if (!tipo || !ADENDO_TEMPLATES[tipo]) {
         alert('Selecione um tipo de adendo e preencha os campos antes de visualizar.');
         return;
       }
       const s = _atual || {};
+
+      // Carrega perfil do estudante (nome e matrícula oficiais) — uma só vez por sessão
+      if (!_meuperfil) {
+        try {
+          _meuperfil = await API.get('obterMeuCadastro', { authToken: getAccessToken() });
+        } catch (_) { _meuperfil = {}; }
+      }
 
       // Coleta dados do formulário dinâmico
       const campos = _coletarCamposDinamicos();
@@ -2139,22 +2147,34 @@
         const m = String(v).match(/^(\d{4})-(\d{2})-(\d{2})$/);
         return m ? `${m[3]}/${m[2]}/${m[1]}` : String(v);
       }
-      // Converte todos os campos ac-* que sejam datas ISO
       Object.keys(campos).forEach(k => {
         if (/data|inicio|termino|vigencia/i.test(k) && /^\d{4}-\d{2}-\d{2}$/.test(campos[k])) {
           campos[k] = _isoParaBr(campos[k]);
         }
       });
 
+      // Formata CNPJ: 14 dígitos → XX.XXX.XXX/XXXX-XX
+      function _fmtCnpj(v) {
+        const d = String(v || '').replace(/\D/g, '');
+        return d.length === 14 ? d.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5') : (v || '');
+      }
+
+      // Empresa: remove CNPJ embutido no nome se existir ("Nome — 12345678000100")
+      const _empBruto  = s.empresa || '_______________';
+      const _empMatch  = _empBruto.match(/^(.+?)\s*[—–-]+\s*(\d+)\s*$/);
+      const _empNome   = _empMatch ? _empMatch[1].trim() : _empBruto;
+      const _empCnpj   = _fmtCnpj(s.cnpjEmpresa || (_empMatch ? _empMatch[2] : ''));
+      const _nomeEmpresaLabel = _empNome + (_empCnpj ? ', CNPJ: ' + _empCnpj : '');
+
       const d = {
-        idEstagio:         s.id           || '',
-        dataFirmamentoTCE: s.dataInicio   || '___/___/______',
-        nomeEmpresa:       s.empresa      || '_______________',
-        nomeAluno:         s.nomeEstudante || getSession()?.name || '_______________',
-        curso:             s.curso        || '_______________',
-        matricula:         s.matricula    || '_______________',
-        dataInicio:        s.dataInicio   || '___/___/______',
-        dataTermino:       s.dataTermino  || '___/___/______',
+        idEstagio:         s.id                                             || '',
+        dataFirmamentoTCE: s.dataInicio                                    || '___/___/______',
+        nomeEmpresa:       _nomeEmpresaLabel,
+        nomeAluno:         _meuperfil.nome || s.nomeEstudante              || '_______________',
+        curso:             s.curso                                         || '_______________',
+        matricula:         _meuperfil.matricula || s.matricula             || '_______________',
+        dataInicio:        s.dataInicio                                    || '___/___/______',
+        dataTermino:       s.dataTermino                                   || '___/___/______',
         ...campos,
       };
 
