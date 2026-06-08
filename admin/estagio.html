@@ -474,10 +474,6 @@
             <label>Data de Término</label>
             <p>${escapeHtml(s.dataTermino || '—')}</p>
           </div>
-          <div class="detail-item detail-full">
-            <label>Calendário de Avaliações</label>
-            ${buildAvaliacoesPrevistasHtml(s.dataInicio, s.dataTermino, _avaliacoes)}
-          </div>
           <div class="detail-item">
             <label>Carga Horária Semanal</label>
             <p>${escapeHtml(s.cargaHorariaSemanal || '—')}h</p>
@@ -1288,6 +1284,7 @@
            </div>`;
 
       c.innerHTML = `
+        ${buildAvaliacoesPrevistasHtml(_estagio.dataInicio, _estagio.dataTermino, _avaliacoes)}
         ${tabelaHtml}
 
         <!-- Iniciar nova avaliação -->
