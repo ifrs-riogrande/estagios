@@ -1104,6 +1104,8 @@ function listarMeusEstagios_(e) {
         linkDocBoletim:       String(r[COL_SOL.LINK_DOC_BOL]        || ''),
         driveUrl:             String(r[COL_SOL.DRIVE_URL]           || ''),
         // ── Dados do estudante ──
+        nomeEstudante:        String(r[COL_SOL.NOME_ESTUDANTE]      || ''),
+        matricula:            String(r[COL_SOL.MATRICULA]           || ''),
         cpf:                  String(r[COL_SOL.CPF]                 || ''),
         dataNasc:             formatarData_(r[COL_SOL.DATA_NASC]),
         telefone:             String(r[COL_SOL.TELEFONE]            || ''),
