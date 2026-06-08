@@ -83,24 +83,6 @@
       <p>Selecione o módulo correspondente ao seu perfil para acessar os formulários e informações do sistema.</p>
     </div>
 
-    <!-- Faixa de estatísticas -->
-    <div id="stats-strip" style="
-      display:flex; align-items:center; justify-content:center; flex-wrap:wrap;
-      gap:var(--space-1) var(--space-6);
-      padding:var(--space-3) var(--space-4);
-      margin-bottom:var(--space-6);
-      background:var(--color-surface);
-      border:1px solid var(--color-border);
-      border-radius:var(--radius-lg);
-      font-size:var(--font-size-sm);
-      color:var(--color-text-muted);
-      min-height:44px;
-    ">
-      <span id="stat-obrig">• 🎓 — Estágios Obrigatórios Ativos</span>
-      <span id="stat-nao-obrig">• 🚀 — Estágios Não Obrigatórios Ativos</span>
-      <span id="stat-vagas">• 🔥 — Vagas Disponíveis</span>
-    </div>
-
     <!-- Grade de 4 módulos -->
     <div class="hub-grid hub-grid--home" role="list">
 
@@ -167,20 +149,12 @@
   <script>
     document.getElementById('footer-year').textContent = new Date().getFullYear();
 
-    // Faixa de estatísticas + badge oportunidades — carregam em paralelo
+    // Badge de oportunidades
     (async function () {
-      const [opResult, estResult] = await Promise.allSettled([
-        API.get('listarOportunidades', {}),
-        API.get('contarEstagiosAtivos', {}),
-      ]);
-
-      // Oportunidades — badge no card + faixa de estatísticas
       try {
-        const total = (opResult.status === 'fulfilled' && Array.isArray(opResult.value))
-          ? opResult.value.length : 0;
-
-        // Badge no card
-        const badge = document.getElementById('badge-oportunidades');
+        const result = await API.get('listarOportunidades', {});
+        const total  = Array.isArray(result) ? result.length : 0;
+        const badge  = document.getElementById('badge-oportunidades');
         if (badge) {
           badge.textContent = total;
           if (total > 0) {
@@ -189,21 +163,6 @@
             badge.style.border     = '1px solid #86efac';
           }
         }
-
-        // Faixa de estatísticas
-        const sv = document.getElementById('stat-vagas');
-        if (sv) sv.textContent = '• 🔥 ' + total + ' Vaga' + (total !== 1 ? 's' : '') + ' Disponíve' + (total !== 1 ? 'is' : 'l');
-      } catch (_) {}
-
-      // Estágios ativos — stat strip
-      try {
-        const d      = estResult.status === 'fulfilled' ? estResult.value : {};
-        const obrig  = d.obrigatorio    || 0;
-        const nObrig = d.naoObrigatorio || 0;
-        const so = document.getElementById('stat-obrig');
-        const sn = document.getElementById('stat-nao-obrig');
-        if (so) so.textContent = '• 🎓 ' + obrig  + ' Estágio' + (obrig  !== 1 ? 's' : '') + ' Obrigatório'    + (obrig  !== 1 ? 's' : '') + ' Ativo' + (obrig  !== 1 ? 's' : '');
-        if (sn) sn.textContent = '• 🚀 ' + nObrig + ' Estágio' + (nObrig !== 1 ? 's' : '') + ' Não Obrigatório' + (nObrig !== 1 ? 's' : '') + ' Ativo' + (nObrig !== 1 ? 's' : '');
       } catch (_) {}
     })();
   </script>
