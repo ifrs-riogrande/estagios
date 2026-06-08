@@ -2150,7 +2150,7 @@
         idEstagio:         s.id           || '',
         dataFirmamentoTCE: s.dataInicio   || '___/___/______',
         nomeEmpresa:       s.empresa      || '_______________',
-        nomeAluno:         s.nomeEstudante || '_______________',
+        nomeAluno:         s.nomeEstudante || getSession()?.name || '_______________',
         curso:             s.curso        || '_______________',
         matricula:         s.matricula    || '_______________',
         dataInicio:        s.dataInicio   || '___/___/______',
