@@ -1802,9 +1802,10 @@
           obsAdicionais: document.getElementById('adendo-obsAdicionais')?.value?.trim() || '',
           ...camposDinamicos,
         });
+        btn.classList.remove('is-loading');
+        btn.textContent = 'Enviado ✓';
         showFormFeedback(fbId, 'success', 'Adendo enviado!',
           'Sua solicitação foi registrada e será analisada pelo setor de estágios.');
-        btn.textContent = 'Enviado ✓';
       } catch (err) {
         showFormFeedback(fbId, 'error', 'Erro ao enviar', err.message);
         btn.disabled = false; btn.classList.remove('is-loading');
@@ -1837,9 +1838,10 @@
           modoAnexo:   true,
           arquivo:     { nome: file.name, base64: b64 },
         });
+        btn.classList.remove('is-loading');
+        btn.textContent = 'Enviado ✓';
         showFormFeedback(fbId, 'success', 'Adendo enviado!',
           'Seu documento de adendo foi recebido e será analisado pelo setor de estágios.');
-        btn.textContent = 'Enviado ✓';
       } catch (err) {
         showFormFeedback(fbId, 'error', 'Erro ao enviar', err.message);
         btn.disabled = false; btn.classList.remove('is-loading');
