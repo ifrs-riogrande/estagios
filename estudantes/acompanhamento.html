@@ -575,19 +575,19 @@
 
       const tipoAdendoOpts = `
         <option value="">Selecione o tipo...</option>
-        <option value="Prorrogação do estágio">Prorrogação do estágio</option>
-        <option value="Rescisão do estágio">Rescisão do estágio</option>
-        <option value="Alteração da modalidade do estágio obrigatório para não obrigatório">Alteração da modalidade do estágio obrigatório para não obrigatório</option>
-        <option value="Alteração de orientador(a) do estágio">Alteração de orientador(a) do estágio</option>
-        <option value="Alteração de supervisor(a) do estágio">Alteração de supervisor(a) do estágio</option>
-        <option value="Alteração do horário do estágio">Alteração do horário do estágio</option>
-        <option value="Alteração da carga horária semanal do estágio">Alteração da carga horária semanal do estágio</option>
-        <option value="Alteração do plano de atividades do(a) estagiário(a)">Alteração do plano de atividades do(a) estagiário(a)</option>
-        <option value="Alteração da vigência do estágio (início e final)">Alteração da vigência do estágio (início e final)</option>
-        <option value="Alteração de setor/departamento do estágio na empresa/instituição concedente">Alteração de setor/departamento do estágio na empresa/instituição concedente</option>
-        <option value="Alteração da apólice de seguros contra acidentes pessoais em favor do(a) estagiário(a)">Alteração da apólice de seguros contra acidentes pessoais em favor do(a) estagiário(a)</option>
-        <option value="Alteração de remuneração do estágio (remunerado para não remunerado / não remunerado para remunerado)">Alteração de remuneração do estágio (remunerado para não remunerado / não remunerado para remunerado)</option>
-        <option value="Alteração do valor de remuneração, auxílio, bolsa e/ou outros benefícios">Alteração do valor de remuneração, auxílio, bolsa e/ou outros benefícios</option>`;
+        <option value="Prorrogação de estágio">Prorrogação de estágio</option>
+        <option value="Alteração de vigência (início e final)">Alteração de vigência (início e final)</option>
+        <option value="Alteração de modalidade (obrigatório → não obrigatório)">Alteração de modalidade (obrigatório → não obrigatório)</option>
+        <option value="Alteração de modalidade (não obrigatório → obrigatório)">Alteração de modalidade (não obrigatório → obrigatório)</option>
+        <option value="Alteração de orientador">Alteração de orientador</option>
+        <option value="Alteração de supervisor">Alteração de supervisor</option>
+        <option value="Alteração de horário">Alteração de horário</option>
+        <option value="Alteração de carga horária semanal">Alteração de carga horária semanal</option>
+        <option value="Alteração do plano de atividades">Alteração do plano de atividades</option>
+        <option value="Alteração de apólice de seguro">Alteração de apólice de seguro</option>
+        <option value="Alteração de local/setor">Alteração de local/setor</option>
+        <option value="Alteração de remuneração">Alteração de remuneração</option>
+        <option value="Rescisão de estágio">Rescisão de estágio</option>`;
 
       let html = '';
 
@@ -613,29 +613,11 @@
               <div id="adendo-form-area">
                 <div class="form-group">
                   <label class="form-label">Tipo de Adendo <span style="color:var(--color-error)">*</span></label>
-                  <select id="adendo-tipoAdendo" class="form-control">${tipoAdendoOpts}</select>
+                  <select id="adendo-tipoAdendo" class="form-control" onchange="onAdendoTipoChange()">${tipoAdendoOpts}</select>
                 </div>
-                <div class="form-group">
-                  <label class="form-label">Nova Data de Término</label>
-                  <input type="date" id="adendo-novaDataTermino" class="form-control">
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Nova Carga Horária Semanal (h)</label>
-                  <input type="number" id="adendo-novaCargaHoraria" class="form-control" min="1" max="40" placeholder="Ex: 20">
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Novo Horário</label>
-                  <input type="text" id="adendo-novoHorario" class="form-control" placeholder="Ex: Segunda a sexta, 08h–12h">
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Justificativa <span style="color:var(--color-error)">*</span></label>
-                  <textarea id="adendo-justificativa" class="form-control" rows="3" placeholder="Motivo da solicitação de alteração..."></textarea>
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Observações Adicionais</label>
-                  <textarea id="adendo-obsAdicionais" class="form-control" rows="2"></textarea>
-                </div>
-                <button class="btn btn-primary btn-sm" onclick="submitAdendoForm(this)">Enviar Adendo</button>
+                <!-- Campos dinâmicos por tipo -->
+                <div id="adendo-campos-dinamicos" style="display:none"></div>
+                <button class="btn btn-primary btn-sm" id="btn-adendo-form" style="display:none" onclick="submitAdendoForm(this)">Enviar Adendo</button>
               </div>
 
               <!-- Modo upload -->
@@ -1457,32 +1439,367 @@
     }
 
     /* ════════════════════════════════════════
+       ADENDO — CONFIG DE CAMPOS POR TIPO
+    ════════════════════════════════════════ */
+    const ADENDO_CONFIG = {
+      'Prorrogação de estágio': {
+        instrucao: 'Informe a nova data de término para extensão do período de estágio.',
+        campos: [
+          { id: 'ac-novaDataTermino', label: 'Nova Data de Término', type: 'date', required: true },
+        ],
+      },
+      'Alteração de vigência (início e final)': {
+        instrucao: 'Informe a nova data de início e a nova data de término do estágio.',
+        campos: [
+          { id: 'ac-novaDataInicio',  label: 'Nova Data de Início',   type: 'date', required: true },
+          { id: 'ac-novaDataTermino', label: 'Nova Data de Término',  type: 'date', required: true },
+        ],
+      },
+      'Alteração de modalidade (obrigatório → não obrigatório)': {
+        instrucao: 'Solicita a alteração da modalidade de estágio obrigatório para não obrigatório.',
+        campos: [
+          { id: 'ac-dataVigencia', label: 'Data de Vigência da Alteração', type: 'date', required: true },
+        ],
+      },
+      'Alteração de modalidade (não obrigatório → obrigatório)': {
+        instrucao: 'Solicita a alteração da modalidade de estágio não obrigatório para obrigatório.',
+        campos: [
+          { id: 'ac-dataVigencia', label: 'Data de Vigência da Alteração', type: 'date', required: true },
+          { id: 'ac-incluiProrrogacao', label: 'Incluir prorrogação do período?', type: 'checkbox',
+            toggleId: 'ac-prorr-group' },
+          { id: 'ac-novaDataTermino', label: 'Nova Data de Término', type: 'date', required: false,
+            groupId: 'ac-prorr-group', groupHidden: true },
+        ],
+      },
+      'Alteração de orientador': {
+        instrucao: 'Selecione o novo orientador acadêmico do estágio.',
+        campos: [
+          { id: 'ac-dataVigencia',       label: 'Data de Vigência da Alteração', type: 'date',        required: true },
+          { id: 'ac-nomeNovoOrientador', label: 'Novo Orientador',               type: 'select-api',  required: true },
+        ],
+      },
+      'Alteração de supervisor': {
+        instrucao: 'Informe os dados do novo supervisor na empresa concedente.',
+        campos: [
+          { id: 'ac-dataVigencia',      label: 'Data de Vigência da Alteração', type: 'date', required: true },
+          { id: 'ac-nomeNovoSupervisor',label: 'Nome do Novo Supervisor',       type: 'text', required: true, placeholder: 'Nome completo' },
+          { id: 'ac-cargoSupervisor',   label: 'Cargo do Novo Supervisor',      type: 'text', required: false, placeholder: 'Ex: Analista de TI' },
+        ],
+      },
+      'Alteração de horário': {
+        instrucao: 'Informe o novo horário de realização do estágio.',
+        campos: [
+          { id: 'ac-dataVigencia', label: 'Data de Vigência da Alteração', type: 'date', required: true },
+          { id: 'ac-novoHorario',  label: 'Novo Horário',                  type: 'text', required: true, placeholder: 'Ex: Segunda a sexta, 08h–12h' },
+        ],
+      },
+      'Alteração de carga horária semanal': {
+        instrucao: 'Informe a nova carga horária semanal do estágio.',
+        campos: [
+          { id: 'ac-dataVigencia',    label: 'Data de Vigência da Alteração',  type: 'date',   required: true },
+          { id: 'ac-novaCargaHoraria',label: 'Nova Carga Horária Semanal (h)', type: 'number', required: true, placeholder: 'Ex: 20', min: 1, max: 40 },
+        ],
+      },
+      'Alteração do plano de atividades': {
+        instrucao: 'Descreva o novo plano de atividades a ser executado no estágio.',
+        campos: [
+          { id: 'ac-dataVigencia', label: 'Data de Vigência da Alteração', type: 'date',     required: true },
+          { id: 'ac-novoPlano',    label: 'Novo Plano de Atividades',      type: 'textarea', required: true, placeholder: 'Descreva as novas atividades…', rows: 5 },
+        ],
+      },
+      'Alteração de apólice de seguro': {
+        instrucao: 'Informe os dados da nova apólice de seguro contra acidentes pessoais.',
+        campos: [
+          { id: 'ac-numeroApolice',  label: 'Número da Nova Apólice', type: 'text', required: true,  placeholder: 'Número da apólice' },
+          { id: 'ac-nomeSeguradoras',label: 'Nome da Seguradora',     type: 'text', required: true,  placeholder: 'Nome da seguradora' },
+        ],
+      },
+      'Alteração de local/setor': {
+        instrucao: 'Informe o novo local ou setor onde as atividades serão realizadas.',
+        campos: [
+          { id: 'ac-dataVigencia',  label: 'Data de Vigência da Alteração', type: 'date', required: true },
+          { id: 'ac-nomeNovoLocal', label: 'Nome do Novo Local/Setor',      type: 'text', required: true, placeholder: 'Ex: Departamento de TI — Sede Centro' },
+        ],
+      },
+      'Alteração de remuneração': {
+        instrucao: 'Selecione o tipo de alteração de remuneração desejado.',
+        subtipos: {
+          id: 'ac-subtipo-rem',
+          opcoes: [
+            { value: 'nao-rem-para-rem', label: 'Não remunerado → Remunerado' },
+            { value: 'rem-para-nao-rem', label: 'Remunerado → Não remunerado' },
+            { value: 'alterar-valor',    label: 'Alterar valor da bolsa' },
+          ],
+          camposPorSubtipo: {
+            'nao-rem-para-rem': [
+              { id: 'ac-dataVigencia', label: 'Data de Vigência', type: 'date', required: true },
+              { id: 'ac-novoValor',    label: 'Novo Valor Mensal (R$)', type: 'text', required: true, placeholder: 'Ex: 800,00' },
+            ],
+            'rem-para-nao-rem': [
+              { id: 'ac-dataVigencia', label: 'Data de Vigência', type: 'date', required: true },
+            ],
+            'alterar-valor': [
+              { id: 'ac-periodoInicio', label: 'Início do Período', type: 'date', required: true },
+              { id: 'ac-periodoFim',    label: 'Fim do Período',    type: 'date', required: true },
+              { id: 'ac-valorAtual',    label: 'Valor Atual (R$)',  type: 'text', required: true, placeholder: 'Ex: 600,00' },
+              { id: 'ac-novoValor',     label: 'Novo Valor (R$)',   type: 'text', required: true, placeholder: 'Ex: 800,00' },
+            ],
+          },
+        },
+      },
+      'Rescisão de estágio': {
+        instrucao: 'Selecione quem está solicitando a rescisão do Termo de Compromisso de Estágio.',
+        subtipos: {
+          id: 'ac-subtipo-rescisao',
+          opcoes: [
+            { value: 'pela-empresa', label: 'Pela empresa concedente' },
+            { value: 'pelo-ifrs',    label: 'Pelo IFRS' },
+          ],
+          camposPorSubtipo: {
+            'pela-empresa': [],   // dados da empresa verificados dinamicamente
+            'pelo-ifrs':    [],   // todos automáticos
+          },
+        },
+      },
+    };
+
+    /* ════════════════════════════════════════
+       ADENDO — RENDERIZAÇÃO DINÂMICA
+    ════════════════════════════════════════ */
+    async function onAdendoTipoChange() {
+      const tipo      = document.getElementById('adendo-tipoAdendo')?.value;
+      const container = document.getElementById('adendo-campos-dinamicos');
+      const btnEnviar = document.getElementById('btn-adendo-form');
+      hideFormFeedback('fb-adendo');
+
+      if (!tipo || !ADENDO_CONFIG[tipo]) {
+        if (container) { container.innerHTML = ''; container.style.display = 'none'; }
+        if (btnEnviar) btnEnviar.style.display = 'none';
+        return;
+      }
+
+      const cfg = ADENDO_CONFIG[tipo];
+      let html = '';
+
+      // Instrução
+      if (cfg.instrucao) {
+        html += `<p style="font-size:var(--font-size-sm);color:var(--color-text-muted);
+                           background:var(--color-bg);border:1px solid var(--color-border);
+                           border-radius:var(--radius-md);padding:var(--space-3) var(--space-4);
+                           margin-bottom:var(--space-4)">${escapeHtml(cfg.instrucao)}</p>`;
+      }
+
+      // Campos diretos (sem subtipos)
+      if (cfg.campos) {
+        html += renderCamposAdendo(cfg.campos);
+      }
+
+      // Subtipos (remuneração, rescisão)
+      if (cfg.subtipos) {
+        const st = cfg.subtipos;
+        html += `
+          <div class="form-group">
+            <label class="form-label">Tipo de Alteração <span style="color:var(--color-error)">*</span></label>
+            <select id="${escapeHtml(st.id)}" class="form-control" onchange="onAdendoSubtipoChange()">
+              <option value="">Selecione...</option>
+              ${st.opcoes.map(o => `<option value="${escapeHtml(o.value)}">${escapeHtml(o.label)}</option>`).join('')}
+            </select>
+          </div>
+          <div id="adendo-subcampos"></div>`;
+      }
+
+      // Justificativa e obs — sempre presentes
+      html += `
+        <div class="form-group">
+          <label class="form-label">Justificativa <span style="color:var(--color-error)">*</span></label>
+          <textarea id="adendo-justificativa" class="form-control" rows="3"
+            placeholder="Motivo da solicitação de alteração…"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Observações Adicionais</label>
+          <textarea id="adendo-obsAdicionais" class="form-control" rows="2"></textarea>
+        </div>`;
+
+      container.innerHTML = html;
+      container.style.display = '';
+      if (btnEnviar) btnEnviar.style.display = '';
+
+      // Carrega orientadores se necessário
+      if (tipo === 'Alteração de orientador') {
+        await _carregarSelectOrientadoresAdendo();
+      }
+    }
+
+    function onAdendoSubtipoChange() {
+      const tipo   = document.getElementById('adendo-tipoAdendo')?.value;
+      const cfg    = ADENDO_CONFIG[tipo];
+      if (!cfg || !cfg.subtipos) return;
+
+      const st       = cfg.subtipos;
+      const subtipo  = document.getElementById(st.id)?.value;
+      const subcont  = document.getElementById('adendo-subcampos');
+      if (!subcont) return;
+
+      if (!subtipo || !st.camposPorSubtipo[subtipo]) {
+        subcont.innerHTML = '';
+
+        // Rescisão pela empresa — verifica dados em falta
+        if (tipo === 'Rescisão de estágio' && subtipo === 'pela-empresa') {
+          subcont.innerHTML = _buildCamposRescisaoEmpresa();
+        }
+        return;
+      }
+
+      const campos = st.camposPorSubtipo[subtipo];
+      if (tipo === 'Rescisão de estágio' && subtipo === 'pela-empresa') {
+        subcont.innerHTML = _buildCamposRescisaoEmpresa();
+      } else {
+        subcont.innerHTML = renderCamposAdendo(campos);
+      }
+    }
+
+    function _buildCamposRescisaoEmpresa() {
+      // Mostra apenas campos que NÃO estão preenchidos no estágio atual
+      const s = _atual || {};
+      let html = '';
+      if (!s.enderecoEmpresa)      html += renderCamposAdendo([{ id: 'ac-enderecoEmpresa',    label: 'Endereço da Empresa',                    type: 'text', required: true, placeholder: 'Rua, número, bairro, cidade/UF' }]);
+      if (!s.telefoneEmpresa)      html += renderCamposAdendo([{ id: 'ac-telefoneEmpresa',    label: 'Telefone da Empresa',                    type: 'text', required: false, placeholder: 'Ex: (53) 99999-9999' }]);
+      if (!s.representanteLegal)   html += renderCamposAdendo([{ id: 'ac-representanteLegal', label: 'Nome do Representante Legal da Empresa', type: 'text', required: true, placeholder: 'Nome completo' }]);
+      if (!s.cargoRepresentante)   html += renderCamposAdendo([{ id: 'ac-cargoRepresentante', label: 'Cargo do Representante Legal',           type: 'text', required: true, placeholder: 'Ex: Diretor Administrativo' }]);
+      if (!html) html = `<p style="font-size:var(--font-size-sm);color:var(--color-success);margin-bottom:var(--space-4)">✓ Todos os dados da empresa já estão registrados no sistema.</p>`;
+      return html;
+    }
+
+    function renderCamposAdendo(campos) {
+      return campos.map(f => {
+        if (f.type === 'checkbox') {
+          return `
+            <div class="form-group">
+              <label style="display:flex;align-items:center;gap:var(--space-2);font-size:var(--font-size-sm);cursor:pointer;font-weight:400">
+                <input type="checkbox" id="${escapeHtml(f.id)}"
+                  onchange="document.getElementById('${escapeHtml(f.toggleId)}').style.display=this.checked?'':'none'">
+                ${escapeHtml(f.label)}
+              </label>
+            </div>
+            <div id="${escapeHtml(f.toggleId)}" style="display:none"></div>`;
+        }
+
+        if (f.groupId && f.groupHidden) {
+          // Campo dentro de um grupo toggle — renderizado no container do grupo
+          const script = `
+            <script>
+              (function(){
+                var g=document.getElementById('${escapeHtml(f.groupId)}');
+                if(g) g.innerHTML += ${JSON.stringify(renderCamposAdendo([{...f, groupId:undefined, groupHidden:undefined}]))};
+              })();
+            </scr` + `ipt>`;
+          return script;
+        }
+
+        const req  = f.required ? `<span style="color:var(--color-error)">*</span>` : '';
+        let input  = '';
+
+        if (f.type === 'select-api') {
+          input = `<select id="${escapeHtml(f.id)}" class="form-control">
+                     <option value="">Carregando orientadores…</option>
+                   </select>`;
+        } else if (f.type === 'textarea') {
+          input = `<textarea id="${escapeHtml(f.id)}" class="form-control"
+                     rows="${f.rows || 3}"
+                     placeholder="${escapeHtml(f.placeholder || '')}"></textarea>`;
+        } else if (f.type === 'number') {
+          input = `<input type="number" id="${escapeHtml(f.id)}" class="form-control"
+                     min="${f.min || ''}" max="${f.max || ''}"
+                     placeholder="${escapeHtml(f.placeholder || '')}">`;
+        } else {
+          input = `<input type="${escapeHtml(f.type)}" id="${escapeHtml(f.id)}" class="form-control"
+                     placeholder="${escapeHtml(f.placeholder || '')}">`;
+        }
+
+        return `<div class="form-group"><label class="form-label">${escapeHtml(f.label)} ${req}</label>${input}</div>`;
+      }).join('');
+    }
+
+    async function _carregarSelectOrientadoresAdendo() {
+      const sel = document.getElementById('ac-nomeNovoOrientador');
+      if (!sel) return;
+      try {
+        const lista = await apiListarOrientadores(_atual?.curso || '');
+        const opts  = Array.isArray(lista) ? lista : [];
+        sel.innerHTML = '<option value="">Selecione um orientador…</option>' +
+          opts.map(o => `<option value="${escapeHtml(o.nome)}" data-email="${escapeHtml(o.email)}">${escapeHtml(o.nome)}</option>`).join('');
+      } catch (e) {
+        sel.innerHTML = '<option value="">Erro ao carregar — tente novamente</option>';
+      }
+    }
+
+    /* ════════════════════════════════════════
+       ADENDO — COLETA CAMPOS DINÂMICOS
+    ════════════════════════════════════════ */
+    function _coletarCamposDinamicos() {
+      // Coleta todos os inputs/selects/textareas com id começando em "ac-"
+      const payload = {};
+      document.querySelectorAll('[id^="ac-"]').forEach(el => {
+        const key = el.id.replace('ac-', '');
+        if (el.type === 'checkbox') {
+          payload[key] = el.checked;
+        } else {
+          const val = (el.value || '').trim();
+          if (val) payload[key] = val;
+        }
+      });
+      // Orientador: pega também o email do data-attribute
+      const oriSel = document.getElementById('ac-nomeNovoOrientador');
+      if (oriSel && oriSel.value) {
+        const opt = oriSel.options[oriSel.selectedIndex];
+        if (opt && opt.dataset.email) payload['emailNovoOrientador'] = opt.dataset.email;
+      }
+      return payload;
+    }
+
+    /* ════════════════════════════════════════
        ENVIO — ADENDO (formulário)
     ════════════════════════════════════════ */
     async function submitAdendoForm(btn) {
-      const fbId          = 'fb-adendo';
-      const tipoAdendo    = document.getElementById('adendo-tipoAdendo')?.value;
-      const justificativa = document.getElementById('adendo-justificativa')?.value.trim();
+      const fbId        = 'fb-adendo';
+      const tipoAdendo  = document.getElementById('adendo-tipoAdendo')?.value;
+      const justificativa = document.getElementById('adendo-justificativa')?.value?.trim();
 
-      if (!tipoAdendo || !justificativa) {
-        showFormFeedback(fbId, 'error', 'Campos obrigatórios', 'Selecione o tipo de adendo e preencha a justificativa.');
+      if (!tipoAdendo) {
+        showFormFeedback(fbId, 'error', 'Tipo obrigatório', 'Selecione o tipo de adendo.');
         return;
       }
+      if (!justificativa) {
+        showFormFeedback(fbId, 'error', 'Justificativa obrigatória', 'Preencha a justificativa para o adendo.');
+        return;
+      }
+
+      // Valida campos obrigatórios do tipo selecionado
+      const cfg = ADENDO_CONFIG[tipoAdendo];
+      const camposObrig = (cfg?.campos || []).filter(f => f.required && f.type !== 'checkbox' && !f.groupHidden);
+      for (const f of camposObrig) {
+        const el = document.getElementById(f.id);
+        if (!el || !el.value.trim()) {
+          showFormFeedback(fbId, 'error', 'Campo obrigatório', `Preencha o campo "${f.label}".`);
+          el?.focus();
+          return;
+        }
+      }
+
       btn.disabled = true; btn.classList.add('is-loading');
       hideFormFeedback(fbId);
       try {
+        const camposDinamicos = _coletarCamposDinamicos();
         await API.post('enviarAdendo', {
-          authToken:        getAccessToken(),
-          idEstagio:        _atual.id,
+          authToken:    getAccessToken(),
+          idEstagio:    _atual.id,
           tipoAdendo,
-          novaDataTermino:  document.getElementById('adendo-novaDataTermino')?.value  || '',
-          novaCargaHoraria: document.getElementById('adendo-novaCargaHoraria')?.value || '',
-          novoHorario:      document.getElementById('adendo-novoHorario')?.value.trim() || '',
           justificativa,
-          obsAdicionais:    document.getElementById('adendo-obsAdicionais')?.value.trim() || '',
+          obsAdicionais: document.getElementById('adendo-obsAdicionais')?.value?.trim() || '',
+          ...camposDinamicos,
         });
         showFormFeedback(fbId, 'success', 'Adendo enviado!',
-          'Sua solicitação de adendo foi registrada e será analisada pelo setor de estágios.');
+          'Sua solicitação foi registrada e será analisada pelo setor de estágios.');
         btn.textContent = 'Enviado ✓';
       } catch (err) {
         showFormFeedback(fbId, 'error', 'Erro ao enviar', err.message);
