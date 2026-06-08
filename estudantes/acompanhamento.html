@@ -15,17 +15,25 @@
     .estagio-selector{background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:var(--space-5);margin-bottom:var(--space-6);}
     .estagio-selector label{font-size:var(--font-size-sm);font-weight:500;display:block;margin-bottom:var(--space-2);}
 
+    /* ── Abas ── */
+    .ficha-tabs{display:flex;gap:0;border-bottom:2px solid var(--color-border);margin-bottom:var(--space-6);overflow-x:auto;}
+    .ficha-tab{padding:var(--space-3) var(--space-5);font-size:var(--font-size-sm);font-weight:500;cursor:pointer;border:none;background:none;color:var(--color-text-muted);border-bottom:2px solid transparent;margin-bottom:-2px;transition:all 0.15s;display:flex;align-items:center;gap:var(--space-2);white-space:nowrap;}
+    .ficha-tab.active{color:var(--color-primary);border-bottom-color:var(--color-primary);}
+    .ficha-tab:hover:not(.active){color:var(--color-text);}
+    .tab-count{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;border-radius:9999px;font-size:11px;background:var(--color-bg);padding:0 6px;}
+    .ficha-tab.active .tab-count{background:var(--color-primary);color:#fff;}
+    .tab-count:empty{display:none;}
+
+    /* ── Hero subtítulo ── */
+    #hero-sub{display:flex;align-items:center;gap:var(--space-3);flex-wrap:wrap;margin-top:4px;font-size:var(--font-size-sm);}
+    .hero-sep{opacity:.4;}
+
     /* ── Timeline de status ── */
     .timeline{position:relative;padding-left:var(--space-10);margin-bottom:var(--space-8);}
     .timeline::before{content:'';position:absolute;left:20px;top:12px;bottom:12px;width:2px;background:var(--color-border);}
     .timeline-item{position:relative;margin-bottom:var(--space-6);}
     .timeline-item:last-child{margin-bottom:0;}
-    .timeline-dot{
-      position:absolute;left:-32px;top:4px;
-      width:24px;height:24px;border-radius:50%;
-      display:flex;align-items:center;justify-content:center;
-      font-size:12px;font-weight:600;border:2px solid;
-    }
+    .timeline-dot{position:absolute;left:-32px;top:4px;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;border:2px solid;}
     .timeline-dot--done    {background:var(--color-success);border-color:var(--color-success);color:#fff;}
     .timeline-dot--active  {background:var(--color-primary);border-color:var(--color-primary);color:#fff;box-shadow:0 0 0 4px rgba(26,58,107,.15);}
     .timeline-dot--pending {background:var(--color-surface);border-color:var(--color-border);color:var(--color-text-light);}
@@ -80,7 +88,7 @@
 
     .loading-page{text-align:center;padding:var(--space-16);color:var(--color-text-muted);}
 
-    /* ── Seções de documentos (relatórios / adendo) ── */
+    /* ── Seções de documentos ── */
     .doc-sections-wrap{margin-top:var(--space-2);}
     .doc-sections-title{font-size:var(--font-size-sm);font-weight:600;color:var(--color-text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:var(--space-3);}
     .doc-section{background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);margin-bottom:var(--space-3);overflow:hidden;}
@@ -91,12 +99,11 @@
     .doc-section-hdr.is-open .ds-chevron{transform:rotate(180deg);}
     .doc-section-body{display:none;padding:var(--space-5);border-top:1px solid var(--color-border);}
     .doc-section-body.is-open{display:block;}
-    /* Toggle modo adendo */
     .mode-toggle{display:flex;gap:var(--space-2);margin-bottom:var(--space-5);}
     .mode-toggle-btn{padding:5px var(--space-4);border-radius:9999px;border:1px solid var(--color-border);background:var(--color-bg);font-size:var(--font-size-sm);cursor:pointer;font-weight:500;transition:all .12s;}
     .mode-toggle-btn.active{background:var(--color-primary);color:#fff;border-color:var(--color-primary);}
 
-    /* ── Histórico de documentos ── */
+    /* ── Histórico ── */
     .hist-list{display:flex;flex-direction:column;gap:var(--space-3);margin-bottom:var(--space-2);}
     .hist-item{background:var(--color-bg);border:1px solid var(--color-border);border-radius:var(--radius-md);padding:var(--space-3) var(--space-4);}
     .hist-item-row{display:flex;align-items:center;justify-content:space-between;gap:var(--space-3);flex-wrap:wrap;margin-bottom:4px;}
@@ -135,7 +142,7 @@
     <section class="page-hero">
       <div class="container">
         <h1>Acompanhamento de Estágio</h1>
-        <p>Acompanhe o andamento do processo e envie documentos quando solicitado.</p>
+        <div id="hero-sub"></div>
       </div>
     </section>
 
@@ -164,7 +171,6 @@
     let _atual = null;
     let _historico = null;
 
-    /* ── Arquivos selecionados para upload ── */
     const _arquivos = { solicitacao: null, tce: null, tce_nao_obrig: null };
 
     document.addEventListener('DOMContentLoaded', async () => {
@@ -202,18 +208,45 @@
         return;
       }
 
-      // Selector + conteúdo do estágio selecionado
-      const opcoes = _estagios.map((e, i) =>
-        `<option value="${i}">${escapeHtml(e.id)} — ${escapeHtml(e.empresa)} (${escapeHtml(e.status)})</option>`).join('');
+      const selectorHtml = _estagios.length > 1
+        ? `<div class="estagio-selector">
+             <label for="sel-estagio">Selecione o estágio:</label>
+             <select id="sel-estagio" class="form-control" onchange="selecionarEstagio(this.value)">
+               ${_estagios.map((e, i) =>
+                 `<option value="${i}">${escapeHtml(e.id)} — ${escapeHtml(e.empresa)} (${escapeHtml(e.status)})</option>`
+               ).join('')}
+             </select>
+           </div>`
+        : '';
 
       c.innerHTML = `
-        <div class="estagio-selector">
-          <label for="sel-estagio">Selecione o estágio:</label>
-          <select id="sel-estagio" class="form-control" onchange="selecionarEstagio(this.value)">
-            ${opcoes}
-          </select>
-        </div>
-        <div id="estagio-detalhe"></div>`;
+        ${selectorHtml}
+        <div id="ficha-tabs-wrap">
+          <div class="ficha-tabs" role="tablist">
+            <button class="ficha-tab active" data-tab="andamento" onclick="mudarAba('andamento')" role="tab">
+              <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/></svg>
+              Andamento
+            </button>
+            <button class="ficha-tab" data-tab="dados" onclick="mudarAba('dados')" role="tab">
+              <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"/></svg>
+              Dados
+            </button>
+            <button class="ficha-tab" data-tab="documentos" onclick="mudarAba('documentos')" role="tab">
+              <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path d="M9 2a2 2 0 00-2 2v8a2 2 0 002 2h6a2 2 0 002-2V6.414A2 2 0 0016.414 5L14 2.586A2 2 0 0012.586 2H9z"/><path d="M3 8a2 2 0 012-2v10h8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z"/></svg>
+              Documentos
+              <span class="tab-count" id="cnt-docs"></span>
+            </button>
+            <button class="ficha-tab" data-tab="adendos" onclick="mudarAba('adendos')" role="tab">
+              <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M17.707 9.293a1 1 0 010 1.414l-7 7a1 1 0 01-1.414 0l-7-7A.997.997 0 012 10V5a3 3 0 013-3h5c.256 0 .512.098.707.293l7 7zM5 6a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd"/></svg>
+              Adendos
+              <span class="tab-count" id="cnt-adendos"></span>
+            </button>
+          </div>
+          <div id="tab-andamento"></div>
+          <div id="tab-dados" hidden></div>
+          <div id="tab-documentos" hidden></div>
+          <div id="tab-adendos" hidden></div>
+        </div>`;
 
       selecionarEstagio(0);
     }
@@ -222,41 +255,83 @@
       _atual = _estagios[parseInt(idx)] || null;
       _historico = null;
       if (!_atual) return;
+
+      // Atualiza hero
+      const sub = document.getElementById('hero-sub');
+      if (sub) {
+        sub.innerHTML =
+          `<code style="font-size:13px;background:rgba(255,255,255,.2);padding:2px 6px;border-radius:4px">${escapeHtml(_atual.id)}</code>` +
+          '<span class="hero-sep">·</span>' +
+          escapeHtml(_atual.empresa || '—') +
+          '<span class="hero-sep">·</span>' +
+          badgeStatus(_atual.status);
+      }
+
       renderDetalhe();
+
       // Carrega histórico em segundo plano
       try {
         _historico = await apiListarHistoricoEstagio(_atual.id);
       } catch (e) {
         _historico = { error: e.message, relatoriosParciais: [], relatorioFinal: null, adendos: [], documentos: [] };
       }
-      const wrap = document.getElementById('wrap-historico');
-      if (wrap) wrap.innerHTML = buildSecaoHistorico(_historico);
+      const wrapDocs   = document.getElementById('wrap-hist-docs');
+      const wrapAdendos = document.getElementById('wrap-hist-adendos');
+      if (wrapDocs)    wrapDocs.innerHTML    = buildHistoricoDocumentos(_historico);
+      if (wrapAdendos) wrapAdendos.innerHTML = buildHistoricoAdendos(_historico);
+      _atualizarContadores();
     }
 
     /* ════════════════════════════════════════
-       RENDER DETALHE DO ESTÁGIO
+       RENDER DETALHE — PREENCHE ABAS
     ════════════════════════════════════════ */
     function renderDetalhe() {
       const s = _atual;
-      const container = document.getElementById('estagio-detalhe');
 
-      // Monta timeline de passos
-      const passos = buildTimeline(s.status);
+      document.getElementById('tab-andamento').innerHTML  = buildTabAndamento(s);
+      document.getElementById('tab-dados').innerHTML      = buildTabDados(s);
+      document.getElementById('tab-documentos').innerHTML = buildTabDocumentos(s);
+      document.getElementById('tab-adendos').innerHTML    = buildTabAdendos(s);
 
-      // Card de ação dependendo do status
+      initUpload('upload-solicitacao', 'solicitacao');
+      initUpload('upload-tce', 'tce');
+      initUpload('upload-tce-nao', 'tce_nao_obrig');
+      initAdendoUpload();
+      initUploadAvulso();
+
+      if (s.status === 'Aceite recusado') inicializarTrocaOrientador();
+    }
+
+    function mudarAba(aba) {
+      document.querySelectorAll('.ficha-tab').forEach(t =>
+        t.classList.toggle('active', t.dataset.tab === aba)
+      );
+      ['andamento', 'dados', 'documentos', 'adendos'].forEach(id => {
+        const el = document.getElementById('tab-' + id);
+        if (el) el.hidden = (id !== aba);
+      });
+    }
+
+    function _atualizarContadores() {
+      if (!_historico) return;
+      const { relatoriosParciais = [], relatorioFinal = null, adendos = [], documentos = [] } = _historico;
+      const cntDocs   = relatoriosParciais.length + (relatorioFinal ? 1 : 0) + documentos.length;
+      const cntAdendo = adendos.length;
+      const elDocs   = document.getElementById('cnt-docs');
+      const elAdendo = document.getElementById('cnt-adendos');
+      if (elDocs)   elDocs.textContent   = cntDocs   > 0 ? String(cntDocs)   : '';
+      if (elAdendo) elAdendo.textContent = cntAdendo > 0 ? String(cntAdendo) : '';
+    }
+
+    /* ════════════════════════════════════════
+       ABA: ANDAMENTO
+    ════════════════════════════════════════ */
+    function buildTabAndamento(s) {
+      const passos   = buildTimeline(s.status);
       const cardAcao = buildCardAcao(s);
-
-      container.innerHTML = `
+      return `
         <div class="main-cols">
-          <!-- Coluna principal -->
-          <div>
-            ${cardAcao}
-            ${buildSecaoInfoCompleta(s)}
-            <div id="wrap-historico">${buildSecaoHistorico(null)}</div>
-            ${buildSecaoUploadAvulso()}
-          </div>
-
-          <!-- Sidebar: timeline -->
+          <div>${cardAcao}</div>
           <div>
             <div class="action-card" style="padding:var(--space-5)">
               <h2 style="margin-bottom:var(--space-5)">Etapas do Processo</h2>
@@ -264,16 +339,237 @@
             </div>
           </div>
         </div>`;
+    }
 
-      // Inicializa uploads
-      initUpload('upload-solicitacao', 'solicitacao');
-      initUpload('upload-tce', 'tce');
-      initUpload('upload-tce-nao', 'tce_nao_obrig');
-      initAdendoUpload();
-      initUploadAvulso();
+    /* ════════════════════════════════════════
+       ABA: DADOS
+    ════════════════════════════════════════ */
+    function buildTabDados(s) {
+      return buildSecaoInfoCompleta(s);
+    }
 
-      // Inicializa picker de troca de orientador (se visível)
-      if (s.status === 'Aceite recusado') inicializarTrocaOrientador();
+    /* ════════════════════════════════════════
+       ABA: DOCUMENTOS
+    ════════════════════════════════════════ */
+    function buildTabDocumentos(s) {
+      const isAtivo = s.status === 'Ativo' || s.status === 'Em execução';
+      const chevron = `<svg class="ds-chevron" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>`;
+      const avOpts  = `
+        <option value="">Selecione...</option>
+        <option value="Ótimo">Ótimo</option>
+        <option value="Bom">Bom</option>
+        <option value="Regular">Regular</option>
+        <option value="Ruim">Ruim</option>`;
+
+      let html = `<div id="wrap-hist-docs">${buildHistoricoDocumentos(null)}</div>`;
+
+      if (isAtivo) {
+        html += `
+        <div class="doc-sections-wrap">
+          <p class="doc-sections-title">Enviar Documentos</p>
+
+          <!-- ── Relatório Parcial ── -->
+          <div class="doc-section">
+            <div class="doc-section-hdr" id="rp-hdr" onclick="toggleDocSection('rp')">
+              <h3>📄 Relatório Parcial</h3>${chevron}
+            </div>
+            <div class="doc-section-body" id="rp-body">
+              <p style="font-size:var(--font-size-sm);color:var(--color-text-muted);margin-bottom:var(--space-4)">
+                Descreva as atividades realizadas no período de referência. Após o envio, o documento passará pelo fluxo de assinaturas digitais (gov.br): <strong>você → empresa concedente → supervisor</strong>.
+              </p>
+              <div id="fb-rp"></div>
+              <div class="form-group">
+                <label class="form-label">Período de Referência <span style="color:var(--color-error)">*</span></label>
+                <input type="text" id="rp-periodoRef" class="form-control" placeholder="Ex: Jan/2025 – Mar/2025">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Atividades Realizadas <span style="color:var(--color-error)">*</span></label>
+                <textarea id="rp-atividadesRealizadas" class="form-control" rows="4" placeholder="Descreva as principais atividades desenvolvidas no período..."></textarea>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Aprendizagens Obtidas</label>
+                <textarea id="rp-aprendizagens" class="form-control" rows="3" placeholder="Conhecimentos e habilidades adquiridos..."></textarea>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Relação com o Curso</label>
+                <textarea id="rp-relacaoCurso" class="form-control" rows="3" placeholder="Como as atividades se relacionam com o seu curso..."></textarea>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Avaliação do Estágio <span style="color:var(--color-error)">*</span></label>
+                <select id="rp-avaliacaoEstagio" class="form-control">${avOpts}</select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Dificuldades Encontradas</label>
+                <textarea id="rp-dificuldades" class="form-control" rows="3" placeholder="Dificuldades ou desafios encontrados..."></textarea>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Sugestões</label>
+                <textarea id="rp-sugestoes" class="form-control" rows="2" placeholder="Sugestões para melhoria do estágio..."></textarea>
+              </div>
+              <button class="btn btn-primary btn-sm" onclick="submitRelatorioParcial(this)">Enviar Relatório Parcial</button>
+            </div>
+          </div>
+
+          <!-- ── Relatório Final ── -->
+          <div class="doc-section">
+            <div class="doc-section-hdr" id="rf-hdr" onclick="toggleDocSection('rf')">
+              <h3>📋 Relatório Final</h3>${chevron}
+            </div>
+            <div class="doc-section-body" id="rf-body">
+              <p style="font-size:var(--font-size-sm);color:var(--color-text-muted);margin-bottom:var(--space-4)">
+                Relatório a ser preenchido ao término do estágio. Após o envio, o documento passará pelo fluxo de assinaturas digitais (gov.br): <strong>você → empresa concedente → supervisor</strong>.
+              </p>
+              <div id="fb-rf"></div>
+              <div class="form-group">
+                <label class="form-label">Data de Encerramento <span style="color:var(--color-error)">*</span></label>
+                <input type="date" id="rf-dataEncerramento" class="form-control">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Resumo das Atividades <span style="color:var(--color-error)">*</span></label>
+                <textarea id="rf-resumoAtividades" class="form-control" rows="4" placeholder="Resumo geral das atividades realizadas durante todo o estágio..."></textarea>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Competências Desenvolvidas</label>
+                <textarea id="rf-competenciasDesenvolvidas" class="form-control" rows="3" placeholder="Competências técnicas e comportamentais desenvolvidas..."></textarea>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Contribuição para a Formação</label>
+                <textarea id="rf-contribuicaoFormacao" class="form-control" rows="3" placeholder="Como o estágio contribuiu para sua formação acadêmica e profissional..."></textarea>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Avaliação da Empresa Concedente <span style="color:var(--color-error)">*</span></label>
+                <select id="rf-avaliacaoConcedente" class="form-control">${avOpts}</select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Avaliação do Orientador Acadêmico <span style="color:var(--color-error)">*</span></label>
+                <select id="rf-avaliacaoOrientador" class="form-control">${avOpts}</select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Recomendaria este estágio? <span style="color:var(--color-error)">*</span></label>
+                <div style="display:flex;gap:var(--space-5);margin-top:var(--space-2)">
+                  <label style="display:flex;align-items:center;gap:var(--space-2);font-size:var(--font-size-sm);font-weight:400;cursor:pointer">
+                    <input type="radio" name="recomendaria" value="Sim"> Sim
+                  </label>
+                  <label style="display:flex;align-items:center;gap:var(--space-2);font-size:var(--font-size-sm);font-weight:400;cursor:pointer">
+                    <input type="radio" name="recomendaria" value="Não"> Não
+                  </label>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Considerações Finais</label>
+                <textarea id="rf-consideracoesFinais" class="form-control" rows="3" placeholder="Comentários finais sobre a experiência..."></textarea>
+              </div>
+              <button class="btn btn-primary btn-sm" onclick="submitRelatorioFinal(this)">Enviar Relatório Final</button>
+            </div>
+          </div>
+
+        </div>`;
+      }
+
+      html += buildSecaoUploadAvulso();
+      return html;
+    }
+
+    /* ════════════════════════════════════════
+       ABA: ADENDOS
+    ════════════════════════════════════════ */
+    function buildTabAdendos(s) {
+      const isAtivo = s.status === 'Ativo' || s.status === 'Em execução';
+      const chevron = `<svg class="ds-chevron" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>`;
+
+      const tipoAdendoOpts = `
+        <option value="">Selecione o tipo...</option>
+        <option value="Prorrogação do estágio">Prorrogação do estágio</option>
+        <option value="Rescisão do estágio">Rescisão do estágio</option>
+        <option value="Alteração da modalidade do estágio obrigatório para não obrigatório">Alteração da modalidade do estágio obrigatório para não obrigatório</option>
+        <option value="Alteração de orientador(a) do estágio">Alteração de orientador(a) do estágio</option>
+        <option value="Alteração de supervisor(a) do estágio">Alteração de supervisor(a) do estágio</option>
+        <option value="Alteração do horário do estágio">Alteração do horário do estágio</option>
+        <option value="Alteração da carga horária semanal do estágio">Alteração da carga horária semanal do estágio</option>
+        <option value="Alteração do plano de atividades do(a) estagiário(a)">Alteração do plano de atividades do(a) estagiário(a)</option>
+        <option value="Alteração da vigência do estágio (início e final)">Alteração da vigência do estágio (início e final)</option>
+        <option value="Alteração de setor/departamento do estágio na empresa/instituição concedente">Alteração de setor/departamento do estágio na empresa/instituição concedente</option>
+        <option value="Alteração da apólice de seguros contra acidentes pessoais em favor do(a) estagiário(a)">Alteração da apólice de seguros contra acidentes pessoais em favor do(a) estagiário(a)</option>
+        <option value="Alteração de remuneração do estágio (remunerado para não remunerado / não remunerado para remunerado)">Alteração de remuneração do estágio (remunerado para não remunerado / não remunerado para remunerado)</option>
+        <option value="Alteração do valor de remuneração, auxílio, bolsa e/ou outros benefícios">Alteração do valor de remuneração, auxílio, bolsa e/ou outros benefícios</option>`;
+
+      let html = '';
+
+      if (isAtivo) {
+        html += `
+        <div class="doc-sections-wrap">
+          <p class="doc-sections-title">Nova Solicitação de Adendo</p>
+          <div class="doc-section">
+            <div class="doc-section-hdr" id="adendo-hdr" onclick="toggleDocSection('adendo')">
+              <h3>✏️ Adendo ao TCE</h3>${chevron}
+            </div>
+            <div class="doc-section-body" id="adendo-body">
+              <p style="font-size:var(--font-size-sm);color:var(--color-text-muted);margin-bottom:var(--space-4)">
+                Solicite alterações no Termo de Compromisso de Estágio. Preencha o formulário ou, se preferir, anexe um documento já preparado.
+              </p>
+              <div class="mode-toggle">
+                <button class="mode-toggle-btn active" data-modo="form" onclick="setAdendoModo('form')">Preencher formulário</button>
+                <button class="mode-toggle-btn" data-modo="upload" onclick="setAdendoModo('upload')">Anexar documento</button>
+              </div>
+              <div id="fb-adendo"></div>
+
+              <!-- Modo formulário -->
+              <div id="adendo-form-area">
+                <div class="form-group">
+                  <label class="form-label">Tipo de Adendo <span style="color:var(--color-error)">*</span></label>
+                  <select id="adendo-tipoAdendo" class="form-control">${tipoAdendoOpts}</select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Nova Data de Término</label>
+                  <input type="date" id="adendo-novaDataTermino" class="form-control">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Nova Carga Horária Semanal (h)</label>
+                  <input type="number" id="adendo-novaCargaHoraria" class="form-control" min="1" max="40" placeholder="Ex: 20">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Novo Horário</label>
+                  <input type="text" id="adendo-novoHorario" class="form-control" placeholder="Ex: Segunda a sexta, 08h–12h">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Justificativa <span style="color:var(--color-error)">*</span></label>
+                  <textarea id="adendo-justificativa" class="form-control" rows="3" placeholder="Motivo da solicitação de alteração..."></textarea>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Observações Adicionais</label>
+                  <textarea id="adendo-obsAdicionais" class="form-control" rows="2"></textarea>
+                </div>
+                <button class="btn btn-primary btn-sm" onclick="submitAdendoForm(this)">Enviar Adendo</button>
+              </div>
+
+              <!-- Modo upload -->
+              <div id="adendo-upload-area" style="display:none">
+                <div class="form-group">
+                  <label class="form-label">Tipo de Adendo <span style="color:var(--color-error)">*</span></label>
+                  <select id="adendo-tipoAdendo-up" class="form-control">${tipoAdendoOpts}</select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Justificativa <span style="color:var(--color-error)">*</span></label>
+                  <textarea id="adendo-justificativa-up" class="form-control" rows="2" placeholder="Motivo da solicitação de alteração..."></textarea>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Documento do Adendo (PDF) <span style="color:var(--color-error)">*</span></label>
+                  <div class="upload-area" id="drop-adendo" onclick="document.getElementById('upload-adendo').click()">
+                    <input type="file" id="upload-adendo" accept=".pdf">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m6.75 12H9m1.5-12H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg>
+                    <p>Clique ou arraste o PDF aqui</p><small>Apenas PDF — máx. 10 MB</small>
+                  </div>
+                  <div class="file-selected" id="file-adendo-info"></div>
+                </div>
+                <button class="btn btn-primary btn-sm" onclick="submitAdendoUpload(this)">Enviar Adendo</button>
+              </div>
+            </div>
+          </div>
+        </div>`;
+      }
+
+      html += `<div id="wrap-hist-adendos">${buildHistoricoAdendos(null)}</div>`;
+      return html;
     }
 
     /* ════════════════════════════════════════
@@ -363,32 +659,28 @@
     }
 
     /* ════════════════════════════════════════
-       SEÇÃO: HISTÓRICO DE DOCUMENTOS
+       HISTÓRICO: DOCUMENTOS
     ════════════════════════════════════════ */
-    function buildSecaoHistorico(h) {
-      if (!h) {
-        return `
-          <div class="action-card">
-            <h2>Histórico de Documentos</h2>
-            <p style="color:var(--color-text-muted);font-size:var(--font-size-sm)">Carregando histórico…</p>
-          </div>`;
-      }
-      if (h.error) {
-        return `
-          <div class="action-card">
-            <h2>Histórico de Documentos</h2>
-            <p style="color:var(--color-error);font-size:var(--font-size-sm)">Não foi possível carregar o histórico: ${escapeHtml(h.error)}</p>
-          </div>`;
-      }
-      const { relatoriosParciais = [], relatorioFinal = null, adendos = [], documentos = [] } = h;
-      const temDados = relatoriosParciais.length || relatorioFinal || adendos.length || documentos.length;
-      if (!temDados) {
-        return `
-          <div class="action-card">
-            <h2>Histórico de Documentos</h2>
-            <p style="color:var(--color-text-muted);font-size:var(--font-size-sm)">Nenhum documento enviado ainda.</p>
-          </div>`;
-      }
+    function buildHistoricoDocumentos(h) {
+      if (!h) return `
+        <div class="action-card">
+          <h2>Histórico de Documentos</h2>
+          <p style="color:var(--color-text-muted);font-size:var(--font-size-sm)">Carregando histórico…</p>
+        </div>`;
+      if (h.error) return `
+        <div class="action-card">
+          <h2>Histórico de Documentos</h2>
+          <p style="color:var(--color-error);font-size:var(--font-size-sm)">Não foi possível carregar o histórico: ${escapeHtml(h.error)}</p>
+        </div>`;
+
+      const { relatoriosParciais = [], relatorioFinal = null, documentos = [] } = h;
+      const temDados = relatoriosParciais.length || relatorioFinal || documentos.length;
+      if (!temDados) return `
+        <div class="action-card">
+          <h2>Histórico de Documentos</h2>
+          <p style="color:var(--color-text-muted);font-size:var(--font-size-sm)">Nenhum documento enviado ainda.</p>
+        </div>`;
+
       let html = `<div class="action-card"><h2>Histórico de Documentos</h2>`;
 
       if (relatoriosParciais.length) {
@@ -419,22 +711,6 @@
           </div>`;
       }
 
-      if (adendos.length) {
-        html += `<p class="info-section-title">Adendos ao TCE (${adendos.length})</p><div class="hist-list">`;
-        adendos.forEach(a => {
-          const bc = {'Aprovado':'badge-approved','Reprovado':'badge-rejected','Pendente':'badge-pending'}[a.status]||'badge-closed';
-          html += `<div class="hist-item">
-            <div class="hist-item-row">
-              <span class="hist-item-title">${escapeHtml(a.tipoAdendo||'—')}</span>
-              <span class="badge ${bc}">${escapeHtml(a.status||'—')}</span>
-            </div>
-            <div class="hist-item-date">${escapeHtml(a.data||'—')}</div>
-            ${a.justificativa ? `<div class="hist-item-desc">${escapeHtml(a.justificativa.substring(0,200))}${a.justificativa.length>200?'…':''}</div>` : ''}
-          </div>`;
-        });
-        html += `</div>`;
-      }
-
       if (documentos.length) {
         html += `<p class="info-section-title">Documentos Enviados (${documentos.length})</p><div class="hist-list">`;
         documentos.forEach(d => {
@@ -460,11 +736,49 @@
     }
 
     /* ════════════════════════════════════════
+       HISTÓRICO: ADENDOS
+    ════════════════════════════════════════ */
+    function buildHistoricoAdendos(h) {
+      if (!h) return `
+        <div class="action-card" style="margin-top:var(--space-4)">
+          <h2>Histórico de Adendos</h2>
+          <p style="color:var(--color-text-muted);font-size:var(--font-size-sm)">Carregando…</p>
+        </div>`;
+      if (h.error) return `
+        <div class="action-card" style="margin-top:var(--space-4)">
+          <h2>Histórico de Adendos</h2>
+          <p style="color:var(--color-error);font-size:var(--font-size-sm)">Não foi possível carregar: ${escapeHtml(h.error)}</p>
+        </div>`;
+
+      const { adendos = [] } = h;
+      if (!adendos.length) return `
+        <div class="action-card" style="margin-top:var(--space-4)">
+          <h2>Histórico de Adendos</h2>
+          <p style="color:var(--color-text-muted);font-size:var(--font-size-sm)">Nenhum adendo solicitado.</p>
+        </div>`;
+
+      let html = `<div class="action-card" style="margin-top:var(--space-4)"><h2>Histórico de Adendos (${adendos.length})</h2><div class="hist-list">`;
+      adendos.forEach(a => {
+        const bc = {'Aprovado':'badge-approved','Reprovado':'badge-rejected','Pendente':'badge-pending'}[a.status]||'badge-closed';
+        html += `<div class="hist-item">
+          <div class="hist-item-row">
+            <span class="hist-item-title">${escapeHtml(a.tipoAdendo||'—')}</span>
+            <span class="badge ${bc}">${escapeHtml(a.status||'—')}</span>
+          </div>
+          <div class="hist-item-date">${escapeHtml(a.data||'—')}</div>
+          ${a.justificativa ? `<div class="hist-item-desc">${escapeHtml(a.justificativa.substring(0,200))}${a.justificativa.length>200?'…':''}</div>` : ''}
+        </div>`;
+      });
+      html += `</div></div>`;
+      return html;
+    }
+
+    /* ════════════════════════════════════════
        SEÇÃO: UPLOAD DE DOCUMENTO AVULSO
     ════════════════════════════════════════ */
     function buildSecaoUploadAvulso() {
       return `
-        <div class="action-card">
+        <div class="action-card" style="margin-top:var(--space-6)">
           <h2>Enviar Documento</h2>
           <p>Envie arquivos adicionais relacionados ao seu estágio — certificados, comprovantes, declarações ou qualquer outro documento relevante.</p>
           <div id="fb-avulso"></div>
@@ -522,21 +836,21 @@
         await apiUploadDocumentoEstagio(_atual.id, titulo, file);
         showFormFeedback(fbId, 'success', 'Documento enviado!', 'O arquivo foi salvo com sucesso na pasta do estágio.');
         btn.textContent = 'Enviado ✓';
-        // Limpa formulário
         document.getElementById('avulso-titulo').value = '';
         input.value = '';
         const info = document.getElementById('file-avulso-info');
         if (info) { info.innerHTML = ''; info.classList.remove('show'); }
         // Recarrega histórico
-        const wrap = document.getElementById('wrap-historico');
-        if (wrap) wrap.innerHTML = buildSecaoHistorico(null);
+        const wrapDocs = document.getElementById('wrap-hist-docs');
+        if (wrapDocs) wrapDocs.innerHTML = buildHistoricoDocumentos(null);
         try {
           _historico = await apiListarHistoricoEstagio(_atual.id);
         } catch (e2) {
           _historico = { error: e2.message, relatoriosParciais: [], relatorioFinal: null, adendos: [], documentos: [] };
         }
-        const wrap2 = document.getElementById('wrap-historico');
-        if (wrap2) wrap2.innerHTML = buildSecaoHistorico(_historico);
+        const wrapDocs2 = document.getElementById('wrap-hist-docs');
+        if (wrapDocs2) wrapDocs2.innerHTML = buildHistoricoDocumentos(_historico);
+        _atualizarContadores();
         setTimeout(() => { btn.textContent = 'Enviar Documento'; btn.disabled = false; btn.classList.remove('is-loading'); }, 2500);
       } catch (err) {
         showFormFeedback(fbId, 'error', 'Erro ao enviar', err.message);
@@ -612,7 +926,6 @@
         }).join('');
       }
 
-      // Fluxo antigo
       const etapaAtual = STATUS_PASSO_ANTIGO[status] || 1;
       const reprovado  = status === 'Reprovado';
       return PASSOS_ANTIGO.map((p, i) => {
@@ -636,7 +949,6 @@
     ════════════════════════════════════════ */
     function buildCardAcao(s) {
 
-      // ── Fluxo novo: Aguardando aceite orientador ───────────────────────────
       if (s.status === 'Aguardando aceite orientador') {
         return `
           <div class="action-card" style="border-color:var(--color-warning);background:var(--color-warning-light)">
@@ -646,7 +958,6 @@
           </div>`;
       }
 
-      // ── Fluxo novo: Aceite recusado ────────────────────────────────────────
       if (s.status === 'Aceite recusado') {
         const motivo = s.observacaoSetor
           ? escapeHtml(s.observacaoSetor.replace(/^Motivo de recusa:\s*/i, ''))
@@ -671,7 +982,6 @@
           </div>`;
       }
 
-      // ── Fluxo novo: Em Checklist ────────────────────────────────────────────
       if (s.status === 'Em Checklist') {
         return `
           <div class="action-card" style="border-color:var(--color-info);background:var(--color-info-light)">
@@ -683,7 +993,6 @@
           </div>`;
       }
 
-      // ── Fluxo novo: Em Assinaturas ─────────────────────────────────────────
       if (s.status === 'Em Assinaturas') {
         return `
           <div class="action-card action-card--highlight">
@@ -695,21 +1004,17 @@
           </div>`;
       }
 
-      // ── Fluxo novo: Ativo ──────────────────────────────────────────────────
       if (s.status === 'Ativo') {
         return `
-          <div class="action-card" style="border-color:var(--color-success);background:var(--color-success-light);margin-bottom:var(--space-4)">
+          <div class="action-card" style="border-color:var(--color-success);background:var(--color-success-light)">
             <h2 style="color:var(--color-success)">✅ Estágio Ativo</h2>
-            <p>Processo concluído. Seu estágio está em andamento. Envie os relatórios nos prazos estabelecidos e solicite adendos ao TCE se necessário.</p>
-          </div>
-          ${buildSecoesDocs(s)}`;
+            <p>Processo concluído. Seu estágio está em andamento. Utilize as abas <strong>Documentos</strong> e <strong>Adendos</strong> para enviar relatórios e solicitar alterações no TCE.</p>
+          </div>`;
       }
 
-      // ── Fluxo antigo: Aguardando Documentos ────────────────────────────────
       if (s.status === 'Aguardando Documentos') {
         const tipoTce = s.tipoEstagio === 'Obrigatório'
-          ? `<!-- TCE Obrigatório -->
-             <div class="form-group">
+          ? `<div class="form-group">
                <label class="form-label">TCE — Termo de Compromisso de Estágio Obrigatório (assinado por todos exceto Diretor Geral) <span style="color:var(--color-error)">*</span></label>
                <div class="upload-area" id="drop-tce" onclick="document.getElementById('upload-tce').click()">
                  <input type="file" id="upload-tce" accept=".pdf">
@@ -718,8 +1023,7 @@
                </div>
                <div class="file-selected" id="file-tce-info"></div>
              </div>`
-          : `<!-- TCE Não Obrigatório -->
-             <div class="form-group">
+          : `<div class="form-group">
                <label class="form-label">TCE — Termo de Compromisso de Estágio Não Obrigatório (assinado por todos exceto Diretor Geral) <span style="color:var(--color-error)">*</span></label>
                <div class="upload-area" id="drop-tce-nao" onclick="document.getElementById('upload-tce-nao').click()">
                  <input type="file" id="upload-tce-nao" accept=".pdf">
@@ -733,8 +1037,6 @@
             <h2>📎 Envie os documentos assinados</h2>
             <p>Os documentos do seu estágio foram gerados. Faça o download na pasta do Drive, obtenha as assinaturas indicadas e envie os arquivos aqui. <strong>Não inclua a assinatura do Diretor Geral</strong> — ela será obtida pelo setor após sua entrega.</p>
             <div id="feedback-upload"></div>
-
-            <!-- Solicitação de Ingresso -->
             <div class="form-group">
               <label class="form-label">Solicitação de Ingresso (assinada) <span style="color:var(--color-error)">*</span></label>
               <div class="upload-area" id="drop-solicitacao" onclick="document.getElementById('upload-solicitacao').click()">
@@ -744,9 +1046,7 @@
               </div>
               <div class="file-selected" id="file-sol-info"></div>
             </div>
-
             ${tipoTce}
-
             <div style="margin-top:var(--space-4)">
               <button id="btn-enviar-docs" class="btn btn-primary" onclick="enviarDocumentos()">Enviar Documentos</button>
             </div>
@@ -757,28 +1057,26 @@
         return `
           <div class="action-card" style="border-color:var(--color-error);background:var(--color-error-light)">
             <h2 style="color:var(--color-error)">❌ Solicitação Reprovada</h2>
-            <p>Sua solicitação foi reprovada pelo setor de estágios. Veja o motivo abaixo e entre em contato se necessário.</p>
+            <p>Sua solicitação foi reprovada pelo setor de estágios. Veja o motivo na aba <strong>Dados</strong> e entre em contato se necessário.</p>
           </div>`;
       }
 
       if (s.status === 'Em execução') {
         return `
-          <div class="action-card" style="border-color:var(--color-success);background:var(--color-success-light);margin-bottom:var(--space-4)">
+          <div class="action-card" style="border-color:var(--color-success);background:var(--color-success-light)">
             <h2 style="color:var(--color-success)">✅ Estágio em Execução</h2>
-            <p>Seu estágio foi autorizado e está em andamento. Envie os relatórios parciais e final nos prazos e solicite adendos ao TCE se necessário.</p>
-          </div>
-          ${buildSecoesDocs(s)}`;
+            <p>Seu estágio foi autorizado e está em andamento. Utilize as abas <strong>Documentos</strong> e <strong>Adendos</strong> para enviar relatórios e solicitar alterações no TCE.</p>
+          </div>`;
       }
 
       if (s.status === 'Encerrado') {
         return `
           <div class="action-card" style="border-color:var(--color-border)">
             <h2>Estágio Encerrado</h2>
-            <p>Este estágio foi concluído. Consulte os documentos na pasta do Drive.</p>
+            <p>Este estágio foi concluído. Consulte os documentos na aba <strong>Documentos</strong> ou na pasta do Drive.</p>
           </div>`;
       }
 
-      // Statuses de espera (Pendente, Em análise, Docs Enviados, Aguardando DG...)
       const mensagens = {
         'Pendente':                  '⏳ Sua solicitação foi recebida e está na fila de análise do setor de estágios.',
         'Em análise':                '🔍 O setor de estágios está analisando sua solicitação. Em breve você receberá uma resposta.',
@@ -814,8 +1112,6 @@
           info.classList.add('show');
         }
       });
-
-      // Drag & drop
       const dropId = { solicitacao: 'drop-solicitacao', tce: 'drop-tce', tce_nao_obrig: 'drop-tce-nao' }[key];
       const drop = document.getElementById(dropId);
       if (!drop) return;
@@ -831,8 +1127,6 @@
     async function enviarDocumentos() {
       const btn = document.getElementById('btn-enviar-docs');
       const feedbackId = 'feedback-upload';
-
-      // Valida arquivos
       const tipo = _atual?.tipoEstagio;
       const temSol = _arquivos.solicitacao;
       const temTce = tipo === 'Obrigatório' ? _arquivos.tce : _arquivos.tce_nao_obrig;
@@ -846,7 +1140,6 @@
       hideFormFeedback(feedbackId);
 
       try {
-        // Converte arquivos para base64
         const [b64Sol, b64Tce] = await Promise.all([
           fileToBase64(tipo === 'Obrigatório' ? _arquivos.tce : _arquivos.tce_nao_obrig),
           fileToBase64(_arquivos.solicitacao),
@@ -864,8 +1157,6 @@
         showFormFeedback(feedbackId, 'success', 'Documentos enviados!',
           'O setor de estágios irá revisar e encaminhar ao Diretor Geral. Você será notificado por e-mail.');
         btn.textContent = 'Enviado ✓';
-
-        // Recarrega após 3s para atualizar status
         setTimeout(() => carregarEstagios(), 3000);
       } catch (err) {
         showFormFeedback(feedbackId, 'error', 'Erro no envio', err.message);
@@ -880,200 +1171,6 @@
         reader.onerror = reject;
         reader.readAsDataURL(file);
       });
-    }
-
-    /* ════════════════════════════════════════
-       SEÇÕES DE DOCUMENTOS — HTML
-    ════════════════════════════════════════ */
-    function buildSecoesDocs(s) {
-      const avOpts = `
-        <option value="">Selecione...</option>
-        <option value="Ótimo">Ótimo</option>
-        <option value="Bom">Bom</option>
-        <option value="Regular">Regular</option>
-        <option value="Ruim">Ruim</option>`;
-
-      const tipoAdendoOpts = `
-        <option value="">Selecione o tipo...</option>
-        <option value="Prorrogação de prazo">Prorrogação de prazo</option>
-        <option value="Alteração de carga horária">Alteração de carga horária</option>
-        <option value="Alteração de horário">Alteração de horário</option>
-        <option value="Alteração de supervisor">Alteração de supervisor</option>
-        <option value="Outro">Outro</option>`;
-
-      const chevron = `<svg class="ds-chevron" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>`;
-
-      return `
-      <div class="doc-sections-wrap">
-        <p class="doc-sections-title">Documentos do Estágio</p>
-
-        <!-- ── Relatório Parcial ── -->
-        <div class="doc-section">
-          <div class="doc-section-hdr" id="rp-hdr" onclick="toggleDocSection('rp')">
-            <h3>📄 Relatório Parcial</h3>
-            ${chevron}
-          </div>
-          <div class="doc-section-body" id="rp-body">
-            <p style="font-size:var(--font-size-sm);color:var(--color-text-muted);margin-bottom:var(--space-4)">
-              Descreva as atividades realizadas no período de referência. Após o envio, o documento passará pelo fluxo de assinaturas digitais (gov.br): <strong>você → empresa concedente → supervisor</strong>.
-            </p>
-            <div id="fb-rp"></div>
-            <div class="form-group">
-              <label class="form-label">Período de Referência <span style="color:var(--color-error)">*</span></label>
-              <input type="text" id="rp-periodoRef" class="form-control" placeholder="Ex: Jan/2025 – Mar/2025">
-            </div>
-            <div class="form-group">
-              <label class="form-label">Atividades Realizadas <span style="color:var(--color-error)">*</span></label>
-              <textarea id="rp-atividadesRealizadas" class="form-control" rows="4" placeholder="Descreva as principais atividades desenvolvidas no período..."></textarea>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Aprendizagens Obtidas</label>
-              <textarea id="rp-aprendizagens" class="form-control" rows="3" placeholder="Conhecimentos e habilidades adquiridos..."></textarea>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Relação com o Curso</label>
-              <textarea id="rp-relacaoCurso" class="form-control" rows="3" placeholder="Como as atividades se relacionam com o seu curso..."></textarea>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Avaliação do Estágio <span style="color:var(--color-error)">*</span></label>
-              <select id="rp-avaliacaoEstagio" class="form-control">${avOpts}</select>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Dificuldades Encontradas</label>
-              <textarea id="rp-dificuldades" class="form-control" rows="3" placeholder="Dificuldades ou desafios encontrados..."></textarea>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Sugestões</label>
-              <textarea id="rp-sugestoes" class="form-control" rows="2" placeholder="Sugestões para melhoria do estágio..."></textarea>
-            </div>
-            <button class="btn btn-primary btn-sm" onclick="submitRelatorioParcial(this)">Enviar Relatório Parcial</button>
-          </div>
-        </div>
-
-        <!-- ── Relatório Final ── -->
-        <div class="doc-section">
-          <div class="doc-section-hdr" id="rf-hdr" onclick="toggleDocSection('rf')">
-            <h3>📋 Relatório Final</h3>
-            ${chevron}
-          </div>
-          <div class="doc-section-body" id="rf-body">
-            <p style="font-size:var(--font-size-sm);color:var(--color-text-muted);margin-bottom:var(--space-4)">
-              Relatório a ser preenchido ao término do estágio. Após o envio, o documento passará pelo fluxo de assinaturas digitais (gov.br): <strong>você → empresa concedente → supervisor</strong>.
-            </p>
-            <div id="fb-rf"></div>
-            <div class="form-group">
-              <label class="form-label">Data de Encerramento <span style="color:var(--color-error)">*</span></label>
-              <input type="date" id="rf-dataEncerramento" class="form-control">
-            </div>
-            <div class="form-group">
-              <label class="form-label">Resumo das Atividades <span style="color:var(--color-error)">*</span></label>
-              <textarea id="rf-resumoAtividades" class="form-control" rows="4" placeholder="Resumo geral das atividades realizadas durante todo o estágio..."></textarea>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Competências Desenvolvidas</label>
-              <textarea id="rf-competenciasDesenvolvidas" class="form-control" rows="3" placeholder="Competências técnicas e comportamentais desenvolvidas..."></textarea>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Contribuição para a Formação</label>
-              <textarea id="rf-contribuicaoFormacao" class="form-control" rows="3" placeholder="Como o estágio contribuiu para sua formação acadêmica e profissional..."></textarea>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Avaliação da Empresa Concedente <span style="color:var(--color-error)">*</span></label>
-              <select id="rf-avaliacaoConcedente" class="form-control">${avOpts}</select>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Avaliação do Orientador Acadêmico <span style="color:var(--color-error)">*</span></label>
-              <select id="rf-avaliacaoOrientador" class="form-control">${avOpts}</select>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Recomendaria este estágio? <span style="color:var(--color-error)">*</span></label>
-              <div style="display:flex;gap:var(--space-5);margin-top:var(--space-2)">
-                <label style="display:flex;align-items:center;gap:var(--space-2);font-size:var(--font-size-sm);font-weight:400;cursor:pointer">
-                  <input type="radio" name="recomendaria" value="Sim"> Sim
-                </label>
-                <label style="display:flex;align-items:center;gap:var(--space-2);font-size:var(--font-size-sm);font-weight:400;cursor:pointer">
-                  <input type="radio" name="recomendaria" value="Não"> Não
-                </label>
-              </div>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Considerações Finais</label>
-              <textarea id="rf-consideracoesFinais" class="form-control" rows="3" placeholder="Comentários finais sobre a experiência..."></textarea>
-            </div>
-            <button class="btn btn-primary btn-sm" onclick="submitRelatorioFinal(this)">Enviar Relatório Final</button>
-          </div>
-        </div>
-
-        <!-- ── Adendo ao TCE ── -->
-        <div class="doc-section">
-          <div class="doc-section-hdr" id="adendo-hdr" onclick="toggleDocSection('adendo')">
-            <h3>✏️ Adendo ao TCE</h3>
-            ${chevron}
-          </div>
-          <div class="doc-section-body" id="adendo-body">
-            <p style="font-size:var(--font-size-sm);color:var(--color-text-muted);margin-bottom:var(--space-4)">
-              Solicite alterações no Termo de Compromisso de Estágio. Preencha o formulário ou, se preferir, anexe um documento já preparado.
-            </p>
-            <div class="mode-toggle">
-              <button class="mode-toggle-btn active" data-modo="form" onclick="setAdendoModo('form')">Preencher formulário</button>
-              <button class="mode-toggle-btn" data-modo="upload" onclick="setAdendoModo('upload')">Anexar documento</button>
-            </div>
-            <div id="fb-adendo"></div>
-
-            <!-- Modo formulário -->
-            <div id="adendo-form-area">
-              <div class="form-group">
-                <label class="form-label">Tipo de Adendo <span style="color:var(--color-error)">*</span></label>
-                <select id="adendo-tipoAdendo" class="form-control">${tipoAdendoOpts}</select>
-              </div>
-              <div class="form-group">
-                <label class="form-label">Nova Data de Término</label>
-                <input type="date" id="adendo-novaDataTermino" class="form-control">
-              </div>
-              <div class="form-group">
-                <label class="form-label">Nova Carga Horária Semanal (h)</label>
-                <input type="number" id="adendo-novaCargaHoraria" class="form-control" min="1" max="40" placeholder="Ex: 20">
-              </div>
-              <div class="form-group">
-                <label class="form-label">Novo Horário</label>
-                <input type="text" id="adendo-novoHorario" class="form-control" placeholder="Ex: Segunda a sexta, 08h–12h">
-              </div>
-              <div class="form-group">
-                <label class="form-label">Justificativa <span style="color:var(--color-error)">*</span></label>
-                <textarea id="adendo-justificativa" class="form-control" rows="3" placeholder="Motivo da solicitação de alteração..."></textarea>
-              </div>
-              <div class="form-group">
-                <label class="form-label">Observações Adicionais</label>
-                <textarea id="adendo-obsAdicionais" class="form-control" rows="2"></textarea>
-              </div>
-              <button class="btn btn-primary btn-sm" onclick="submitAdendoForm(this)">Enviar Adendo</button>
-            </div>
-
-            <!-- Modo upload -->
-            <div id="adendo-upload-area" style="display:none">
-              <div class="form-group">
-                <label class="form-label">Tipo de Adendo <span style="color:var(--color-error)">*</span></label>
-                <select id="adendo-tipoAdendo-up" class="form-control">${tipoAdendoOpts}</select>
-              </div>
-              <div class="form-group">
-                <label class="form-label">Justificativa <span style="color:var(--color-error)">*</span></label>
-                <textarea id="adendo-justificativa-up" class="form-control" rows="2" placeholder="Motivo da solicitação de alteração..."></textarea>
-              </div>
-              <div class="form-group">
-                <label class="form-label">Documento do Adendo (PDF) <span style="color:var(--color-error)">*</span></label>
-                <div class="upload-area" id="drop-adendo" onclick="document.getElementById('upload-adendo').click()">
-                  <input type="file" id="upload-adendo" accept=".pdf">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m6.75 12H9m1.5-12H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg>
-                  <p>Clique ou arraste o PDF aqui</p><small>Apenas PDF — máx. 10 MB</small>
-                </div>
-                <div class="file-selected" id="file-adendo-info"></div>
-              </div>
-              <button class="btn btn-primary btn-sm" onclick="submitAdendoUpload(this)">Enviar Adendo</button>
-            </div>
-          </div>
-        </div>
-
-      </div>`;
     }
 
     /* ════════════════════════════════════════
@@ -1121,10 +1218,10 @@
        ENVIO — RELATÓRIO PARCIAL
     ════════════════════════════════════════ */
     async function submitRelatorioParcial(btn) {
-      const fbId              = 'fb-rp';
-      const periodoRef        = document.getElementById('rp-periodoRef')?.value.trim();
+      const fbId                 = 'fb-rp';
+      const periodoRef           = document.getElementById('rp-periodoRef')?.value.trim();
       const atividadesRealizadas = document.getElementById('rp-atividadesRealizadas')?.value.trim();
-      const avaliacaoEstagio  = document.getElementById('rp-avaliacaoEstagio')?.value;
+      const avaliacaoEstagio     = document.getElementById('rp-avaliacaoEstagio')?.value;
 
       if (!periodoRef || !atividadesRealizadas || !avaliacaoEstagio) {
         showFormFeedback(fbId, 'error', 'Campos obrigatórios', 'Preencha o Período de Referência, Atividades Realizadas e Avaliação do Estágio.');
@@ -1290,7 +1387,7 @@
     let _orientadoresTroca = [];
 
     async function carregarOrientadoresTroca() {
-      if (_orientadoresTroca.length) return; // já carregado
+      if (_orientadoresTroca.length) return;
       try {
         const lista = await apiListarOrientadores(_atual?.curso || '');
         _orientadoresTroca = Array.isArray(lista) ? lista : [];
@@ -1299,7 +1396,6 @@
       }
     }
 
-    // Chamado quando o DOM do card "Aceite recusado" é montado
     async function inicializarTrocaOrientador() {
       await carregarOrientadoresTroca();
       const loading = document.getElementById('trocar-ori-loading');
@@ -1352,5 +1448,3 @@
   </script>
 </body>
 </html>
-
-
