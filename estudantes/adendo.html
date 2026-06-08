@@ -38,7 +38,7 @@
       <div class="form-wrapper">
         <div class="form-page-header">
           <h1>Adendo ao Termo de Compromisso de Estágio</h1>
-          <p>Use este formulário para solicitar alterações em um estágio já aprovado: prorrogação de prazo, mudança de carga horária, troca de supervisor, etc.</p>
+          <p>Use este formulário para solicitar alterações em um estágio já aprovado: prorrogação, rescisão, mudança de carga horária, alteração de supervisor(a), entre outras.</p>
         </div>
 
         <div class="info-banner" role="note">
@@ -72,15 +72,19 @@
               <label class="form-label required" for="tipo-adendo">Tipo de alteração</label>
               <select id="tipo-adendo" name="tipoAdendo" class="form-control" required aria-required="true" aria-describedby="tipo-adendo-error">
                 <option value="">Selecione...</option>
-                <option value="Prorrogação de prazo">Prorrogação de prazo (nova data de término)</option>
-                <option value="Redução de prazo">Redução de prazo (término antecipado)</option>
-                <option value="Alteração de carga horária">Alteração de carga horária</option>
-                <option value="Alteração de horário">Alteração de horário/turno</option>
-                <option value="Troca de supervisor">Troca de supervisor</option>
-                <option value="Troca de orientador">Troca de orientador</option>
-                <option value="Alteração de remuneração">Alteração de remuneração</option>
-                <option value="Alteração de setor/área">Alteração de setor ou área de atuação</option>
-                <option value="Outro">Outro</option>
+                <option value="Prorrogação do estágio">Prorrogação do estágio</option>
+                <option value="Rescisão do estágio">Rescisão do estágio</option>
+                <option value="Alteração da modalidade do estágio obrigatório para não obrigatório">Alteração da modalidade do estágio obrigatório para não obrigatório</option>
+                <option value="Alteração de orientador(a) do estágio">Alteração de orientador(a) do estágio</option>
+                <option value="Alteração de supervisor(a) do estágio">Alteração de supervisor(a) do estágio</option>
+                <option value="Alteração do horário do estágio">Alteração do horário do estágio</option>
+                <option value="Alteração da carga horária semanal do estágio">Alteração da carga horária semanal do estágio</option>
+                <option value="Alteração do plano de atividades do(a) estagiário(a)">Alteração do plano de atividades do(a) estagiário(a)</option>
+                <option value="Alteração da vigência do estágio (início e final)">Alteração da vigência do estágio (início e final)</option>
+                <option value="Alteração de setor/departamento do estágio na empresa/instituição concedente">Alteração de setor/departamento do estágio na empresa/instituição concedente</option>
+                <option value="Alteração da apólice de seguros contra acidentes pessoais em favor do(a) estagiário(a)">Alteração da apólice de seguros contra acidentes pessoais em favor do(a) estagiário(a)</option>
+                <option value="Alteração de remuneração do estágio (remunerado para não remunerado / não remunerado para remunerado)">Alteração de remuneração do estágio (remunerado para não remunerado / não remunerado para remunerado)</option>
+                <option value="Alteração do valor de remuneração, auxílio, bolsa e/ou outros benefícios">Alteração do valor de remuneração, auxílio, bolsa e/ou outros benefícios</option>
               </select>
               <span id="tipo-adendo-error" class="form-error hidden" role="alert"></span>
             </div>
@@ -180,13 +184,17 @@
     // Exibe campos condicionais por tipo de adendo
     document.getElementById('tipo-adendo').addEventListener('change', function () {
       const tipo = this.value;
-      toggleSection('secao-nova-data',   tipo === 'Prorrogação de prazo' || tipo === 'Redução de prazo');
-      toggleSection('secao-nova-carga',  tipo === 'Alteração de carga horária');
-      toggleSection('secao-novo-horario',tipo === 'Alteração de horário');
+      const comData  = tipo === 'Prorrogação do estágio' || tipo === 'Alteração da vigência do estágio (início e final)';
+      const comCarga  = tipo === 'Alteração da carga horária semanal do estágio';
+      const comHorario = tipo === 'Alteração do horário do estágio';
 
-      document.getElementById('nova-data-termino').required  = (tipo === 'Prorrogação de prazo' || tipo === 'Redução de prazo');
-      document.getElementById('nova-carga-horaria').required = (tipo === 'Alteração de carga horária');
-      document.getElementById('novo-horario').required       = (tipo === 'Alteração de horário');
+      toggleSection('secao-nova-data',    comData);
+      toggleSection('secao-nova-carga',   comCarga);
+      toggleSection('secao-novo-horario', comHorario);
+
+      document.getElementById('nova-data-termino').required  = comData;
+      document.getElementById('nova-carga-horaria').required = comCarga;
+      document.getElementById('novo-horario').required       = comHorario;
     });
 
     function validateForm() {
@@ -198,11 +206,11 @@
       if (!document.getElementById('tipo-adendo').value) fail('tipo-adendo', 'Selecione o tipo de alteração.');
 
       const tipo = document.getElementById('tipo-adendo').value;
-      if ((tipo === 'Prorrogação de prazo' || tipo === 'Redução de prazo') && !document.getElementById('nova-data-termino').value)
-        fail('nova-data-termino', 'Informe a nova data de término.');
-      if (tipo === 'Alteração de carga horária' && !document.getElementById('nova-carga-horaria').value)
+      if ((tipo === 'Prorrogação do estágio' || tipo === 'Alteração da vigência do estágio (início e final)') && !document.getElementById('nova-data-termino').value)
+        fail('nova-data-termino', 'Informe a nova data.');
+      if (tipo === 'Alteração da carga horária semanal do estágio' && !document.getElementById('nova-carga-horaria').value)
         fail('nova-carga-horaria', 'Selecione a nova carga horária.');
-      if (tipo === 'Alteração de horário' && !document.getElementById('novo-horario').value.trim())
+      if (tipo === 'Alteração do horário do estágio' && !document.getElementById('novo-horario').value.trim())
         fail('novo-horario', 'Informe o novo horário.');
 
       const just = document.getElementById('justificativa').value.trim();
