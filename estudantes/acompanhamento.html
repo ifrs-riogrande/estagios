@@ -1937,22 +1937,22 @@
     ════════════════════════════════════════ */
     const ADENDO_TEMPLATES = {
       'Prorrogação de estágio': (d) => `
-        <h2 style="text-align:center;margin-bottom:24px">Prorrogação de Estágio</h2>
-        <p>Aditamento ao Termo de Compromisso de Estágio, firmado em <strong>${d.dataFirmamentoTCE}</strong>, entre a Instituição de Ensino, IFRS – Campus Rio Grande, unidade concedente, <strong>${d.nomeEmpresa}</strong>, e o(a) estagiário(a) <strong>${d.nomeAluno}</strong>, alun(o) regularmente matriculad(o) no <strong>${d.curso}</strong>, matrícula nº <strong>${d.matricula}</strong> desta Instituição de Ensino.</p>
-        <p>Este termo aditivo prorroga de <strong>${d.dataInicio}</strong> a <strong>${d.novaDataTermino || '___/___/______'}</strong>, o período de estágio mencionado na cláusula 4º, no item a, do referido Termo de Compromisso de Estágio.</p>
-        ${_rodapeAdendo()}`,
+        ${_cabecalhoAdendo('ADITAMENTO AO TERMO DE COMPROMISSO DE ESTÁGIO')}
+        <p style="font-family:Arial,sans-serif;font-size:10pt">Aditamento ao Termo de Compromisso de Estágio, firmado em <strong>${d.dataFirmamentoTCE}</strong>, entre a Instituição de Ensino, IFRS – Campus Rio Grande, unidade concedente, <strong>${d.nomeEmpresa}</strong>, e o(a) estagiário(a) <strong>${d.nomeAluno}</strong>, alun(o) regularmente matriculad(o) no <strong>${d.curso}</strong>, matrícula nº <strong>${d.matricula}</strong> desta Instituição de Ensino.</p>
+        <p style="font-family:Arial,sans-serif;font-size:10pt">Este termo aditivo prorroga de <strong>${d.dataInicio}</strong> a <strong>${d.novaDataTermino || '___/___/______'}</strong>, o período de estágio mencionado na cláusula 4º, no item a, do referido Termo de Compromisso de Estágio.</p>
+        ${_rodapeAdendo(d)}`,
 
       'Alteração de vigência (início e final)': (d) => `
-        <h2 style="text-align:center;margin-bottom:24px">Alteração de Vigência do Estágio</h2>
-        <p>Aditamento ao Termo de Compromisso de Estágio, firmado em <strong>${d.dataFirmamentoTCE}</strong>, entre a Instituição de Ensino, IFRS – Campus Rio Grande, unidade concedente, <strong>${d.nomeEmpresa}</strong>, e o(a) estagiário(a) <strong>${d.nomeAluno}</strong>, alun(o) regularmente matriculad(o) no <strong>${d.curso}</strong>, matrícula nº <strong>${d.matricula}</strong> desta Instituição de Ensino.</p>
-        <p>Este termo aditivo altera a vigência do estágio para o período de <strong>${d.novaDataInicio || '___/___/______'}</strong> a <strong>${d.novaDataTermino || '___/___/______'}</strong>, conforme mencionado na cláusula 4º, no item a, do referido Termo de Compromisso de Estágio.</p>
-        ${_rodapeAdendo()}`,
+        ${_cabecalhoAdendo('ADITAMENTO AO TERMO DE COMPROMISSO DE ESTÁGIO')}
+        <p style="font-family:Arial,sans-serif;font-size:10pt">Aditamento ao Termo de Compromisso de Estágio, firmado em <strong>${d.dataFirmamentoTCE}</strong>, entre a Instituição de Ensino, IFRS – Campus Rio Grande, unidade concedente, <strong>${d.nomeEmpresa}</strong>, e o(a) estagiário(a) <strong>${d.nomeAluno}</strong>, alun(o) regularmente matriculad(o) no <strong>${d.curso}</strong>, matrícula nº <strong>${d.matricula}</strong> desta Instituição de Ensino.</p>
+        <p style="font-family:Arial,sans-serif;font-size:10pt">Este termo aditivo altera a vigência do estágio para o período de <strong>${d.novaDataInicio || '___/___/______'}</strong> a <strong>${d.novaDataTermino || '___/___/______'}</strong>, conforme mencionado na cláusula 4º, no item a, do referido Termo de Compromisso de Estágio.</p>
+        ${_rodapeAdendo(d)}`,
 
       'Alteração de modalidade (obrigatório → não obrigatório)': (d) => `
-        <h2 style="text-align:center;margin-bottom:24px">Alteração de Modalidade de Estágio</h2>
-        <p>Aditamento ao Termo de Compromisso de Estágio, firmado em <strong>${d.dataFirmamentoTCE}</strong>, entre a Instituição de Ensino, IFRS – Campus Rio Grande, a empresa, <strong>${d.nomeEmpresa}</strong>, e <strong>${d.nomeAluno}</strong>, regularmente matriculad(o) no Curso <strong>${d.curso}</strong> sob o número de matrícula <strong>${d.matricula}</strong>.</p>
-        <p>Este termo aditivo altera a modalidade de estágio obrigatório para estágio não-obrigatório a partir de <strong>${d.dataVigencia || '___/___/______'}</strong>.</p>
-        ${_rodapeAdendo()}`,
+        ${_cabecalhoAdendo('ADITAMENTO AO TERMO DE COMPROMISSO DE ESTÁGIO')}
+        <p style="font-family:Arial,sans-serif;font-size:10pt">Aditamento ao Termo de Compromisso de Estágio, firmado em <strong>${d.dataFirmamentoTCE}</strong>, entre a Instituição de Ensino, IFRS – Campus Rio Grande, a empresa, <strong>${d.nomeEmpresa}</strong>, e <strong>${d.nomeAluno}</strong>, regularmente matriculad(o) no Curso <strong>${d.curso}</strong> sob o número de matrícula <strong>${d.matricula}</strong>.</p>
+        <p style="font-family:Arial,sans-serif;font-size:10pt">Este termo aditivo altera a modalidade de estágio obrigatório para estágio não-obrigatório a partir de <strong>${d.dataVigencia || '___/___/______'}</strong>.</p>
+        ${_rodapeAdendo(d)}`,
 
       'Alteração de modalidade (não obrigatório → obrigatório)': (d) => {
         const prorroga = d.incluiProrrogacao && d.novaDataTermino;
@@ -1961,130 +1961,158 @@
           ? `Este termo aditivo prorroga de <strong>${d.dataInicio}</strong> a <strong>${d.novaDataTermino}</strong>, o período de estágio mencionado na cláusula 4º, no item a, do referido Termo de Compromisso de Estágio e altera a modalidade de estágio não-obrigatório para estágio obrigatório a partir de <strong>${d.dataVigencia || '___/___/______'}</strong>.`
           : `Este termo aditivo altera a modalidade de estágio não-obrigatório para estágio obrigatório a partir de <strong>${d.dataVigencia || '___/___/______'}</strong>.`;
         return `
-          <h2 style="text-align:center;margin-bottom:24px">${titulo}</h2>
-          <p>Aditamento ao Termo de Compromisso de Estágio, firmado em <strong>${d.dataFirmamentoTCE}</strong>, entre a Instituição de Ensino, IFRS – Campus Rio Grande, a empresa, <strong>${d.nomeEmpresa}</strong>, e <strong>${d.nomeAluno}</strong>, regularmente matriculad(o) no Curso <strong>${d.curso}</strong> sob o número de matrícula <strong>${d.matricula}</strong>.</p>
-          <p>${corpo}</p>
-          ${_rodapeAdendo()}`;
+          ${_cabecalhoAdendo('ADITAMENTO AO TERMO DE COMPROMISSO DE ESTÁGIO')}
+          <p style="font-family:Arial,sans-serif;font-size:10pt">Aditamento ao Termo de Compromisso de Estágio, firmado em <strong>${d.dataFirmamentoTCE}</strong>, entre a Instituição de Ensino, IFRS – Campus Rio Grande, a empresa, <strong>${d.nomeEmpresa}</strong>, e <strong>${d.nomeAluno}</strong>, regularmente matriculad(o) no Curso <strong>${d.curso}</strong> sob o número de matrícula <strong>${d.matricula}</strong>.</p>
+          <p style="font-family:Arial,sans-serif;font-size:10pt">${corpo}</p>
+          ${_rodapeAdendo(d)}`;
       },
 
       'Alteração de orientador': (d) => `
-        <h2 style="text-align:center;margin-bottom:24px">Alteração de Orientador</h2>
-        <p>Aditamento ao Termo de Compromisso de Estágio, firmado em <strong>${d.dataFirmamentoTCE}</strong>, entre a Instituição de Ensino, IFRS – Campus Rio Grande, unidade concedente, <strong>${d.nomeEmpresa}</strong>, e o(a) estagiário(a) <strong>${d.nomeAluno}</strong>, aluno(a) regularmente matriculado(a) no <strong>${d.curso}</strong>, matrícula nº <strong>${d.matricula}</strong> desta Instituição de Ensino.</p>
-        <p>Este termo aditivo altera as seguintes condições do referido Termo de Compromisso de Estágio: A partir de <strong>${d.dataVigencia || '___/___/______'}</strong> o(a) orientador(a) de estágio passa a ser <strong>${d.nomeNovoOrientador || '_______________'}</strong>.</p>
-        ${_rodapeAdendo()}`,
+        ${_cabecalhoAdendo('ADITAMENTO AO TERMO DE COMPROMISSO DE ESTÁGIO')}
+        <p style="font-family:Arial,sans-serif;font-size:10pt">Aditamento ao Termo de Compromisso de Estágio, firmado em <strong>${d.dataFirmamentoTCE}</strong>, entre a Instituição de Ensino, IFRS – Campus Rio Grande, unidade concedente, <strong>${d.nomeEmpresa}</strong>, e o(a) estagiário(a) <strong>${d.nomeAluno}</strong>, aluno(a) regularmente matriculado(a) no <strong>${d.curso}</strong>, matrícula nº <strong>${d.matricula}</strong> desta Instituição de Ensino.</p>
+        <p style="font-family:Arial,sans-serif;font-size:10pt">Este termo aditivo altera as seguintes condições do referido Termo de Compromisso de Estágio: A partir de <strong>${d.dataVigencia || '___/___/______'}</strong> o(a) orientador(a) de estágio passa a ser <strong>${d.nomeNovoOrientador || '_______________'}</strong>.</p>
+        ${_rodapeAdendo(d)}`,
 
       'Alteração de supervisor': (d) => `
-        <h2 style="text-align:center;margin-bottom:24px">Alteração de Supervisor</h2>
-        <p>Aditamento ao Termo de Compromisso de Estágio, firmado em <strong>${d.dataFirmamentoTCE}</strong>, entre a Instituição de Ensino, IFRS – Campus Rio Grande, unidade concedente, <strong>${d.nomeEmpresa}</strong>, e o(a) estagiário(a) <strong>${d.nomeAluno}</strong>, aluno(a) regularmente matriculado(a) no <strong>${d.curso}</strong>, matrícula nº <strong>${d.matricula}</strong> desta Instituição de Ensino.</p>
-        <p>Este termo aditivo altera as seguintes condições do referido Termo de Compromisso de Estágio: A partir de <strong>${d.dataVigencia || '___/___/______'}</strong> o(a) supervisor(a) de estágio passa a ser <strong>${d.nomeNovoSupervisor || '_______________'}</strong>${d.cargoSupervisor ? ', cargo: ' + d.cargoSupervisor : ''}.</p>
-        ${_rodapeAdendo()}`,
+        ${_cabecalhoAdendo('ADITAMENTO AO TERMO DE COMPROMISSO DE ESTÁGIO')}
+        <p style="font-family:Arial,sans-serif;font-size:10pt">Aditamento ao Termo de Compromisso de Estágio, firmado em <strong>${d.dataFirmamentoTCE}</strong>, entre a Instituição de Ensino, IFRS – Campus Rio Grande, unidade concedente, <strong>${d.nomeEmpresa}</strong>, e o(a) estagiário(a) <strong>${d.nomeAluno}</strong>, aluno(a) regularmente matriculado(a) no <strong>${d.curso}</strong>, matrícula nº <strong>${d.matricula}</strong> desta Instituição de Ensino.</p>
+        <p style="font-family:Arial,sans-serif;font-size:10pt">Este termo aditivo altera as seguintes condições do referido Termo de Compromisso de Estágio: A partir de <strong>${d.dataVigencia || '___/___/______'}</strong> o(a) supervisor(a) de estágio passa a ser <strong>${d.nomeNovoSupervisor || '_______________'}</strong>${d.cargoSupervisor ? ', cargo: ' + d.cargoSupervisor : ''}.</p>
+        ${_rodapeAdendo(d)}`,
 
       'Alteração de horário': (d) => `
-        <h2 style="text-align:center;margin-bottom:24px">Alteração de Horário</h2>
-        <p>Aditamento ao Termo de Compromisso de Estágio, firmado em <strong>${d.dataFirmamentoTCE}</strong>, entre a Instituição de Ensino, IFRS – Campus Rio Grande, unidade concedente, <strong>${d.nomeEmpresa}</strong>, e o(a) estagiário(a) <strong>${d.nomeAluno}</strong>, aluno(a) regularmente matriculado(a) no <strong>${d.curso}</strong>, matrícula nº <strong>${d.matricula}</strong> desta Instituição de Ensino.</p>
-        <p>Este termo aditivo altera as seguintes condições do referido Termo de Compromisso de Estágio: A partir de <strong>${d.dataVigencia || '___/___/______'}</strong> o horário de estágio passa a ser <strong>${d.novoHorario || '_______________'}</strong>.</p>
-        ${_rodapeAdendo()}`,
+        ${_cabecalhoAdendo('ADITAMENTO AO TERMO DE COMPROMISSO DE ESTÁGIO')}
+        <p style="font-family:Arial,sans-serif;font-size:10pt">Aditamento ao Termo de Compromisso de Estágio, firmado em <strong>${d.dataFirmamentoTCE}</strong>, entre a Instituição de Ensino, IFRS – Campus Rio Grande, unidade concedente, <strong>${d.nomeEmpresa}</strong>, e o(a) estagiário(a) <strong>${d.nomeAluno}</strong>, aluno(a) regularmente matriculado(a) no <strong>${d.curso}</strong>, matrícula nº <strong>${d.matricula}</strong> desta Instituição de Ensino.</p>
+        <p style="font-family:Arial,sans-serif;font-size:10pt">Este termo aditivo altera as seguintes condições do referido Termo de Compromisso de Estágio: A partir de <strong>${d.dataVigencia || '___/___/______'}</strong> o horário de estágio passa a ser <strong>${d.novoHorario || '_______________'}</strong>.</p>
+        ${_rodapeAdendo(d)}`,
 
       'Alteração de carga horária semanal': (d) => `
-        <h2 style="text-align:center;margin-bottom:24px">Alteração de Carga Horária Semanal</h2>
-        <p>Aditamento ao Termo de Compromisso de Estágio, firmado em <strong>${d.dataFirmamentoTCE}</strong>, entre a Instituição de Ensino, IFRS – Campus Rio Grande, unidade concedente, <strong>${d.nomeEmpresa}</strong>, e o(a) estagiário(a) <strong>${d.nomeAluno}</strong>, aluno(a) regularmente matriculado(a) no <strong>${d.curso}</strong>, matrícula nº <strong>${d.matricula}</strong> desta Instituição de Ensino.</p>
-        <p>Este termo aditivo altera a carga horária semanal do estágio para <strong>${d.novaCargaHoraria || '___'} horas semanais</strong>, a partir de <strong>${d.dataVigencia || '___/___/______'}</strong>, conforme cláusula 4º do referido Termo de Compromisso de Estágio.</p>
-        ${_rodapeAdendo()}`,
+        ${_cabecalhoAdendo('ADITAMENTO AO TERMO DE COMPROMISSO DE ESTÁGIO')}
+        <p style="font-family:Arial,sans-serif;font-size:10pt">Aditamento ao Termo de Compromisso de Estágio, firmado em <strong>${d.dataFirmamentoTCE}</strong>, entre a Instituição de Ensino, IFRS – Campus Rio Grande, unidade concedente, <strong>${d.nomeEmpresa}</strong>, e o(a) estagiário(a) <strong>${d.nomeAluno}</strong>, aluno(a) regularmente matriculado(a) no <strong>${d.curso}</strong>, matrícula nº <strong>${d.matricula}</strong> desta Instituição de Ensino.</p>
+        <p style="font-family:Arial,sans-serif;font-size:10pt">Este termo aditivo altera a carga horária semanal do estágio para <strong>${d.novaCargaHoraria || '___'} horas semanais</strong>, a partir de <strong>${d.dataVigencia || '___/___/______'}</strong>, conforme cláusula 4º do referido Termo de Compromisso de Estágio.</p>
+        ${_rodapeAdendo(d)}`,
 
       'Alteração do plano de atividades': (d) => `
-        <h2 style="text-align:center;margin-bottom:24px">Alteração do Plano de Atividades</h2>
-        <p>Aditamento ao Termo de Compromisso de Estágio, firmado em <strong>${d.dataFirmamentoTCE}</strong>, entre a Instituição de Ensino, IFRS – Campus Rio Grande, unidade concedente, <strong>${d.nomeEmpresa}</strong>, e o(a) estagiário(a) <strong>${d.nomeAluno}</strong>, aluno(a) regularmente matriculado(a) no <strong>${d.curso}</strong>, matrícula nº <strong>${d.matricula}</strong> desta Instituição de Ensino.</p>
+        ${_cabecalhoAdendo('ADITAMENTO AO TERMO DE COMPROMISSO DE ESTÁGIO')}
+        <p style="font-family:Arial,sans-serif;font-size:10pt">Aditamento ao Termo de Compromisso de Estágio, firmado em <strong>${d.dataFirmamentoTCE}</strong>, entre a Instituição de Ensino, IFRS – Campus Rio Grande, unidade concedente, <strong>${d.nomeEmpresa}</strong>, e o(a) estagiário(a) <strong>${d.nomeAluno}</strong>, aluno(a) regularmente matriculado(a) no <strong>${d.curso}</strong>, matrícula nº <strong>${d.matricula}</strong> desta Instituição de Ensino.</p>
         <p>Este termo aditivo altera o Plano de Atividades do estágio a partir de <strong>${d.dataVigencia || '___/___/______'}</strong>, passando a vigorar o seguinte plano:</p>
         <blockquote style="border-left:3px solid #ccc;margin:12px 0;padding:8px 16px;color:#555;white-space:pre-wrap">${escapeHtml(d.novoPlano || '_______________')}</blockquote>
-        ${_rodapeAdendo()}`,
+        ${_rodapeAdendo(d)}`,
 
       'Alteração de apólice de seguro': (d) => `
-        <h2 style="text-align:center;margin-bottom:24px">Alteração de Apólice de Seguro</h2>
-        <p>Aditamento ao Termo de Compromisso de Estágio, firmado em <strong>${d.dataFirmamentoTCE}</strong>, entre a Instituição de Ensino, IFRS – Campus Rio Grande, a empresa, <strong>${d.nomeEmpresa}</strong>, e <strong>${d.nomeAluno}</strong>, (matrícula nº <strong>${d.matricula}</strong>), regularmente matriculad(o) no Curso <strong>${d.curso}</strong>.</p>
-        <p>Este termo aditivo altera a cobertura de seguro contra acidentes pessoais, que passará a ser proporcionada pela apólice <strong>${d.numeroApolice || '_______________'}</strong>, da seguradora <strong>${d.nomeSeguradoras || '_______________'}</strong>.</p>
-        ${_rodapeAdendo()}`,
+        ${_cabecalhoAdendo('ADITAMENTO AO TERMO DE COMPROMISSO DE ESTÁGIO')}
+        <p style="font-family:Arial,sans-serif;font-size:10pt">Aditamento ao Termo de Compromisso de Estágio, firmado em <strong>${d.dataFirmamentoTCE}</strong>, entre a Instituição de Ensino, IFRS – Campus Rio Grande, a empresa, <strong>${d.nomeEmpresa}</strong>, e <strong>${d.nomeAluno}</strong>, (matrícula nº <strong>${d.matricula}</strong>), regularmente matriculad(o) no Curso <strong>${d.curso}</strong>.</p>
+        <p style="font-family:Arial,sans-serif;font-size:10pt">Este termo aditivo altera a cobertura de seguro contra acidentes pessoais, que passará a ser proporcionada pela apólice <strong>${d.numeroApolice || '_______________'}</strong>, da seguradora <strong>${d.nomeSeguradoras || '_______________'}</strong>.</p>
+        ${_rodapeAdendo(d)}`,
 
       'Alteração de local/setor': (d) => `
-        <h2 style="text-align:center;margin-bottom:24px">Alteração de Local de Estágio</h2>
-        <p>Aditamento ao Termo de Compromisso de Estágio, firmado em <strong>${d.dataFirmamentoTCE}</strong>, entre a Instituição de Ensino, IFRS – Campus Rio Grande, unidade concedente, <strong>${d.nomeEmpresa}</strong>, e o(a) estagiário(a) <strong>${d.nomeAluno}</strong>, aluno(a) regularmente matriculado(a) no <strong>${d.curso}</strong>, matrícula nº <strong>${d.matricula}</strong> desta Instituição de Ensino.</p>
-        <p>Este termo aditivo altera as seguintes condições do referido Termo de Compromisso de Estágio: A partir de <strong>${d.dataVigencia || '___/___/______'}</strong>, o(a) estagiário(a) passará a realizar suas atividades no <strong>${d.nomeNovoLocal || '_______________'}</strong> da referida concedente.</p>
-        ${_rodapeAdendo()}`,
+        ${_cabecalhoAdendo('ADITAMENTO AO TERMO DE COMPROMISSO DE ESTÁGIO')}
+        <p style="font-family:Arial,sans-serif;font-size:10pt">Aditamento ao Termo de Compromisso de Estágio, firmado em <strong>${d.dataFirmamentoTCE}</strong>, entre a Instituição de Ensino, IFRS – Campus Rio Grande, unidade concedente, <strong>${d.nomeEmpresa}</strong>, e o(a) estagiário(a) <strong>${d.nomeAluno}</strong>, aluno(a) regularmente matriculado(a) no <strong>${d.curso}</strong>, matrícula nº <strong>${d.matricula}</strong> desta Instituição de Ensino.</p>
+        <p style="font-family:Arial,sans-serif;font-size:10pt">Este termo aditivo altera as seguintes condições do referido Termo de Compromisso de Estágio: A partir de <strong>${d.dataVigencia || '___/___/______'}</strong>, o(a) estagiário(a) passará a realizar suas atividades no <strong>${d.nomeNovoLocal || '_______________'}</strong> da referida concedente.</p>
+        ${_rodapeAdendo(d)}`,
 
       'Alteração de remuneração': (d) => {
         const sub = d['subtipo-rem'];
         if (sub === 'nao-rem-para-rem') return `
-          <h2 style="text-align:center;margin-bottom:24px">Alteração de Não Remunerado para Remunerado</h2>
-          <p>Aditamento ao Termo de Compromisso de Estágio, firmado em <strong>${d.dataFirmamentoTCE}</strong>, entre a Instituição de Ensino, IFRS – Campus Rio Grande, a empresa, <strong>${d.nomeEmpresa}</strong>, e <strong>${d.nomeAluno}</strong>, (matrícula nº <strong>${d.matricula}</strong>), regularmente matriculad(o) no Curso <strong>${d.curso}</strong>.</p>
-          <p>Este termo aditivo altera o mencionado na cláusula 4º, no item b, do referido Termo de Compromisso de Estágio, passando a tratar-se de estágio remunerado com renda mensal de R$ <strong>${d.novoValor || '_______________'}</strong>, a partir de <strong>${d.dataVigencia || '___/___/______'}</strong>.</p>
-          ${_rodapeAdendo()}`;
+          ${_cabecalhoAdendo('ADITAMENTO AO TERMO DE COMPROMISSO DE ESTÁGIO')}
+          <p style="font-family:Arial,sans-serif;font-size:10pt">Aditamento ao Termo de Compromisso de Estágio, firmado em <strong>${d.dataFirmamentoTCE}</strong>, entre a Instituição de Ensino, IFRS – Campus Rio Grande, a empresa, <strong>${d.nomeEmpresa}</strong>, e <strong>${d.nomeAluno}</strong>, (matrícula nº <strong>${d.matricula}</strong>), regularmente matriculad(o) no Curso <strong>${d.curso}</strong>.</p>
+          <p style="font-family:Arial,sans-serif;font-size:10pt">Este termo aditivo altera o mencionado na cláusula 4º, no item b, do referido Termo de Compromisso de Estágio, passando a tratar-se de estágio remunerado com renda mensal de R$ <strong>${d.novoValor || '_______________'}</strong>, a partir de <strong>${d.dataVigencia || '___/___/______'}</strong>.</p>
+          ${_rodapeAdendo(d)}`;
         if (sub === 'rem-para-nao-rem') return `
-          <h2 style="text-align:center;margin-bottom:24px">Alteração de Remunerado para Não Remunerado</h2>
-          <p>Aditamento ao Termo de Compromisso de Estágio, firmado em <strong>${d.dataFirmamentoTCE}</strong>, entre a Instituição de Ensino, IFRS – Campus Rio Grande, a empresa, <strong>${d.nomeEmpresa}</strong>, e <strong>${d.nomeAluno}</strong>, (matrícula nº <strong>${d.matricula}</strong>), regularmente matriculad(o) no Curso <strong>${d.curso}</strong>.</p>
-          <p>Este termo aditivo altera o mencionado na cláusula 4º, no item b, do referido Termo de Compromisso de Estágio, passando a tratar-se de estágio não remunerado a partir de <strong>${d.dataVigencia || '___/___/______'}</strong>.</p>
-          ${_rodapeAdendo()}`;
+          ${_cabecalhoAdendo('ADITAMENTO AO TERMO DE COMPROMISSO DE ESTÁGIO')}
+          <p style="font-family:Arial,sans-serif;font-size:10pt">Aditamento ao Termo de Compromisso de Estágio, firmado em <strong>${d.dataFirmamentoTCE}</strong>, entre a Instituição de Ensino, IFRS – Campus Rio Grande, a empresa, <strong>${d.nomeEmpresa}</strong>, e <strong>${d.nomeAluno}</strong>, (matrícula nº <strong>${d.matricula}</strong>), regularmente matriculad(o) no Curso <strong>${d.curso}</strong>.</p>
+          <p style="font-family:Arial,sans-serif;font-size:10pt">Este termo aditivo altera o mencionado na cláusula 4º, no item b, do referido Termo de Compromisso de Estágio, passando a tratar-se de estágio não remunerado a partir de <strong>${d.dataVigencia || '___/___/______'}</strong>.</p>
+          ${_rodapeAdendo(d)}`;
         // alterar-valor
         return `
-          <h2 style="text-align:center;margin-bottom:24px">Alteração de Remuneração</h2>
-          <p>Aditamento ao Termo de Compromisso de Estágio, firmado em <strong>${d.dataFirmamentoTCE}</strong>, entre a Instituição de Ensino, IFRS – Campus Rio Grande, a empresa, <strong>${d.nomeEmpresa}</strong>, e <strong>${d.nomeAluno}</strong>, (matrícula nº <strong>${d.matricula}</strong>), regularmente matriculad(o) no Curso <strong>${d.curso}</strong>.</p>
-          <p>Este termo aditivo prorroga de <strong>${d.periodoInicio || '___/___/______'}</strong> a <strong>${d.periodoFim || '___/___/______'}</strong>, o período de estágio mencionado na cláusula 4º, no item a, do referido Termo de Compromisso de Estágio, passando o valor a ser recebido de R$ <strong>${d.valorAtual || '_______________'}</strong> para R$ <strong>${d.novoValor || '_______________'}</strong>.</p>
-          ${_rodapeAdendo()}`;
+          ${_cabecalhoAdendo('ADITAMENTO AO TERMO DE COMPROMISSO DE ESTÁGIO')}
+          <p style="font-family:Arial,sans-serif;font-size:10pt">Aditamento ao Termo de Compromisso de Estágio, firmado em <strong>${d.dataFirmamentoTCE}</strong>, entre a Instituição de Ensino, IFRS – Campus Rio Grande, a empresa, <strong>${d.nomeEmpresa}</strong>, e <strong>${d.nomeAluno}</strong>, (matrícula nº <strong>${d.matricula}</strong>), regularmente matriculad(o) no Curso <strong>${d.curso}</strong>.</p>
+          <p style="font-family:Arial,sans-serif;font-size:10pt">Este termo aditivo prorroga de <strong>${d.periodoInicio || '___/___/______'}</strong> a <strong>${d.periodoFim || '___/___/______'}</strong>, o período de estágio mencionado na cláusula 4º, no item a, do referido Termo de Compromisso de Estágio, passando o valor a ser recebido de R$ <strong>${d.valorAtual || '_______________'}</strong> para R$ <strong>${d.novoValor || '_______________'}</strong>.</p>
+          ${_rodapeAdendo(d)}`;
       },
 
       'Rescisão de estágio': (d) => {
         const sub = d['subtipo-rescisao'];
         if (sub === 'pela-empresa') return `
-          <h2 style="text-align:center;margin-bottom:24px">Termo de Rescisão de Contrato de Estágio</h2>
-          <p>Termo de Rescisão de Contrato firmado entre a Empresa, Instituição de Ensino e Estagiário, cujos dados seguem abaixo:</p>
-          <p><strong>Dados da Empresa:</strong><br>
+          ${_cabecalhoAdendo('TERMO DE RESCISÃO DE CONTRATO DE ESTÁGIO')}
+          <p style="font-family:Arial,sans-serif;font-size:10pt">Termo de Rescisão de Contrato firmado entre a Empresa, Instituição de Ensino e Estagiário, cujos dados seguem abaixo:</p>
+          <p style="font-family:Arial,sans-serif;font-size:10pt"><strong>Dados da Empresa:</strong><br>
           Empresa: <strong>${d.nomeEmpresa}</strong><br>
           ${d.enderecoEmpresa ? 'Endereço: <strong>' + escapeHtml(d.enderecoEmpresa) + '</strong><br>' : ''}
           ${d.telefoneEmpresa ? 'Telefone: <strong>' + escapeHtml(d.telefoneEmpresa) + '</strong><br>' : ''}
           ${d.representanteLegal ? 'Representante Legal: <strong>' + escapeHtml(d.representanteLegal) + '</strong>' : ''}
           ${d.cargoRepresentante ? ' &nbsp; Cargo: <strong>' + escapeHtml(d.cargoRepresentante) + '</strong>' : ''}</p>
-          <p><strong>Dados da Instituição de Ensino:</strong><br>
+          <p style="font-family:Arial,sans-serif;font-size:10pt"><strong>Dados da Instituição de Ensino:</strong><br>
           Instituição de Ensino: Instituição Federal de Educação, Ciência e Tecnologia do Rio Grande do Sul – Câmpus Rio Grande<br>
           Endereço: Rua Engenheiro Alfredo Huch, 475 — Rio Grande/RS<br>
           Representante Legal: Alexandre Jesus da Silva Machado<br>
           Cargo: Diretor Geral do IFRS – Câmpus Rio Grande</p>
-          <p><strong>Dados do(a) Estagiário(a):</strong><br>
+          <p style="font-family:Arial,sans-serif;font-size:10pt"><strong>Dados do(a) Estagiário(a):</strong><br>
           Nome: <strong>${d.nomeAluno}</strong><br>
           Curso: <strong>${d.curso}</strong></p>
-          <p>O contrato a ser rescindido possui início em <strong>${d.dataInicio}</strong> e término em <strong>${d.dataTermino}</strong>.</p>
-          <p>Conforme tratado entre as partes, o contrato será rescindido na presente data.</p>
-          ${_rodapeAdendo()}`;
+          <p style="font-family:Arial,sans-serif;font-size:10pt">O contrato a ser rescindido possui início em <strong>${d.dataInicio}</strong> e término em <strong>${d.dataTermino}</strong>.</p>
+          <p style="font-family:Arial,sans-serif;font-size:10pt">Conforme tratado entre as partes, o contrato será rescindido na presente data.</p>
+          ${_rodapeAdendo(d, {omitirPermanencia: true})}`;
         // pelo-ifrs
         return `
-          <h2 style="text-align:center;margin-bottom:24px">Termo de Rescisão de Contrato</h2>
-          <p>Termo de Rescisão de Contrato firmado entre a Empresa, Instituição de Ensino e Estagiário, cujos dados seguem abaixo:</p>
-          <p><strong>Dados da Instituição de Ensino / Empresa Concedente:</strong><br>
+          ${_cabecalhoAdendo('TERMO DE RESCISÃO DE CONTRATO DE ESTÁGIO')}
+          <p style="font-family:Arial,sans-serif;font-size:10pt">Termo de Rescisão de Contrato firmado entre a Empresa, Instituição de Ensino e Estagiário, cujos dados seguem abaixo:</p>
+          <p style="font-family:Arial,sans-serif;font-size:10pt"><strong>Dados da Instituição de Ensino / Empresa Concedente:</strong><br>
           Instituição de Ensino: Instituição Federal de Educação, Ciência e Tecnologia do Rio Grande do Sul – Câmpus Rio Grande<br>
           Endereço: Rua Engenheiro Alfredo Huch, 475 — Rio Grande/RS<br>
           Representante Legal: Prof. Alexandre Jesus da Silva Machado<br>
           Cargo: Diretor Geral do IFRS – Câmpus Rio Grande</p>
-          <p><strong>Dados do(a) Estagiário(a):</strong><br>
+          <p style="font-family:Arial,sans-serif;font-size:10pt"><strong>Dados do(a) Estagiário(a):</strong><br>
           Nome: <strong>${d.nomeAluno}</strong><br>
           Curso: <strong>${d.curso}</strong></p>
-          <p>O contrato a ser rescindido possui início em <strong>${d.dataInicio}</strong> e término previsto para <strong>${d.dataTermino}</strong>.</p>
-          <p>Conforme tratado entre as partes, o contrato será rescindido na presente data.</p>
-          ${_rodapeAdendo()}`;
+          <p style="font-family:Arial,sans-serif;font-size:10pt">O contrato a ser rescindido possui início em <strong>${d.dataInicio}</strong> e término previsto para <strong>${d.dataTermino}</strong>.</p>
+          <p style="font-family:Arial,sans-serif;font-size:10pt">Conforme tratado entre as partes, o contrato será rescindido na presente data.</p>
+          ${_rodapeAdendo(d, {omitirPermanencia: true})}`;
       },
     };
 
-    function _rodapeAdendo() {
-      return `
-        <p>A partir deste adendo, permanecem inalteradas todas as demais disposições do Termo de Compromisso de Estágio e do Plano de Atividades.</p>
-        <p>E por estarem de inteiro e comum acordo com as condições e dizeres deste instrumento, as partes assinam-no digitalmente ou, se manuscrita, em 3 (três) vias de igual teor.</p>
-        <br>
-        <table style="width:100%;border-collapse:collapse;font-size:13px;margin-top:16px">
-          <tr>
-            <td style="border:1px solid #ccc;padding:8px 12px;font-weight:600">Assinaturas GOV.BR</td>
-            <td style="border:1px solid #ccc;padding:8px 12px"></td>
-          </tr>
-          <tr><td style="border:1px solid #ccc;padding:8px 12px">ESTAGIÁRIO(A) OU REPRESENTANTE LEGAL</td><td style="border:1px solid #ccc;padding:8px 12px">CPF: ___.___.___-__</td></tr>
-          <tr><td style="border:1px solid #ccc;padding:8px 12px">CONCEDENTE</td><td style="border:1px solid #ccc;padding:8px 12px">Assinatura do(a) representante</td></tr>
-          <tr><td style="border:1px solid #ccc;padding:8px 12px">COORDENADOR(A) DO CURSO</td><td style="border:1px solid #ccc;padding:8px 12px"></td></tr>
-          <tr><td style="border:1px solid #ccc;padding:8px 12px">INSTITUIÇÃO DE ENSINO — Diretor(a) Geral</td><td style="border:1px solid #ccc;padding:8px 12px"></td></tr>
-        </table>`;
+    function _cabecalhoAdendo(titulo) {
+      return `<div style="text-align:center;font-family:Arial,sans-serif;margin-bottom:8px">
+        <img src="https://ifrs-riogrande.github.io/estagios/assets/img/logo-ifrs.png"
+             onerror="this.style.display='none'"
+             style="height:54px;margin:0 auto 4px;display:block">
+        <p style="margin:1px 0;font-size:8pt;font-family:Arial,sans-serif">MINISTÉRIO DA EDUCAÇÃO</p>
+        <p style="margin:1px 0;font-size:9pt;font-weight:bold;font-family:Arial,sans-serif">INSTITUTO FEDERAL DE EDUCAÇÃO, CIÊNCIA E TECNOLOGIA DO RIO GRANDE DO SUL</p>
+        <p style="margin:1px 0 8px;font-size:8pt;font-family:Arial,sans-serif">Campus Rio Grande</p>
+      </div>
+      <hr style="border:none;border-top:1px solid #888;margin:0 0 12px">
+      <p style="text-align:center;font-family:Arial,sans-serif;font-size:13pt;font-weight:bold;margin:0 0 16px">${titulo}</p>`;
+    }
+
+    function _assinHtml(nome, papel) {
+      return `<div style="margin-top:50px;text-align:center;font-family:Arial,sans-serif;font-size:10pt">
+        <div style="margin:0">_______________________________________</div>
+        <div style="font-weight:bold;margin:2px 0">${nome}</div>
+        <div style="margin:2px 0">${papel}</div>
+      </div>`;
+    }
+
+    function _rodapeAdendo(d, opcoes) {
+      d = d || {};
+      opcoes = opcoes || {};
+      const _mesesPt = ['janeiro','fevereiro','março','abril','maio','junho','julho',
+                        'agosto','setembro','outubro','novembro','dezembro'];
+      const _hoje     = new Date();
+      const _dataLinha = 'Rio Grande, ' + _hoje.getDate() + ' de ' + _mesesPt[_hoje.getMonth()] + ' de ' + _hoje.getFullYear() + '.';
+      const _nomeAluno = d.nomeAluno ? escapeHtml(d.nomeAluno) : 'ESTAGIÁRIO(A)';
+      const _idEstagio = d.idEstagio ? escapeHtml(String(d.idEstagio)) : '—';
+      const _dataEmissao = _hoje.toLocaleDateString('pt-BR');
+
+      const _permanencia = opcoes.omitirPermanencia ? '' :
+        `<p style="margin-top:16px;font-family:Arial,sans-serif;font-size:10pt">A partir deste adendo, permanecem inalteradas todas as demais disposições do Termo de Compromisso de Estágio e do Plano de Atividades.</p>`;
+
+      return `${_permanencia}
+        <p style="font-family:Arial,sans-serif;font-size:10pt">E por estarem de inteiro e comum acordo com as condições e dizeres deste instrumento, as partes assinam-no digitalmente.</p>
+        <p style="margin-top:20px;font-family:Arial,sans-serif;font-size:10pt">${_dataLinha}</p>
+        ${_assinHtml(_nomeAluno, 'ESTAGIÁRIO(A)')}
+        ${_assinHtml('Representante', 'CONCEDENTE')}
+        ${_assinHtml('COORDENADOR(A) DO CURSO', 'COORDENADOR(A) DO CURSO')}
+        ${_assinHtml('DIRETOR-GERAL DO IFRS – CAMPUS RIO GRANDE', 'INSTITUIÇÃO DE ENSINO')}
+        <p style="margin-top:48px;text-align:center;font-family:Arial,sans-serif;font-size:7pt;font-style:italic;color:#777;border-top:1px solid #ccc;padding-top:6px">SGE · IFRS Campus Rio Grande · Visualização gerada em ${_dataEmissao} · ID: ${_idEstagio}</p>`;
     }
 
     function previewAdendo() {
@@ -2139,17 +2167,12 @@
       janela.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
         <title>Adendo — IFRS Campus Rio Grande</title>
         <style>
-          body{font-family:Arial,sans-serif;font-size:13px;line-height:1.7;margin:40px;color:#222}
-          h2{font-size:15px;margin-bottom:20px}
-          p{margin-bottom:12px}
-          table{width:100%;border-collapse:collapse;margin-top:16px}
-          td{border:1px solid #ccc;padding:8px 12px}
+          body{font-family:Arial,sans-serif;font-size:10pt;line-height:1.6;margin:56px 72px;color:#222}
+          p{margin:4px 0 8px;font-family:Arial,sans-serif;font-size:10pt}
           blockquote{border-left:3px solid #ccc;margin:12px 0;padding:8px 16px;color:#555}
-          @media print{body{margin:20mm}}
+          @page{margin:20mm}
+          @media print{body{margin:0}}
         </style>
-        <img src="https://ifrs-riogrande.github.io/estagios/assets/img/logo-ifrs.png"
-             onerror="this.style.display='none'"
-             style="height:50px;margin-bottom:16px;display:block">
       </head><body>${conteudo}</body></html>`);
       janela.document.close();
       janela.focus();
@@ -2177,7 +2200,7 @@
       </div>
       <!-- Corpo do documento -->
       <div id="modal-adendo-corpo"
-           style="padding:32px 40px;font-family:Georgia,serif;font-size:13px;line-height:1.8;color:#222"></div>
+           style="padding:32px 40px;font-family:Arial,sans-serif;font-size:10pt;line-height:1.6;color:#222"></div>
       <!-- Footer -->
       <div style="display:flex;gap:12px;padding:16px 24px;border-top:1px solid #e5e7eb;justify-content:flex-end">
         <button onclick="fecharPreviewAdendo()"
