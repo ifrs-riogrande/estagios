@@ -971,7 +971,6 @@
     /* ─── Aba: Adendos ─── */
     function renderAdendos() {
       document.getElementById('cnt-adendos').textContent = _adendos.length > 0 ? String(_adendos.length) : '';
-
       const c = document.getElementById('content-adendos');
 
       if (_adendos.length === 0) {
@@ -983,61 +982,116 @@
         return;
       }
 
-      const linhas = _adendos.map((a, idx) => {
-        const rid = 'adendo-det-' + idx;
-        return `
-          <tr>
-            <td style="font-size:12px">${escapeHtml(a.tipoAlteracao || '—')}</td>
-            <td style="font-size:12px">${escapeHtml(a.dataSolicitacao || '—')}</td>
-            <td>${badgeAdendo(a.status)}</td>
-            <td>
-              <button class="btn btn-secondary btn-sm" onclick="toggleAdendoDetalhe('${rid}')">Ver</button>
-            </td>
-          </tr>
-          <tr class="adendo-detail-row" id="${rid}">
-            <td colspan="4">
-              <div class="adendo-detail-inner">
-                <div class="detail-grid" style="margin-bottom:var(--space-3)">
-                  <div class="detail-item detail-full"><label>Tipo de Alteração</label><p>${escapeHtml(a.tipoAlteracao || '—')}</p></div>
-                  <div class="detail-item detail-full"><label>Descrição / Justificativa</label><p style="white-space:pre-wrap">${escapeHtml(a.descricao || '—')}</p></div>
-                  ${a.valorAnterior ? `<div class="detail-item"><label>Valor Anterior</label><p>${escapeHtml(a.valorAnterior)}</p></div>` : ''}
-                  ${a.valorNovo     ? `<div class="detail-item"><label>Novo Valor</label><p>${escapeHtml(a.valorNovo)}</p></div>` : ''}
-                </div>
-                ${a.status === 'Pendente' ? `
-                <div style="display:flex;flex-wrap:wrap;gap:var(--space-3);align-items:flex-start">
-                  <div style="flex:1;min-width:240px">
-                    <textarea id="motivo-adendo-${idx}" class="form-control" rows="2" placeholder="Motivo da reprovação (se reprovar)…" style="font-size:13px"></textarea>
-                  </div>
-                  <div style="display:flex;gap:var(--space-2)">
-                    <button class="btn btn-danger btn-sm"  onclick="acaoAdendo('reprovarAdendo',  ${JSON.stringify(a).replace(/"/g,'&quot;')}, ${idx})">Reprovar</button>
-                    <button class="btn btn-primary btn-sm" onclick="acaoAdendo('aprovarAdendo',   ${JSON.stringify(a).replace(/"/g,'&quot;')}, ${idx})">Aprovar</button>
-                  </div>
-                </div>` : ''}
-              </div>
-            </td>
-          </tr>`;
-      }).join('');
+      c.innerHTML = _adendos.map((a, idx) => buildAdendoCard(a, idx)).join('');
+    }
 
-      c.innerHTML = `
-        <div class="table-wrap">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Tipo de Alteração</th>
-                <th>Data</th>
-                <th>Status</th>
-                <th>Ações</th>
-              </tr>
-            </thead>
-            <tbody>${linhas}</tbody>
-          </table>
+    function buildAdendoCard(a, idx) {
+      const uid    = 'adendo-' + idx;
+      const status = a.status || 'Pendente';
+      const aJson  = JSON.stringify(a).replace(/"/g, '&quot;');
+      const idAdendo = escapeHtml(a.idAdendo || a.id || '');
+
+      const detailHtml = `
+        <div class="detail-grid" style="margin:var(--space-3) 0 0">
+          <div class="detail-item detail-full">
+            <label>Descrição / Justificativa</label>
+            <p style="white-space:pre-wrap">${escapeHtml(a.descricao || '—')}</p>
+          </div>
+          ${a.valorAnterior ? `<div class="detail-item"><label>Valor Anterior</label><p>${escapeHtml(a.valorAnterior)}</p></div>` : ''}
+          ${a.valorNovo     ? `<div class="detail-item"><label>Novo Valor</label><p>${escapeHtml(a.valorNovo)}</p></div>` : ''}
+        </div>`;
+
+      let actionsHtml = '';
+      let rejectPanelHtml = '';
+
+      if (status === 'Pendente') {
+        actionsHtml = `
+          <div class="doc-actions">
+            <div class="doc-actions-left">Revise os detalhes do adendo antes de prosseguir.</div>
+            <div class="doc-actions-right">
+              <button class="btn btn-danger btn-sm" onclick="mostrarPainelRejeicaoAdendo('${uid}')">Devolver ao Estudante</button>
+              <button class="btn btn-primary btn-sm" onclick="acaoAdendo('aprovarAdendo', ${aJson}, ${idx})">Aprovar e Gerar PDF</button>
+            </div>
+          </div>`;
+        rejectPanelHtml = `
+          <div class="reject-panel" id="reject-adendo-${uid}">
+            <div class="form-group" style="margin-bottom:var(--space-3)">
+              <label class="form-label">Motivo da devolução</label>
+              <textarea id="motivo-adendo-${idx}" class="form-control" rows="2" placeholder="Indique o que deve ser corrigido…"></textarea>
+            </div>
+            <div style="display:flex;gap:var(--space-2)">
+              <button class="btn btn-ghost btn-sm" onclick="ocultarPainelRejeicaoAdendo('${uid}')">Cancelar</button>
+              <button class="btn btn-danger btn-sm" onclick="acaoAdendo('reprovarAdendo', ${aJson}, ${idx})">Confirmar Devolução</button>
+            </div>
+          </div>`;
+
+      } else if (status === 'Aguardando Correção') {
+        actionsHtml = `
+          <div class="doc-actions">
+            <div class="doc-actions-left">
+              ⚠️ Devolvido ao estudante para correção.
+              ${a.motivoReprovacao ? `<br><span style="font-size:12px;color:var(--color-text-muted)">Motivo: ${escapeHtml(a.motivoReprovacao)}</span>` : ''}
+            </div>
+            <div class="doc-actions-right"></div>
+          </div>`;
+
+      } else if (status === 'Em Assinaturas') {
+        const pastaUrl = a.driveUrl || (_estagio && _estagio.driveUrl ? _estagio.driveUrl : '');
+        actionsHtml = `
+          <div class="doc-actions">
+            <div class="doc-actions-left">Adendo em assinaturas digitais (gov.br): Estagiário → Concedente → Coordenador → Diretor Geral.</div>
+            <div class="doc-actions-right">
+              <button class="btn btn-secondary btn-sm" onclick="regenerarAdendo('${idAdendo}', this)">🔄 Regenerar Adendo</button>
+              <a href="https://validar.iti.gov.br/" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">Validador ITI ↗</a>
+              ${pastaUrl ? `<a href="${escapeHtml(pastaUrl)}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">📁 Abrir pasta ↗</a>` : ''}
+              <button class="btn btn-secondary btn-sm" onclick="reenviarNotifAdendo('${idAdendo}', this)">
+                <svg width="12" height="12" viewBox="0 0 20 20" fill="currentColor"><path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"/><path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"/></svg>
+                Reenviar notificação
+              </button>
+            </div>
+          </div>`;
+
+      } else if (status === 'Concluído') {
+        actionsHtml = `
+          <div class="doc-actions">
+            <div class="doc-actions-left">Adendo concluído com todas as assinaturas.</div>
+            <div class="doc-actions-right">
+              ${a.pdfUrl ? `<a href="${escapeHtml(a.pdfUrl)}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">📄 Abrir PDF ↗</a>` : ''}
+              <button class="btn btn-secondary btn-sm" onclick="regenerarAdendo('${idAdendo}', this)">🔄 Regenerar</button>
+            </div>
+          </div>`;
+
+      } else if (status === 'Recusado' || status === 'Reprovado') {
+        actionsHtml = `
+          <div class="doc-actions">
+            <div class="doc-actions-left" style="color:var(--color-error)">
+              ✗ Adendo recusado.
+              ${a.motivoReprovacao ? `<br><span style="font-size:12px;color:var(--color-text-muted)">Motivo: ${escapeHtml(a.motivoReprovacao)}</span>` : ''}
+            </div>
+            <div class="doc-actions-right"></div>
+          </div>`;
+      }
+
+      return `
+        <div class="doc-card" style="margin-bottom:var(--space-4)">
+          <div class="doc-card-header">
+            <div>
+              <div class="doc-card-title">${escapeHtml(a.tipoAlteracao || '—')}</div>
+              ${a.dataSolicitacao ? `<div style="font-size:12px;color:var(--color-text-muted)">Solicitado em ${escapeHtml(a.dataSolicitacao)}</div>` : ''}
+            </div>
+            ${badgeAdendo(status)}
+          </div>
+          ${detailHtml}
+          ${actionsHtml}
+          ${rejectPanelHtml}
         </div>`;
     }
 
-    function toggleAdendoDetalhe(rid) {
-      const row = document.getElementById(rid);
-      if (!row) return;
-      row.classList.toggle('show');
+    function mostrarPainelRejeicaoAdendo(uid) {
+      document.getElementById('reject-adendo-' + uid)?.classList.add('show');
+    }
+    function ocultarPainelRejeicaoAdendo(uid) {
+      document.getElementById('reject-adendo-' + uid)?.classList.remove('show');
     }
 
     /* ─── Ações: Dados (aprovar/reprovar solicitação) ─── */
@@ -1118,21 +1172,56 @@
     /* ─── Ações: Adendos ─── */
     async function acaoAdendo(action, adendo, idx) {
       const payload = {
-        idAdendo: adendo.idAdendo || adendo.id,
-        idEstagio: adendo.idEstagio,
+        idAdendo:  adendo.idAdendo || adendo.id,
+        idEstagio: adendo.idEstagio || _id,
         authToken: getAccessToken(),
       };
       if (action === 'reprovarAdendo') {
         const motivo = document.getElementById('motivo-adendo-' + idx)?.value?.trim();
-        if (!motivo) { showToast('Informe o motivo da reprovação.', 'error'); return; }
+        if (!motivo) { showToast('Informe o motivo da devolução.', 'error'); return; }
         payload.motivoReprovacao = motivo;
+      }
+      if (action === 'aprovarAdendo') {
+        if (!confirm('Aprovar o adendo e iniciar o fluxo de assinaturas (gov.br)?')) return;
       }
       try {
         await API.post(action, payload);
-        showToast(action === 'aprovarAdendo' ? 'Adendo aprovado!' : 'Adendo reprovado.', 'success');
+        showToast(action === 'aprovarAdendo'
+          ? 'Adendo aprovado! PDF gerado e fluxo de assinaturas iniciado.'
+          : 'Adendo devolvido ao estudante para correção.', 'success');
         await carregarTudo();
         mudarAba('adendos');
       } catch (err) { showToast('Erro: ' + err.message, 'error'); }
+    }
+
+    async function regenerarAdendo(idAdendo, btn) {
+      if (!confirm('Regenerar o PDF do adendo? O arquivo atual no Drive será substituído.')) return;
+      const orig = btn.textContent.trim();
+      btn.disabled = true; btn.textContent = 'Gerando…';
+      try {
+        const res = await API.post('regenerarAdendo', { idAdendo, authToken: getAccessToken() });
+        showToast('✅ Adendo regenerado com sucesso!', 'success');
+        if (res && res.pdfUrl) window.open(res.pdfUrl, '_blank');
+        await carregarTudo();
+        mudarAba('adendos');
+      } catch (err) {
+        showToast('Erro ao regenerar: ' + err.message, 'error');
+        btn.disabled = false; btn.textContent = orig;
+      }
+    }
+
+    async function reenviarNotifAdendo(idAdendo, btn) {
+      if (!confirm('Reenviar notificação para o responsável pela etapa atual?')) return;
+      const orig = btn.textContent;
+      btn.disabled = true; btn.textContent = 'Enviando…';
+      try {
+        await API.post('reenviarNotificacaoAdendo', { idAdendo, authToken: getAccessToken() });
+        showToast('✉️ Notificação reenviada com sucesso.', 'success');
+      } catch (err) {
+        showToast('Erro: ' + err.message, 'error');
+      } finally {
+        btn.disabled = false; btn.textContent = orig;
+      }
     }
 
     /* ─── Abas ─── */
@@ -1185,7 +1274,15 @@
     }
 
     function badgeAdendo(s) {
-      const m = { 'Pendente': 'badge-pending', 'Aprovado': 'badge-approved', 'Reprovado': 'badge-rejected' };
+      const m = {
+        'Pendente':            'badge-pending',
+        'Aguardando Correção': 'badge-dg',
+        'Em Assinaturas':      'badge-docs',
+        'Aprovado':            'badge-approved',
+        'Concluído':           'badge-running',
+        'Reprovado':           'badge-rejected',
+        'Recusado':            'badge-rejected',
+      };
       return `<span class="badge ${m[s] || 'badge-pending'}">${escapeHtml(s || '—')}</span>`;
     }
 
