@@ -47,8 +47,9 @@ main {
    HEADER
    ───────────────────────────────────────── */
 #app-header {
-  background-color: var(--color-primary);
-  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  background-color: #ffffff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  border-bottom: 1px solid #e5e7eb;
   position: sticky;
   top: 0;
   z-index: 100;
@@ -68,12 +69,12 @@ main {
   align-items: center;
   gap: var(--space-4);
   text-decoration: none;
-  color: #FFFFFF;
+  color: var(--color-text);
   flex-shrink: 0;
 }
 
 .header-brand:hover {
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--color-primary);
   text-decoration: none;
 }
 
@@ -81,9 +82,8 @@ main {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: #ffffff;
   border-radius: var(--radius-md);
-  padding: 4px 8px;
+  padding: 2px 0;
   flex-shrink: 0;
 }
 
@@ -138,7 +138,7 @@ main {
 .header-nav a,
 .header-nav button {
   font-size: var(--font-size-sm);
-  color: rgba(255, 255, 255, 0.85);
+  color: var(--color-text-muted);
   text-decoration: none;
   padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-md);
@@ -152,8 +152,8 @@ main {
 
 .header-nav a:hover,
 .header-nav button:hover {
-  color: #FFFFFF;
-  background-color: rgba(255, 255, 255, 0.1);
+  color: var(--color-primary);
+  background-color: var(--color-bg);
   text-decoration: none;
 }
 
@@ -164,18 +164,18 @@ main {
   gap: var(--space-2);
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-medium);
-  color: rgba(255, 255, 255, 0.85);
+  color: var(--color-text-muted);
   text-decoration: none;
   padding: var(--space-2) var(--space-4) var(--space-2) var(--space-3);
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: var(--color-bg);
   border-radius: 9999px;
   transition: color var(--transition-fast), background-color var(--transition-fast);
   white-space: nowrap;
 }
 
 .back-link:hover {
-  color: #FFFFFF;
-  background-color: rgba(255, 255, 255, 0.2);
+  color: var(--color-primary);
+  background-color: var(--color-border);
   text-decoration: none;
 }
 
@@ -196,19 +196,19 @@ main {
   gap: var(--space-2);
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-medium);
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--color-text);
   padding: var(--space-1) var(--space-3) var(--space-1) var(--space-1);
-  background-color: rgba(255, 255, 255, 0.12);
+  background-color: var(--color-bg);
   border-radius: 9999px;
-  border: none;
+  border: 1px solid var(--color-border);
   cursor: pointer;
   font-family: inherit;
   transition: background-color var(--transition-fast), color var(--transition-fast);
 }
 
 .header-user:hover {
-  background-color: rgba(255, 255, 255, 0.22);
-  color: #ffffff;
+  background-color: var(--color-border);
+  color: var(--color-primary);
 }
 
 .header-user-avatar {
@@ -217,21 +217,21 @@ main {
   border-radius: 50%;
   object-fit: cover;
   flex-shrink: 0;
-  border: 2px solid rgba(255, 255, 255, 0.35);
+  border: 2px solid var(--color-border);
 }
 
 .header-user-avatar-icon {
   width: 18px;
   height: 18px;
   flex-shrink: 0;
-  opacity: 0.85;
+  opacity: 0.6;
 }
 
 .header-user-chevron {
   width: 14px;
   height: 14px;
   flex-shrink: 0;
-  opacity: 0.7;
+  opacity: 0.5;
   transition: transform 0.2s ease;
 }
 
