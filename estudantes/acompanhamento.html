@@ -1613,16 +1613,12 @@
           <div id="adendo-subcampos"></div>`;
       }
 
-      // Justificativa e obs — sempre presentes
+      // Justificativa — opcional, sem campo de obs adicionais
       html += `
         <div class="form-group">
-          <label class="form-label">Justificativa <span style="color:var(--color-error)">*</span></label>
+          <label class="form-label">Justificativa</label>
           <textarea id="adendo-justificativa" class="form-control" rows="3"
-            placeholder="Motivo da solicitação de alteração…"></textarea>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Observações Adicionais</label>
-          <textarea id="adendo-obsAdicionais" class="form-control" rows="2"></textarea>
+            placeholder="Motivo da solicitação de alteração… (opcional)"></textarea>
         </div>`;
 
       container.innerHTML = html;
@@ -1774,11 +1770,6 @@
         showFormFeedback(fbId, 'error', 'Tipo obrigatório', 'Selecione o tipo de adendo.');
         return;
       }
-      if (!justificativa) {
-        showFormFeedback(fbId, 'error', 'Justificativa obrigatória', 'Preencha a justificativa para o adendo.');
-        return;
-      }
-
       // Valida campos obrigatórios do tipo selecionado
       const cfg = ADENDO_CONFIG[tipoAdendo];
       const camposObrig = (cfg?.campos || []).filter(f => f.required && f.type !== 'checkbox' && !f.groupHidden);
@@ -1806,13 +1797,11 @@
           idEstagio:    _atual.id,
           tipoAdendo,
           justificativa,
-          obsAdicionais: document.getElementById('adendo-obsAdicionais')?.value?.trim() || '',
           ...camposDinamicos,
         });
-        btn.classList.remove('is-loading');
-        btn.textContent = 'Enviado ✓';
         showFormFeedback(fbId, 'success', 'Adendo enviado!',
           'Sua solicitação foi registrada e será analisada pelo setor de estágios.');
+        setTimeout(() => window.location.reload(), 1800);
       } catch (err) {
         showFormFeedback(fbId, 'error', 'Erro ao enviar', err.message);
         btn.disabled = false; btn.classList.remove('is-loading');
