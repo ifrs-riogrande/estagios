@@ -1790,12 +1790,18 @@
         }
       }
 
+      const _tok = getAccessToken();
+      if (!_tok) {
+        showFormFeedback(fbId, 'error', 'Sessão expirada', 'Sua sessão expirou. Recarregue a página e faça login novamente.');
+        return;
+      }
+
       btn.disabled = true; btn.classList.add('is-loading');
       hideFormFeedback(fbId);
       try {
         const camposDinamicos = _coletarCamposDinamicos();
         await API.post('enviarAdendo', {
-          authToken:    getAccessToken(),
+          authToken:    _tok,
           idEstagio:    _atual.id,
           tipoAdendo,
           justificativa,
@@ -1826,12 +1832,18 @@
         showFormFeedback(fbId, 'error', 'Campos obrigatórios', 'Selecione o tipo, informe a justificativa e anexe o PDF do adendo.');
         return;
       }
+      const _tok2 = getAccessToken();
+      if (!_tok2) {
+        showFormFeedback(fbId, 'error', 'Sessão expirada', 'Sua sessão expirou. Recarregue a página e faça login novamente.');
+        return;
+      }
+
       btn.disabled = true; btn.classList.add('is-loading');
       hideFormFeedback(fbId);
       try {
         const b64 = await fileToBase64(file);
         await API.post('enviarAdendo', {
-          authToken:   getAccessToken(),
+          authToken:   _tok2,
           idEstagio:   _atual.id,
           tipoAdendo,
           justificativa,
