@@ -993,12 +993,15 @@
 
       const detailHtml = `
         <div class="detail-grid" style="margin:var(--space-3) 0 0">
+          ${a.emailEstudante ? `<div class="detail-item"><label>Estudante</label><p>${escapeHtml(a.emailEstudante)}</p></div>` : ''}
           <div class="detail-item detail-full">
-            <label>Descrição / Justificativa</label>
-            <p style="white-space:pre-wrap">${escapeHtml(a.descricao || '—')}</p>
+            <label>Justificativa</label>
+            <p style="white-space:pre-wrap">${escapeHtml(a.justificativa || '—')}</p>
           </div>
-          ${a.valorAnterior ? `<div class="detail-item"><label>Valor Anterior</label><p>${escapeHtml(a.valorAnterior)}</p></div>` : ''}
-          ${a.valorNovo     ? `<div class="detail-item"><label>Novo Valor</label><p>${escapeHtml(a.valorNovo)}</p></div>` : ''}
+          ${a.novaDataTermino ? `<div class="detail-item"><label>Nova Data de Término</label><p>${escapeHtml(a.novaDataTermino)}</p></div>` : ''}
+          ${a.novaCarga       ? `<div class="detail-item"><label>Nova Carga Horária</label><p>${escapeHtml(a.novaCarga)}</p></div>` : ''}
+          ${a.novoHorario     ? `<div class="detail-item detail-full"><label>Novo Horário</label><p style="white-space:pre-wrap">${escapeHtml(a.novoHorario)}</p></div>` : ''}
+          ${a.obs             ? `<div class="detail-item detail-full"><label>Observações</label><p style="white-space:pre-wrap">${escapeHtml(a.obs)}</p></div>` : ''}
         </div>`;
 
       let actionsHtml = '';
@@ -1007,9 +1010,10 @@
       if (status === 'Pendente') {
         actionsHtml = `
           <div class="doc-actions">
-            <div class="doc-actions-left">Revise os detalhes do adendo antes de prosseguir.</div>
+            <div class="doc-actions-left"></div>
             <div class="doc-actions-right">
-              <button class="btn btn-danger btn-sm" onclick="mostrarPainelRejeicaoAdendo('${uid}')">Devolver ao Estudante</button>
+              <button class="btn btn-secondary btn-sm" onclick="previewAdendoAdmin(${aJson})">👁 Visualizar Documento</button>
+              <button class="btn btn-danger btn-sm" onclick="mostrarPainelRejeicaoAdendo('${uid}')">Devolver para ajustes</button>
               <button class="btn btn-primary btn-sm" onclick="acaoAdendo('aprovarAdendo', ${aJson}, ${idx})">Aprovar e Gerar PDF</button>
             </div>
           </div>`;
@@ -1775,6 +1779,86 @@
         btn.textContent = orig;
       }
     }
+
+    /* ─── Preview de Adendo (modal) ─── */
+    function previewAdendoAdmin(a) {
+      const s = _estagio || {};
+      const mesesPt = ['janeiro','fevereiro','março','abril','maio','junho','julho',
+                       'agosto','setembro','outubro','novembro','dezembro'];
+      const hoje = new Date();
+      const dataLinha = 'Rio Grande, ' + hoje.getDate() + ' de ' + mesesPt[hoje.getMonth()] + ' de ' + hoje.getFullYear() + '.';
+
+      const fmtCnpj = v => {
+        const d = String(v || '').replace(/\D/g, '');
+        return d.length === 14 ? d.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5') : (v || '');
+      };
+      const nomeAluno    = escapeHtml(s.nomeEstudante || '—');
+      const empBruto     = s.empresa || '—';
+      const empMatch     = empBruto.match(/^(.+?)\s*[—–-]+\s*(\d+)\s*$/);
+      const empNome      = escapeHtml(empMatch ? empMatch[1].trim() : empBruto);
+      const empCnpj      = fmtCnpj(s.cnpjEmpresa || (empMatch ? empMatch[2] : ''));
+      const nomeEmpLabel = empNome + (empCnpj ? ', CNPJ: ' + empCnpj : '');
+
+      const cab = `<div style="text-align:center;font-family:Arial,sans-serif;margin-bottom:8px">
+        <div style="width:54px;height:54px;background:#005a2b;color:#fff;font-weight:bold;font-size:13pt;
+                    display:inline-flex;align-items:center;justify-content:center;border-radius:6px;margin-bottom:6px">IFRS</div>
+        <p style="margin:1px 0;font-size:8pt;font-family:Arial,sans-serif">MINISTÉRIO DA EDUCAÇÃO</p>
+        <p style="margin:1px 0;font-size:9pt;font-weight:bold;font-family:Arial,sans-serif">INSTITUTO FEDERAL DE EDUCAÇÃO, CIÊNCIA E TECNOLOGIA DO RIO GRANDE DO SUL</p>
+        <p style="margin:1px 0 8px;font-size:8pt;font-family:Arial,sans-serif">Campus Rio Grande</p>
+      </div>
+      <hr style="border:none;border-top:1px solid #888;margin:0 0 12px">
+      <p style="text-align:center;font-family:Arial,sans-serif;font-size:13pt;font-weight:bold;margin:0 0 16px">ADITAMENTO AO TERMO DE COMPROMISSO DE ESTÁGIO</p>`;
+
+      const assin = (nome, papel) =>
+        `<div style="margin-top:50px;text-align:center;font-family:Arial,sans-serif;font-size:10pt">
+          <div>_______________________________________</div>
+          <div style="font-weight:bold;margin:2px 0">${nome}</div>
+          <div>${papel}</div>
+        </div>`;
+
+      const tipo = escapeHtml(a.tipoAlteracao || '—');
+      const just = escapeHtml(a.justificativa || '—');
+      const camposAlter = [];
+      if (a.novaDataTermino) camposAlter.push(`<li>Nova data de término: <strong>${escapeHtml(a.novaDataTermino)}</strong></li>`);
+      if (a.novaCarga)       camposAlter.push(`<li>Nova carga horária semanal: <strong>${escapeHtml(a.novaCarga)}</strong></li>`);
+      if (a.novoHorario)     camposAlter.push(`<li>Novo horário: <strong>${escapeHtml(a.novoHorario)}</strong></li>`);
+
+      const p = t => `<p style="font-family:Arial,sans-serif;font-size:10pt;margin:8px 0">${t}</p>`;
+
+      const corpo = `
+        ${p(`O INSTITUTO FEDERAL DE EDUCAÇÃO, CIÊNCIA E TECNOLOGIA DO RIO GRANDE DO SUL – IFRS, Campus Rio Grande,
+        a empresa <strong>${nomeEmpLabel}</strong>, e o(a) estagiário(a) <strong>${nomeAluno}</strong>,
+        matrícula <strong>${escapeHtml(s.matricula || '—')}</strong>, curso <strong>${escapeHtml(s.curso || '—')}</strong>,
+        têm entre si, justo e acordado, o presente Aditamento ao Termo de Compromisso de Estágio.`)}
+        ${p(`<strong>Tipo de alteração:</strong> ${tipo}`)}
+        ${p(`<strong>Justificativa:</strong> ${just}`)}
+        ${camposAlter.length ? p(`<strong>Alterações solicitadas:</strong>`) + `<ul style="font-family:Arial,sans-serif;font-size:10pt">${camposAlter.join('')}</ul>` : ''}
+        ${a.obs ? p(`<strong>Observações:</strong> ${escapeHtml(a.obs)}`) : ''}
+        ${p('A partir deste adendo, permanecem inalteradas todas as demais disposições estabelecidas no Termo de Compromisso de Estágio original e seus aditamentos anteriores, se houver.')}
+        ${p('E por estarem de inteiro e comum acordo, assinam o presente instrumento em 3 (três) vias de igual teor e forma.')}
+        <p style="margin-top:20px;font-family:Arial,sans-serif;font-size:10pt">${dataLinha}</p>
+        ${assin(nomeAluno, 'ESTAGIÁRIO(A)')}
+        ${assin('Representante', 'CONCEDENTE')}
+        ${assin('COORDENADOR(A) DO CURSO', 'COORDENADOR(A) DO CURSO')}
+        ${assin('DIRETOR-GERAL DO IFRS – CAMPUS RIO GRANDE', 'INSTITUIÇÃO DE ENSINO')}`;
+
+      document.getElementById('modal-adendo-body').innerHTML = cab + corpo;
+      document.getElementById('modal-adendo').style.display = '';
+    }
   </script>
+
+  <!-- Modal preview de adendo -->
+  <div id="modal-adendo" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.55);overflow:auto;padding:32px 16px" onclick="if(event.target===this)this.style.display='none'">
+    <div style="max-width:720px;margin:0 auto;background:#fff;border-radius:10px;padding:40px 48px;position:relative;box-shadow:0 8px 32px rgba(0,0,0,.25)">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;border-bottom:1px solid #e5e7eb;padding-bottom:16px">
+        <span style="font-size:13px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.04em">Pré-visualização do Adendo</span>
+        <div style="display:flex;gap:8px;align-items:center">
+          <button onclick="window.print()" style="padding:6px 14px;border:1px solid #d1d5db;border-radius:6px;background:#f9fafb;cursor:pointer;font-size:13px">🖨 Imprimir</button>
+          <button onclick="document.getElementById('modal-adendo').style.display='none'" style="padding:6px 14px;border:1px solid #d1d5db;border-radius:6px;background:#f9fafb;cursor:pointer;font-size:13px">✕ Fechar</button>
+        </div>
+      </div>
+      <div id="modal-adendo-body"></div>
+    </div>
+  </div>
 </body>
 </html>
