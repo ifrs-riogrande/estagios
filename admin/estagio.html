@@ -1930,7 +1930,8 @@
         <p style="margin:1px 0 8px;font-size:8pt;font-family:Arial,sans-serif">Campus Rio Grande</p>
       </div>
       <hr style="border:none;border-top:1px solid #888;margin:0 0 12px">
-      <p style="text-align:center;font-family:Arial,sans-serif;font-size:13pt;font-weight:bold;margin:0 0 16px">ADITAMENTO AO TERMO DE COMPROMISSO DE ESTÁGIO</p>`;
+      <p style="text-align:center;font-family:Arial,sans-serif;font-size:13pt;font-weight:bold;margin:0 0 4px">ADITAMENTO AO TERMO DE COMPROMISSO DE ESTÁGIO</p>
+      ${a.tipoAlteracao ? `<p style="text-align:center;font-family:Arial,sans-serif;font-size:10pt;font-weight:normal;margin:0 0 16px;text-transform:uppercase;letter-spacing:.04em">${escapeHtml(a.tipoAlteracao)}</p>` : '<p style="margin:0 0 16px"></p>'}`;
 
       const assin = (nome, papel) =>
         `<div style="margin-top:50px;text-align:center;font-family:Arial,sans-serif;font-size:10pt">

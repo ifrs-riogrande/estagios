@@ -299,8 +299,17 @@ function _gerarPdfAdendoInicial_(idEstagio, idAdendo, dados, sol, pastaId) {
     // ── Título ───────────────────────────────────────────────────────────────
     var pTitulo = body.appendParagraph('ADITAMENTO AO TERMO DE COMPROMISSO DE ESTÁGIO');
     pTitulo.setAlignment(DocumentApp.HorizontalAlignment.CENTER);
-    pTitulo.setSpacingBefore(4).setSpacingAfter(8);
+    pTitulo.setSpacingBefore(4).setSpacingAfter(4);
     pTitulo.editAsText().setFontFamily('Arial').setFontSize(13).setBold(true);
+
+    // ── Subtítulo: tipo de adendo ─────────────────────────────────────────────
+    var tipoLabel = ((dados && dados.tipoAlteracao) || '').toUpperCase();
+    if (tipoLabel) {
+      var pSubtitulo = body.appendParagraph(tipoLabel);
+      pSubtitulo.setAlignment(DocumentApp.HorizontalAlignment.CENTER);
+      pSubtitulo.setSpacingBefore(0).setSpacingAfter(10);
+      pSubtitulo.editAsText().setFontFamily('Arial').setFontSize(10).setBold(false);
+    }
 
     // ── Abertura ─────────────────────────────────────────────────────────────
     txt(
