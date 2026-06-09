@@ -1609,11 +1609,28 @@ function listarHistoricoEstagio_(e) {
     }
   }
 
+  // ── Parecer Final (se existir e tiver PDF) ──
+  var parecerFinalInfo = null;
+  try {
+    var pFinal = obterParecer_(idEstagio);
+    if (pFinal && pFinal.pdfUrl) {
+      parecerFinalInfo = {
+        statusGeral: String(pFinal.statusGeral || ''),
+        pdfUrl:      String(pFinal.pdfUrl      || ''),
+        dataAprov:   pFinal.dataAprovacao
+                       ? Utilities.formatDate(new Date(pFinal.dataAprovacao),
+                           Session.getScriptTimeZone(), 'dd/MM/yyyy')
+                       : '',
+      };
+    }
+  } catch (_) {}
+
   return jsonOk_({
     relatoriosParciais: relatoriosParciais,
     relatorioFinal:     relatorioFinal,
     adendos:            adendos,
     documentos:         documentos,
+    parecerFinal:       parecerFinalInfo,
   });
 }
 

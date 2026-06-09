@@ -49,7 +49,7 @@ function lerLinksAvaliacoes() {
 
 /**
  * Apaga o parecer anterior (se houver), inicia um novo e loga os links.
- * Pré-requisito: avaliações devem estar concluídas OU use forcarInicio=true.
+ * Chama a lógica interna diretamente, sem validação de token de admin.
  */
 function resetTestarParecer() {
   var props = PropertiesService.getScriptProperties();
@@ -58,15 +58,86 @@ function resetTestarParecer() {
   props.deleteProperty('parecer_' + _TESTE_ID);
   Logger.log('Parecer anterior apagado.');
 
-  // Forçar avaliações como concluídas para não bloquear (simula todas prontas)
+  // Simula avaliações concluídas
   _simularAvaliacoesConcluidas_();
 
-  // Inicia o parecer com token de admin de teste
-  var adminToken = validarTokenAdmin_ ? null : null; // só usamos a função diretamente
-  var res = iniciarParecerFinal_(_TESTE_ID, _obterAdminTokenTeste_());
+  // Chama lógica interna diretamente (sem validação de admin)
+  var res = _iniciarParecerInterno_(_TESTE_ID);
   Logger.log('Resultado iniciarParecer: ' + JSON.stringify(res));
 
   lerLinksParecer();
+}
+
+/**
+ * Versão interna de iniciarParecerFinal_ sem validação de token admin.
+ * Usada apenas para testes.
+ */
+function _iniciarParecerInterno_(idEstagio) {
+  var existente = obterParecer_(idEstagio);
+  if (existente && existente.statusGeral !== PARECER_ST.APROVADO) {
+    return { error: 'Parecer já existe (status: ' + existente.statusGeral + ')' };
+  }
+
+  var sol = _obterDadosSolicitacaoCompleto_(idEstagio);
+  if (!sol || !sol.idEstagio) return { error: 'Estágio não encontrado' };
+
+  var tipoEstagio   = String(sol.tipoEstagio || '').toLowerCase();
+  var isObrigatorio = tipoEstagio.indexOf('não') === -1 && tipoEstagio.indexOf('nao') === -1;
+  var tipoDiretoria = isObrigatorio ? 'DEN' : 'DEX';
+  var dadosDiretoria = obterDadosDiretoria_(tipoDiretoria);
+
+  var emailCoordenador = _ckObterEmailCoordenador_(sol.curso || '');
+  var nomeCoordenador  = _ckObterNomeCoordenador_(sol.curso || '');
+
+  if (!emailCoordenador) {
+    Logger.log('⚠️  Coordenador não encontrado para curso: ' + sol.curso);
+    emailCoordenador = 'coordenador@riogrande.ifrs.edu.br'; // fallback para teste
+    nomeCoordenador  = 'Coordenador (simulado)';
+  }
+
+  var totalHoras = _calcularTotalHorasEstagio_(idEstagio);
+  var agora      = new Date().toISOString();
+
+  var parecer = {
+    parecerId:            idEstagio + '_parecer',
+    idEstagio:            idEstagio,
+    statusGeral:          PARECER_ST.AGUARDANDO_COORDENADOR,
+    tipoDiretoria:        tipoDiretoria,
+    ciclo:                1,
+    nomeAluno:            sol.nomeEstudante  || '',
+    curso:                sol.curso          || '',
+    matricula:            sol.matricula      || '',
+    totalHoras:           totalHoras,
+    modalidade:           sol.tipoEstagio    || '',
+    emailCoordenador:     emailCoordenador,
+    nomeCoordenador:      nomeCoordenador,
+    tokenCoordenador:     Utilities.getUuid(),
+    parecerCoordenador:   null,
+    assinaturaCoordenador:null,
+    tsParecerCoordenador: null,
+    emailDiretoria:       dadosDiretoria.email,
+    nomeDiretoria:        dadosDiretoria.nome,
+    tokenDiretoria:       Utilities.getUuid(),
+    parecerDiretoria:     null,
+    assinaturaDiretoria:  null,
+    tsParecerDiretoria:   null,
+    pdfUrl:               '',
+    tokenValidacao:       null,
+    tsInicio:             agora,
+    tsConclusao:          null,
+    historico:            [],
+  };
+
+  salvarParecer_(idEstagio, parecer);
+  _atualizarParecer_Planilha_(parecer);
+
+  Logger.log('✅ Parecer criado: ' + parecer.parecerId);
+  Logger.log('   Tipo estágio: ' + sol.tipoEstagio + ' → Diretoria: ' + tipoDiretoria);
+  Logger.log('   Coordenador: ' + emailCoordenador);
+  Logger.log('   Diretoria: ' + dadosDiretoria.email);
+  Logger.log('   Total horas calculado: ' + totalHoras);
+
+  return { ok: true, parecerId: parecer.parecerId, tipoDiretoria: tipoDiretoria };
 }
 
 /** Só lê os links do parecer sem recriar */
