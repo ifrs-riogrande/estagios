@@ -252,7 +252,11 @@
             <button class="ficha-tab" data-tab="documentos" onclick="mudarAba('documentos')" role="tab">
               <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path d="M9 2a2 2 0 00-2 2v8a2 2 0 002 2h6a2 2 0 002-2V6.414A2 2 0 0016.414 5L14 2.586A2 2 0 0012.586 2H9z"/><path d="M3 8a2 2 0 012-2v10h8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z"/></svg>
               Documentos
-              <span class="tab-count" id="cnt-docs"></span>
+            </button>
+            <button class="ficha-tab" data-tab="relatorios" onclick="mudarAba('relatorios')" role="tab">
+              <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"/></svg>
+              Relatórios
+              <span class="tab-count" id="cnt-relatorios"></span>
             </button>
             <button class="ficha-tab" data-tab="adendos" onclick="mudarAba('adendos')" role="tab">
               <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M17.707 9.293a1 1 0 010 1.414l-7 7a1 1 0 01-1.414 0l-7-7A.997.997 0 012 10V5a3 3 0 013-3h5c.256 0 .512.098.707.293l7 7zM5 6a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd"/></svg>
@@ -268,6 +272,7 @@
           <div id="tab-andamento"></div>
           <div id="tab-dados" hidden></div>
           <div id="tab-documentos" hidden></div>
+          <div id="tab-relatorios" hidden></div>
           <div id="tab-adendos" hidden></div>
           <div id="tab-avaliacoes" hidden></div>
         </div>`;
@@ -306,12 +311,18 @@
         _avaliacoes = [];
       }
 
-      const wrapDocs    = document.getElementById('wrap-hist-docs');
-      const wrapAdendos = document.getElementById('wrap-hist-adendos');
-      const wrapAval    = document.getElementById('wrap-hist-aval');
-      if (wrapDocs)    wrapDocs.innerHTML    = buildHistoricoDocumentos(_historico);
-      if (wrapAdendos) wrapAdendos.innerHTML = buildHistoricoAdendos(_historico);
-      if (wrapAval)    wrapAval.innerHTML    = buildAvaliacoesContent(_atual);
+      const wrapRel        = document.getElementById('wrap-hist-relatorios');
+      const wrapDocsAval   = document.getElementById('wrap-docs-aval');
+      const wrapDocsParecer= document.getElementById('wrap-docs-parecer');
+      const wrapAvulsos    = document.getElementById('wrap-hist-avulsos');
+      const wrapAdendos    = document.getElementById('wrap-hist-adendos');
+      const wrapAval       = document.getElementById('wrap-hist-aval');
+      if (wrapRel)         wrapRel.innerHTML         = buildHistoricoRelatorios(_historico);
+      if (wrapDocsAval)    wrapDocsAval.innerHTML    = buildDocsAvaliacoes();
+      if (wrapDocsParecer) wrapDocsParecer.innerHTML = buildDocsParecer(_historico);
+      if (wrapAvulsos)     wrapAvulsos.innerHTML     = buildHistoricoAvulsos(_historico);
+      if (wrapAdendos)     wrapAdendos.innerHTML     = buildHistoricoAdendos(_historico);
+      if (wrapAval)        wrapAval.innerHTML        = buildAvaliacoesContent(_atual);
       _atualizarContadores();
     }
 
@@ -324,6 +335,7 @@
       document.getElementById('tab-andamento').innerHTML  = buildTabAndamento(s);
       document.getElementById('tab-dados').innerHTML      = buildTabDados(s);
       document.getElementById('tab-documentos').innerHTML = buildTabDocumentos(s);
+      document.getElementById('tab-relatorios').innerHTML = buildTabRelatorios(s);
       document.getElementById('tab-adendos').innerHTML    = buildTabAdendos(s);
       document.getElementById('tab-avaliacoes').innerHTML = buildTabAvaliacoes(s);
 
@@ -340,7 +352,7 @@
       document.querySelectorAll('.ficha-tab').forEach(t =>
         t.classList.toggle('active', t.dataset.tab === aba)
       );
-      ['andamento', 'dados', 'documentos', 'adendos', 'avaliacoes'].forEach(id => {
+      ['andamento', 'dados', 'documentos', 'relatorios', 'adendos', 'avaliacoes'].forEach(id => {
         const el = document.getElementById('tab-' + id);
         if (el) el.hidden = (id !== aba);
       });
@@ -349,13 +361,13 @@
     function _atualizarContadores() {
       if (!_historico) return;
       const { relatoriosParciais = [], relatorioFinal = null, adendos = [], documentos = [] } = _historico;
-      const cntDocs   = relatoriosParciais.length + (relatorioFinal ? 1 : 0) + documentos.length;
+      const cntRel    = relatoriosParciais.length + (relatorioFinal ? 1 : 0);
       const cntAdendo = adendos.length;
       const cntAval   = _avaliacoes.length;
-      const elDocs    = document.getElementById('cnt-docs');
+      const elRel     = document.getElementById('cnt-relatorios');
       const elAdendo  = document.getElementById('cnt-adendos');
       const elAval    = document.getElementById('cnt-avaliacoes');
-      if (elDocs)   elDocs.textContent   = cntDocs   > 0 ? String(cntDocs)   : '';
+      if (elRel)    elRel.textContent    = cntRel    > 0 ? String(cntRel)    : '';
       if (elAdendo) elAdendo.textContent = cntAdendo > 0 ? String(cntAdendo) : '';
       if (elAval)   elAval.textContent   = cntAval   > 0 ? String(cntAval)   : '';
     }
@@ -386,9 +398,237 @@
     }
 
     /* ════════════════════════════════════════
-       ABA: DOCUMENTOS
+       ABA: DOCUMENTOS (leitura — espelho do admin)
     ════════════════════════════════════════ */
     function buildTabDocumentos(s) {
+      const sec = (titulo, conteudo) =>
+        `<div style="margin-bottom:var(--space-6)">
+           <h3 style="font-size:var(--font-size-sm);font-weight:600;margin-bottom:var(--space-4);
+                      padding:var(--space-2) var(--space-4);background:var(--color-bg);
+                      border-left:3px solid var(--color-primary);
+                      border-radius:0 var(--radius-md) var(--radius-md) 0;
+                      color:var(--color-text)">${titulo}</h3>
+           ${conteudo}
+         </div>`;
+
+      const docCard = (titulo, meta, url, labelBtn) =>
+        `<div class="avulso-item">
+           <div class="avulso-item-info">
+             <div class="avulso-item-title">📄 ${escapeHtml(titulo)}</div>
+             <div class="avulso-item-meta">${escapeHtml(meta)}</div>
+           </div>
+           ${url ? `<a href="${escapeHtml(url)}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">${escapeHtml(labelBtn || 'Abrir ↗')}</a>` : ''}
+         </div>`;
+
+      const vazio = msg =>
+        `<p style="font-size:var(--font-size-sm);color:var(--color-text-muted)">${msg}</p>`;
+
+      let html = '';
+
+      // ── 1. Pasta do Estágio no Drive ─────────────────────────────────────────
+      html += sec('1. 📁 Pasta do Estágio no Drive',
+        s.driveUrl
+          ? `<div class="avulso-list">
+               <div class="avulso-item">
+                 <div class="avulso-item-info">
+                   <div class="avulso-item-title">Pasta do Estágio</div>
+                   <div class="avulso-item-meta">Todos os documentos gerados são salvos aqui</div>
+                 </div>
+                 <a href="${escapeHtml(s.driveUrl)}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">📁 Abrir pasta ↗</a>
+               </div>
+             </div>`
+          : vazio('Pasta ainda não disponível.')
+      );
+
+      // ── 2. Documentos de Admissão ─────────────────────────────────────────────
+      {
+        const admDocs = [
+          { num: '2.1', label: 'Comprovante de Matrícula', url: s.linkDocMatricula },
+          { num: '2.2', label: 'Documento de Identidade',  url: s.linkDocIdentidade },
+          { num: '2.3', label: 'Boletim / Histórico',      url: s.linkDocBoletim },
+        ];
+        html += sec('2. 📄 Documentos de Admissão',
+          `<div class="avulso-list">` +
+          admDocs.map(d =>
+            `<div class="avulso-item">
+               <div class="avulso-item-info">
+                 <div class="avulso-item-title">📄 ${d.num}. ${escapeHtml(d.label)}</div>
+                 <div class="avulso-item-meta">Enviado pelo estudante na solicitação</div>
+               </div>
+               ${d.url ? `<a href="${escapeHtml(d.url)}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">Abrir ↗</a>` : `<span style="font-size:var(--font-size-xs);color:var(--color-text-muted)">Não enviado</span>`}
+             </div>`
+          ).join('') + `</div>`
+        );
+      }
+
+      // ── 3. Documentos do Fluxo ────────────────────────────────────────────────
+      {
+        const statusesComFluxo = ['Em Assinaturas','Ativo','Em execução','Encerrado','Concluído',
+                                   'Docs Enviados','Aguardando DG','Aguardando Validação Final'];
+        const temFluxo = statusesComFluxo.includes(s.status);
+        const emAss    = s.status === 'Em Assinaturas';
+
+        let fluxoHtml = '';
+        if (temFluxo) {
+          // 3.1 Solicitação
+          fluxoHtml += `<div style="margin-bottom:var(--space-4)">
+            <div style="font-size:var(--font-size-xs);font-weight:600;text-transform:uppercase;
+                        color:var(--color-text-muted);letter-spacing:.04em;margin-bottom:var(--space-3)">
+              📄 3.1 Solicitação de Estágio
+            </div>
+            <div class="avulso-list">
+              <div class="avulso-item">
+                <div class="avulso-item-info">
+                  <div class="avulso-item-title">📄 Solicitação de Estágio</div>
+                  <div class="avulso-item-meta">Disponível na pasta do Drive</div>
+                </div>
+                ${s.driveUrl ? `<a href="${escapeHtml(s.driveUrl)}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">📁 Abrir pasta ↗</a>` : ''}
+              </div>
+            </div>
+          </div>`;
+
+          // 3.2 TCE
+          const tceUrl  = emAss ? `../assinaturas/?id=${encodeURIComponent(s.id)}` : (s.driveUrl || '');
+          const tceMeta = emAss
+            ? '🔏 Fluxo de assinaturas em andamento'
+            : 'Todas as assinaturas concluídas · ✓ Concluído';
+          const tceBtnLabel = emAss ? 'Ir para Assinaturas ↗' : '📁 Abrir pasta ↗';
+          fluxoHtml += `<div>
+            <div style="font-size:var(--font-size-xs);font-weight:600;text-transform:uppercase;
+                        color:var(--color-text-muted);letter-spacing:.04em;margin-bottom:var(--space-3)">
+              📄 3.2 TCE — Termo de Compromisso de Estágio
+            </div>
+            <div class="avulso-list">
+              <div class="avulso-item">
+                <div class="avulso-item-info">
+                  <div class="avulso-item-title">📄 Termo de Compromisso de Estágio (TCE)</div>
+                  <div class="avulso-item-meta">${escapeHtml(tceMeta)}</div>
+                </div>
+                ${tceUrl ? `<a href="${escapeHtml(tceUrl)}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">${escapeHtml(tceBtnLabel)}</a>` : ''}
+              </div>
+            </div>
+          </div>`;
+        }
+
+        html += sec('3. 📄 Documentos do Fluxo',
+          temFluxo ? fluxoHtml : vazio('Os documentos do fluxo estarão disponíveis após aprovação da solicitação.')
+        );
+      }
+
+      // ── 4. Avaliações de Estágio ─────────────────────────────────────────────
+      html += sec('4. 📄 Avaliações de Estágio',
+        `<div id="wrap-docs-aval">${buildDocsAvaliacoes()}</div>`
+      );
+
+      // ── 5. Parecer Final ─────────────────────────────────────────────────────
+      html += sec('5. 📄 Parecer Final',
+        `<div id="wrap-docs-parecer">${buildDocsParecer(null)}</div>`
+      );
+
+      // ── 6. Demais Documentos ─────────────────────────────────────────────────
+      {
+        const avulsoUpload = buildSecaoUploadAvulso();
+        const avulsoHist   = `<div id="wrap-hist-avulsos">${buildHistoricoAvulsos(null)}</div>`;
+        html += sec('6. 📄 Demais Documentos', avulsoUpload + avulsoHist);
+      }
+
+      return html;
+    }
+
+    /* Seção 4: avaliações concluídas com PDF */
+    function buildDocsAvaliacoes() {
+      if (!_avaliacoes || !_avaliacoes.length) {
+        return `<div style="margin-bottom:var(--space-3)">
+          <div style="font-size:var(--font-size-xs);font-weight:600;text-transform:uppercase;color:var(--color-text-muted);letter-spacing:.04em;margin-bottom:var(--space-3)">4.1 Avaliações Parciais</div>
+          <p style="font-size:var(--font-size-sm);color:var(--color-text-muted)">Nenhuma avaliação parcial concluída.</p>
+        </div>
+        <div>
+          <div style="font-size:var(--font-size-xs);font-weight:600;text-transform:uppercase;color:var(--color-text-muted);letter-spacing:.04em;margin-bottom:var(--space-3)">4.2 Avaliação Final</div>
+          <p style="font-size:var(--font-size-sm);color:var(--color-text-muted)">Avaliação final ainda não concluída.</p>
+        </div>`;
+      }
+      const parciais = _avaliacoes.filter(a => a.tipo !== 'final' && a.status === 'concluido' && a.pdfUrl);
+      const final    = _avaliacoes.find(a => a.tipo === 'final' && a.status === 'concluido' && a.pdfUrl);
+
+      let html = `<div style="margin-bottom:var(--space-4)">
+        <div style="font-size:var(--font-size-xs);font-weight:600;text-transform:uppercase;color:var(--color-text-muted);letter-spacing:.04em;margin-bottom:var(--space-3)">4.1 Avaliações Parciais</div>`;
+      if (parciais.length) {
+        html += `<div class="avulso-list">` +
+          parciais.map((a, i) => `
+            <div class="avulso-item">
+              <div class="avulso-item-info">
+                <div class="avulso-item-title">📄 Avaliação ${i + 1} — ${escapeHtml(a.periodoRef || a.periodo || '')}</div>
+                <div class="avulso-item-meta">✓ Concluída</div>
+              </div>
+              <a href="${escapeHtml(a.pdfUrl)}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">Abrir ↗</a>
+            </div>`).join('') + `</div>`;
+      } else {
+        html += `<p style="font-size:var(--font-size-sm);color:var(--color-text-muted)">Nenhuma avaliação parcial concluída.</p>`;
+      }
+      html += `</div><div>
+        <div style="font-size:var(--font-size-xs);font-weight:600;text-transform:uppercase;color:var(--color-text-muted);letter-spacing:.04em;margin-bottom:var(--space-3)">4.2 Avaliação Final</div>`;
+      if (final) {
+        html += `<div class="avulso-list">
+          <div class="avulso-item">
+            <div class="avulso-item-info">
+              <div class="avulso-item-title">📄 Avaliação Final</div>
+              <div class="avulso-item-meta">✓ Concluída</div>
+            </div>
+            <a href="${escapeHtml(final.pdfUrl)}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">Abrir ↗</a>
+          </div>
+        </div>`;
+      } else {
+        html += `<p style="font-size:var(--font-size-sm);color:var(--color-text-muted)">Avaliação final ainda não concluída.</p>`;
+      }
+      html += `</div>`;
+      return html;
+    }
+
+    /* Seção 5: parecer final */
+    function buildDocsParecer(h) {
+      if (!h) return `<p style="font-size:var(--font-size-sm);color:var(--color-text-muted)">Carregando…</p>`;
+      const p = h.parecerFinal;
+      if (!p || !p.pdfUrl) {
+        return `<p style="font-size:var(--font-size-sm);color:var(--color-text-muted)">Parecer final ainda não concluído.</p>`;
+      }
+      return `<div class="avulso-list">
+        <div class="avulso-item">
+          <div class="avulso-item-info">
+            <div class="avulso-item-title">📄 Parecer Final de Estágio</div>
+            <div class="avulso-item-meta">✓ Concluído${p.dataAprov ? ' · ' + escapeHtml(p.dataAprov) : ''}</div>
+          </div>
+          <a href="${escapeHtml(p.pdfUrl)}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">Abrir ↗</a>
+        </div>
+      </div>`;
+    }
+
+    /* Histórico de documentos avulsos (seção 6) */
+    function buildHistoricoAvulsos(h) {
+      if (!h) return `<p style="font-size:var(--font-size-sm);color:var(--color-text-muted);margin-top:var(--space-4)">Carregando…</p>`;
+      const { documentos = [] } = h;
+      if (!documentos.length) return '';
+      return `<div class="hist-list" style="margin-top:var(--space-4)">` +
+        documentos.map(d =>
+          `<div class="hist-item">
+            <div class="hist-item-row">
+              <span class="hist-item-title">${escapeHtml(d.titulo || '—')}</span>
+              <span class="hist-item-date">${escapeHtml(d.data || '—')}</span>
+            </div>
+            <div class="hist-item-meta">Enviado por: ${escapeHtml(d.perfil === 'Admin' ? 'Setor de Estágios' : 'Você')}${d.nomeArquivo ? ' · ' + escapeHtml(d.nomeArquivo) : ''}</div>
+            ${d.linkDrive
+              ? `<a href="${escapeHtml(d.linkDrive)}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm" style="margin-top:var(--space-2)">
+                   <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+                   Baixar ↗
+                 </a>`
+              : ''}
+          </div>`
+        ).join('') + `</div>`;
+    }
+
+    /* ════════════════════════════════════════
+       ABA: RELATÓRIOS
+    ════════════════════════════════════════ */
+    function buildTabRelatorios(s) {
       const isAtivo = s.status === 'Ativo' || s.status === 'Em execução';
       const chevron = `<svg class="ds-chevron" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>`;
       const avOpts  = `
@@ -398,172 +638,165 @@
         <option value="Regular">Regular</option>
         <option value="Ruim">Ruim</option>`;
 
-      const sec = (titulo, conteudo) =>
-        `<div style="margin-bottom:var(--space-6)">
-           <h3 style="font-size:var(--font-size-sm);font-weight:600;margin-bottom:var(--space-4);
-                      padding:var(--space-2) var(--space-4);
-                      background:var(--color-bg);
-                      border-left:3px solid var(--color-primary);
-                      border-radius:0 var(--radius-md) var(--radius-md) 0;
-                      color:var(--color-text)">${titulo}</h3>
-           ${conteudo}
-         </div>`;
-
       let html = '';
 
-      // ── 1. Pasta do Estágio no Drive ─────────────────────────────────────────
-      if (s.driveUrl) {
-        html += sec('1. 📁 Pasta do Estágio no Drive',
-          `<div class="avulso-list">
-            <div class="avulso-item">
-              <div class="avulso-item-info">
-                <div class="avulso-item-title">Pasta do Estágio</div>
-                <div class="avulso-item-meta">Todos os documentos do seu estágio são salvos aqui</div>
-              </div>
-              <a href="${escapeHtml(s.driveUrl)}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">📁 Abrir pasta ↗</a>
+      if (isAtivo) {
+        html += `
+        <div class="doc-sections-wrap">
+          <p class="doc-sections-title">Nova Solicitação de Relatório</p>
+
+          <!-- ── Relatório Parcial ── -->
+          <div class="doc-section">
+            <div class="doc-section-hdr" id="rp-hdr" onclick="toggleDocSection('rp')">
+              <h3>📄 Relatório Parcial</h3>${chevron}
             </div>
-          </div>`
-        );
+            <div class="doc-section-body" id="rp-body">
+              <p style="font-size:var(--font-size-sm);color:var(--color-text-muted);margin-bottom:var(--space-4)">
+                Descreva as atividades realizadas no período de referência. Após o envio, o documento passará pelo fluxo de assinaturas digitais (gov.br): <strong>você → empresa concedente → supervisor</strong>.
+              </p>
+              <div id="fb-rp"></div>
+              <div class="form-group">
+                <label class="form-label">Período de Referência <span style="color:var(--color-error)">*</span></label>
+                <input type="text" id="rp-periodoRef" class="form-control" placeholder="Ex: Jan/2025 – Mar/2025">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Atividades Realizadas <span style="color:var(--color-error)">*</span></label>
+                <textarea id="rp-atividadesRealizadas" class="form-control" rows="4" placeholder="Descreva as principais atividades desenvolvidas no período..."></textarea>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Aprendizagens Obtidas</label>
+                <textarea id="rp-aprendizagens" class="form-control" rows="3" placeholder="Conhecimentos e habilidades adquiridos..."></textarea>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Relação com o Curso</label>
+                <textarea id="rp-relacaoCurso" class="form-control" rows="3" placeholder="Como as atividades se relacionam com o seu curso..."></textarea>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Avaliação do Estágio <span style="color:var(--color-error)">*</span></label>
+                <select id="rp-avaliacaoEstagio" class="form-control">${avOpts}</select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Dificuldades Encontradas</label>
+                <textarea id="rp-dificuldades" class="form-control" rows="3" placeholder="Dificuldades ou desafios encontrados..."></textarea>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Sugestões</label>
+                <textarea id="rp-sugestoes" class="form-control" rows="2" placeholder="Sugestões para melhoria do estágio..."></textarea>
+              </div>
+              <button class="btn btn-primary btn-sm" onclick="submitRelatorioParcial(this)">Enviar Relatório Parcial</button>
+            </div>
+          </div>
+
+          <!-- ── Relatório Final ── -->
+          <div class="doc-section">
+            <div class="doc-section-hdr" id="rf-hdr" onclick="toggleDocSection('rf')">
+              <h3>📋 Relatório Final</h3>${chevron}
+            </div>
+            <div class="doc-section-body" id="rf-body">
+              <p style="font-size:var(--font-size-sm);color:var(--color-text-muted);margin-bottom:var(--space-4)">
+                Relatório a ser preenchido ao término do estágio. Após o envio, o documento passará pelo fluxo de assinaturas digitais (gov.br): <strong>você → empresa concedente → supervisor</strong>.
+              </p>
+              <div id="fb-rf"></div>
+              <div class="form-group">
+                <label class="form-label">Data de Encerramento <span style="color:var(--color-error)">*</span></label>
+                <input type="date" id="rf-dataEncerramento" class="form-control">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Resumo das Atividades <span style="color:var(--color-error)">*</span></label>
+                <textarea id="rf-resumoAtividades" class="form-control" rows="4" placeholder="Resumo geral das atividades realizadas durante todo o estágio..."></textarea>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Competências Desenvolvidas</label>
+                <textarea id="rf-competenciasDesenvolvidas" class="form-control" rows="3" placeholder="Competências técnicas e comportamentais desenvolvidas..."></textarea>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Contribuição para a Formação</label>
+                <textarea id="rf-contribuicaoFormacao" class="form-control" rows="3" placeholder="Como o estágio contribuiu para sua formação acadêmica e profissional..."></textarea>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Avaliação da Empresa Concedente <span style="color:var(--color-error)">*</span></label>
+                <select id="rf-avaliacaoConcedente" class="form-control">${avOpts}</select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Avaliação do Orientador Acadêmico <span style="color:var(--color-error)">*</span></label>
+                <select id="rf-avaliacaoOrientador" class="form-control">${avOpts}</select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Recomendaria este estágio? <span style="color:var(--color-error)">*</span></label>
+                <div style="display:flex;gap:var(--space-5);margin-top:var(--space-2)">
+                  <label style="display:flex;align-items:center;gap:var(--space-2);font-size:var(--font-size-sm);font-weight:400;cursor:pointer">
+                    <input type="radio" name="recomendaria" value="Sim"> Sim
+                  </label>
+                  <label style="display:flex;align-items:center;gap:var(--space-2);font-size:var(--font-size-sm);font-weight:400;cursor:pointer">
+                    <input type="radio" name="recomendaria" value="Não"> Não
+                  </label>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Considerações Finais</label>
+                <textarea id="rf-consideracoesFinais" class="form-control" rows="3" placeholder="Comentários finais sobre a experiência..."></textarea>
+              </div>
+              <button class="btn btn-primary btn-sm" onclick="submitRelatorioFinal(this)">Enviar Relatório Final</button>
+            </div>
+          </div>
+        </div>`;
       }
 
-      // ── 2. Documentos de Admissão ─────────────────────────────────────────────
-      {
-        const docs = [
-          { label: 'Comprovante de Matrícula', url: s.linkDocMatricula },
-          { label: 'Documento de Identidade',  url: s.linkDocIdentidade },
-          { label: 'Boletim / Histórico',      url: s.linkDocBoletim },
-        ].filter(d => d.url);
+      html += `<div id="wrap-hist-relatorios">${buildHistoricoRelatorios(null)}</div>`;
+      return html;
+    }
 
-        const admHtml = docs.length
-          ? `<div class="avulso-list">` +
-            docs.map((d, i) =>
-              `<div class="avulso-item">
-                <div class="avulso-item-info">
-                  <div class="avulso-item-title">2.${i + 1}. ${escapeHtml(d.label)}</div>
-                  <div class="avulso-item-meta">Enviado na solicitação de estágio</div>
-                </div>
-                <a href="${escapeHtml(d.url)}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">Abrir ↗</a>
-              </div>`
-            ).join('') +
-            `</div>`
-          : `<p style="font-size:var(--font-size-sm);color:var(--color-text-muted)">Nenhum documento de admissão registrado.</p>`;
+    /* Histórico de relatórios (para a aba Relatórios) */
+    function buildHistoricoRelatorios(h) {
+      if (!h) return `
+        <div class="action-card" style="margin-top:var(--space-4)">
+          <h2>Histórico de Relatórios</h2>
+          <p style="color:var(--color-text-muted);font-size:var(--font-size-sm)">Carregando histórico…</p>
+        </div>`;
+      if (h.error) return `
+        <div class="action-card" style="margin-top:var(--space-4)">
+          <h2>Histórico de Relatórios</h2>
+          <p style="color:var(--color-error);font-size:var(--font-size-sm)">${escapeHtml(h.error)}</p>
+        </div>`;
 
-        html += sec('2. 📄 Documentos de Admissão', admHtml);
-      }
+      const { relatoriosParciais = [], relatorioFinal = null } = h;
+      if (!relatoriosParciais.length && !relatorioFinal) return `
+        <div class="action-card" style="margin-top:var(--space-4)">
+          <h2>Histórico de Relatórios</h2>
+          <p style="color:var(--color-text-muted);font-size:var(--font-size-sm)">Nenhum relatório enviado ainda.</p>
+        </div>`;
 
-      // ── 3. Relatórios ─────────────────────────────────────────────────────────
-      {
-        let relHtml = `<div id="wrap-hist-docs">${buildHistoricoDocumentos(null)}</div>`;
+      let html = `<div class="action-card" style="margin-top:var(--space-4)"><h2>Histórico de Relatórios</h2>`;
 
-        if (isAtivo) {
-          relHtml += `
-          <div class="doc-sections-wrap" style="margin-top:var(--space-4)">
-            <p class="doc-sections-title">Enviar Relatório</p>
-
-            <!-- ── Relatório Parcial ── -->
-            <div class="doc-section">
-              <div class="doc-section-hdr" id="rp-hdr" onclick="toggleDocSection('rp')">
-                <h3>📄 Relatório Parcial</h3>${chevron}
-              </div>
-              <div class="doc-section-body" id="rp-body">
-                <p style="font-size:var(--font-size-sm);color:var(--color-text-muted);margin-bottom:var(--space-4)">
-                  Descreva as atividades realizadas no período de referência. Após o envio, o documento passará pelo fluxo de assinaturas digitais (gov.br): <strong>você → empresa concedente → supervisor</strong>.
-                </p>
-                <div id="fb-rp"></div>
-                <div class="form-group">
-                  <label class="form-label">Período de Referência <span style="color:var(--color-error)">*</span></label>
-                  <input type="text" id="rp-periodoRef" class="form-control" placeholder="Ex: Jan/2025 – Mar/2025">
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Atividades Realizadas <span style="color:var(--color-error)">*</span></label>
-                  <textarea id="rp-atividadesRealizadas" class="form-control" rows="4" placeholder="Descreva as principais atividades desenvolvidas no período..."></textarea>
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Aprendizagens Obtidas</label>
-                  <textarea id="rp-aprendizagens" class="form-control" rows="3" placeholder="Conhecimentos e habilidades adquiridos..."></textarea>
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Relação com o Curso</label>
-                  <textarea id="rp-relacaoCurso" class="form-control" rows="3" placeholder="Como as atividades se relacionam com o seu curso..."></textarea>
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Avaliação do Estágio <span style="color:var(--color-error)">*</span></label>
-                  <select id="rp-avaliacaoEstagio" class="form-control">${avOpts}</select>
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Dificuldades Encontradas</label>
-                  <textarea id="rp-dificuldades" class="form-control" rows="3" placeholder="Dificuldades ou desafios encontrados..."></textarea>
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Sugestões</label>
-                  <textarea id="rp-sugestoes" class="form-control" rows="2" placeholder="Sugestões para melhoria do estágio..."></textarea>
-                </div>
-                <button class="btn btn-primary btn-sm" onclick="submitRelatorioParcial(this)">Enviar Relatório Parcial</button>
-              </div>
+      if (relatoriosParciais.length) {
+        html += `<p class="info-section-title">Relatórios Parciais (${relatoriosParciais.length})</p><div class="hist-list">`;
+        relatoriosParciais.forEach(r => {
+          html += `<div class="hist-item">
+            <div class="hist-item-row">
+              <span class="hist-item-title">Período: ${escapeHtml(r.periodoRef || '—')}</span>
+              <span class="hist-item-date">${escapeHtml(r.data || '—')}</span>
             </div>
-
-            <!-- ── Relatório Final ── -->
-            <div class="doc-section">
-              <div class="doc-section-hdr" id="rf-hdr" onclick="toggleDocSection('rf')">
-                <h3>📋 Relatório Final</h3>${chevron}
-              </div>
-              <div class="doc-section-body" id="rf-body">
-                <p style="font-size:var(--font-size-sm);color:var(--color-text-muted);margin-bottom:var(--space-4)">
-                  Relatório a ser preenchido ao término do estágio. Após o envio, o documento passará pelo fluxo de assinaturas digitais (gov.br): <strong>você → empresa concedente → supervisor</strong>.
-                </p>
-                <div id="fb-rf"></div>
-                <div class="form-group">
-                  <label class="form-label">Data de Encerramento <span style="color:var(--color-error)">*</span></label>
-                  <input type="date" id="rf-dataEncerramento" class="form-control">
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Resumo das Atividades <span style="color:var(--color-error)">*</span></label>
-                  <textarea id="rf-resumoAtividades" class="form-control" rows="4" placeholder="Resumo geral das atividades realizadas durante todo o estágio..."></textarea>
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Competências Desenvolvidas</label>
-                  <textarea id="rf-competenciasDesenvolvidas" class="form-control" rows="3" placeholder="Competências técnicas e comportamentais desenvolvidas..."></textarea>
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Contribuição para a Formação</label>
-                  <textarea id="rf-contribuicaoFormacao" class="form-control" rows="3" placeholder="Como o estágio contribuiu para sua formação acadêmica e profissional..."></textarea>
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Avaliação da Empresa Concedente <span style="color:var(--color-error)">*</span></label>
-                  <select id="rf-avaliacaoConcedente" class="form-control">${avOpts}</select>
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Avaliação do Orientador Acadêmico <span style="color:var(--color-error)">*</span></label>
-                  <select id="rf-avaliacaoOrientador" class="form-control">${avOpts}</select>
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Recomendaria este estágio? <span style="color:var(--color-error)">*</span></label>
-                  <div style="display:flex;gap:var(--space-5);margin-top:var(--space-2)">
-                    <label style="display:flex;align-items:center;gap:var(--space-2);font-size:var(--font-size-sm);font-weight:400;cursor:pointer">
-                      <input type="radio" name="recomendaria" value="Sim"> Sim
-                    </label>
-                    <label style="display:flex;align-items:center;gap:var(--space-2);font-size:var(--font-size-sm);font-weight:400;cursor:pointer">
-                      <input type="radio" name="recomendaria" value="Não"> Não
-                    </label>
-                  </div>
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Considerações Finais</label>
-                  <textarea id="rf-consideracoesFinais" class="form-control" rows="3" placeholder="Comentários finais sobre a experiência..."></textarea>
-                </div>
-                <button class="btn btn-primary btn-sm" onclick="submitRelatorioFinal(this)">Enviar Relatório Final</button>
-              </div>
-            </div>
-
+            ${r.avaliacao ? `<div class="hist-item-meta">Avaliação: <strong>${escapeHtml(r.avaliacao)}</strong></div>` : ''}
+            ${r.atividades ? `<div class="hist-item-desc">${escapeHtml(r.atividades.substring(0, 250))}${r.atividades.length > 250 ? '…' : ''}</div>` : ''}
           </div>`;
-        }
-
-        html += sec('3. 📄 Relatórios', relHtml);
+        });
+        html += `</div>`;
       }
 
-      // ── 4. Demais Documentos ──────────────────────────────────────────────────
-      html += sec('4. 📄 Demais Documentos', buildSecaoUploadAvulso());
+      if (relatorioFinal) {
+        const r = relatorioFinal;
+        html += `<p class="info-section-title">Relatório Final</p>
+          <div class="hist-item">
+            <div class="hist-item-row">
+              <span class="hist-item-title">Enviado em ${escapeHtml(r.data || '—')}</span>
+              ${r.dataEncerramento ? `<span class="hist-item-date">Encerramento: ${escapeHtml(r.dataEncerramento)}</span>` : ''}
+            </div>
+            ${r.avalConcedente ? `<div class="hist-item-meta">Empresa: <strong>${escapeHtml(r.avalConcedente)}</strong> · Orientador: <strong>${escapeHtml(r.avalOrientador || '—')}</strong> · Recomendaria: <strong>${escapeHtml(r.recomendaria || '—')}</strong></div>` : ''}
+            ${r.resumo ? `<div class="hist-item-desc">${escapeHtml(r.resumo.substring(0, 250))}${r.resumo.length > 250 ? '…' : ''}</div>` : ''}
+          </div>`;
+      }
 
+      html += `</div>`;
       return html;
     }
 
@@ -812,83 +1045,6 @@
     }
 
     /* ════════════════════════════════════════
-       HISTÓRICO: DOCUMENTOS
-    ════════════════════════════════════════ */
-    function buildHistoricoDocumentos(h) {
-      if (!h) return `
-        <div class="action-card">
-          <h2>Histórico de Relatórios</h2>
-          <p style="color:var(--color-text-muted);font-size:var(--font-size-sm)">Carregando histórico…</p>
-        </div>`;
-      if (h.error) return `
-        <div class="action-card">
-          <h2>Histórico de Relatórios</h2>
-          <p style="color:var(--color-error);font-size:var(--font-size-sm)">Não foi possível carregar o histórico: ${escapeHtml(h.error)}</p>
-        </div>`;
-
-      const { relatoriosParciais = [], relatorioFinal = null, documentos = [] } = h;
-      const temDados = relatoriosParciais.length || relatorioFinal || documentos.length;
-      if (!temDados) return `
-        <div class="action-card">
-          <h2>Histórico de Relatórios</h2>
-          <p style="color:var(--color-text-muted);font-size:var(--font-size-sm)">Nenhum relatório enviado ainda.</p>
-        </div>`;
-
-      let html = `<div class="action-card"><h2>Histórico de Relatórios</h2>`;
-
-      if (relatoriosParciais.length) {
-        html += `<p class="info-section-title">Relatórios Parciais (${relatoriosParciais.length})</p><div class="hist-list">`;
-        relatoriosParciais.forEach(r => {
-          html += `<div class="hist-item">
-            <div class="hist-item-row">
-              <span class="hist-item-title">Período: ${escapeHtml(r.periodoRef || '—')}</span>
-              <span class="hist-item-date">${escapeHtml(r.data || '—')}</span>
-            </div>
-            ${r.avaliacao ? `<div class="hist-item-meta">Avaliação: <strong>${escapeHtml(r.avaliacao)}</strong></div>` : ''}
-            ${r.atividades ? `<div class="hist-item-desc">${escapeHtml(r.atividades.substring(0, 250))}${r.atividades.length > 250 ? '…' : ''}</div>` : ''}
-          </div>`;
-        });
-        html += `</div>`;
-      }
-
-      if (relatorioFinal) {
-        const r = relatorioFinal;
-        html += `<p class="info-section-title">Relatório Final</p>
-          <div class="hist-item">
-            <div class="hist-item-row">
-              <span class="hist-item-title">Enviado em ${escapeHtml(r.data || '—')}</span>
-              ${r.dataEncerramento ? `<span class="hist-item-date">Encerramento: ${escapeHtml(r.dataEncerramento)}</span>` : ''}
-            </div>
-            ${r.avalConcedente ? `<div class="hist-item-meta">Empresa: <strong>${escapeHtml(r.avalConcedente)}</strong> · Orientador: <strong>${escapeHtml(r.avalOrientador || '—')}</strong> · Recomendaria: <strong>${escapeHtml(r.recomendaria || '—')}</strong></div>` : ''}
-            ${r.resumo ? `<div class="hist-item-desc">${escapeHtml(r.resumo.substring(0, 250))}${r.resumo.length > 250 ? '…' : ''}</div>` : ''}
-          </div>`;
-      }
-
-      if (documentos.length) {
-        html += `<p class="info-section-title">Documentos Avulsos (${documentos.length})</p><div class="hist-list">`;
-        documentos.forEach(d => {
-          html += `<div class="hist-item">
-            <div class="hist-item-row">
-              <span class="hist-item-title">${escapeHtml(d.titulo || '—')}</span>
-              <span class="hist-item-date">${escapeHtml(d.data || '—')}</span>
-            </div>
-            <div class="hist-item-meta">Enviado por: ${escapeHtml(d.perfil === 'Admin' ? 'Setor de Estágios' : 'Você')}${d.nomeArquivo ? ' · ' + escapeHtml(d.nomeArquivo) : ''}</div>
-            ${d.linkDrive
-              ? `<a href="${escapeHtml(d.linkDrive)}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm" style="margin-top:var(--space-2)">
-                  <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
-                  Baixar ↗
-                </a>`
-              : `<span style="font-size:var(--font-size-xs);color:var(--color-text-light);margin-top:var(--space-1);display:block">Arquivo registrado — link disponível após aprovação do estágio</span>`}
-          </div>`;
-        });
-        html += `</div>`;
-      }
-
-      html += `</div>`;
-      return html;
-    }
-
-    /* ════════════════════════════════════════
        HISTÓRICO: ADENDOS
     ════════════════════════════════════════ */
     function buildHistoricoAdendos(h) {
@@ -1023,15 +1179,15 @@
         const info = document.getElementById('file-avulso-info');
         if (info) { info.innerHTML = ''; info.classList.remove('show'); }
         // Recarrega histórico
-        const wrapDocs = document.getElementById('wrap-hist-docs');
-        if (wrapDocs) wrapDocs.innerHTML = buildHistoricoDocumentos(null);
+        const wrapAvulsos = document.getElementById('wrap-hist-avulsos');
+        if (wrapAvulsos) wrapAvulsos.innerHTML = buildHistoricoAvulsos(null);
         try {
           _historico = await apiListarHistoricoEstagio(_atual.id);
         } catch (e2) {
           _historico = { error: e2.message, relatoriosParciais: [], relatorioFinal: null, adendos: [], documentos: [] };
         }
-        const wrapDocs2 = document.getElementById('wrap-hist-docs');
-        if (wrapDocs2) wrapDocs2.innerHTML = buildHistoricoDocumentos(_historico);
+        const wrapAvulsos2 = document.getElementById('wrap-hist-avulsos');
+        if (wrapAvulsos2) wrapAvulsos2.innerHTML = buildHistoricoAvulsos(_historico);
         _atualizarContadores();
         setTimeout(() => { btn.textContent = 'Enviar Documento'; btn.disabled = false; btn.classList.remove('is-loading'); }, 2500);
       } catch (err) {
