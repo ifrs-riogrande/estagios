@@ -1060,8 +1060,22 @@
             <div class="doc-actions-right"></div>
           </div>`;
 
-      } else if (status === 'Em Assinatura' || status === 'Aprovado') {
-        // 'Aprovado' = status legado — tratado igual a Em Assinatura (fluxo já iniciado ou aprovado externamente)
+      } else if (status === 'Aprovado') {
+        // Status legado (código anterior ao fluxo de assinaturas) — sem fluxo no PropertiesService
+        const pastaUrl = a.driveUrl || (_estagio && _estagio.driveUrl ? _estagio.driveUrl : '');
+        actionsHtml = `
+          <div class="doc-actions">
+            <div class="doc-actions-left"></div>
+            <div class="doc-actions-right">
+              <button class="btn btn-secondary btn-sm" onclick="regenerarAdendo('${escapeHtml(idAdendo)}', this)">
+                🔄 Regenerar Adendo
+              </button>
+              <a href="https://validar.iti.gov.br/" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">Validador ITI ↗</a>
+              ${pastaUrl ? `<a href="${escapeHtml(pastaUrl)}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">📁 Abrir pasta ↗</a>` : ''}
+            </div>
+          </div>`;
+
+      } else if (status === 'Em Assinatura') {
         const pastaUrl = a.driveUrl || (_estagio && _estagio.driveUrl ? _estagio.driveUrl : '');
         const assUrl   = `../assinaturas/adendo.html?id=${encodeURIComponent(a.idEstagio || _id)}&adendo=${encodeURIComponent(idAdendo)}`;
         actionsHtml = `
