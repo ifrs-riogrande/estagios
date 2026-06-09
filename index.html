@@ -39,6 +39,12 @@
       margin-bottom: var(--space-2);
     }
 
+    .home-eyebrow-bem {
+      display: inline-block;
+      padding-bottom: 2px;
+      border-bottom: 2.5px solid #2e7d32;
+    }
+
     .home-headline h1 {
       font-size: var(--font-size-2xl);
       font-weight: 800;
@@ -79,7 +85,21 @@
           <!-- Logo IFRS: quando disponível, troque pelo <img> real -->
           <span class="header-logo-wrap"><img src="assets/img/logo-ifrs.png" alt="IFRS" class="header-logo"></span>
         </a>
-        <div id="header-user-area"></div>
+        <div style="display:flex;align-items:center;gap:var(--space-3)">
+          <a href="ajuda/index.html" style="
+            display:inline-flex;align-items:center;gap:6px;
+            font-size:var(--font-size-sm);font-weight:500;
+            color:var(--color-text-muted);text-decoration:none;
+            padding:6px 12px;border-radius:9999px;
+            border:1.5px solid #d1d5db;background:#fff;
+            transition:border-color .15s,color .15s;
+          " onmouseover="this.style.borderColor='#2e7d32';this.style.color='#2e7d32'"
+             onmouseout="this.style.borderColor='#d1d5db';this.style.color=''">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><circle cx="12" cy="17" r=".5" fill="currentColor"/></svg>
+            Ajuda
+          </a>
+          <div id="header-user-area"></div>
+        </div>
       </div>
     </div>
   </header>
@@ -91,7 +111,7 @@
   <main class="home-main">
     <div style="width:100%;max-width:860px;margin:0 auto">
     <div class="home-headline">
-      <p class="home-eyebrow">Bem-vindo(a)!</p>
+      <p class="home-eyebrow"><span class="home-eyebrow-bem">Bem</span>-vindo(a)!</p>
       <h1>Sistema de<br><span>Gestão de Estágios <em>SGE</em></span></h1>
       <p>Gerencie seu estágio de forma rápida, prática e segura. Acesse documentos, acompanhe processos e encontre oportunidades em um só lugar.</p>
     </div>
