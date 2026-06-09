@@ -610,7 +610,7 @@ function enviarAdendo_(dados) {
   var tipoAdendo   = sanitizar_(dados.tipoAdendo, 50);
   var novaData     = sanitizar_(dados.novaDataTermino, 10);
   var novaCarga    = sanitizar_(dados.novaCargaHoraria, 20);
-  var novoHorario  = sanitizar_(dados.novoHorario, 100);
+  var novoHorario  = sanitizar_(dados.novoHorario, 3000); // JSON para tabela de horários
   var justificativa= sanitizar_(dados.justificativa, 2000);
   var obs          = sanitizar_(dados.obsAdicionais, 500);
 
@@ -619,10 +619,8 @@ function enviarAdendo_(dados) {
 
   if ((tipoAdendo === 'Prorrogação de prazo' || tipoAdendo === 'Redução de prazo') && !novaData)
     return jsonError_('Nova data de término é obrigatória para este tipo de adendo.', 'VALIDATION');
-  if (tipoAdendo === 'Alteração de carga horária' && !novaCarga)
-    return jsonError_('Nova carga horária é obrigatória.', 'VALIDATION');
-  if (tipoAdendo === 'Alteração de horário' && !novoHorario)
-    return jsonError_('Novo horário é obrigatório.', 'VALIDATION');
+  if (tipoAdendo === 'Alteração de horário / carga horária' && !novoHorario)
+    return jsonError_('Os dias e horários do estágio são obrigatórios para este tipo de adendo.', 'VALIDATION');
 
   verificarIdEstagio_(idEstagio, tokenInfo.email);
 

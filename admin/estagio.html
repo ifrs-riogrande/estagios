@@ -290,6 +290,33 @@
      * timestamp numérico, ou já DD/MM/YYYY) para DD/MM/YYYY.
      * Retorna '—' se o valor for vazio/inválido.
      */
+    // Renderiza novoHorario: tabela se for JSON, texto puro se for string simples
+    function _renderNovoHorarioAdmin(val) {
+      if (!val) return '<p>—</p>';
+      var diasParsed = null;
+      try { diasParsed = JSON.parse(val); } catch (_) {}
+      if (Array.isArray(diasParsed) && diasParsed.length) {
+        var rows = diasParsed.map(function(r) {
+          return '<tr>' +
+            '<td style="padding:4px 8px">' + escapeHtml(r.dia || '') + '</td>' +
+            '<td style="padding:4px 8px;text-align:center">' + escapeHtml(r.entrada || '') + '</td>' +
+            '<td style="padding:4px 8px;text-align:center">' + escapeHtml(r.saida || '') + '</td>' +
+            '<td style="padding:4px 8px;text-align:center">' + escapeHtml(r.diaria || '') + '</td>' +
+            '</tr>';
+        }).join('');
+        return '<table style="width:100%;border-collapse:collapse;font-size:var(--font-size-sm);margin-top:4px">' +
+          '<thead><tr style="background:var(--color-bg)">' +
+          '<th style="padding:4px 8px;text-align:left;border-bottom:1px solid var(--color-border);font-weight:600;font-size:var(--font-size-xs)">Dia</th>' +
+          '<th style="padding:4px 8px;text-align:center;border-bottom:1px solid var(--color-border);font-weight:600;font-size:var(--font-size-xs)">Entrada</th>' +
+          '<th style="padding:4px 8px;text-align:center;border-bottom:1px solid var(--color-border);font-weight:600;font-size:var(--font-size-xs)">Saída</th>' +
+          '<th style="padding:4px 8px;text-align:center;border-bottom:1px solid var(--color-border);font-weight:600;font-size:var(--font-size-xs)">Diária</th>' +
+          '</tr></thead>' +
+          '<tbody>' + rows + '</tbody>' +
+          '</table>';
+      }
+      return '<p style="white-space:pre-wrap">' + escapeHtml(val) + '</p>';
+    }
+
     function fmtDataAdendo(val) {
       if (!val) return '—';
       var s = String(val).trim();
@@ -1020,8 +1047,8 @@
             <p style="white-space:pre-wrap">${escapeHtml(a.justificativa || '—')}</p>
           </div>
           ${a.novaDataTermino ? `<div class="detail-item"><label>Nova Data de Término</label><p>${escapeHtml(fmtDataAdendo(a.novaDataTermino))}</p></div>` : ''}
-          ${a.novaCarga       ? `<div class="detail-item"><label>Nova Carga Horária</label><p>${escapeHtml(a.novaCarga)}</p></div>` : ''}
-          ${a.novoHorario     ? `<div class="detail-item detail-full"><label>Novo Horário</label><p style="white-space:pre-wrap">${escapeHtml(a.novoHorario)}</p></div>` : ''}
+          ${a.novaCarga       ? `<div class="detail-item"><label>Nova Carga Horária Semanal</label><p>${escapeHtml(a.novaCarga)}</p></div>` : ''}
+          ${a.novoHorario     ? `<div class="detail-item detail-full"><label>Novo Horário</label>${_renderNovoHorarioAdmin(a.novoHorario)}</div>` : ''}
           ${a.obs             ? `<div class="detail-item detail-full"><label>Observações</label><p style="white-space:pre-wrap">${escapeHtml(a.obs)}</p></div>` : ''}
         </div>`;
 
@@ -1917,7 +1944,30 @@
       const camposAlter = [];
       if (a.novaDataTermino) camposAlter.push(`<li>Nova data de término: <strong>${escapeHtml(fmtDataAdendo(a.novaDataTermino))}</strong></li>`);
       if (a.novaCarga)       camposAlter.push(`<li>Nova carga horária semanal: <strong>${escapeHtml(a.novaCarga)}</strong></li>`);
-      if (a.novoHorario)     camposAlter.push(`<li>Novo horário: <strong>${escapeHtml(a.novoHorario)}</strong></li>`);
+      if (a.novoHorario) {
+        let _diasParsed = null;
+        try { _diasParsed = JSON.parse(a.novoHorario); } catch(_) {}
+        if (Array.isArray(_diasParsed) && _diasParsed.length) {
+          const _tblRows = _diasParsed.map(r =>
+            `<tr><td style="border:1px solid #ccc;padding:4px 8px">${escapeHtml(r.dia||'')}</td>` +
+            `<td style="border:1px solid #ccc;padding:4px 8px;text-align:center">${escapeHtml(r.entrada||'')}</td>` +
+            `<td style="border:1px solid #ccc;padding:4px 8px;text-align:center">${escapeHtml(r.saida||'')}</td>` +
+            `<td style="border:1px solid #ccc;padding:4px 8px;text-align:center">${escapeHtml(r.diaria||'')}</td></tr>`
+          ).join('');
+          camposAlter.push(
+            `<li>Novo horário:<br>` +
+            `<table style="border-collapse:collapse;font-size:10pt;margin-top:4px">` +
+            `<thead><tr style="background:#f5f5f5">` +
+            `<th style="border:1px solid #ccc;padding:4px 8px;text-align:left">Dia</th>` +
+            `<th style="border:1px solid #ccc;padding:4px 8px">Entrada</th>` +
+            `<th style="border:1px solid #ccc;padding:4px 8px">Saída</th>` +
+            `<th style="border:1px solid #ccc;padding:4px 8px">Diária</th>` +
+            `</tr></thead><tbody>${_tblRows}</tbody></table></li>`
+          );
+        } else {
+          camposAlter.push(`<li>Novo horário: <strong>${escapeHtml(a.novoHorario)}</strong></li>`);
+        }
+      }
 
       const p = t => `<p style="font-family:Arial,sans-serif;font-size:10pt;margin:8px 0">${t}</p>`;
 

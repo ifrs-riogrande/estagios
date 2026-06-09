@@ -582,8 +582,7 @@
         <option value="Alteração de modalidade (não obrigatório → obrigatório)">Alteração de modalidade (não obrigatório → obrigatório)</option>
         <option value="Alteração de orientador">Alteração de orientador</option>
         <option value="Alteração de supervisor">Alteração de supervisor</option>
-        <option value="Alteração de horário">Alteração de horário</option>
-        <option value="Alteração de carga horária semanal">Alteração de carga horária semanal</option>
+        <option value="Alteração de horário / carga horária">Alteração de horário / carga horária</option>
         <option value="Alteração do plano de atividades">Alteração do plano de atividades</option>
         <option value="Alteração de apólice de seguro">Alteração de apólice de seguro</option>
         <option value="Alteração de local/setor">Alteração de local/setor</option>
@@ -1520,18 +1519,11 @@
           { id: 'ac-cargoSupervisor',   label: 'Cargo do Novo Supervisor',      type: 'text', required: false, placeholder: 'Ex: Analista de TI' },
         ],
       },
-      'Alteração de horário': {
-        instrucao: 'Informe o novo horário de realização do estágio.',
+      'Alteração de horário / carga horária': {
+        instrucao: 'Informe a nova grade de dias e horários do estágio. A carga horária semanal será calculada automaticamente.',
+        tipo: 'horario-tabela',
         campos: [
           { id: 'ac-dataVigencia', label: 'Data de Vigência da Alteração', type: 'date', required: true },
-          { id: 'ac-novoHorario',  label: 'Novo Horário',                  type: 'text', required: true, placeholder: 'Ex: Segunda a sexta, 08h–12h' },
-        ],
-      },
-      'Alteração de carga horária semanal': {
-        instrucao: 'Informe a nova carga horária semanal do estágio.',
-        campos: [
-          { id: 'ac-dataVigencia',    label: 'Data de Vigência da Alteração',  type: 'date',   required: true },
-          { id: 'ac-novaCargaHoraria',label: 'Nova Carga Horária Semanal (h)', type: 'number', required: true, placeholder: 'Ex: 20', min: 1, max: 40 },
         ],
       },
       'Alteração do plano de atividades': {
@@ -1628,6 +1620,11 @@
         html += renderCamposAdendo(cfg.campos);
       }
 
+      // Tabela de horários — tipo especial
+      if (cfg.tipo === 'horario-tabela') {
+        html += _buildHorarioTabelaHtml();
+      }
+
       // Subtipos (remuneração, rescisão)
       if (cfg.subtipos) {
         const st = cfg.subtipos;
@@ -1653,6 +1650,11 @@
       container.innerHTML = html;
       container.style.display = '';
       if (btnWrap) btnWrap.style.display = 'flex';
+
+      // Tabela de horários: adiciona primeira linha automaticamente
+      if (cfg.tipo === 'horario-tabela') {
+        adicionarLinhaHorario();
+      }
 
       // Carrega orientadores se necessário
       if (tipo === 'Alteração de orientador') {
@@ -1784,7 +1786,148 @@
         const opt = oriSel.options[oriSel.selectedIndex];
         if (opt && opt.dataset.email) payload['emailNovoOrientador'] = opt.dataset.email;
       }
+      // Tabela de horários: serializa como JSON se presente
+      const tbody = document.getElementById('horario-tabela-tbody');
+      if (tbody) {
+        const dias = [];
+        Array.from(tbody.rows).forEach(tr => {
+          const dia     = (tr.querySelector('.horario-dia')?.value     || '').trim();
+          const entrada = (tr.querySelector('.horario-entrada')?.value || '').trim();
+          const saida   = (tr.querySelector('.horario-saida')?.value   || '').trim();
+          const diaria  = (tr.querySelector('.horario-diaria')?.textContent || '').trim();
+          if (dia || entrada || saida) {
+            dias.push({ dia, entrada, saida, diaria: diaria !== '—' ? diaria : '' });
+          }
+        });
+        if (dias.length) {
+          payload['novoHorario']       = JSON.stringify(dias);
+          payload['novaCargaHoraria']  = document.getElementById('horario-total-semanal')?.textContent || '';
+        }
+      }
       return payload;
+    }
+
+    /* ════════════════════════════════════════
+       ADENDO — TABELA DE HORÁRIOS
+    ════════════════════════════════════════ */
+    function _buildHorarioTabelaHtml() {
+      return `
+        <div class="form-group" style="margin-top:var(--space-3)">
+          <label class="form-label">Dias e Horários de Estágio <span style="color:var(--color-error)">*</span></label>
+          <div style="overflow-x:auto;border:1px solid var(--color-border);border-radius:var(--radius-md);background:var(--color-surface);margin-bottom:var(--space-2)">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Dia da Semana</th>
+                  <th>Entrada</th>
+                  <th>Saída</th>
+                  <th>Carga Diária</th>
+                  <th style="width:48px"></th>
+                </tr>
+              </thead>
+              <tbody id="horario-tabela-tbody"></tbody>
+            </table>
+          </div>
+          <button type="button" class="btn btn-secondary btn-sm"
+                  onclick="adicionarLinhaHorario()"
+                  style="margin-bottom:var(--space-3)">+ Adicionar dia</button>
+          <div style="padding:var(--space-3) var(--space-4);background:var(--color-bg);
+                      border:1px solid var(--color-border);border-radius:var(--radius-md);
+                      font-size:var(--font-size-sm)">
+            <strong>Nova Carga Horária Semanal:</strong>
+            <span id="horario-total-semanal"
+                  style="color:var(--color-primary);font-weight:600;margin-left:4px">0h</span>
+          </div>
+        </div>`;
+    }
+
+    function adicionarLinhaHorario() {
+      const tbody = document.getElementById('horario-tabela-tbody');
+      if (!tbody) return;
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>
+          <select class="form-control horario-dia"
+                  style="min-width:150px;font-size:var(--font-size-sm)">
+            <option value="">Selecione...</option>
+            <option>Segunda-feira</option>
+            <option>Terça-feira</option>
+            <option>Quarta-feira</option>
+            <option>Quinta-feira</option>
+            <option>Sexta-feira</option>
+            <option>Sábado</option>
+            <option>Domingo</option>
+          </select>
+        </td>
+        <td>
+          <input type="time" class="form-control horario-entrada"
+                 oninput="recalcularLinhaHorario(this.closest('tr'))"
+                 style="width:110px;font-size:var(--font-size-sm)">
+        </td>
+        <td>
+          <input type="time" class="form-control horario-saida"
+                 oninput="recalcularLinhaHorario(this.closest('tr'))"
+                 style="width:110px;font-size:var(--font-size-sm)">
+        </td>
+        <td>
+          <span class="horario-diaria"
+                style="font-size:var(--font-size-sm);color:var(--color-text-muted);
+                       padding:0 var(--space-2)">—</span>
+        </td>
+        <td>
+          <button type="button"
+                  onclick="this.closest('tr').remove();recalcularTotalSemanal()"
+                  class="btn btn-secondary btn-sm"
+                  style="color:var(--color-error);padding:4px 10px"
+                  title="Remover linha">✕</button>
+        </td>`;
+      tbody.appendChild(tr);
+    }
+
+    function recalcularLinhaHorario(tr) {
+      if (!tr) return;
+      const entrada = tr.querySelector('.horario-entrada')?.value;
+      const saida   = tr.querySelector('.horario-saida')?.value;
+      const span    = tr.querySelector('.horario-diaria');
+      if (!span) return;
+      if (entrada && saida) {
+        const [eh, em] = entrada.split(':').map(Number);
+        const [sh, sm] = saida.split(':').map(Number);
+        const mins = (sh * 60 + sm) - (eh * 60 + em);
+        if (mins > 0) {
+          const h = Math.floor(mins / 60);
+          const m = mins % 60;
+          span.textContent = h + 'h' + (m ? String(m).padStart(2, '0') + 'min' : '');
+          span.style.color = 'var(--color-text)';
+        } else {
+          span.textContent = '—';
+          span.style.color = 'var(--color-error)';
+        }
+      } else {
+        span.textContent = '—';
+        span.style.color = 'var(--color-text-muted)';
+      }
+      recalcularTotalSemanal();
+    }
+
+    function recalcularTotalSemanal() {
+      const tbody   = document.getElementById('horario-tabela-tbody');
+      const totalEl = document.getElementById('horario-total-semanal');
+      if (!tbody || !totalEl) return;
+      let totalMins = 0;
+      Array.from(tbody.rows).forEach(tr => {
+        const entrada = tr.querySelector('.horario-entrada')?.value;
+        const saida   = tr.querySelector('.horario-saida')?.value;
+        if (entrada && saida) {
+          const [eh, em] = entrada.split(':').map(Number);
+          const [sh, sm] = saida.split(':').map(Number);
+          const mins = (sh * 60 + sm) - (eh * 60 + em);
+          if (mins > 0) totalMins += mins;
+        }
+      });
+      const h = Math.floor(totalMins / 60);
+      const m = totalMins % 60;
+      totalEl.textContent = h + 'h' + (m ? String(m).padStart(2, '0') + 'min' : '');
     }
 
     /* ════════════════════════════════════════
@@ -1807,6 +1950,21 @@
         if (!el || !el.value.trim()) {
           showFormFeedback(fbId, 'error', 'Campo obrigatório', `Preencha o campo "${f.label}".`);
           el?.focus();
+          return;
+        }
+      }
+      // Valida tabela de horários
+      if (cfg?.tipo === 'horario-tabela') {
+        const tbody = document.getElementById('horario-tabela-tbody');
+        const linhasValidas = tbody
+          ? Array.from(tbody.rows).filter(tr =>
+              tr.querySelector('.horario-dia')?.value &&
+              tr.querySelector('.horario-entrada')?.value &&
+              tr.querySelector('.horario-saida')?.value)
+          : [];
+        if (!linhasValidas.length) {
+          showFormFeedback(fbId, 'error', 'Horário obrigatório',
+            'Adicione pelo menos um dia com dia da semana, entrada e saída preenchidos.');
           return;
         }
       }
@@ -2013,17 +2171,42 @@
         <p style="font-family:Arial,sans-serif;font-size:10pt">Este termo aditivo altera as seguintes condições do referido Termo de Compromisso de Estágio: A partir de <strong>${d.dataVigencia || '___/___/______'}</strong> o(a) supervisor(a) de estágio passa a ser <strong>${d.nomeNovoSupervisor || '_______________'}</strong>${d.cargoSupervisor ? ', cargo: ' + d.cargoSupervisor : ''}.</p>
         ${_rodapeAdendo(d)}`,
 
-      'Alteração de horário': (d) => `
-        ${_cabecalhoAdendo('ADITAMENTO AO TERMO DE COMPROMISSO DE ESTÁGIO')}
-        <p style="font-family:Arial,sans-serif;font-size:10pt">Aditamento ao Termo de Compromisso de Estágio, firmado em <strong>${d.dataFirmamentoTCE}</strong>, entre a Instituição de Ensino, IFRS – Campus Rio Grande, unidade concedente, <strong>${d.nomeEmpresa}</strong>, e o(a) estagiário(a) <strong>${d.nomeAluno}</strong>, aluno(a) regularmente matriculado(a) no <strong>${d.curso}</strong>, matrícula nº <strong>${d.matricula}</strong> desta Instituição de Ensino.</p>
-        <p style="font-family:Arial,sans-serif;font-size:10pt">Este termo aditivo altera as seguintes condições do referido Termo de Compromisso de Estágio: A partir de <strong>${d.dataVigencia || '___/___/______'}</strong> o horário de estágio passa a ser <strong>${d.novoHorario || '_______________'}</strong>.</p>
-        ${_rodapeAdendo(d)}`,
-
-      'Alteração de carga horária semanal': (d) => `
-        ${_cabecalhoAdendo('ADITAMENTO AO TERMO DE COMPROMISSO DE ESTÁGIO')}
-        <p style="font-family:Arial,sans-serif;font-size:10pt">Aditamento ao Termo de Compromisso de Estágio, firmado em <strong>${d.dataFirmamentoTCE}</strong>, entre a Instituição de Ensino, IFRS – Campus Rio Grande, unidade concedente, <strong>${d.nomeEmpresa}</strong>, e o(a) estagiário(a) <strong>${d.nomeAluno}</strong>, aluno(a) regularmente matriculado(a) no <strong>${d.curso}</strong>, matrícula nº <strong>${d.matricula}</strong> desta Instituição de Ensino.</p>
-        <p style="font-family:Arial,sans-serif;font-size:10pt">Este termo aditivo altera a carga horária semanal do estágio para <strong>${d.novaCargaHoraria || '___'} horas semanais</strong>, a partir de <strong>${d.dataVigencia || '___/___/______'}</strong>, conforme cláusula 4º do referido Termo de Compromisso de Estágio.</p>
-        ${_rodapeAdendo(d)}`,
+      'Alteração de horário / carga horária': (d) => {
+        let horarioHtml = '';
+        let diasParsed = null;
+        try { diasParsed = JSON.parse(d.novoHorario); } catch (_) {}
+        if (Array.isArray(diasParsed) && diasParsed.length) {
+          horarioHtml = `
+            <table style="width:100%;border-collapse:collapse;font-family:Arial,sans-serif;font-size:10pt;margin:8px 0">
+              <thead>
+                <tr style="background:#f5f5f5">
+                  <th style="border:1px solid #ccc;padding:5px 10px;text-align:left">Dia</th>
+                  <th style="border:1px solid #ccc;padding:5px 10px;text-align:center">Entrada</th>
+                  <th style="border:1px solid #ccc;padding:5px 10px;text-align:center">Saída</th>
+                  <th style="border:1px solid #ccc;padding:5px 10px;text-align:center">Diária</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${diasParsed.map(r => `
+                  <tr>
+                    <td style="border:1px solid #ccc;padding:5px 10px">${escapeHtml(r.dia || '')}</td>
+                    <td style="border:1px solid #ccc;padding:5px 10px;text-align:center">${escapeHtml(r.entrada || '')}</td>
+                    <td style="border:1px solid #ccc;padding:5px 10px;text-align:center">${escapeHtml(r.saida || '')}</td>
+                    <td style="border:1px solid #ccc;padding:5px 10px;text-align:center">${escapeHtml(r.diaria || '')}</td>
+                  </tr>`).join('')}
+              </tbody>
+            </table>`;
+        } else if (d.novoHorario) {
+          horarioHtml = `<p style="font-family:Arial,sans-serif;font-size:10pt"><strong>Novo Horário:</strong> ${escapeHtml(d.novoHorario)}</p>`;
+        }
+        return `
+          ${_cabecalhoAdendo('ADITAMENTO AO TERMO DE COMPROMISSO DE ESTÁGIO')}
+          <p style="font-family:Arial,sans-serif;font-size:10pt">Aditamento ao Termo de Compromisso de Estágio, firmado em <strong>${d.dataFirmamentoTCE}</strong>, entre a Instituição de Ensino, IFRS – Campus Rio Grande, unidade concedente, <strong>${d.nomeEmpresa}</strong>, e o(a) estagiário(a) <strong>${d.nomeAluno}</strong>, aluno(a) regularmente matriculado(a) no <strong>${d.curso}</strong>, matrícula nº <strong>${d.matricula}</strong> desta Instituição de Ensino.</p>
+          <p style="font-family:Arial,sans-serif;font-size:10pt">Este termo aditivo altera o horário e a carga horária semanal do estágio a partir de <strong>${d.dataVigencia || '___/___/______'}</strong>, passando a vigorar a seguinte grade de horários:</p>
+          ${horarioHtml}
+          ${d.novaCargaHoraria ? `<p style="font-family:Arial,sans-serif;font-size:10pt"><strong>Nova Carga Horária Semanal: ${escapeHtml(d.novaCargaHoraria)}</strong></p>` : ''}
+          ${_rodapeAdendo(d)}`;
+      },
 
       'Alteração do plano de atividades': (d) => `
         ${_cabecalhoAdendo('ADITAMENTO AO TERMO DE COMPROMISSO DE ESTÁGIO')}

@@ -323,8 +323,37 @@ function _gerarPdfAdendoInicial_(idEstagio, idAdendo, dados, sol, pastaId) {
     sec('ALTERAÇÕES PACTUADAS');
     kv('Tipo de Alteração', (dados && dados.tipoAlteracao) || '—');
     if (dados && dados.novaDataTermino) kv('Nova Data de Término',     _formatarDataBr_(new Date(dados.novaDataTermino)));
-    if (dados && dados.novaCarga)       kv('Nova Carga Horária Semanal', dados.novaCarga);
-    if (dados && dados.novoHorario)     kv('Novo Horário',               dados.novoHorario);
+    if (dados && dados.novoHorario) {
+      var _parsedDias = null;
+      try { _parsedDias = JSON.parse(dados.novoHorario); } catch (_) {}
+      if (Array.isArray(_parsedDias) && _parsedDias.length) {
+        // Renderiza como tabela (Dia / Entrada / Saída / Diária)
+        var _tblData = [['Dia da Semana', 'Entrada', 'Saída', 'Carga Diária']].concat(
+          _parsedDias.map(function(r) {
+            return [r.dia || '', r.entrada || '', r.saida || '', r.diaria || ''];
+          })
+        );
+        var _tbl = body.appendTable(_tblData);
+        // Estilo header
+        var _hRow = _tbl.getRow(0);
+        for (var _ci = 0; _ci < 4; _ci++) {
+          _hRow.getCell(_ci).editAsText().setFontFamily('Arial').setFontSize(9).setBold(true);
+        }
+        // Estilo dados
+        for (var _ri = 1; _ri < _tbl.getNumRows(); _ri++) {
+          for (var _ci2 = 0; _ci2 < 4; _ci2++) {
+            _tbl.getRow(_ri).getCell(_ci2).editAsText().setFontFamily('Arial').setFontSize(9);
+          }
+        }
+        if (dados.novaCarga) kv('Nova Carga Horária Semanal', dados.novaCarga);
+      } else {
+        // Texto puro (retrocompatibilidade)
+        kv('Novo Horário', dados.novoHorario);
+        if (dados.novaCarga) kv('Nova Carga Horária Semanal', dados.novaCarga);
+      }
+    } else if (dados && dados.novaCarga) {
+      kv('Nova Carga Horária Semanal', dados.novaCarga);
+    }
     if (dados && dados.justificativa)   kv('Justificativa',              dados.justificativa);
 
     // ── Texto legal ───────────────────────────────────────────────────────────
