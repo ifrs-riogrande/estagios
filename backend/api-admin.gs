@@ -990,7 +990,8 @@ function processarAdendo_(body, decisao) {
   for (var i = 1; i < dados.length; i++) {
     var rowId     = String(dados[i][COL_AD_ID]    || '').trim();
     var rowStatus = String(dados[i][COL_AD_STATUS] || '').trim();
-    if (rowId !== idEstagio || rowStatus !== 'Pendente') continue;
+    // Aceita 'Pendente' ou 'Aprovado' (retrocompat — status antigo antes do fluxo de assinaturas)
+    if (rowId !== idEstagio || (rowStatus !== 'Pendente' && rowStatus !== 'Aprovado')) continue;
 
     var emailEst  = String(dados[i][COL_AD_EMAIL] || '').trim();
     var rowIdAdendo = COL_AD_IDADENDO >= 0 ? String(dados[i][COL_AD_IDADENDO] || '').trim() : '';
