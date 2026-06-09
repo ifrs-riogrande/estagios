@@ -78,12 +78,12 @@ main {
 }
 
 .header-logo {
-  height: 40px;
+  height: 46px;
   width: auto;
   object-fit: contain;
   background: #ffffff;
   border-radius: var(--radius-md);
-  padding: 3px;
+  padding: 4px;
 }
 
 /* Fallback quando não há imagem: mostra sigla */
