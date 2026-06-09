@@ -1028,15 +1028,14 @@
       let actionsHtml = '';
       let rejectPanelHtml = '';
 
-      if (status === 'Pendente' || status === 'Aprovado') {
-        // 'Aprovado' = status legado do código anterior (antes do fluxo de assinaturas)
+      if (status === 'Pendente') {
         actionsHtml = `
           <div class="doc-actions">
-            <div class="doc-actions-left">${status === 'Aprovado' ? '⚠️ Adendo aprovado com código anterior — clique em "Iniciar Fluxo de Assinaturas" para gerar o PDF e notificar o estudante.' : ''}</div>
+            <div class="doc-actions-left"></div>
             <div class="doc-actions-right">
               <button class="btn btn-secondary btn-sm" onclick="previewAdendoAdmin(${aJson})">👁 Visualizar Documento</button>
               <button class="btn btn-danger btn-sm" onclick="mostrarPainelRejeicaoAdendo('${uid}')">Devolver para ajustes</button>
-              <button class="btn btn-primary btn-sm" onclick="acaoAdendo('aprovarAdendo', ${aJson}, ${idx})">${status === 'Aprovado' ? '▶ Iniciar Fluxo de Assinaturas' : 'Aprovar e Gerar PDF'}</button>
+              <button class="btn btn-primary btn-sm" onclick="acaoAdendo('aprovarAdendo', ${aJson}, ${idx})">Aprovar e Gerar PDF</button>
             </div>
           </div>`;
         rejectPanelHtml = `
@@ -1061,37 +1060,45 @@
             <div class="doc-actions-right"></div>
           </div>`;
 
-      } else if (status === 'Em Assinatura') {
+      } else if (status === 'Em Assinatura' || status === 'Aprovado') {
+        // 'Aprovado' = status legado — tratado igual a Em Assinatura (fluxo já iniciado ou aprovado externamente)
         const pastaUrl = a.driveUrl || (_estagio && _estagio.driveUrl ? _estagio.driveUrl : '');
         const assUrl   = `../assinaturas/adendo.html?id=${encodeURIComponent(a.idEstagio || _id)}&adendo=${encodeURIComponent(idAdendo)}`;
         actionsHtml = `
           <div class="doc-actions">
-            <div class="doc-actions-left">Adendo em fluxo de assinaturas digitais (gov.br).</div>
+            <div class="doc-actions-left"></div>
             <div class="doc-actions-right">
+              <button class="btn btn-secondary btn-sm" onclick="regenerarAdendo('${escapeHtml(idAdendo)}', this)">
+                🔄 Regenerar Adendo
+              </button>
+              <a href="https://validar.iti.gov.br/" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">Validador ITI ↗</a>
+              ${pastaUrl ? `<a href="${escapeHtml(pastaUrl)}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">📁 Abrir pasta ↗</a>` : ''}
               <button class="btn btn-secondary btn-sm" onclick="verFluxoAdendo('${escapeHtml(idAdendo)}', '${uid}', this)">📋 Ver fluxo</button>
               <a href="${escapeHtml(assUrl)}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">🔏 Abrir assinaturas ↗</a>
-              <button class="btn btn-secondary btn-sm" onclick="regenerarAdendo('${escapeHtml(idAdendo)}', this)">🔄 Regenerar Adendo</button>
-              <a href="https://validar.iti.gov.br/" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">Validador ITI ↗</a>
               <button class="btn btn-secondary btn-sm" onclick="reenviarNotifAdendo('${idAdendo}', this)">
                 <svg width="12" height="12" viewBox="0 0 20 20" fill="currentColor"><path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"/><path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"/></svg>
                 Reenviar notificação
               </button>
-              ${pastaUrl ? `<a href="${escapeHtml(pastaUrl)}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">📁 Pasta ↗</a>` : ''}
             </div>
           </div>
           <div id="fluxo-adendo-${uid}" style="display:none;margin-top:var(--space-3);padding:var(--space-4);background:var(--color-bg);border-radius:var(--radius-md);border:1px solid var(--color-border);"></div>`;
 
-      } else if (status === 'Assinado') {
-        const assUrl = `../assinaturas/adendo.html?id=${encodeURIComponent(a.idEstagio || _id)}&adendo=${encodeURIComponent(idAdendo)}`;
+      } else if (status === 'Assinado' || status === 'Concluído') {
+        const pastaUrl = a.driveUrl || (_estagio && _estagio.driveUrl ? _estagio.driveUrl : '');
+        const assUrl   = `../assinaturas/adendo.html?id=${encodeURIComponent(a.idEstagio || _id)}&adendo=${encodeURIComponent(idAdendo)}`;
         actionsHtml = `
           <div class="doc-actions">
-            <div class="doc-actions-left">✅ Adendo assinado por todas as partes.</div>
+            <div class="doc-actions-left"></div>
             <div class="doc-actions-right">
-              <a href="${escapeHtml(assUrl)}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">📋 Ver fluxo completo ↗</a>
+              <button class="btn btn-secondary btn-sm" onclick="regenerarAdendo('${escapeHtml(idAdendo)}', this)">
+                🔄 Regenerar Adendo
+              </button>
               <a href="https://validar.iti.gov.br/" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">Validador ITI ↗</a>
-              ${a.pdfUrl ? `<a href="${escapeHtml(a.pdfUrl)}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">📄 Abrir PDF ↗</a>` : ''}
+              ${pastaUrl ? `<a href="${escapeHtml(pastaUrl)}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">📁 Abrir pasta ↗</a>` : ''}
+              <button class="btn btn-secondary btn-sm" onclick="verFluxoAdendo('${escapeHtml(idAdendo)}', '${uid}', this)">📋 Ver fluxo completo</button>
             </div>
-          </div>`;
+          </div>
+          <div id="fluxo-adendo-${uid}" style="display:none;margin-top:var(--space-3);padding:var(--space-4);background:var(--color-bg);border-radius:var(--radius-md);border:1px solid var(--color-border);"></div>`;
 
       } else if (status === 'Recusado' || status === 'Reprovado') {
         actionsHtml = `
@@ -1311,7 +1318,7 @@
         'Aguardando Correção': 'badge-dg',
         'Em Assinatura':       'badge-docs',
         'Em Assinaturas':      'badge-docs',  // retrocompatibilidade
-        'Aprovado':            'badge-dg',      // status legado — precisa iniciar fluxo
+        'Aprovado':            'badge-docs',    // status legado — equivalente a Em Assinatura
         'Assinado':            'badge-running',
         'Concluído':           'badge-running',
         'Reprovado':           'badge-rejected',
