@@ -608,7 +608,6 @@
                 <button class="mode-toggle-btn active" data-modo="form" onclick="setAdendoModo('form')">Preencher formulário</button>
                 <button class="mode-toggle-btn" data-modo="upload" onclick="setAdendoModo('upload')">Anexar documento</button>
               </div>
-              <div id="fb-adendo"></div>
 
               <!-- Modo formulário -->
               <div id="adendo-form-area">
@@ -618,10 +617,11 @@
                 </div>
                 <!-- Campos dinâmicos por tipo -->
                 <div id="adendo-campos-dinamicos" style="display:none"></div>
-                <div id="btn-adendo-wrap" style="display:none;display:none;gap:var(--space-2);flex-wrap:wrap">
+                <div id="btn-adendo-wrap" style="display:none;gap:var(--space-2);flex-wrap:wrap">
                   <button class="btn btn-secondary btn-sm" id="btn-adendo-preview" onclick="previewAdendo()">📄 Visualizar Documento</button>
                   <button class="btn btn-primary btn-sm"   id="btn-adendo-form"    onclick="submitAdendoForm(this)">Enviar Adendo</button>
                 </div>
+                <div id="fb-adendo" style="margin-top:var(--space-3)"></div>
               </div>
 
               <!-- Modo upload -->
@@ -644,6 +644,7 @@
                   <div class="file-selected" id="file-adendo-info"></div>
                 </div>
                 <button class="btn btn-primary btn-sm" onclick="submitAdendoUpload(this)">Enviar Adendo</button>
+                <div id="fb-adendo-up" style="margin-top:var(--space-3)"></div>
               </div>
             </div>
           </div>
@@ -1822,7 +1823,7 @@
        ENVIO — ADENDO (upload)
     ════════════════════════════════════════ */
     async function submitAdendoUpload(btn) {
-      const fbId          = 'fb-adendo';
+      const fbId          = 'fb-adendo-up';
       const tipoAdendo    = document.getElementById('adendo-tipoAdendo-up')?.value;
       const justificativa = document.getElementById('adendo-justificativa-up')?.value.trim();
       const fileInput     = document.getElementById('upload-adendo');
