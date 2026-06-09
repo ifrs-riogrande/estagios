@@ -356,10 +356,24 @@ main {
    FOOTER
    ───────────────────────────────────────── */
 #app-footer {
-  background-color: var(--color-primary);
-  color: rgba(255, 255, 255, 0.7);
-  padding: var(--space-5) 0;
+  background-color: #ffffff;
+  color: var(--color-text-muted);
+  border-top: 1px solid #e5e7eb;
+  padding: var(--space-4) 0;
   margin-top: auto;
+}
+
+/* Dica bar — amarela, acima do footer */
+.dica-bar {
+  background: #fffde7;
+  border-top: 1px solid #fff9c4;
+  border-bottom: 1px solid #fff9c4;
+  padding: 10px var(--space-6);
+  font-size: var(--font-size-sm);
+  color: #795548;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
 }
 
 .footer-inner {
@@ -372,7 +386,7 @@ main {
 }
 
 .footer-copy {
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--color-text-muted);
 }
 
 .footer-links {
@@ -381,13 +395,13 @@ main {
 }
 
 .footer-links a {
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--color-text-muted);
   font-size: var(--font-size-sm);
   transition: color var(--transition-fast);
 }
 
 .footer-links a:hover {
-  color: #FFFFFF;
+  color: var(--color-primary);
   text-decoration: none;
 }
 
