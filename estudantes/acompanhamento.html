@@ -913,14 +913,43 @@
 
       let html = `<div class="action-card" style="margin-top:var(--space-4)"><h2>Histórico de Adendos (${adendos.length})</h2><div class="hist-list">`;
       adendos.forEach(a => {
-        const bc = { 'Aprovado': 'badge-approved', 'Reprovado': 'badge-rejected', 'Pendente': 'badge-pending' }[a.status] || 'badge-closed';
+        const badgeCls = {
+          'Aprovado':            'badge-approved',
+          'Reprovado':           'badge-rejected',
+          'Pendente':            'badge-pending',
+          'Aguardando Correção': 'badge-closed',
+          'Em Assinatura':       'badge-analysis',
+          'Assinado':            'badge-approved',
+        }[a.status] || 'badge-closed';
+
+        const emAssinatura = a.status === 'Em Assinatura';
+        const assinado     = a.status === 'Assinado';
+        const idAdendo     = a.idAdendo || a.id || '';
+        const idEstagio    = a.idEstagio || _atual.id || '';
+
+        let acaoHtml = '';
+        if ((emAssinatura || assinado) && idAdendo) {
+          const assUrl = `../assinaturas/adendo.html?id=${encodeURIComponent(idEstagio)}&adendo=${encodeURIComponent(idAdendo)}&token=${encodeURIComponent(a.tokenEstudante || '')}`;
+          acaoHtml = `
+            <div style="margin-top:8px;">
+              <a href="${escapeHtml(assUrl)}" target="_blank" rel="noopener"
+                 style="display:inline-flex;align-items:center;gap:6px;font-size:var(--font-size-xs);font-weight:600;
+                        color:var(--color-secondary);text-decoration:none;
+                        padding:4px 10px;border:1px solid var(--color-secondary);border-radius:var(--radius-sm);
+                        background:var(--color-info-light);">
+                🔏 ${emAssinatura ? 'Acompanhar / Assinar Aditamento' : 'Ver histórico de assinaturas'} ↗
+              </a>
+            </div>`;
+        }
+
         html += `<div class="hist-item">
           <div class="hist-item-row">
             <span class="hist-item-title">${escapeHtml(a.tipoAdendo || '—')}</span>
-            <span class="badge ${bc}">${escapeHtml(a.status || '—')}</span>
+            <span class="badge ${badgeCls}">${escapeHtml(a.status || '—')}</span>
           </div>
           <div class="hist-item-date">${escapeHtml(a.data || '—')}</div>
           ${a.justificativa ? `<div class="hist-item-desc">${escapeHtml(a.justificativa.substring(0, 200))}${a.justificativa.length > 200 ? '…' : ''}</div>` : ''}
+          ${acaoHtml}
         </div>`;
       });
       html += `</div></div>`;

@@ -50,6 +50,20 @@ var MAIL = (function () {
       + escapeHtmlMail_(String(valor || '—')) + '</p>';
   }
 
+  /**
+   * Gera um botão de e-mail compatível com Gmail (usa bgcolor no <td> e display:block no <a>).
+   */
+  function botaoEmail_(url, texto) {
+    var u = escapeHtmlMail_(url);
+    return '<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:24px 0 8px;">'
+      + '<tr><td bgcolor="#1d4ed8" style="border-radius:6px;background:#1d4ed8;">'
+      + '<a href="' + u + '" target="_blank"'
+      + ' style="display:block;padding:14px 28px;font-family:Arial,sans-serif;font-size:15px;'
+      + 'font-weight:700;color:#ffffff !important;text-decoration:none;border-radius:6px;mso-padding-alt:14px 28px;">'
+      + '<span style="color:#ffffff;">' + escapeHtmlMail_(texto) + '</span>'
+      + '</a></td></tr></table>';
+  }
+
   function formatarDataBR_(valor) {
     if (!valor) return valor || '';
     var s = String(valor);
@@ -233,15 +247,37 @@ var MAIL = (function () {
   // --------------------------------------------------------------------------
 
   function enviarEmailAdendoRecebido(dados) {
-    var corpo = '<p>Uma solicitação de adendo ao TCE foi recebida.</p>'
+    var urlAdmin = BASE_URL + '/admin/estagio.html?id=' + encodeURIComponent(dados.idEstagio);
+    var corpo = '<p>Uma solicitação de adendo ao TCE foi recebida e aguarda sua análise.</p>'
       + campo_('ID do estágio', dados.idEstagio)
+      + campo_('Estudante', dados.nomeEstudante || dados.emailEstudante || '')
       + campo_('Tipo de alteração', dados.tipoAdendo)
-      + campo_('Justificativa', dados.justificativa)
+      + (dados.justificativa ? campo_('Justificativa', dados.justificativa) : '')
       + (dados.novaDataTermino ? campo_('Nova data de término', dados.novaDataTermino) : '')
       + (dados.novaCargaHoraria ? campo_('Nova carga horária', dados.novaCargaHoraria) : '')
-      + (dados.novoHorario ? campo_('Novo horário', dados.novoHorario) : '');
-    enviar_(SETOR_EMAIL, '[SGE] Adendo ao TCE — ' + dados.idEstagio,
+      + (dados.novoHorario ? campo_('Novo horário', dados.novoHorario) : '')
+      + botaoEmail_(urlAdmin, 'Analisar e aprovar adendo')
+      + '<p style="font-size:13px;color:#6b7280;margin:4px 0 16px;">'
+      + 'Ou acesse diretamente: <a href="' + urlAdmin + '" style="color:#1d4ed8;">' + urlAdmin + '</a></p>';
+    enviar_(SETOR_EMAIL, '[SGE] Adendo ao TCE recebido — ' + dados.idEstagio,
       htmlBase_('[SGE] Adendo ao TCE', corpo));
+  }
+
+  function enviarEmailAdendoProcessado(dados) {
+    var decisao   = dados.decisao;   // 'Aprovado' ou 'Reprovado'
+    var aprovado  = decisao === 'Aprovado';
+    var urlAluno  = BASE_URL + '/estudantes/acompanhamento.html';
+    var titulo    = aprovado ? '[SGE] Adendo ao TCE aprovado' : '[SGE] Adendo ao TCE reprovado';
+    var intro     = aprovado
+      ? '<p>Seu pedido de adendo ao TCE foi <strong>aprovado</strong> pelo Setor de Estágios.</p>'
+      : '<p>Seu pedido de adendo ao TCE foi <strong>reprovado</strong> pelo Setor de Estágios.</p>';
+    var corpo = intro
+      + campo_('Estágio', dados.idEstagio)
+      + (dados.motivoRejeicao ? campo_('Motivo', dados.motivoRejeicao) : '')
+      + botaoEmail_(urlAluno, 'Ver meu estágio no SGE')
+      + '<p style="font-size:13px;color:#6b7280;margin:4px 0 16px;">'
+      + 'Ou acesse: <a href="' + urlAluno + '" style="color:#1d4ed8;">' + urlAluno + '</a></p>';
+    enviar_(dados.emailAluno, titulo, htmlBase_(titulo, corpo));
   }
 
   // --------------------------------------------------------------------------
@@ -522,6 +558,91 @@ var MAIL = (function () {
   }
 
   // --------------------------------------------------------------------------
+  // Assinaturas — Adendo
+  // --------------------------------------------------------------------------
+
+  function enviarEmailAssinaturaAdendoGovBr(dados) {
+    // dados: { idEstagio, nomeEstudante, tipoAdendo, labelAtor, prazoVencimento, email, pageUrl, numeroEtapa, motivoRejeicao? }
+    var pageUrl = dados.pageUrl || (BASE_URL + '/assinaturas/adendo.html?id=' + encodeURIComponent(dados.idEstagio));
+    var blocoRejeicao = dados.motivoRejeicao
+      ? '<div style="background:#fef2f2;border-left:4px solid #ef4444;padding:12px 16px;border-radius:4px;margin-bottom:16px;">'
+        + '<p style="margin:0 0 4px;font-weight:600;color:#dc2626;">⚠️ Sua etapa foi devolvida para correção</p>'
+        + '<p style="margin:0;font-size:13px;color:#374151;"><strong>Motivo:</strong> ' + escapeHtmlMail_(dados.motivoRejeicao) + '</p>'
+        + '</div>'
+      : '';
+    var corpo = '<p>Olá!</p>'
+      + (dados.motivoRejeicao
+          ? '<p>Sua etapa no fluxo de assinaturas do <strong>Aditamento ao TCE</strong> foi <strong>devolvida para correção</strong>. '
+            + 'Acesse a página pelo link abaixo, verifique o motivo e reenvie o documento corrigido.</p>'
+          : '<p>É a sua vez de assinar o <strong>Aditamento ao Termo de Compromisso de Estágio</strong>. '
+            + 'Acesse a página pelo botão abaixo, baixe o documento, assine com gov.br e envie a versão assinada.</p>')
+      + blocoRejeicao
+      + campo_('ID do estágio', dados.idEstagio)
+      + campo_('Estudante', dados.nomeEstudante)
+      + campo_('Tipo de aditamento', dados.tipoAdendo || '—')
+      + campo_('Sua etapa', 'Etapa ' + dados.numeroEtapa + '/5 — ' + dados.labelAtor)
+      + campo_('Prazo limite', dados.prazoVencimento || '—')
+      + botaoEmail_(pageUrl, '🖊 Acessar e Assinar Aditamento')
+      + '<p style="font-size:13px;color:#6b7280;margin-top:12px;">'
+      + 'Se o botão não funcionar, acesse: <a href="' + pageUrl + '" style="color:#6b7280;">' + pageUrl + '</a></p>';
+    enviar_(dados.email,
+      '[SGE] Assine o Aditamento ao TCE (etapa ' + dados.numeroEtapa + '/5) — ' + dados.idEstagio,
+      htmlBase_('Assinatura do Aditamento — ' + dados.labelAtor, corpo));
+  }
+
+  function enviarEmailAssinaturaAdendoInterno(dados) {
+    // dados: { idEstagio, nomeEstudante, tipoAdendo, labelAtor, prazoVencimento, email, pageUrl, numeroEtapa, motivoRejeicao? }
+    var pageUrl = dados.pageUrl || (BASE_URL + '/assinaturas/adendo.html?id=' + encodeURIComponent(dados.idEstagio));
+    var blocoRejeicao = dados.motivoRejeicao
+      ? '<div style="background:#fef2f2;border-left:4px solid #ef4444;padding:12px 16px;border-radius:4px;margin-bottom:16px;">'
+        + '<p style="margin:0 0 4px;font-weight:600;color:#dc2626;">⚠️ Etapa devolvida para correção</p>'
+        + '<p style="margin:0;font-size:13px;color:#374151;"><strong>Motivo:</strong> ' + escapeHtmlMail_(dados.motivoRejeicao) + '</p>'
+        + '</div>'
+      : '';
+    var corpo = '<p>Olá!</p>'
+      + (dados.motivoRejeicao
+          ? '<p>Uma etapa do fluxo de assinaturas do Aditamento ao TCE foi <strong>devolvida para correção</strong>. '
+            + 'Por favor acesse o sistema e tome a devida providência.</p>'
+          : '<p>O fluxo de assinaturas do Aditamento ao TCE chegou à sua etapa. '
+            + 'Por favor, revise o documento e registre sua decisão no sistema.</p>')
+      + blocoRejeicao
+      + campo_('ID do estágio', dados.idEstagio)
+      + campo_('Estudante', dados.nomeEstudante)
+      + campo_('Tipo de aditamento', dados.tipoAdendo || '—')
+      + campo_('Sua etapa', 'Etapa ' + dados.numeroEtapa + '/5 — ' + dados.labelAtor)
+      + campo_('Prazo limite', dados.prazoVencimento || '—')
+      + botaoEmail_(pageUrl, 'Acessar Fluxo de Assinaturas')
+      + '<p style="font-size:13px;color:#6b7280;margin-top:12px;">'
+      + 'Ou acesse: <a href="' + pageUrl + '" style="color:#6b7280;">' + pageUrl + '</a></p>';
+    enviar_(dados.email,
+      '[SGE] Ação necessária — Aditamento TCE etapa ' + dados.numeroEtapa + '/5 — ' + dados.idEstagio,
+      htmlBase_('Aditamento TCE — ' + dados.labelAtor, corpo));
+  }
+
+  function enviarEmailPdfFinalAdendo(dados) {
+    // dados: { idEstagio, idAdendo, nomeEstudante, tipoAdendo, tokenPorAtor, destinatarios: [{email, nome, ator}] }
+    var baseUrl = BASE_URL + '/assinaturas/adendo.html'
+                + '?id='     + encodeURIComponent(dados.idEstagio)
+                + '&adendo=' + encodeURIComponent(dados.idAdendo || '');
+    dados.destinatarios.forEach(function(dest) {
+      var pageUrl = dest.ator && dados.tokenPorAtor && dados.tokenPorAtor[dest.ator]
+        ? baseUrl + '&token=' + encodeURIComponent(dados.tokenPorAtor[dest.ator])
+        : baseUrl;
+      var corpo = '<p>Olá, ' + escapeHtmlMail_(dest.nome) + '!</p>'
+        + '<p>O processo de assinatura do <strong>Aditamento ao Termo de Compromisso de Estágio</strong> foi concluído com sucesso! 🎉</p>'
+        + campo_('ID do estágio', dados.idEstagio)
+        + campo_('Estudante', dados.nomeEstudante)
+        + campo_('Tipo de aditamento', dados.tipoAdendo || '—')
+        + botaoEmail_(pageUrl, '📄 Acessar Aditamento Assinado')
+        + '<p style="font-size:13px;color:#6b7280;margin-top:16px;">'
+        + 'O documento pode ser baixado diretamente na página acima.</p>';
+      enviar_(dest.email,
+        '[SGE] Aditamento ao TCE assinado — Estágio ' + dados.idEstagio + ' — ' + escapeHtmlMail_(dados.nomeEstudante),
+        htmlBase_('Aditamento Concluído', corpo));
+    });
+  }
+
+  // --------------------------------------------------------------------------
   // API pública
   // --------------------------------------------------------------------------
   return {
@@ -533,6 +654,7 @@ var MAIL = (function () {
     enviarEmailRelatorioParcialRecebido: enviarEmailRelatorioParcialRecebido,
     enviarEmailRelatorioFinalRecebido:   enviarEmailRelatorioFinalRecebido,
     enviarEmailAdendoRecebido:           enviarEmailAdendoRecebido,
+    enviarEmailAdendoProcessado:         enviarEmailAdendoProcessado,
     enviarEmailNovoOrientador:           enviarEmailNovoOrientador,
     enviarEmailNovoCoordenador:          enviarEmailNovoCoordenador,
     enviarEmailRejeicaoServidor:         enviarEmailRejeicaoServidor,
@@ -543,11 +665,15 @@ var MAIL = (function () {
     enviarEmailChecklistAtor:            enviarEmailChecklistAtor,
     enviarEmailChecklistAjuste:          enviarEmailChecklistAjuste,
     enviarEmailLembreteChecklist:        enviarEmailLembreteChecklist,
-    // Assinaturas
+    // Assinaturas TCE
     enviarEmailAssinaturaGovBr:          enviarEmailAssinaturaGovBr,
     enviarEmailAssinaturaInterno:        enviarEmailAssinaturaInterno,
     enviarEmailLembreteAssinatura:       enviarEmailLembreteAssinatura,
     enviarEmailPdfFinalAssinaturas:      enviarEmailPdfFinalAssinaturas,
+    // Assinaturas Adendo
+    enviarEmailAssinaturaAdendoGovBr:    enviarEmailAssinaturaAdendoGovBr,
+    enviarEmailAssinaturaAdendoInterno:  enviarEmailAssinaturaAdendoInterno,
+    enviarEmailPdfFinalAdendo:           enviarEmailPdfFinalAdendo,
     // Checklist orientador (novo fluxo) + compatibilidade aceite antigo
     enviarEmailChecklistOrientador:      enviarEmailChecklistOrientador,
     enviarEmailAceiteOrientador:         enviarEmailAceiteOrientador,
@@ -679,6 +805,7 @@ function enviarEmailSolicitacaoReprovada_(d)     { return MAIL.enviarEmailSolici
 function enviarEmailRelatorioParcialRecebido_(d) { return MAIL.enviarEmailRelatorioParcialRecebido(d); }
 function enviarEmailRelatorioFinalRecebido_(d)   { return MAIL.enviarEmailRelatorioFinalRecebido(d); }
 function enviarEmailAdendoRecebido_(d)           { return MAIL.enviarEmailAdendoRecebido(d); }
+function enviarEmailAdendoProcessado_(d)         { return MAIL.enviarEmailAdendoProcessado(d); }
 function enviarEmailNovoOrientador_(d)           { return MAIL.enviarEmailNovoOrientador(d); }
 function enviarEmailNovoCoordenador_(d)          { return MAIL.enviarEmailNovoCoordenador(d); }
 function enviarEmailRejeicaoServidor_(d)         { return MAIL.enviarEmailRejeicaoServidor(d); }
@@ -694,6 +821,9 @@ function enviarEmailAssinaturaGovBr_(d)          { return MAIL.enviarEmailAssina
 function enviarEmailAssinaturaInterno_(d)        { return MAIL.enviarEmailAssinaturaInterno(d); }
 function enviarEmailLembreteAssinatura_(d)       { return MAIL.enviarEmailLembreteAssinatura(d); }
 function enviarEmailPdfFinalAssinaturas_(d)      { return MAIL.enviarEmailPdfFinalAssinaturas(d); }
+function enviarEmailAssinaturaAdendoGovBr_(d)   { return MAIL.enviarEmailAssinaturaAdendoGovBr(d); }
+function enviarEmailAssinaturaAdendoInterno_(d) { return MAIL.enviarEmailAssinaturaAdendoInterno(d); }
+function enviarEmailPdfFinalAdendo_(d)          { return MAIL.enviarEmailPdfFinalAdendo(d); }
 // Checklist orientador + aceite (compatibilidade)
 function enviarEmailChecklistOrientador_(d)            { return MAIL.enviarEmailChecklistOrientador(d); }
 function enviarEmailAceiteOrientador_(d)               { return MAIL.enviarEmailAceiteOrientador(d); }

@@ -614,9 +614,8 @@ function enviarAdendo_(dados) {
   var justificativa= sanitizar_(dados.justificativa, 2000);
   var obs          = sanitizar_(dados.obsAdicionais, 500);
 
-  if (!tipoAdendo)        return jsonError_('Tipo de adendo é obrigatório.', 'VALIDATION');
-  if (!justificativa || justificativa.length < 40)
-    return jsonError_('Justificativa muito curta. Explique melhor o motivo.', 'VALIDATION');
+  if (!tipoAdendo) return jsonError_('Tipo de adendo é obrigatório.', 'VALIDATION');
+  // justificativa é opcional
 
   if ((tipoAdendo === 'Prorrogação de prazo' || tipoAdendo === 'Redução de prazo') && !novaData)
     return jsonError_('Nova data de término é obrigatória para este tipo de adendo.', 'VALIDATION');
@@ -627,10 +626,12 @@ function enviarAdendo_(dados) {
 
   verificarIdEstagio_(idEstagio, tokenInfo.email);
 
+  var idAdendo = Utilities.getUuid(); // ID único e estável para o adendo
+
   var ss    = SpreadsheetApp.openById(CFG_SOL.SS_ID);
   var sheet = obterOuCriarAba_(ss, CFG_SOL.ABA_ADENDO,
     ['Timestamp','ID Estágio','E-mail Estudante','Tipo de Adendo','Nova Data Término',
-     'Nova Carga Horária','Novo Horário','Justificativa','Observações','Status']);
+     'Nova Carga Horária','Novo Horário','Justificativa','Observações','Status','ID Adendo']);
 
   var linha = [];
   linha[COL_ADENDO.TIMESTAMP]         = new Date();
@@ -643,6 +644,7 @@ function enviarAdendo_(dados) {
   linha[COL_ADENDO.JUSTIFICATIVA]     = justificativa;
   linha[COL_ADENDO.OBS]               = obs;
   linha[COL_ADENDO.STATUS]            = 'Pendente';
+  linha[10]                           = idAdendo; // coluna ID Adendo (índice 10)
 
   sheet.appendRow(linha);
 
@@ -1569,14 +1571,21 @@ function listarHistoricoEstagio_(e) {
     var dAdendo = sheetAdendo.getDataRange().getValues();
     for (var l = 1; l < dAdendo.length; l++) {
       if (String(dAdendo[l][COL_ADENDO.ID_ESTAGIO] || '') !== idEstagio) continue;
+      // Detecta coluna 'ID Adendo' dinamicamente no header
+      var hdrAdendo   = dAdendo[0] || [];
+      var colIdAdendo = hdrAdendo.indexOf('ID Adendo');
+      var rowIdAdendo = colIdAdendo >= 0 ? String(dAdendo[l][colIdAdendo] || '') : '';
+
       adendos.push({
-        data:         dAdendo[l][COL_ADENDO.TIMESTAMP]
-                        ? Utilities.formatDate(new Date(dAdendo[l][COL_ADENDO.TIMESTAMP]),
-                            Session.getScriptTimeZone(), 'dd/MM/yyyy HH:mm')
-                        : '',
-        tipoAdendo:   String(dAdendo[l][COL_ADENDO.TIPO_ADENDO]    || ''),
-        justificativa: String(dAdendo[l][COL_ADENDO.JUSTIFICATIVA] || ''),
-        status:       String(dAdendo[l][COL_ADENDO.STATUS]         || 'Pendente'),
+        data:          dAdendo[l][COL_ADENDO.TIMESTAMP]
+                         ? Utilities.formatDate(new Date(dAdendo[l][COL_ADENDO.TIMESTAMP]),
+                             Session.getScriptTimeZone(), 'dd/MM/yyyy HH:mm')
+                         : '',
+        tipoAdendo:    String(dAdendo[l][COL_ADENDO.TIPO_ADENDO]    || ''),
+        justificativa: String(dAdendo[l][COL_ADENDO.JUSTIFICATIVA]  || ''),
+        status:        String(dAdendo[l][COL_ADENDO.STATUS]         || 'Pendente'),
+        idAdendo:      rowIdAdendo,
+        idEstagio:     idEstagio,
       });
     }
   }

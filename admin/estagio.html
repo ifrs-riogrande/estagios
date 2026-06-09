@@ -1060,29 +1060,32 @@
             <div class="doc-actions-right"></div>
           </div>`;
 
-      } else if (status === 'Em Assinaturas') {
+      } else if (status === 'Em Assinatura') {
         const pastaUrl = a.driveUrl || (_estagio && _estagio.driveUrl ? _estagio.driveUrl : '');
+        const assUrl   = `../assinaturas/adendo.html?id=${encodeURIComponent(a.idEstagio || _id)}&adendo=${encodeURIComponent(idAdendo)}`;
         actionsHtml = `
           <div class="doc-actions">
-            <div class="doc-actions-left">Adendo em assinaturas digitais (gov.br): Estagiário → Concedente → Coordenador → Diretor Geral.</div>
+            <div class="doc-actions-left">Adendo em fluxo de assinaturas digitais (gov.br).</div>
             <div class="doc-actions-right">
-              <button class="btn btn-secondary btn-sm" onclick="regenerarAdendo('${idAdendo}', this)">🔄 Regenerar Adendo</button>
-              <a href="https://validar.iti.gov.br/" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">Validador ITI ↗</a>
-              ${pastaUrl ? `<a href="${escapeHtml(pastaUrl)}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">📁 Abrir pasta ↗</a>` : ''}
+              <button class="btn btn-secondary btn-sm" onclick="verFluxoAdendo('${escapeHtml(idAdendo)}', '${uid}', this)">📋 Ver fluxo</button>
+              <a href="${escapeHtml(assUrl)}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">🔏 Abrir assinaturas ↗</a>
               <button class="btn btn-secondary btn-sm" onclick="reenviarNotifAdendo('${idAdendo}', this)">
                 <svg width="12" height="12" viewBox="0 0 20 20" fill="currentColor"><path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"/><path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"/></svg>
                 Reenviar notificação
               </button>
+              ${pastaUrl ? `<a href="${escapeHtml(pastaUrl)}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">📁 Pasta ↗</a>` : ''}
             </div>
-          </div>`;
+          </div>
+          <div id="fluxo-adendo-${uid}" style="display:none;margin-top:var(--space-3);padding:var(--space-4);background:var(--color-bg);border-radius:var(--radius-md);border:1px solid var(--color-border);"></div>`;
 
-      } else if (status === 'Concluído') {
+      } else if (status === 'Assinado') {
+        const assUrl = `../assinaturas/adendo.html?id=${encodeURIComponent(a.idEstagio || _id)}&adendo=${encodeURIComponent(idAdendo)}`;
         actionsHtml = `
           <div class="doc-actions">
-            <div class="doc-actions-left">Adendo concluído com todas as assinaturas.</div>
+            <div class="doc-actions-left">✅ Adendo assinado por todas as partes.</div>
             <div class="doc-actions-right">
+              <a href="${escapeHtml(assUrl)}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">📋 Ver fluxo completo ↗</a>
               ${a.pdfUrl ? `<a href="${escapeHtml(a.pdfUrl)}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">📄 Abrir PDF ↗</a>` : ''}
-              <button class="btn btn-secondary btn-sm" onclick="regenerarAdendo('${idAdendo}', this)">🔄 Regenerar</button>
             </div>
           </div>`;
 
@@ -1302,13 +1305,60 @@
       const m = {
         'Pendente':            'badge-pending',
         'Aguardando Correção': 'badge-dg',
-        'Em Assinaturas':      'badge-docs',
+        'Em Assinatura':       'badge-docs',
+        'Em Assinaturas':      'badge-docs',  // retrocompatibilidade
         'Aprovado':            'badge-approved',
+        'Assinado':            'badge-running',
         'Concluído':           'badge-running',
         'Reprovado':           'badge-rejected',
         'Recusado':            'badge-rejected',
       };
       return `<span class="badge ${m[s] || 'badge-pending'}">${escapeHtml(s || '—')}</span>`;
+    }
+
+    async function verFluxoAdendo(idAdendo, uid, btn) {
+      const container = document.getElementById('fluxo-adendo-' + uid);
+      if (!container) return;
+      if (container.style.display !== 'none') { container.style.display = 'none'; btn.textContent = '📋 Ver fluxo'; return; }
+      const orig = btn.textContent; btn.disabled = true; btn.textContent = 'Carregando…';
+      try {
+        const fluxo = await API.get('obterFluxoAdendoAdmin', { id: _id, adendo: idAdendo, authToken: getAccessToken() });
+        container.innerHTML = renderMiniTimelineAdendo(fluxo);
+        container.style.display = '';
+        btn.textContent = '📋 Ocultar fluxo';
+      } catch (err) {
+        container.innerHTML = `<p style="color:var(--color-error);font-size:var(--font-size-xs)">Erro ao carregar fluxo: ${escapeHtml(err.message)}</p>`;
+        container.style.display = '';
+        btn.textContent = orig;
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    function renderMiniTimelineAdendo(fluxo) {
+      if (!fluxo || !fluxo.etapas) return '<p style="font-size:var(--font-size-xs);color:var(--color-text-muted)">Fluxo não disponível.</p>';
+      const statusBg = { concluido: '#d1fae5', aguardando: '#dbeafe', pendente: 'var(--color-bg)', rejeitado: '#fee2e2' };
+      const statusTx = { concluido: '#065f46', aguardando: '#1e40af', pendente: 'var(--color-text-muted)', rejeitado: '#991b1b' };
+      const statusLbl= { concluido: '✓', aguardando: '⏳', pendente: '—', rejeitado: '✕' };
+
+      const etapasHtml = fluxo.etapas.map(et => {
+        const bg  = statusBg[et.status]  || 'var(--color-bg)';
+        const tx  = statusTx[et.status]  || 'var(--color-text-muted)';
+        const lbl = statusLbl[et.status] || et.status;
+        const data = et.data ? ' · ' + new Date(et.data).toLocaleDateString('pt-BR') : '';
+        return `<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:${bg};border-radius:6px;font-size:12px;color:${tx};">
+          <span style="font-weight:700;min-width:18px;text-align:center;">${et.numero}</span>
+          <span style="flex:1">${escapeHtml(et.label)}</span>
+          <span style="font-weight:600;">${lbl}${data}</span>
+        </div>`;
+      }).join('');
+
+      const assUrl = `../assinaturas/adendo.html?id=${encodeURIComponent(_id)}&adendo=${encodeURIComponent(fluxo.idAdendo || '')}`;
+      return `
+        <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px">${etapasHtml}</div>
+        <a href="${escapeHtml(assUrl)}" target="_blank" rel="noopener" class="btn btn-primary btn-sm" style="font-size:12px;">
+          🔏 Acessar página de assinaturas ↗
+        </a>`;
     }
 
     function showToast(msg, type = 'success') {

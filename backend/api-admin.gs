@@ -503,13 +503,20 @@ function listarAdendosAdmin_() {
   var ss    = SpreadsheetApp.openById(CFG_ADMIN.SS_ID);
   var sheet = ss.getSheetByName(CFG_ADMIN.ABA_ADENDOS);
   if (!sheet) return jsonOk_([]);
-  var dados = sheet.getDataRange().getValues();
+  var dados  = sheet.getDataRange().getValues();
+  var header = dados[0] || [];
+  // Detecta coluna ID Adendo pelo cabeçalho
+  var colIdAdendo = -1;
+  for (var h = 0; h < header.length; h++) {
+    if (String(header[h]).trim() === 'ID Adendo') { colIdAdendo = h; break; }
+  }
   var lista = [];
   for (var i = 1; i < dados.length; i++) {
     var r = dados[i];
     if (!r[COL_ADENDO.TIMESTAMP]) continue;
     lista.push({
-      id:              i,   // linha como ID
+      id:              i,
+      idAdendo:        colIdAdendo >= 0 ? String(r[colIdAdendo] || '') : '',
       idEstagio:       String(r[COL_ADENDO.ID_ESTAGIO]        || '').trim(),
       emailEstudante:  String(r[COL_ADENDO.EMAIL_ESTUDANTE]   || ''),
       tipoAlteracao:   String(r[COL_ADENDO.TIPO_ADENDO]       || ''),
@@ -952,25 +959,92 @@ function processarAdendo_(body, decisao) {
   if (!sheet) return jsonError_('Aba de adendos não encontrada.', 'NOT_FOUND');
   var dados = sheet.getDataRange().getValues();
 
-  // Procura por idEstagio
-  for (var i = 1; i < dados.length; i++) {
-    if (String(dados[i][1] || '').trim() === idEstagio && String(dados[i][9] || '').trim() === 'Pendente') {
-      sheet.getRange(i + 1, 10).setValue(decisao); // col 9 = status
-      if (motivo) sheet.getRange(i + 1, 11).setValue(motivo);
+  // Detecta colunas a partir do cabeçalho real da planilha
+  var header = dados.length > 0 ? dados[0] : [];
+  var COL_AD_ID       = -1, COL_AD_EMAIL   = -1, COL_AD_STATUS  = -1;
+  var COL_AD_TIPO     = -1, COL_AD_DATA    = -1, COL_AD_CARGA   = -1;
+  var COL_AD_HORARIO  = -1, COL_AD_JUST    = -1, COL_AD_IDADENDO = -1;
+  for (var h = 0; h < header.length; h++) {
+    var hn = String(header[h]).trim();
+    if (hn === 'ID Estágio')        COL_AD_ID       = h;
+    if (hn === 'E-mail Estudante')  COL_AD_EMAIL    = h;
+    if (hn === 'Status')            COL_AD_STATUS   = h;
+    if (hn === 'Tipo de Adendo')    COL_AD_TIPO     = h;
+    if (hn === 'Nova Data Término') COL_AD_DATA     = h;
+    if (hn === 'Nova Carga Horária')COL_AD_CARGA    = h;
+    if (hn === 'Novo Horário')      COL_AD_HORARIO  = h;
+    if (hn === 'Justificativa')     COL_AD_JUST     = h;
+    if (hn === 'ID Adendo')         COL_AD_IDADENDO = h;
+  }
+  // Fallbacks para índices padrão
+  if (COL_AD_ID      < 0) COL_AD_ID      = 1;
+  if (COL_AD_EMAIL   < 0) COL_AD_EMAIL   = 2;
+  if (COL_AD_STATUS  < 0) COL_AD_STATUS  = 9;
+  if (COL_AD_TIPO    < 0) COL_AD_TIPO    = 3;
+  if (COL_AD_DATA    < 0) COL_AD_DATA    = 4;
+  if (COL_AD_CARGA   < 0) COL_AD_CARGA   = 5;
+  if (COL_AD_HORARIO < 0) COL_AD_HORARIO = 6;
+  if (COL_AD_JUST    < 0) COL_AD_JUST    = 7;
 
-      var emailEst = String(dados[i][3] || '');
-      var nomeEst  = String(dados[i][2] || '');
-      if (emailEst) {
-        MailApp.sendEmail({
-          to:      emailEst,
-          subject: '[SGE IFRS] Adendo ao TCE ' + (decisao === 'Aprovado' ? 'aprovado' : 'reprovado') + ' — ' + idEstagio,
-          body:    'Prezado(a) ' + nomeEst + ',\n\n' +
-                   'Seu pedido de adendo ao TCE do estágio ' + idEstagio + ' foi ' + decisao.toLowerCase() + '.' +
-                   (motivo ? '\n\nMotivo: ' + motivo : '') +
-                   '\n\nSetor de Estágios — IFRS Campus Rio Grande',
-        });
+  // Procura por idEstagio com status Pendente
+  for (var i = 1; i < dados.length; i++) {
+    var rowId     = String(dados[i][COL_AD_ID]    || '').trim();
+    var rowStatus = String(dados[i][COL_AD_STATUS] || '').trim();
+    if (rowId !== idEstagio || rowStatus !== 'Pendente') continue;
+
+    var emailEst  = String(dados[i][COL_AD_EMAIL] || '').trim();
+    var rowIdAdendo = COL_AD_IDADENDO >= 0 ? String(dados[i][COL_AD_IDADENDO] || '').trim() : '';
+
+    if (decisao === 'Aprovado') {
+      // ── Inicia fluxo de assinaturas ──────────────────────────────────────
+      // Gera ID do adendo se não existir (para adendos antigos sem UUID)
+      if (!rowIdAdendo) {
+        rowIdAdendo = Utilities.getUuid();
+        if (COL_AD_IDADENDO >= 0) {
+          sheet.getRange(i + 1, COL_AD_IDADENDO + 1).setValue(rowIdAdendo);
+        }
       }
-      return jsonOk_({ status: decisao });
+
+      sheet.getRange(i + 1, COL_AD_STATUS + 1).setValue('Em Assinatura');
+
+      var dadosAdendo = {
+        tipoAlteracao:   String(dados[i][COL_AD_TIPO]    || ''),
+        novaDataTermino: String(dados[i][COL_AD_DATA]    || ''),
+        novaCarga:       String(dados[i][COL_AD_CARGA]   || ''),
+        novoHorario:     String(dados[i][COL_AD_HORARIO] || ''),
+        justificativa:   String(dados[i][COL_AD_JUST]    || ''),
+        emailEstudante:  emailEst,
+      };
+
+      try {
+        iniciarFluxoAdendoAss_(idEstagio, rowIdAdendo, dadosAdendo);
+      } catch (eFluxo) {
+        logErro_('processarAdendo_.iniciarFluxo', eFluxo);
+        // Reverte status em caso de falha crítica
+        sheet.getRange(i + 1, COL_AD_STATUS + 1).setValue('Pendente');
+        return jsonError_('Erro ao iniciar fluxo de assinaturas: ' + eFluxo.message, 'INTERNAL');
+      }
+
+      return jsonOk_({ status: 'Em Assinatura', idAdendo: rowIdAdendo });
+
+    } else {
+      // ── Reprovar: mantém comportamento original ───────────────────────────
+      sheet.getRange(i + 1, COL_AD_STATUS + 1).setValue('Reprovado');
+      if (motivo) sheet.getRange(i + 1, COL_AD_STATUS + 2).setValue(motivo);
+
+      if (emailEst && emailEst.indexOf('@') > 0) {
+        try {
+          enviarEmailAdendoProcessado_({
+            idEstagio:      idEstagio,
+            emailAluno:     emailEst,
+            decisao:        'Reprovado',
+            motivoRejeicao: motivo,
+          });
+        } catch (eMail) {
+          logErro_('processarAdendo_.sendEmail', eMail);
+        }
+      }
+      return jsonOk_({ status: 'Reprovado' });
     }
   }
   return jsonError_('Adendo pendente não encontrado para ' + idEstagio, 'NOT_FOUND');

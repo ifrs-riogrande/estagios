@@ -92,11 +92,16 @@ var GET_ROUTES = {
   'obterPrazos':             doGetChecklist,
   'validarChecklist':        doGetChecklist,  // público — sem auth
 
-  // Assinaturas
+  // Assinaturas TCE
   'obterFluxoAssinaturas':        doGetAssinaturas,
   'obterFluxoAssinaturasAdmin':   doGetAssinaturas,
   'listarFluxosPendentesEtapa':   doGetAssinaturas,
   'baixarPdfAssinatura':          doGetAssinaturas,
+
+  // Assinaturas Adendo
+  'obterFluxoAdendo':             doGetAdendo,
+  'obterFluxoAdendoAdmin':        doGetAdendo,
+  'baixarPdfAdendo':              doGetAdendo,
 
   // Avaliações
   'obterFluxoAvaliacao':          doGetAvaliacoes,
@@ -208,12 +213,18 @@ var POST_ROUTES = {
   'reenviarNotificacaoChecklist':    doPostChecklist,
   'regenerarPdfChecklist':           doPostChecklist,
 
-  // Assinaturas
+  // Assinaturas TCE
   'concluirEtapa':                    doPostAssinaturas,
   'rejeitarEtapa':                    doPostAssinaturas,
   'uploadPdfAssinado':                doPostAssinaturas,
   'reenviarNotificacaoAssinatura':    doPostAssinaturas,
   'regenerarTCEInicial':              doPostAssinaturas,
+
+  // Assinaturas Adendo
+  'uploadPdfAdendoAssinado':          doPostAdendo,
+  'concluirEtapaAdendo':              doPostAdendo,
+  'rejeitarEtapaAdendo':              doPostAdendo,
+  'reenviarNotificacaoAdendo':        doPostAdendo,
 
   // Parecer Final
   'iniciarParecerFinal':              doPostParecer,
@@ -257,6 +268,10 @@ function doPost(e) {
     e._body = body;
     return handler(e);
   } catch (err) {
+    // Erros de autenticação são esperados — retorna mensagem diretamente (sem logar como erro interno)
+    if (err && (err.code === 'AUTH_ERROR' || err.name === 'ErroAutenticacao')) {
+      return jsonError_(err.message, 'AUTH_ERROR');
+    }
     logErro_('Code.doPost', err);
     return jsonError_('Erro interno no roteador.', 'INTERNAL');
   }
