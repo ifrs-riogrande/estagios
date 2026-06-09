@@ -284,6 +284,27 @@
   <script>
     'use strict';
 
+    /* ─── Helpers ─── */
+    /**
+     * Formata qualquer representação de data (ISO, Date object serializado,
+     * timestamp numérico, ou já DD/MM/YYYY) para DD/MM/YYYY.
+     * Retorna '—' se o valor for vazio/inválido.
+     */
+    function fmtDataAdendo(val) {
+      if (!val) return '—';
+      var s = String(val).trim();
+      // Já está no formato DD/MM/YYYY
+      if (/^\d{2}\/\d{2}\/\d{4}$/.test(s)) return s;
+      // Tenta construir um Date a partir do valor
+      var d = new Date(s);
+      if (isNaN(d.getTime())) return s; // retorna como veio se não for data válida
+      // Ajusta fuso: usa UTC para evitar off-by-one
+      var dd   = String(d.getUTCDate()).padStart(2, '0');
+      var mm   = String(d.getUTCMonth() + 1).padStart(2, '0');
+      var yyyy = d.getUTCFullYear();
+      return dd + '/' + mm + '/' + yyyy;
+    }
+
     /* ─── Estado ─── */
     let _id = '';
     let _estagio = null;
@@ -998,7 +1019,7 @@
             <label>Justificativa</label>
             <p style="white-space:pre-wrap">${escapeHtml(a.justificativa || '—')}</p>
           </div>
-          ${a.novaDataTermino ? `<div class="detail-item"><label>Nova Data de Término</label><p>${escapeHtml(a.novaDataTermino)}</p></div>` : ''}
+          ${a.novaDataTermino ? `<div class="detail-item"><label>Nova Data de Término</label><p>${escapeHtml(fmtDataAdendo(a.novaDataTermino))}</p></div>` : ''}
           ${a.novaCarga       ? `<div class="detail-item"><label>Nova Carga Horária</label><p>${escapeHtml(a.novaCarga)}</p></div>` : ''}
           ${a.novoHorario     ? `<div class="detail-item detail-full"><label>Novo Horário</label><p style="white-space:pre-wrap">${escapeHtml(a.novoHorario)}</p></div>` : ''}
           ${a.obs             ? `<div class="detail-item detail-full"><label>Observações</label><p style="white-space:pre-wrap">${escapeHtml(a.obs)}</p></div>` : ''}
@@ -1819,7 +1840,7 @@
       const tipo = escapeHtml(a.tipoAlteracao || '—');
       const just = escapeHtml(a.justificativa || '—');
       const camposAlter = [];
-      if (a.novaDataTermino) camposAlter.push(`<li>Nova data de término: <strong>${escapeHtml(a.novaDataTermino)}</strong></li>`);
+      if (a.novaDataTermino) camposAlter.push(`<li>Nova data de término: <strong>${escapeHtml(fmtDataAdendo(a.novaDataTermino))}</strong></li>`);
       if (a.novaCarga)       camposAlter.push(`<li>Nova carga horária semanal: <strong>${escapeHtml(a.novaCarga)}</strong></li>`);
       if (a.novoHorario)     camposAlter.push(`<li>Novo horário: <strong>${escapeHtml(a.novoHorario)}</strong></li>`);
 
