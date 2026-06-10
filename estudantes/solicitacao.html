@@ -579,36 +579,12 @@
             <div class="declaration-box">
               <div class="form-check-group">
                 <div class="form-check">
-                  <input type="checkbox" id="decl-assinaturas" name="declAssinaturas" required aria-required="true" aria-describedby="decl-assinaturas-error">
-                  <label class="form-check-label required" for="decl-assinaturas">
-                    Declaro estar ciente de que o estágio só pode iniciar após todas as assinaturas do Termo de Compromisso, do Plano de Atividades e da comprovação do seguro.
+                  <input type="checkbox" id="decl-unica" name="declUnica" required aria-required="true" aria-describedby="decl-unica-error">
+                  <label class="form-check-label required" for="decl-unica" style="font-weight:600;">
+                    ⚠️ Declaro que as informações prestadas são verdadeiras, estou ciente das normas de estágio do IFRS Campus Rio Grande e de que somente poderei iniciar o estágio após receber a autorização pelo sistema e por e-mail. Este aceite equivale à minha assinatura eletrônica.
                   </label>
                 </div>
-                <span id="decl-assinaturas-error" class="form-error hidden" role="alert"></span>
-
-                <div class="form-check">
-                  <input type="checkbox" id="decl-relatorios" name="declRelatorios" required aria-required="true" aria-describedby="decl-relatorios-error">
-                  <label class="form-check-label required" for="decl-relatorios">
-                    Estou ciente de que devo apresentar relatórios semestrais e finais, conforme o tipo de estágio.
-                  </label>
-                </div>
-                <span id="decl-relatorios-error" class="form-error hidden" role="alert"></span>
-
-                <div class="form-check">
-                  <input type="checkbox" id="decl-comunicacoes" name="declComunicacoes" required aria-required="true" aria-describedby="decl-comunicacoes-error">
-                  <label class="form-check-label required" for="decl-comunicacoes">
-                    Concordo em receber comunicações da Central de Estágios pelo e-mail institucional informado.
-                  </label>
-                </div>
-                <span id="decl-comunicacoes-error" class="form-error hidden" role="alert"></span>
-
-                <div class="form-check" style="margin-top:var(--space-4);padding-top:var(--space-4);border-top:1px solid var(--color-border);">
-                  <input type="checkbox" id="decl-termo-ciencia" name="declTermoCiencia" required aria-required="true" aria-describedby="decl-termo-ciencia-error">
-                  <label class="form-check-label required" for="decl-termo-ciencia" style="font-weight:600;">
-                    ✍️ Termo de Ciência e Veracidade — Ao marcar esta opção, declaro que todas as informações fornecidas nesta solicitação são verdadeiras e que estou ciente das regras de estágio do IFRS Campus Rio Grande. Esta marcação constitui minha assinatura eletrônica neste documento.
-                  </label>
-                </div>
-                <span id="decl-termo-ciencia-error" class="form-error hidden" role="alert"></span>
+                <span id="decl-unica-error" class="form-error hidden" role="alert"></span>
               </div>
             </div>
           </div>
@@ -1400,10 +1376,8 @@
       if (!document.getElementById('comprovante-matricula').files?.length) fail('comprovante-matricula', 'Anexe o comprovante de matrícula.');
       if (!document.getElementById('doc-identidade').files?.length)        fail('doc-identidade', 'Anexe o documento de identidade.');
 
-      if (!document.getElementById('decl-assinaturas').checked)  fail('decl-assinaturas', 'Aceite esta declaração para continuar.');
-      if (!document.getElementById('decl-relatorios').checked)   fail('decl-relatorios', 'Aceite esta declaração para continuar.');
-      if (!document.getElementById('decl-comunicacoes').checked) fail('decl-comunicacoes', 'Aceite esta declaração para continuar.');
-      if (!document.getElementById('decl-termo-ciencia').checked) fail('decl-termo-ciencia', 'Você precisa assinar eletronicamente o Termo de Ciência e Veracidade para prosseguir.');
+      if (!document.getElementById('decl-unica').checked) fail('decl-unica', 'Aceite esta declaração para continuar.');
+      if (!document.getElementById('decl-unica').checked) fail('decl-unica', 'Aceite esta declaração para continuar.');
 
       if (firstInvalid) {
         document.getElementById(firstInvalid)?.focus();
