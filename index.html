@@ -71,6 +71,26 @@
     @media (max-width: 480px) {
       .home-headline h1 { font-size: var(--font-size-xl); }
     }
+
+    .hub-card { position: relative; }
+
+    .hub-card-arrow {
+      position: absolute;
+      bottom: 10px;
+      right: 10px;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      line-height: 1;
+      transition: transform .2s;
+      pointer-events: none;
+    }
+
+    .hub-card:hover .hub-card-arrow { transform: translateX(4px); }
   </style>
 </head>
 <body>
@@ -127,6 +147,7 @@
         </svg>
         <span class="hub-card__label">Estudantes</span>
         <span class="hub-card__desc">Cadastro, solicitação e relatórios de estágio</span>
+        <span class="hub-card-arrow" style="background:#e8f5e9;color:#2e7d32">→</span>
       </a>
 
       <!-- 2. Institucional -->
@@ -137,6 +158,7 @@
         </svg>
         <span class="hub-card__label">Institucional</span>
         <span class="hub-card__desc">Servidores, DG, DEX, DEN e Registro Acadêmico</span>
+        <span class="hub-card-arrow" style="background:#e3f2fd;color:#1565c0">→</span>
       </a>
 
       <!-- 3. Portal de Oportunidades -->
@@ -156,6 +178,7 @@
           ">0</span>
         </span>
         <span class="hub-card__desc">Vagas de estágio e emprego para estudantes</span>
+        <span class="hub-card-arrow" style="background:#f3e5f5;color:#6d28e6">→</span>
       </a>
 
     </div><!-- /hub-grid -->
