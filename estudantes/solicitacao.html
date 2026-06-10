@@ -366,7 +366,7 @@
               <select id="empresa" name="empresa" class="form-control" required aria-required="true" aria-describedby="empresa-hint empresa-error" disabled>
                 <option value="">Carregando concedentes...</option>
               </select>
-              <span id="empresa-hint" class="form-hint">Se a empresa não constar, ela não foi cadastrada ou está aguardando validação.</span>
+              <span id="empresa-hint" class="form-hint">Concedente verificada e aprovada na etapa anterior.</span>
               <span id="empresa-error" class="form-error hidden" role="alert"></span>
             </div>
           </div>
@@ -382,7 +382,7 @@
               <select id="supervisor" name="supervisor" class="form-control" required aria-required="true" aria-describedby="supervisor-hint supervisor-error" disabled>
                 <option value="">Selecione primeiro a concedente...</option>
               </select>
-              <span id="supervisor-hint" class="form-hint">Lista filtrada pela empresa selecionada. Se vazio, o supervisor ainda não foi cadastrado para essa empresa.</span>
+              <span id="supervisor-hint" class="form-hint">Supervisor verificado e aprovado na etapa anterior.</span>
               <span id="supervisor-error" class="form-error hidden" role="alert"></span>
             </div>
           </div>
@@ -711,6 +711,91 @@
       if (selSup) selSup.innerHTML = '<option value="">Selecione o supervisor…</option>';
     }
 
+    // ── Searchable select ──────────────────────────────────────────────────────
+    // Transforma um <select> oculto em campo de busca por nome.
+    // Chame após popular o select; o valor selecionado dispara `change` no select original.
+    function makeSearchable(selectId, placeholder) {
+      const sel = document.getElementById(selectId);
+      if (!sel) return;
+
+      // Remove wrapper anterior se existir (ex.: reload de supervisores)
+      const prev = sel.parentNode.querySelector('.ss-wrapper');
+      if (prev) prev.remove();
+
+      // Coleta opções: separa normais e a especial __NAO__
+      const normal = [], nao = [];
+      for (let i = 0; i < sel.options.length; i++) {
+        const o = sel.options[i];
+        if (!o.value) continue;
+        const entry = { value: o.value, label: (o.dataset.nome || o.textContent).trim(), display: o.textContent.trim() };
+        (o.value === '__NAO__' ? nao : normal).push(entry);
+      }
+
+      // Monta wrapper
+      const wrapper = document.createElement('div');
+      wrapper.className = 'ss-wrapper';
+
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.className = 'form-control ss-input';
+      input.placeholder = placeholder || 'Digite para buscar…';
+      input.autocomplete = 'off';
+
+      const list = document.createElement('div');
+      list.className = 'ss-list ss-hidden';
+
+      wrapper.appendChild(input);
+      wrapper.appendChild(list);
+      sel.parentNode.insertBefore(wrapper, sel.nextSibling);
+      sel.style.display = 'none';
+
+      function renderList(q) {
+        list.innerHTML = '';
+        const qn = (q || '').toLowerCase().trim();
+        const filtered = qn ? normal.filter(o => o.label.toLowerCase().includes(qn)) : normal.slice();
+
+        if (filtered.length === 0 && nao.length === 0) {
+          const empty = document.createElement('div');
+          empty.className = 'ss-empty';
+          empty.textContent = 'Nenhum resultado encontrado.';
+          list.appendChild(empty);
+        }
+
+        filtered.forEach(function(o) {
+          const item = document.createElement('div');
+          item.className = 'ss-option';
+          item.textContent = o.display;
+          item.addEventListener('mousedown', function(e) { e.preventDefault(); pick(o); });
+          list.appendChild(item);
+        });
+
+        // Opção "não encontrei" sempre ao final, independente do filtro
+        nao.forEach(function(o) {
+          const item = document.createElement('div');
+          item.className = 'ss-option ss-option--nao';
+          item.textContent = o.display;
+          item.addEventListener('mousedown', function(e) { e.preventDefault(); pick(o); });
+          list.appendChild(item);
+        });
+
+        list.classList.remove('ss-hidden');
+      }
+
+      function pick(o) {
+        input.value = o.value === '__NAO__' ? '' : o.label;
+        sel.value = o.value;
+        list.classList.add('ss-hidden');
+        sel.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+
+      input.addEventListener('focus', function() { renderList(this.value); });
+      input.addEventListener('input', function() { sel.value = ''; renderList(this.value); });
+      input.addEventListener('blur',  function() { setTimeout(function() { list.classList.add('ss-hidden'); }, 160); });
+
+      // Escape fecha a lista
+      input.addEventListener('keydown', function(e) { if (e.key === 'Escape') list.classList.add('ss-hidden'); });
+    }
+
     function precheckAcoes(cnpjNum, mostrarEmp, mostrarSup) {
       const acoesDiv = document.getElementById('precheck-acoes');
       acoesDiv.style.display = 'block';
@@ -751,6 +836,7 @@
         optNao.textContent = '— Não encontrei minha concedente';
         sel.insertBefore(optNao, optNaoFirst ? optNaoFirst.nextSibling : sel.firstChild);
         sel.disabled = false;
+        makeSearchable('precheck-empresa-select', 'Digite o nome da concedente…');
       } catch(err) {
         sel.innerHTML = '<option value="">Erro ao carregar — recarregue a página</option>';
         console.error('[precheck empresas]', err);
@@ -786,6 +872,7 @@
         const optPlaceholderSup = sel.querySelector('option[value=""]');
         sel.insertBefore(optNao, optPlaceholderSup ? optPlaceholderSup.nextSibling : sel.firstChild);
         sel.disabled = false;
+        makeSearchable('precheck-supervisor-select', 'Digite o nome do supervisor…');
       } catch(err) {
         sel.innerHTML = '<option value="">Erro ao carregar supervisores</option>';
         console.error('[precheck supervisores]', err);
