@@ -42,7 +42,7 @@
         </div>
 
         <div class="info-banner" role="note">
-          Os dados da empresa (seção 1) são de uso <strong>interno do setor</strong> e não serão publicados.
+          Os dados da concedente (seção 1) são de uso <strong>interno do setor</strong> e não serão publicados.
           As demais informações poderão ser divulgadas nos canais institucionais após aprovação.
         </div>
 
@@ -59,12 +59,12 @@
 
             <div class="form-row">
               <div class="form-group">
-                <label class="form-label required" for="select-empresa">Nome da empresa</label>
+                <label class="form-label required" for="select-empresa">Nome da concedente</label>
                 <select id="select-empresa" class="form-control" disabled
                   aria-required="true" aria-describedby="nome-empresa-error">
-                  <option value="">Carregando empresas cadastradas…</option>
+                  <option value="">Carregando concedentes cadastradas…</option>
                 </select>
-                <!-- Campo de texto manual: aparece apenas quando "Outra empresa" é selecionada -->
+                <!-- Campo de texto manual: aparece apenas quando "Outra concedente" é selecionada -->
                 <div id="empresa-outro-wrap" hidden style="margin-top:var(--space-3);">
                   <input type="text" id="nome-empresa" name="nomeEmpresa" class="form-control"
                     placeholder="Razão social ou nome fantasia"
@@ -385,7 +385,7 @@
       const sel = document.getElementById('select-empresa');
       try {
         const empresas = await apiListarEmpresas();
-        sel.innerHTML = '<option value="">Selecione a empresa…</option>';
+        sel.innerHTML = '<option value="">Selecione a concedente…</option>';
         if (Array.isArray(empresas) && empresas.length > 0) {
           empresas.forEach(function (e) {
             const opt = document.createElement('option');
@@ -395,13 +395,13 @@
           });
         }
       } catch (err) {
-        sel.innerHTML = '<option value="">Selecione a empresa…</option>';
+        sel.innerHTML = '<option value="">Selecione a concedente…</option>';
         console.warn('[oportunidades] Erro ao carregar empresas:', err);
       }
-      // Sempre adiciona a opção "Outra empresa"
+      // Sempre adiciona a opção "Outra concedente"
       const optOutro = document.createElement('option');
       optOutro.value = '__outro__';
-      optOutro.textContent = '— Outra empresa (não cadastrada) —';
+      optOutro.textContent = '— Outra concedente (não cadastrada) —';
       sel.appendChild(optOutro);
       sel.disabled = false;
     }
@@ -502,7 +502,7 @@
         // Nenhuma opção selecionada no dropdown
         _selEmp.classList.add('is-invalid');
         const _errEmp = document.getElementById('nome-empresa-error');
-        _errEmp.textContent = 'Selecione uma empresa cadastrada ou escolha "Outra empresa".';
+        _errEmp.textContent = 'Selecione uma empresa cadastrada ou escolha "Outra concedente".';
         _errEmp.classList.remove('hidden');
         if (!firstInvalid) firstInvalid = 'select-empresa';
         valid = false;

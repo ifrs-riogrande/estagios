@@ -201,7 +201,7 @@
         </div>
         <div class="form-group" style="min-width:220px;">
           <label for="filtro-busca">Buscar</label>
-          <input type="search" id="filtro-busca" class="form-control" placeholder="Nome, matrícula ou empresa…">
+          <input type="search" id="filtro-busca" class="form-control" placeholder="Nome, matrícula ou concedente…">
         </div>
         <div class="toolbar-actions">
           <button id="btn-atualizar" class="btn btn-secondary btn-sm">
@@ -219,7 +219,7 @@
               <th>ID</th>
               <th>Estudante</th>
               <th>Curso</th>
-              <th>Empresa</th>
+              <th>Concedente</th>
               <th>Tipo</th>
               <th>Data</th>
               <th>Status</th>
@@ -461,11 +461,11 @@
             <p>${escapeHtml(s.emailEstudante || '—')}</p>
           </div>
           <div class="detail-item">
-            <label>Empresa</label>
+            <label>Concedente</label>
             <p>${escapeHtml(s.empresa || '—')}</p>
           </div>
           <div class="detail-item">
-            <label>CNPJ da Empresa <span class="sensivel-badge">sensível</span></label>
+            <label>CNPJ da Concedente <span class="sensivel-badge">sensível</span></label>
             <p>
               <span class="dado-sensivel dado-oculto" data-valor="${escapeHtml(formatarCNPJ(s.cnpjEmpresa || '') || '—')}">••••••••••••••</span>
             </p>

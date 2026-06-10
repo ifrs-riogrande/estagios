@@ -308,7 +308,7 @@
                     <th>ID</th>
                     <th>Estudante</th>
                     <th>Curso</th>
-                    <th>Empresa</th>
+                    <th>Concedente</th>
                     <th>Tipo</th>
                     <th>Status</th>
                     <th>Data</th>
@@ -416,7 +416,7 @@
         { label: 'Solicitações pendentes',  value: stats.pendentes     ?? '—', sub: 'aguardando análise',          mod: 'warning' },
         { label: 'Em checklist/assinaturas',value: stats.emFluxoNovo   ?? '—', sub: 'no fluxo de aprovação novo',  mod: 'info'    },
         { label: 'Encerrados este semestre', value: stats.encerrados   ?? '—', sub: 'concluídos no período',       mod: 'success' },
-        { label: 'Empresas concedentes',    value: stats.empresas      ?? '—', sub: 'com estágio ativo',           mod: 'info'    },
+        { label: 'Concedentes',    value: stats.empresas      ?? '—', sub: 'com estágio ativo',           mod: 'info'    },
       ];
       el.innerHTML = cards.map(function (c) {
         return '<div class="stat-card stat-card--' + c.mod + '" role="figure" aria-label="' + c.label + ': ' + c.value + '">'

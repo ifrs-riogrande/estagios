@@ -491,11 +491,11 @@
             <p>${escapeHtml(s.emailEstudante || '—')}</p>
           </div>
           <div class="detail-item">
-            <label>Empresa</label>
+            <label>Concedente</label>
             <p>${escapeHtml(s.empresa || '—')}</p>
           </div>
           <div class="detail-item">
-            <label>CNPJ da Empresa <span class="sensivel-badge">sensível</span></label>
+            <label>CNPJ da Concedente <span class="sensivel-badge">sensível</span></label>
             <p><span class="dado-sensivel dado-oculto" data-valor="${escapeHtml(formatarCNPJ(s.cnpjEmpresa || '') || '—')}">••••••••••••••</span></p>
           </div>
           <div class="detail-item">
@@ -1970,7 +1970,7 @@
 
       const corpo = `
         ${p(`O INSTITUTO FEDERAL DE EDUCAÇÃO, CIÊNCIA E TECNOLOGIA DO RIO GRANDE DO SUL – IFRS, Campus Rio Grande,
-        a empresa <strong>${nomeEmpLabel}</strong>, e o(a) estagiário(a) <strong>${nomeAluno}</strong>,
+        a concedente <strong>${nomeEmpLabel}</strong>, e o(a) estagiário(a) <strong>${nomeAluno}</strong>,
         matrícula <strong>${escapeHtml(s.matricula || '—')}</strong>, curso <strong>${escapeHtml(s.curso || '—')}</strong>,
         têm entre si, justo e acordado, o presente Aditamento ao Termo de Compromisso de Estágio.`)}
         ${p(`<strong>Tipo de alteração:</strong> ${tipo}`)}

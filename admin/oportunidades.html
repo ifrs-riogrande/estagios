@@ -72,7 +72,7 @@
     <section class="page-hero">
       <div class="container">
         <h1>Portal de Oportunidades</h1>
-        <p>Gerencie vagas de estágio e emprego cadastradas pelas empresas.</p>
+        <p>Gerencie vagas de estágio e emprego cadastradas pelas concedentes.</p>
       </div>
     </section>
 
@@ -97,7 +97,7 @@
           <option value="Reprovada">Reprovadas</option>
           <option value="Encerrada">Encerradas</option>
         </select>
-        <input type="text" id="filtro-busca" class="form-control" placeholder="Buscar por empresa ou título…"
+        <input type="text" id="filtro-busca" class="form-control" placeholder="Buscar por concedente ou título…"
           style="max-width:300px;padding:var(--space-2) var(--space-3);font-size:var(--font-size-sm)"
           oninput="renderLista()">
       </div>
@@ -116,14 +116,14 @@
   <!-- Modal: Magic Link -->
   <div class="modal-overlay" id="modal-magic-link">
     <div class="modal-box">
-      <div class="modal-title">✉️ Enviar Link para Empresa</div>
+      <div class="modal-title">✉️ Enviar Link para Concedente</div>
       <p style="font-size:var(--font-size-sm);color:var(--color-text-muted);margin-bottom:var(--space-5)">
         A empresa receberá um e-mail com o link para preencher o formulário de oportunidade.
         A vaga ficará com status <strong>Pendente</strong> até sua aprovação.
       </p>
       <div id="fb-magic-link"></div>
       <div class="form-group" style="margin-bottom:var(--space-5)">
-        <label class="form-label" for="ml-email">E-mail da empresa <span style="color:var(--color-error)">*</span></label>
+        <label class="form-label" for="ml-email">E-mail da concedente <span style="color:var(--color-error)">*</span></label>
         <input type="email" id="ml-email" class="form-control" placeholder="rh@empresa.com.br">
       </div>
       <div style="display:flex;gap:var(--space-3);justify-content:flex-end">
@@ -144,8 +144,8 @@
 
       <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4)">
         <div class="form-group">
-          <label class="form-label">Empresa <span style="color:var(--color-error)">*</span></label>
-          <input type="text" id="opp-empresa" class="form-control" placeholder="Nome da empresa">
+          <label class="form-label">Concedente <span style="color:var(--color-error)">*</span></label>
+          <input type="text" id="opp-empresa" class="form-control" placeholder="Nome da concedente">
         </div>
         <div class="form-group">
           <label class="form-label">Responsável <span style="color:var(--color-error)">*</span></label>
@@ -256,7 +256,7 @@
       <div class="form-group" style="margin-bottom:var(--space-5)">
         <label class="form-label">Motivo da reprovação <span style="color:var(--color-error)">*</span></label>
         <textarea id="motivo-reprovacao" class="form-control" rows="3"
-          placeholder="Explique o motivo para que a empresa possa corrigir e reenviar…"></textarea>
+          placeholder="Explique o motivo para que a concedente possa corrigir e reenviar…"></textarea>
       </div>
       <input type="hidden" id="reprovar-opp-id">
       <div style="display:flex;gap:var(--space-3);justify-content:flex-end">

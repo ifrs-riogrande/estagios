@@ -557,7 +557,7 @@
   const LABELS_ATORES = {
     admin:       'Setor de Estágios',
     orientador:  'Orientador(a) de Estágio',
-    supervisor:  'Supervisor(a) na Empresa',
+    supervisor:  'Supervisor(a) na Concedente',
     coordenador: 'Coordenador(a) de Curso',
   };
 
@@ -803,14 +803,14 @@
         ${oriFez ? `<div class="proc-atores"><span class="proc-ator-chip ${chipCls(aOri.status)}">${chipIcon(aOri.status)}${statusLabel(aOri.status)}</span></div>` : ''}
       </div></div>`;
 
-    /* 3 — Supervisor(a) na Empresa */
+    /* 3 — Supervisor(a) na Concedente */
     const aSup = hist.supervisor || {};
     const supFez = aSup.status === 'aprovado' || aSup.status === 'ajuste';
     const supAtivo = hist.etapaAtiva === 'supervisor';
     steps += `<div class="proc-step">
       <div class="proc-dot ${supFez ? dotCls(aSup.status) : (supAtivo ? 'proc-dot--active' : 'proc-dot--pending')}">${dotIcon(aSup.status,'3')}</div>
       <div class="proc-step-body">
-        <div class="proc-step-label">Supervisor(a) na Empresa</div>
+        <div class="proc-step-label">Supervisor(a) na Concedente</div>
         <div class="proc-step-meta">${escapeHtml(info.nomeSupervisor||'')}${supFez && aSup.data ? ' · '+fmtDH(aSup.data) : (supAtivo ? ' · Em verificação…' : (!oriFez ? ' · Aguardando orientador' : ' · Aguardando liberação'))}</div>
         ${supFez ? `<div class="proc-atores"><span class="proc-ator-chip ${chipCls(aSup.status)}">${chipIcon(aSup.status)}${statusLabel(aSup.status)}</span></div>` : ''}
       </div></div>`;
@@ -1325,7 +1325,7 @@
         </svg>
         <h2>Acesso não autorizado</h2>
         <p>O e-mail <strong>${escapeHtml(email || '')}</strong> não está associado a nenhum ator deste checklist.</p>
-        <p>Se você é da <strong>empresa ou supervisor</strong>, utilize o link recebido por e-mail
+        <p>Se você é da <strong>concedente ou supervisor</strong>, utilize o link recebido por e-mail
            — ele contém um código de acesso e não exige conta Google.</p>
         <p>Se você é orientador ou coordenador, verifique se acessou com a conta Google correta.</p>
         <button onclick="logout('../')" class="btn btn-ghost" style="margin-top:var(--space-4);">

@@ -433,7 +433,7 @@
     }
     renderAuthGate(
       'Acesso ao Fluxo de Assinaturas',
-      'Entre com sua conta Google para assinar o TCE.<br><span style="font-size:var(--font-size-xs);color:var(--color-text-muted)">Estudantes: use o e-mail institucional <strong>@aluno.riogrande.ifrs.edu.br</strong>.<br>Servidores: use o e-mail <strong>@riogrande.ifrs.edu.br</strong>.<br>Empresa/supervisor: use o e-mail cadastrado no sistema.</span>',
+      'Entre com sua conta Google para assinar o TCE.<br><span style="font-size:var(--font-size-xs);color:var(--color-text-muted)">Estudantes: use o e-mail institucional <strong>@aluno.riogrande.ifrs.edu.br</strong>.<br>Servidores: use o e-mail <strong>@riogrande.ifrs.edu.br</strong>.<br>Concedente/supervisor: use o e-mail cadastrado no sistema.</span>',
       redirectAfter || window.location.href,
       'external'
     );
@@ -614,7 +614,7 @@
       } else if (meuEmail && (meuEmail.includes('@riogrande.ifrs') || meuEmail.includes('@ifrs.edu'))) {
         dica = `<p style="margin-top:var(--space-2);font-size:var(--font-size-sm)">Se você é <strong>orientador, coordenador ou diretor</strong>, aguarde o e-mail de notificação com o link correto para a sua etapa.</p>`;
       } else {
-        dica = `<p style="margin-top:var(--space-2);font-size:var(--font-size-sm)">Se você é <strong>supervisor ou representante da empresa</strong>, verifique se o e-mail acima é o mesmo cadastrado pelo setor de estágios.</p>`;
+        dica = `<p style="margin-top:var(--space-2);font-size:var(--font-size-sm)">Se você é <strong>supervisor ou representante da concedente</strong>, verifique se o e-mail acima é o mesmo cadastrado pelo setor de estágios.</p>`;
       }
       panel.innerHTML = `
         <div class="alert alert-info" style="margin-bottom:var(--space-6);">

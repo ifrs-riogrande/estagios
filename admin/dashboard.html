@@ -114,7 +114,7 @@
         <div class="stat-card stat-card--warning"><div class="stat-card__label">Pendentes</div><div class="stat-card__value" id="stat-pendentes">—</div><div class="stat-card__sub">Aguardando análise</div></div>
         <div class="stat-card stat-card--info">   <div class="stat-card__label">Em checklist/assinaturas</div><div class="stat-card__value" id="stat-fluxo-novo">—</div><div class="stat-card__sub">Fluxo digital em andamento</div></div>
         <div class="stat-card stat-card--info">   <div class="stat-card__label">Encerrados</div><div class="stat-card__value" id="stat-encerrados">—</div><div class="stat-card__sub">Este ano</div></div>
-        <div class="stat-card stat-card--success"><div class="stat-card__label">Empresas Parceiras</div><div class="stat-card__value" id="stat-empresas">—</div><div class="stat-card__sub">Com estágios ativos</div></div>
+        <div class="stat-card stat-card--success"><div class="stat-card__label">Concedentes</div><div class="stat-card__value" id="stat-empresas">—</div><div class="stat-card__sub">Com estágios ativos</div></div>
       </div>
 
       <!-- Alertas -->
@@ -134,7 +134,7 @@
 
         <!-- Top empresas -->
         <div class="dash-section">
-          <h2>Top Empresas</h2>
+          <h2>Top Concedentes</h2>
           <div id="top-empresas-container"><div class="table-loading">Carregando…</div></div>
         </div>
 
@@ -150,7 +150,7 @@
           <table class="data-table">
             <thead>
               <tr>
-                <th>ID</th><th>Estudante</th><th>Curso</th><th>Empresa</th><th>Tipo</th><th>Data</th><th>Status</th>
+                <th>ID</th><th>Estudante</th><th>Curso</th><th>Concedente</th><th>Tipo</th><th>Data</th><th>Status</th>
               </tr>
             </thead>
             <tbody id="tbody-recentes">
@@ -247,7 +247,7 @@
     function renderTopEmpresas(lista) {
       const c = document.getElementById('top-empresas-container');
       if (!lista.length) { c.innerHTML = '<p style="color:var(--color-text-muted);font-size:var(--font-size-sm)">Sem dados.</p>'; return; }
-      c.innerHTML = `<div class="table-wrap"><table class="data-table"><thead><tr><th>#</th><th>Empresa</th><th>Ativos</th></tr></thead><tbody>
+      c.innerHTML = `<div class="table-wrap"><table class="data-table"><thead><tr><th>#</th><th>Concedente</th><th>Ativos</th></tr></thead><tbody>
         ${lista.map((e, i) => `<tr><td style="color:var(--color-text-muted)">${i+1}</td><td>${escapeHtml(e.nomeFantasia||e.razaoSocial)}</td><td style="font-weight:600">${e.total}</td></tr>`).join('')}
       </tbody></table></div>`;
     }

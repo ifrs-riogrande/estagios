@@ -648,7 +648,7 @@
             </div>
             <div class="doc-section-body" id="rp-body">
               <p style="font-size:var(--font-size-sm);color:var(--color-text-muted);margin-bottom:var(--space-4)">
-                Descreva as atividades realizadas no período de referência. Após o envio, o documento passará pelo fluxo de assinaturas digitais (gov.br): <strong>você → empresa concedente → supervisor</strong>.
+                Descreva as atividades realizadas no período de referência. Após o envio, o documento passará pelo fluxo de assinaturas digitais (gov.br): <strong>você → concedente → supervisor</strong>.
               </p>
               <div id="fb-rp"></div>
               <div class="form-group">
@@ -690,7 +690,7 @@
             </div>
             <div class="doc-section-body" id="rf-body">
               <p style="font-size:var(--font-size-sm);color:var(--color-text-muted);margin-bottom:var(--space-4)">
-                Relatório a ser preenchido ao término do estágio. Após o envio, o documento passará pelo fluxo de assinaturas digitais (gov.br): <strong>você → empresa concedente → supervisor</strong>.
+                Relatório a ser preenchido ao término do estágio. Após o envio, o documento passará pelo fluxo de assinaturas digitais (gov.br): <strong>você → concedente → supervisor</strong>.
               </p>
               <div id="fb-rf"></div>
               <div class="form-group">
@@ -1576,7 +1576,7 @@
           sugestoes:          document.getElementById('rp-sugestoes')?.value.trim(),
         });
         showFormFeedback(fbId, 'success', 'Relatório enviado!',
-          'Seu relatório parcial foi registrado. O documento passará pelo fluxo de assinaturas digitais (gov.br): você → empresa concedente → supervisor.');
+          'Seu relatório parcial foi registrado. O documento passará pelo fluxo de assinaturas digitais (gov.br): você → concedente → supervisor.');
         btn.textContent = 'Enviado ✓';
       } catch (err) {
         showFormFeedback(fbId, 'error', 'Erro ao enviar', err.message);
@@ -1615,7 +1615,7 @@
           consideracoesFinais:       document.getElementById('rf-consideracoesFinais')?.value.trim(),
         });
         showFormFeedback(fbId, 'success', 'Relatório enviado!',
-          'Seu relatório final foi registrado. O documento passará pelo fluxo de assinaturas digitais (gov.br): você → empresa concedente → supervisor.');
+          'Seu relatório final foi registrado. O documento passará pelo fluxo de assinaturas digitais (gov.br): você → concedente → supervisor.');
         btn.textContent = 'Enviado ✓';
       } catch (err) {
         showFormFeedback(fbId, 'error', 'Erro ao enviar', err.message);
@@ -1730,7 +1730,7 @@
         subtipos: {
           id: 'ac-subtipo-rescisao',
           opcoes: [
-            { value: 'pela-empresa', label: 'Pela empresa concedente' },
+            { value: 'pela-empresa', label: 'Pela concedente' },
             { value: 'pelo-ifrs',    label: 'Pelo IFRS' },
           ],
           camposPorSubtipo: {
@@ -1850,7 +1850,7 @@
       if (!s.telefoneEmpresa)      html += renderCamposAdendo([{ id: 'ac-telefoneEmpresa',    label: 'Telefone da Empresa',                    type: 'text', required: false, placeholder: 'Ex: (53) 99999-9999' }]);
       if (!s.representanteLegal)   html += renderCamposAdendo([{ id: 'ac-representanteLegal', label: 'Nome do Representante Legal da Empresa', type: 'text', required: true, placeholder: 'Nome completo' }]);
       if (!s.cargoRepresentante)   html += renderCamposAdendo([{ id: 'ac-cargoRepresentante', label: 'Cargo do Representante Legal',           type: 'text', required: true, placeholder: 'Ex: Diretor Administrativo' }]);
-      if (!html) html = `<p style="font-size:var(--font-size-sm);color:var(--color-success);margin-bottom:var(--space-4)">✓ Todos os dados da empresa já estão registrados no sistema.</p>`;
+      if (!html) html = `<p style="font-size:var(--font-size-sm);color:var(--color-success);margin-bottom:var(--space-4)">✓ Todos os dados da concedente já estão registrados no sistema.</p>`;
       return html;
     }
 

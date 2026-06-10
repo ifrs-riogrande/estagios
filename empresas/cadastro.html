@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cadastro de Empresa — Central de Estágios IFRS</title>
+  <title>Cadastro de Concedente — Central de Estágios IFRS</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
@@ -35,7 +35,7 @@
 
         <!-- Cabeçalho da página -->
         <div class="form-page-header">
-          <h1>Cadastro de Empresa Concedente</h1>
+          <h1>Cadastro de Concedente</h1>
           <p>
             Formulário destinado ao cadastro de empresas, instituições e profissionais liberais que
             ofertarão vagas de estágio a estudantes do IFRS Campus Rio Grande.
@@ -46,9 +46,9 @@
         <div class="info-banner" role="note">
           <strong>Atenção:</strong>
           <ul>
-            <li>O cadastro é único por empresa. Verifique se já não está registrada antes de prosseguir.</li>
-            <li>Se sua empresa já está registrada, selecione <strong>Atualização de cadastro existente</strong>.</li>
-            <li>Após validação pelo setor, a empresa ficará disponível nos formulários de solicitação de estágio.</li>
+            <li>O cadastro é único por concedente. Verifique se já não está registrada antes de prosseguir.</li>
+            <li>Se a concedente já está registrada, selecione <strong>Atualização de cadastro existente</strong>.</li>
+            <li>Após validação pelo setor, a concedente ficará disponível nos formulários de solicitação de estágio.</li>
             <li>Dúvidas: <a href="mailto:estagios@riogrande.ifrs.edu.br">estagios@riogrande.ifrs.edu.br</a></li>
           </ul>
         </div>
@@ -198,7 +198,7 @@
 
             <div class="form-row">
               <div class="form-group">
-                <label class="form-label required" for="tel-empresa">Telefone da Empresa</label>
+                <label class="form-label required" for="tel-empresa">Telefone da Concedente</label>
                 <input type="tel" id="tel-empresa" name="telEmpresa" class="form-control"
                   placeholder="(53)999999999" required aria-required="true"
                   data-mask="phone" inputmode="tel"
@@ -207,7 +207,7 @@
                 <span id="tel-empresa-error" class="form-error hidden" role="alert"></span>
               </div>
               <div class="form-group">
-                <label class="form-label required" for="email-empresa">E-mail da Empresa</label>
+                <label class="form-label required" for="email-empresa">E-mail da Concedente</label>
                 <input type="email" id="email-empresa" name="emailEmpresa" class="form-control"
                   placeholder="contato@empresa.com.br" required aria-required="true"
                   aria-describedby="email-empresa-error" autocomplete="email">
@@ -280,7 +280,7 @@
             </h2>
 
             <div class="form-group">
-              <label class="form-label required" for="possui-convenio">Sua empresa possui convênio com o IFRS Campus Rio Grande?</label>
+              <label class="form-label required" for="possui-convenio">A concedente possui convênio com o IFRS Campus Rio Grande?</label>
               <select id="possui-convenio" name="possuiConvenio" class="form-control" required aria-required="true"
                 aria-describedby="possui-convenio-error">
                 <option value="">Selecione...</option>
@@ -307,10 +307,10 @@
 
             <div class="form-row">
               <div class="form-group">
-                <label class="form-label" for="arquivo-cdn-empresa">CDN da Empresa (PDF)</label>
+                <label class="form-label" for="arquivo-cdn-empresa">CDN da Concedente (PDF)</label>
                 <input type="file" id="arquivo-cdn-empresa" name="arquivoCdnEmpresa" class="form-control"
                   accept="application/pdf" aria-describedby="arquivo-cdn-empresa-hint arquivo-cdn-empresa-error">
-                <span id="arquivo-cdn-empresa-hint" class="form-hint">Capacidade de Nomeação e Delegação da empresa. PDF, até 5 MB.</span>
+                <span id="arquivo-cdn-empresa-hint" class="form-hint">Capacidade de Nomeação e Delegação da concedente. PDF, até 5 MB.</span>
                 <span id="arquivo-cdn-empresa-error" class="form-error hidden" role="alert"></span>
               </div>
               <div class="form-group">

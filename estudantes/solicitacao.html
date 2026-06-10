@@ -136,7 +136,7 @@
                 <span class="tooltip-help" aria-label="Empresa ou instituição concedente: é a entidade que disponibiliza vagas para realização de estágios.">?</span>
               </label>
               <select id="precheck-empresa-select" class="form-control">
-                <option value="">Carregando empresas…</option>
+                <option value="">Carregando concedentes…</option>
               </select>
             </div>
             <div id="precheck-emp-status" style="display:none;margin-top:var(--space-2);margin-bottom:var(--space-4);"></div>
@@ -361,7 +361,7 @@
             <div class="form-group">
               <label class="form-label required" for="empresa">Selecione a concedente de estágio</label>
               <select id="empresa" name="empresa" class="form-control" required aria-required="true" aria-describedby="empresa-hint empresa-error" disabled>
-                <option value="">Carregando empresas...</option>
+                <option value="">Carregando concedentes...</option>
               </select>
               <span id="empresa-hint" class="form-hint">Se a empresa não constar, ela não foi cadastrada ou está aguardando validação.</span>
               <span id="empresa-error" class="form-error hidden" role="alert"></span>
@@ -377,7 +377,7 @@
             <div class="form-group">
               <label class="form-label required" for="supervisor">Selecione o supervisor</label>
               <select id="supervisor" name="supervisor" class="form-control" required aria-required="true" aria-describedby="supervisor-hint supervisor-error" disabled>
-                <option value="">Selecione primeiro a empresa...</option>
+                <option value="">Selecione primeiro a concedente...</option>
               </select>
               <span id="supervisor-hint" class="form-hint">Lista filtrada pela empresa selecionada. Se vazio, o supervisor ainda não foi cadastrado para essa empresa.</span>
               <span id="supervisor-error" class="form-error hidden" role="alert"></span>
@@ -955,7 +955,7 @@
       document.getElementById('area-setor').value = '';
 
       if (!cnpj) {
-        populateSelect('supervisor', [], 'Selecione primeiro a empresa...');
+        populateSelect('supervisor', [], 'Selecione primeiro a concedente...');
         return;
       }
       try {
