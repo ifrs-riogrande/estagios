@@ -379,8 +379,8 @@ textarea.form-control {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: var(--space-4);
-  padding: var(--space-8) var(--space-6);
+  gap: var(--space-3);
+  padding: var(--space-5) var(--space-6);
   background-color: var(--color-surface);
   border: 2px solid var(--color-border);
   border-radius: var(--radius-xl);
@@ -392,7 +392,6 @@ textarea.form-control {
     transform var(--transition-normal);
   text-decoration: none;
   color: var(--color-text);
-  min-height: 160px;
 }
 
 .hub-card:hover {
