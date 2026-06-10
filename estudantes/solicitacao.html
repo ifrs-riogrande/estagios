@@ -243,7 +243,7 @@
 
             <div class="form-row">
               <div class="form-group">
-                <label class="form-label required" for="turno">Turno</label>
+                <label class="form-label required" for="turno">Turno de aulas</label>
                 <select id="turno" name="turno" class="form-control" required aria-required="true" aria-describedby="turno-error">
                   <option value="">Selecione...</option>
                   <option value="Manhã">Manhã</option>
@@ -254,7 +254,7 @@
                 <span id="turno-error" class="form-error hidden" role="alert"></span>
               </div>
               <div class="form-group">
-                <label class="form-label required" for="semestre-atual">Período/Semestre atual</label>
+                <label class="form-label required" for="semestre-atual">Período/Semestre atual que está cursando</label>
                 <select id="semestre-atual" name="semestreAtual" class="form-control" required aria-required="true"
                   aria-describedby="semestre-atual-hint semestre-atual-error" disabled>
                   <option value="">Selecione o curso primeiro...</option>
@@ -288,7 +288,10 @@
               <div class="alert-content" id="msg-modalidade-texto"></div>
             </div>
             <div class="form-group">
-              <label class="form-label required" for="tipo-estagio">Tipo de estágio solicitado</label>
+              <label class="form-label required" for="tipo-estagio">
+                Tipo de estágio solicitado
+                <span class="tooltip-help" aria-label="Estágio obrigatório: é aquele constituído como componente curricular integrante do Projeto Pedagógico do Curso, indicado como requisito para aprovação e obtenção de diploma de conclusão de curso. | Estágio não obrigatório: é aquele desenvolvido como atividade opcional e complementar à formação acadêmica-profissional do estudante, acrescida à carga horária regular e obrigatória, e conforme previsto no Projeto Pedagógico do Curso.">?</span>
+              </label>
               <select id="tipo-estagio" name="tipoEstagio" class="form-control" required aria-required="true" aria-describedby="tipo-estagio-error">
                 <option value="">Selecione...</option>
                 <option value="Obrigatório">Estágio Obrigatório</option>
