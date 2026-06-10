@@ -402,6 +402,11 @@
     // Referência do estudante que originou este cadastro (vinda via ?ref= na URL)
     const _emailEstudanteRef = (new URLSearchParams(window.location.search)).get('ref') || '';
 
+    // Chave de idempotência — gerada uma vez por carregamento da página, enviada com o formulário
+    const _idempotencyKey = (typeof crypto !== 'undefined' && crypto.randomUUID)
+      ? crypto.randomUUID()
+      : Date.now().toString(36) + Math.random().toString(36).slice(2);
+
     // Pré-preenche CNPJ se vier via ?cnpj= (magic link do admin)
     (function() {
       const cnpjParam = (new URLSearchParams(window.location.search)).get('cnpj') || '';
@@ -663,6 +668,7 @@
         declaracao:       'Sim',
         emailEstudanteRef: _emailEstudanteRef,
         possuiConvenio:   document.getElementById('possui-convenio').value,
+        idempotencyKey:   _idempotencyKey,
       };
 
       btnEnviar.classList.add('is-loading');

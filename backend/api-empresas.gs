@@ -175,6 +175,15 @@ function cadastrarEmpresa_(dados) {
   var emailEstRef     = sanitizar_(dados.emailEstudanteRef || '', 150).toLowerCase();
   var possuiConvenio  = sanitizar_(dados.possuiConvenio || '');
   if (possuiConvenio !== 'Sim' && possuiConvenio !== 'Não') possuiConvenio = '';
+  var idemKey = sanitizar_(dados.idempotencyKey || '', 64);
+
+  // Idempotência: retorna resultado cacheado se a mesma chave já foi processada
+  if (idemKey) {
+    var _cacheEmp = CacheService.getScriptCache();
+    var _ckEmp = 'cemp_' + idemKey.replace(/\W/g, '').slice(0, 55);
+    var _cachedEmp = _cacheEmp.get(_ckEmp);
+    if (_cachedEmp) { try { return JSON.parse(_cachedEmp); } catch(_e) {} }
+  }
 
   // Validações críticas (o frontend já valida, mas nunca confie só nele)
   if (!razaoSocial) throw new Error('Razão social é obrigatória.');
@@ -271,29 +280,45 @@ function cadastrarEmpresa_(dados) {
     }
   }
 
-  // Verifica duplicata para novo cadastro
-  if (tipo === 'Novo cadastro') {
-    var dupLinha = buscarEmpresaPorCNPJ_(aba, cnpjNorm, -1);
-    if (dupLinha > 0) {
-      novaLinha[COL_EMP.STATUS] = 'Pendente de correção';
+  // Lock atômico: impede que duas submissões simultâneas passem pela verificação de duplicata e gravem juntas
+  var lockEmp = LockService.getScriptLock();
+  try {
+    lockEmp.waitLock(10000);
+  } catch(_le) {
+    throw new Error('Servidor ocupado. Aguarde alguns instantes e tente novamente.');
+  }
+  try {
+    // Verifica duplicata para novo cadastro dentro do lock
+    if (tipo === 'Novo cadastro') {
+      var dupLinha = buscarEmpresaPorCNPJ_(aba, cnpjNorm, -1);
+      if (dupLinha > 0) {
+        novaLinha[COL_EMP.STATUS] = 'Pendente de correção';
+      }
     }
+    aba.appendRow(novaLinha);
+    var ultimaLinha = aba.getLastRow();
+    var cor = novaLinha[COL_EMP.STATUS] === 'Pendente de correção' ? '#FFCDD2' : '#FFF9C4';
+    aba.getRange(ultimaLinha, 1, 1, aba.getLastColumn()).setBackground(cor);
+  } finally {
+    lockEmp.releaseLock();
   }
 
-  aba.appendRow(novaLinha);
-
-  // Formatação visual da nova linha
-  var ultimaLinha = aba.getLastRow();
-  var cor = novaLinha[COL_EMP.STATUS] === 'Pendente de correção' ? '#FFCDD2' : '#FFF9C4';
-  aba.getRange(ultimaLinha, 1, 1, aba.getLastColumn()).setBackground(cor);
-
-  // Notificações
+  // Notificações (fora do lock — operações lentas não devem segurar o lock)
   var _notaConvenio = possuiConvenio ? 'Possui Convênio com IFRS: ' + possuiConvenio : '';
   notificarSetor_(razaoSocial, cnpj, emailRep, tipo, _notaConvenio);
   if (novaLinha[COL_EMP.STATUS] !== 'Pendente de correção') {
     enviarConfirmacao_(emailEmp, emailRep, nomeRep, razaoSocial, 'novo');
   }
 
-  return { mensagem: 'Cadastro recebido com sucesso! Você receberá uma confirmação por e-mail em até 1 dia útil.' };
+  var resultEmp = { mensagem: 'Cadastro recebido com sucesso! Você receberá uma confirmação por e-mail em até 1 dia útil.', cnpj: cnpjNorm };
+  if (idemKey) {
+    try {
+      var _cacheEmp2 = CacheService.getScriptCache();
+      var _ckEmp2 = 'cemp_' + idemKey.replace(/\W/g, '').slice(0, 55);
+      _cacheEmp2.put(_ckEmp2, JSON.stringify(resultEmp), 3600);
+    } catch(_ce) {}
+  }
+  return resultEmp;
 }
 
 // ─────────────────────────────────────────
@@ -319,6 +344,15 @@ function cadastrarSupervisor_(dados) {
   var descExp       = sanitizar_(dados.descExperiencia);
   var declaracao    = sanitizar_(dados.declaracao);
   var emailEstRef   = sanitizar_(dados.emailEstudanteRef || '', 150).toLowerCase();
+  var idemKeySup    = sanitizar_(dados.idempotencyKey || '', 64);
+
+  // Idempotência: retorna resultado cacheado se a mesma chave já foi processada
+  if (idemKeySup) {
+    var _cacheSup = CacheService.getScriptCache();
+    var _ckSup = 'csup_' + idemKeySup.replace(/\W/g, '').slice(0, 55);
+    var _cachedSup = _cacheSup.get(_ckSup);
+    if (_cachedSup) { try { return JSON.parse(_cachedSup); } catch(_s) {} }
+  }
 
   if (!nome)     throw new Error('Nome do supervisor é obrigatório.');
   if (!validarCPF_(cpf)) throw new Error('CPF do supervisor inválido.');
@@ -405,13 +439,24 @@ function cadastrarSupervisor_(dados) {
     return { mensagem: 'Atualização recebida com sucesso!' };
   }
 
-  if (tipo === 'Novo cadastro' && linhaExistente > 0) {
-    novaLinha[COL_SUP.OBSERVACOES] = 'ATENÇÃO: CPF já consta na linha ' + linhaExistente + '. Verificar duplicata.';
+  // Lock atômico: impede que duas submissões simultâneas gravem o mesmo supervisor
+  var lockSup = LockService.getScriptLock();
+  try {
+    lockSup.waitLock(10000);
+  } catch(_ls) {
+    throw new Error('Servidor ocupado. Aguarde alguns instantes e tente novamente.');
+  }
+  try {
+    if (tipo === 'Novo cadastro' && linhaExistente > 0) {
+      novaLinha[COL_SUP.OBSERVACOES] = 'ATENÇÃO: CPF já consta na linha ' + linhaExistente + '. Verificar duplicata.';
+    }
+    aba.appendRow(novaLinha);
+    aba.getRange(aba.getLastRow(), 1, 1, aba.getLastColumn()).setBackground('#FFF9C4');
+  } finally {
+    lockSup.releaseLock();
   }
 
-  aba.appendRow(novaLinha);
-  aba.getRange(aba.getLastRow(), 1, 1, aba.getLastColumn()).setBackground('#FFF9C4');
-
+  // Notificações fora do lock
   GmailApp.sendEmail(CFG.EMAIL_SETOR,
     '[NOVO SUPERVISOR] ' + nome + ' — ' + empresaNome,
     'Novo supervisor cadastrado via formulário web.\n\nNome: ' + nome + '\nCPF: ' + cpf +
@@ -425,7 +470,15 @@ function cadastrarSupervisor_(dados) {
     {name: CFG.NOME_SETOR, replyTo: CFG.EMAIL_SETOR}
   );
 
-  return { mensagem: 'Cadastro recebido! Você receberá uma confirmação por e-mail em até 1 dia útil.' };
+  var resultSup = { mensagem: 'Cadastro recebido! Você receberá uma confirmação por e-mail em até 1 dia útil.', cpf: cpfNorm };
+  if (idemKeySup) {
+    try {
+      var _cacheSup2 = CacheService.getScriptCache();
+      var _ckSup2 = 'csup_' + idemKeySup.replace(/\W/g, '').slice(0, 55);
+      _cacheSup2.put(_ckSup2, JSON.stringify(resultSup), 3600);
+    } catch(_cs) {}
+  }
+  return resultSup;
 }
 
 // ─────────────────────────────────────────
