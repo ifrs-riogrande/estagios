@@ -886,7 +886,39 @@
       if (status === 'Validado') {
         precheckBanner(supSt, 'success', '✅ <strong>' + nome + '</strong> — cadastro aprovado.');
         btnPro.style.display = 'inline-flex';
-        btnPro.onclick = function() {
+        btnPro.onclick = async function() {
+          const empCnpjPre = document.getElementById('precheck-empresa-select').value;
+          const supCpfPre  = document.getElementById('precheck-supervisor-select').value;
+
+          // Pré-seleciona empresa na seção 5
+          const selEmp = document.getElementById('empresa');
+          if (selEmp && empCnpjPre) {
+            selEmp.value = empCnpjPre;
+            selEmp.disabled = true;
+
+            // Carrega supervisores para esse CNPJ e pré-seleciona na seção 6
+            const selSup = document.getElementById('supervisor');
+            try {
+              const supervisores = await apiListarSupervisores(empCnpjPre);
+              if (supervisores && supervisores.length > 0) {
+                supervisoresCache = supervisores;
+                populateSelect('supervisor',
+                  supervisores.map(s => ({ value: s.cpf, label: s.nome + (s.cargo ? ' — ' + s.cargo : '') })),
+                  'Selecione o supervisor...'
+                );
+                if (supCpfPre) {
+                  selSup.value = supCpfPre;
+                  // Preenche área/setor automaticamente
+                  const sup = supervisoresCache.find(s => s.cpf === supCpfPre);
+                  if (sup && sup.setor) {
+                    document.getElementById('area-setor').value = sup.setor;
+                  }
+                }
+              }
+            } catch(_) {}
+            if (selSup) selSup.disabled = true;
+          }
+
           document.getElementById('painel-precheck').style.display = 'none';
           document.getElementById('form-solicitacao').style.display = '';
         };
