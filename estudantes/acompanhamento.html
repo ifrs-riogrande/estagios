@@ -1904,14 +1904,19 @@
       }).join('');
     }
 
+    // Mapa em memória: nome do orientador → e-mail (evita expor PII no DOM)
+    let _orientadoresEmailMap = {};
+
     async function _carregarSelectOrientadoresAdendo() {
       const sel = document.getElementById('ac-nomeNovoOrientador');
       if (!sel) return;
       try {
         const lista = await apiListarOrientadores(_atual?.curso || '');
         const opts  = Array.isArray(lista) ? lista : [];
+        _orientadoresEmailMap = {};
+        opts.forEach(o => { if (o.nome && o.email) _orientadoresEmailMap[o.nome] = o.email; });
         sel.innerHTML = '<option value="">Selecione um orientador…</option>' +
-          opts.map(o => `<option value="${escapeHtml(o.nome)}" data-email="${escapeHtml(o.email)}">${escapeHtml(o.nome)}</option>`).join('');
+          opts.map(o => `<option value="${escapeHtml(o.nome)}">${escapeHtml(o.nome)}</option>`).join('');
       } catch (e) {
         sel.innerHTML = '<option value="">Erro ao carregar — tente novamente</option>';
       }
@@ -1932,11 +1937,11 @@
           if (val) payload[key] = val;
         }
       });
-      // Orientador: pega também o email do data-attribute
+      // Orientador: resolve e-mail via mapa em memória (não exposto no DOM)
       const oriSel = document.getElementById('ac-nomeNovoOrientador');
       if (oriSel && oriSel.value) {
-        const opt = oriSel.options[oriSel.selectedIndex];
-        if (opt && opt.dataset.email) payload['emailNovoOrientador'] = opt.dataset.email;
+        const emailOri = _orientadoresEmailMap[oriSel.value];
+        if (emailOri) payload['emailNovoOrientador'] = emailOri;
       }
       // Tabela de horários: serializa como JSON se presente
       const tbody = document.getElementById('horario-tabela-tbody');

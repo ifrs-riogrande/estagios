@@ -138,7 +138,7 @@ function listarSupervisores_(cnpjBusca) {
     if (cnpjLinha !== cnpjNorm) continue;
 
     lista.push({
-      cpf:    String(dados[i][COL_SUP.CPF]   || '').trim(),
+      codigoAcesso: String(dados[i][COL_SUP.CODIGO_ACESSO] || '').trim(),
       nome:   String(dados[i][COL_SUP.NOME]  || '').trim(),
       cargo:  String(dados[i][COL_SUP.CARGO] || '').trim(),
       email:  String(dados[i][COL_SUP.EMAIL_SUP] || '').trim(),
@@ -459,7 +459,7 @@ function cadastrarSupervisor_(dados) {
   // Notificações fora do lock
   GmailApp.sendEmail(CFG.EMAIL_SETOR,
     '[NOVO SUPERVISOR] ' + nome + ' — ' + empresaNome,
-    'Novo supervisor cadastrado via formulário web.\n\nNome: ' + nome + '\nCPF: ' + cpf +
+    'Novo supervisor cadastrado via formulário web.\n\nNome: ' + nome +
     '\nEmpresa: ' + empresaNome + '\nSetor: ' + setor + '\nE-mail: ' + emailSup +
     '\nFormação: ' + nivelForm + ' em ' + areaForm,
     {name: 'Sistema de Estágios IFRS'}
@@ -470,7 +470,7 @@ function cadastrarSupervisor_(dados) {
     {name: CFG.NOME_SETOR, replyTo: CFG.EMAIL_SETOR}
   );
 
-  var resultSup = { mensagem: 'Cadastro recebido! Você receberá uma confirmação por e-mail em até 1 dia útil.', cpf: cpfNorm };
+  var resultSup = { mensagem: 'Cadastro recebido! Você receberá uma confirmação por e-mail em até 1 dia útil.' };
   if (idemKeySup) {
     try {
       var _cacheSup2 = CacheService.getScriptCache();
@@ -978,7 +978,7 @@ function salvarMeuCadastroSupervisor_(body) {
 
   GmailApp.sendEmail(CFG.EMAIL_SETOR,
     '[NOVO SUPERVISOR] ' + nome + ' — ' + empresaNome,
-    'Novo supervisor cadastrado via portal.\nNome: ' + nome + '\nCPF: ' + cpf +
+    'Novo supervisor cadastrado via portal.\nNome: ' + nome +
     '\nEmpresa: ' + empresaNome + '\nSetor: ' + setor + '\nE-mail: ' + emailSup,
     { name: 'Sistema de Estágios IFRS' }
   );

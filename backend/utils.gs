@@ -24,6 +24,22 @@ function jsonError_(mensagem, code) {
 }
 
 // ---------------------------------------------------------------------------
+// Mascaramento de dados pessoais (LGPD)
+// ---------------------------------------------------------------------------
+
+function mascararCPF_(cpf) {
+  var s = String(cpf || '').replace(/\D/g, '');
+  if (s.length !== 11) return cpf;
+  return '***.' + s.slice(3, 6) + '.' + s.slice(6, 9) + '-**';
+}
+
+function mascararTelefone_(tel) {
+  var s = String(tel || '').replace(/\D/g, '');
+  if (s.length < 8) return tel;
+  return s.slice(0, 2) + ' *****-' + s.slice(-4);
+}
+
+// ---------------------------------------------------------------------------
 // Sanitização e validação
 // ---------------------------------------------------------------------------
 

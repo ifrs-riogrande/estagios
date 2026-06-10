@@ -399,8 +399,8 @@
     const btnEnviar = document.getElementById('btn-enviar');
     const btnLimpar = document.getElementById('btn-limpar');
 
-    // Referência do estudante que originou este cadastro (vinda via ?ref= na URL)
-    const _emailEstudanteRef = (new URLSearchParams(window.location.search)).get('ref') || '';
+    // Referência do estudante que originou este cadastro (via sessionStorage — sem expor na URL)
+    const _emailEstudanteRef = (() => { try { return sessionStorage.getItem('sge_ref_email') || ''; } catch(_e) { return ''; } })();
 
     // Chave de idempotência — gerada uma vez por carregamento da página, enviada com o formulário
     const _idempotencyKey = (typeof crypto !== 'undefined' && crypto.randomUUID)
@@ -712,11 +712,10 @@
         btnLimpar.disabled = true;
 
         // Botão para cadastrar supervisor
-        const refParam = _emailEstudanteRef ? '&ref=' + encodeURIComponent(_emailEstudanteRef) : '';
         const cnpjParam = '?empresa=' + encodeURIComponent(dados.cnpj);
         const divNext = document.createElement('div');
         divNext.style.cssText = 'margin-top:var(--space-5);text-align:center;';
-        divNext.innerHTML = '<a href="supervisor.html' + cnpjParam + refParam + '" class="btn btn-primary">'
+        divNext.innerHTML = '<a href="supervisor.html' + cnpjParam + '" class="btn btn-primary">'
           + 'Cadastrar supervisor →</a>';
         form.appendChild(divNext);
 

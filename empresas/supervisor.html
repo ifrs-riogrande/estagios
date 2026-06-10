@@ -333,8 +333,8 @@
     const btnLimpar = document.getElementById('btn-limpar');
     const selectEmpresa = document.getElementById('empresa');
 
-    // Referência do estudante que originou este cadastro (vinda via ?ref= na URL)
-    const _emailEstudanteRef = (new URLSearchParams(window.location.search)).get('ref') || '';
+    // Referência do estudante que originou este cadastro (via sessionStorage — sem expor na URL)
+    const _emailEstudanteRef = (() => { try { return sessionStorage.getItem('sge_ref_email') || ''; } catch(_e) { return ''; } })();
 
     // Chave de idempotência — gerada uma vez por carregamento da página, enviada com o formulário
     const _idempotencyKey = (typeof crypto !== 'undefined' && crypto.randomUUID)

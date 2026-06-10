@@ -797,19 +797,22 @@
     }
 
     function precheckAcoes(cnpjNum, mostrarEmp, mostrarSup) {
+      // Armazena e-mail em sessionStorage — sem expor na URL
+      if (_emailEstudanteLogado) {
+        try { sessionStorage.setItem('sge_ref_email', _emailEstudanteLogado); } catch(_e) {}
+      }
       const acoesDiv = document.getElementById('precheck-acoes');
       acoesDiv.style.display = 'block';
-      const ref = _emailEstudanteLogado ? '?ref=' + encodeURIComponent(_emailEstudanteLogado) : '';
       let html = '<p style="margin-bottom:var(--space-3);font-size:var(--font-size-sm);">'
         + 'Após o cadastro, o setor analisará e aprovará os dados. Você receberá um e-mail quando o cadastro for aprovado.</p>'
         + '<div style="display:flex;flex-wrap:wrap;gap:var(--space-3);">';
       if (mostrarEmp) {
-        const cnpjP = cnpjNum ? (ref ? '&cnpj=' : '?cnpj=') + cnpjNum : '';
-        html += '<a href="../empresas/cadastro.html' + ref + cnpjP + '" class="btn btn-secondary" target="_blank">Cadastrar empresa</a>';
+        const cnpjP = cnpjNum ? '?cnpj=' + cnpjNum : '';
+        html += '<a href="../empresas/cadastro.html' + cnpjP + '" class="btn btn-secondary" target="_blank">Cadastrar empresa</a>';
       }
       if (mostrarSup) {
-        const empP = cnpjNum ? (ref ? '&empresa=' : '?empresa=') + cnpjNum : '';
-        html += '<a href="../empresas/supervisor.html' + ref + empP + '" class="btn btn-secondary" target="_blank">Cadastrar supervisor</a>';
+        const empP = cnpjNum ? '?empresa=' + cnpjNum : '';
+        html += '<a href="../empresas/supervisor.html' + empP + '" class="btn btn-secondary" target="_blank">Cadastrar supervisor</a>';
       }
       html += '</div>';
       acoesDiv.innerHTML = html;
@@ -968,7 +971,7 @@
           selEmp.value = empCnpj;
           selEmp.disabled = true;
 
-          // Seção 6: carrega supervisores validados para obter o CPF, cruza pelo nome
+          // Seção 6: carrega supervisores validados, cruza pelo nome
           selSup.innerHTML = '<option value="">Carregando…</option>';
           selSup.disabled = true;
           try {
@@ -978,10 +981,10 @@
             if (sup) {
               selSup.innerHTML = '';
               const optSup = document.createElement('option');
-              optSup.value = sup.cpf;
+              optSup.value = sup.codigoAcesso;
               optSup.textContent = sup.nome + (sup.cargo ? ' — ' + sup.cargo : '');
               selSup.appendChild(optSup);
-              selSup.value = sup.cpf;
+              selSup.value = sup.codigoAcesso;
               if (sup.setor) document.getElementById('area-setor').value = sup.setor;
             }
           } catch(_) {}
@@ -1067,7 +1070,7 @@
         } else {
           supervisoresCache = supervisores;
           populateSelect('supervisor',
-            supervisores.map(s => ({ value: s.cpf, label: s.nome + (s.cargo ? ' — ' + s.cargo : '') })),
+            supervisores.map(s => ({ value: s.codigoAcesso, label: s.nome + (s.cargo ? ' — ' + s.cargo : '') })),
             'Selecione o supervisor...'
           );
           selectSup.disabled = false;
@@ -1481,8 +1484,8 @@
       if (_submitting) return;   // trava local: ignora clique duplo
 
       // Resolve dados do supervisor e orientador a partir dos caches
-      const supCpf  = document.getElementById('supervisor').value;
-      const supObj  = supervisoresCache.find(s => s.cpf === supCpf) || {};
+      const supCodigo = document.getElementById('supervisor').value;
+      const supObj    = supervisoresCache.find(s => s.codigoAcesso === supCodigo) || {};
       const oriSiape = document.getElementById('orientador').value;
       const oriObj  = orientadoresCache.find(o => o.siape === oriSiape) || {};
 

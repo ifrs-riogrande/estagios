@@ -369,7 +369,7 @@ function listarAlunosAdmin_() {
     var ests = estagiosPorEmail[emailEst] || [];
     lista.push({
       nome:                 String(r[1]  || ''),  // NOME
-      cpf:                  String(r[8]  || ''),  // CPF
+      cpf:                  mascararCPF_(r[8]),   // CPF (mascarado — LGPD)
       matricula:            String(r[4]  || ''),  // MATRICULA
       email:                emailEst,
       emailPessoal:         String(r[3]  || ''),  // EMAIL_PESSOAL
@@ -378,7 +378,7 @@ function listarAlunosAdmin_() {
       semestre:             String(r[7]  || ''),  // SEMESTRE
       modalidade:           String(r[21] || ''),  // MODALIDADE
       dataNascimento:       formatarData_(r[9]),  // DATA_NASC
-      telefone:             String(r[10] || ''),  // TELEFONE
+      telefone:             mascararTelefone_(r[10]),  // TELEFONE (mascarado)
       endereco:             String(r[11] || ''),  // ENDERECO
       bairro:               String(r[22] || ''),  // BAIRRO
       cep:                  String(r[23] || ''),  // CEP
@@ -386,8 +386,8 @@ function listarAlunosAdmin_() {
       uf:                   String(r[25] || ''),  // UF
       maiorIdade:           String(r[12] || ''),  // MAIOR_IDADE
       nomeResponsavelLegal: String(r[13] || ''),  // NOME_RESP
-      cpfResponsavelLegal:  String(r[14] || ''),  // CPF_RESP
-      telResponsavelLegal:  String(r[15] || ''),  // TEL_RESP
+      cpfResponsavelLegal:  mascararCPF_(r[14]),  // CPF_RESP (mascarado — LGPD)
+      telResponsavelLegal:  mascararTelefone_(r[15]),  // TEL_RESP (mascarado)
       status:               String(r[18] || 'Aguardando Validação'),  // STATUS
       estagios:             ests,
       totalEstagios:        ests.length,
@@ -442,7 +442,7 @@ function listarEmpresasAdmin_() {
       nomeRepresentante:  String(r[15] || ''),
       cargoRepresentante: String(r[16] || ''),
       emailRep:           String(r[17] || ''),
-      cpfRep:             String(r[18] || ''),
+      cpfRep:             mascararCPF_(r[18]),  // mascarado — LGPD
       status:             String(r[19] || 'Pendente'),
       estagiosAtivos:     ativosPorEmpresa[cnpjNorm] || 0,
       driveDocs:          String(r[21] || ''),
@@ -482,9 +482,9 @@ function listarOrientadoresAdmin_() {
     var emailOri = String(r[COL_ORI.EMAIL] || '').toLowerCase();
     lista.push({
       nome:        String(r[COL_ORI.NOME]         || ''),
-      cpf:         String(r[COL_ORI.CPF]          || ''),
+      cpf:         mascararCPF_(r[COL_ORI.CPF]),   // mascarado — LGPD
       siape:       String(r[COL_ORI.SIAPE]        || ''),
-      tel:         String(r[COL_ORI.TEL]          || ''),
+      tel:         mascararTelefone_(r[COL_ORI.TEL]),  // mascarado — LGPD
       titulacao:   String(r[COL_ORI.TITULACAO]    || ''),
       area:        String(r[COL_ORI.AREA]         || ''),
       email:       emailOri,
