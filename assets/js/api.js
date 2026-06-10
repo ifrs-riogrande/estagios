@@ -536,8 +536,10 @@ async function submitWithFeedback(apiFn, submitBtn, feedbackId, successTitle, su
   submitBtn.disabled = true;
   if (typeof hideFormFeedback === 'function') hideFormFeedback(feedbackId);
 
+  let succeeded = false;
   try {
     const result = await apiFn();
+    succeeded = true;
     if (typeof showFormFeedback === 'function') {
       showFormFeedback(feedbackId, 'success', successTitle, successMsg);
     }
@@ -552,7 +554,7 @@ async function submitWithFeedback(apiFn, submitBtn, feedbackId, successTitle, su
     console.error('[API Error]', err);
   } finally {
     submitBtn.classList.remove('is-loading');
-    submitBtn.disabled = false;
+    if (!succeeded) submitBtn.disabled = false;
   }
 }
 
