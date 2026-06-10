@@ -259,6 +259,10 @@ function cadastrarEmpresa_(dados) {
       campos.forEach(function(c) {
         aba.getRange(linhaExistente, c.col + 1).setValue(c.val);
       });
+      // Atualiza emailEstRef somente se vier na requisição (preserva o existente caso o supervisor atualize por conta própria)
+      if (emailEstRef) {
+        aba.getRange(linhaExistente, COL_EMP.EMAIL_ESTUDANTE_REF + 1).setValue(emailEstRef);
+      }
       aba.getRange(linhaExistente, COL_EMP.STATUS + 1).setValue('Pendente');
       var notaConvenio = possuiConvenio ? 'Possui Convênio com IFRS: ' + possuiConvenio : '';
       notificarSetor_(razaoSocial, cnpj, emailRep, 'Atualização de cadastro', notaConvenio);
@@ -383,6 +387,10 @@ function cadastrarSupervisor_(dados) {
     campos.forEach(function(c) {
       aba.getRange(linhaExistente, c.col + 1).setValue(c.val);
     });
+    // Atualiza emailEstRef somente se vier na requisição (preserva o existente caso o supervisor atualize por conta própria)
+    if (emailEstRef) {
+      aba.getRange(linhaExistente, COL_SUP.EMAIL_ESTUDANTE_REF + 1).setValue(emailEstRef);
+    }
     aba.getRange(linhaExistente, COL_SUP.STATUS + 1).setValue('Pendente');
     GmailApp.sendEmail(CFG.EMAIL_SETOR,
       '[ATUALIZAÇÃO SUPERVISOR] ' + nome,
