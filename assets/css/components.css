@@ -429,6 +429,67 @@ textarea.form-control {
   line-height: var(--line-height-normal);
 }
 
+/* Tooltip de ajuda inline (ícone ?) */
+.tooltip-help {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #e5e7eb;
+  color: #6b7280;
+  font-size: 11px;
+  font-weight: 700;
+  font-style: normal;
+  cursor: default;
+  vertical-align: middle;
+  margin-left: 5px;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.tooltip-help::after {
+  content: attr(aria-label);
+  display: none;
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1f2937;
+  color: #f9fafb;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.5;
+  padding: 8px 12px;
+  border-radius: 6px;
+  width: 260px;
+  white-space: normal;
+  z-index: 100;
+  pointer-events: none;
+  box-shadow: 0 4px 12px rgba(0,0,0,.2);
+}
+
+.tooltip-help::before {
+  content: '';
+  display: none;
+  position: absolute;
+  bottom: calc(100% + 2px);
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: #1f2937;
+  z-index: 100;
+  pointer-events: none;
+}
+
+.tooltip-help:hover::after,
+.tooltip-help:hover::before,
+.tooltip-help:focus::after,
+.tooltip-help:focus::before {
+  display: block;
+}
+
 .hub-card { position: relative; }
 
 .hub-card-arrow {

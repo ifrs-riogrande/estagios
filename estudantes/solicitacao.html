@@ -114,18 +114,7 @@
           <p>Preencha com atenção. O estágio só pode iniciar após todas as assinaturas do TCE e retorno do setor liberando o início.</p>
         </div>
 
-        <div class="info-banner" role="note">
-          <strong>Pré-requisitos:</strong>
-          <ul>
-            <li>Ter cadastro ativo no sistema (seu acesso foi validado pelo setor de estágios)</li>
-            <li>A empresa concedente estar cadastrada e <strong>validada</strong> pelo setor</li>
-            <li>O supervisor estar cadastrado e <strong>validado</strong> pelo setor</li>
-            <li>O professor orientador estar cadastrado e <strong>validado</strong> pelo setor</li>
-            <li>Solicitar com mínimo de <strong>7 dias corridos</strong> antes da data de início desejada</li>
-          </ul>
-        </div>
-
-        <!-- ══════════════════════════════════════════════════════════
+<!-- ══════════════════════════════════════════════════════════
              PRÉ-VERIFICAÇÃO DE CONCEDENTE
              Exibida antes do formulário se empresa/supervisor não estiverem prontos.
              Oculta quando ambos estão validados.
@@ -134,15 +123,18 @@
           <div class="form-section" style="border:2px solid var(--color-warning,#f59e0b);border-radius:var(--radius-md);padding:var(--space-6);background:#fffbeb;">
             <h2 class="form-section-title" style="color:var(--color-warning-dark,#92400e);">
               <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" style="width:20px;height:20px;"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
-              Verificação de Empresa e Supervisor
+              Verificação de cadastro
             </h2>
             <p style="margin-bottom:var(--space-5);">
-              Selecione a <strong>empresa concedente</strong> onde realizará o estágio. Se não encontrar sua empresa na lista, clique em <em>"Não encontrei minha empresa"</em> para cadastrá-la.
+              Verifique se a empresa ou instituição concedente já está cadastrada no sistema. Caso não a encontre, clique em <em>"Não encontrei minha instituição"</em> para realizar o cadastro. Na próxima etapa, você poderá selecionar ou cadastrar o supervisor de estágio.
             </p>
 
             <!-- Passo 1: Empresa -->
             <div class="form-group">
-              <label class="form-label required" for="precheck-empresa-select">Empresa concedente</label>
+              <label class="form-label required" for="precheck-empresa-select">
+                Concedente
+                <span class="tooltip-help" aria-label="Empresa ou instituição concedente: é a entidade que disponibiliza vagas para realização de estágios.">?</span>
+              </label>
               <select id="precheck-empresa-select" class="form-control">
                 <option value="">Carregando empresas…</option>
               </select>
@@ -152,7 +144,10 @@
             <!-- Passo 2: Supervisor (aparece após empresa Validada) -->
             <div id="precheck-grupo-supervisor" style="display:none;">
               <div class="form-group">
-                <label class="form-label required" for="precheck-supervisor-select">Supervisor de estágio</label>
+                <label class="form-label required" for="precheck-supervisor-select">
+                  Supervisor de estágio
+                  <span class="tooltip-help" aria-label="Supervisor(a) de estágio é o(a) profissional da empresa/instituição concedente de estágio com formação ou experiência na área de conhecimento desenvolvida nas atividades do(a) estudante estagiário(a).">?</span>
+                </label>
                 <select id="precheck-supervisor-select" class="form-control">
                   <option value="">Selecione o supervisor…</option>
                 </select>
