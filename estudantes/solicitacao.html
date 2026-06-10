@@ -126,7 +126,7 @@
               Verificação de cadastro
             </h2>
             <p style="margin-bottom:var(--space-5);">
-              Verifique se a empresa ou instituição concedente já está cadastrada no sistema. Caso não a encontre, clique em <em>"Não encontrei minha instituição"</em> para realizar o cadastro. Na próxima etapa, você poderá selecionar ou cadastrar o supervisor de estágio.
+              Verifique se a empresa ou instituição concedente já está cadastrada no sistema. Caso não a encontre, clique em <em>"Não encontrei minha concedente"</em> para realizar o cadastro. Na próxima etapa, você poderá selecionar ou cadastrar o supervisor de estágio.
             </p>
 
             <!-- Passo 1: Empresa -->
@@ -737,7 +737,7 @@
       acoesDiv.style.display = 'block';
       const ref = _emailEstudanteLogado ? '?ref=' + encodeURIComponent(_emailEstudanteLogado) : '';
       let html = '<p style="margin-bottom:var(--space-3);font-size:var(--font-size-sm);">'
-        + 'Após o cadastro, o setor analisará e aprovará os dados. Você receberá um e-mail quando ambos estiverem aprovados.</p>'
+        + 'Após o cadastro, o setor analisará e aprovará os dados. Você receberá um e-mail quando o cadastro for aprovado.</p>'
         + '<div style="display:flex;flex-wrap:wrap;gap:var(--space-3);">';
       if (mostrarEmp) {
         const cnpjP = cnpjNum ? (ref ? '&cnpj=' : '?cnpj=') + cnpjNum : '';
@@ -768,8 +768,9 @@
         // Opção "não encontrei"
         const optNao = document.createElement('option');
         optNao.value = '__NAO__';
-        optNao.textContent = '— Não encontrei minha empresa';
-        sel.appendChild(optNao);
+        const optNaoFirst = sel.querySelector('option[value=""]');
+        optNao.textContent = '— Não encontrei minha concedente';
+        sel.insertBefore(optNao, optNaoFirst ? optNaoFirst.nextSibling : sel.firstChild);
         sel.disabled = false;
       } catch(err) {
         sel.innerHTML = '<option value="">Erro ao carregar — recarregue a página</option>';
@@ -803,7 +804,8 @@
         const optNao = document.createElement('option');
         optNao.value = '__NAO__';
         optNao.textContent = '— Não encontrei meu supervisor';
-        sel.appendChild(optNao);
+        const optPlaceholderSup = sel.querySelector('option[value=""]');
+        sel.insertBefore(optNao, optPlaceholderSup ? optPlaceholderSup.nextSibling : sel.firstChild);
         sel.disabled = false;
       } catch(err) {
         sel.innerHTML = '<option value="">Erro ao carregar supervisores</option>';
@@ -823,7 +825,7 @@
         // Empresa não encontrada → cadastrar empresa (supervisor virá depois)
         empSt.style.display = 'block';
         precheckBanner(empSt, 'danger',
-          '🏢 <strong>Empresa não encontrada.</strong> Clique abaixo para cadastrá-la. '
+          '🏢 <strong>Concedente não encontrada.</strong> Clique abaixo para cadastrá-la. '
           + 'O supervisor poderá ser cadastrado logo em seguida.');
         precheckAcoes('', true, false);
         return;
@@ -867,7 +869,7 @@
       if (val === '__NAO__') {
         supSt.style.display = 'block';
         precheckBanner(supSt, 'danger',
-          '👤 <strong>Supervisor não encontrado.</strong> Clique abaixo para cadastrá-lo nesta empresa.');
+          '👤 <strong>Supervisor não encontrado.</strong> Clique abaixo para cadastrá-lo nesta concedente.');
         precheckAcoes(empCnpj, false, true);
         return;
       }
