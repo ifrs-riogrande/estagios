@@ -646,7 +646,7 @@
         tipo:             document.getElementById('tipo').value,
         razaoSocial:      document.getElementById('razao-social').value.trim(),
         nomeFantasia:     document.getElementById('nome-fantasia').value.trim(),
-        cnpj:             document.getElementById('cnpj').value.trim(),
+        cnpj:             document.getElementById('cnpj').value.replace(/\D/g, ''),
         ramo:             document.getElementById('ramo').value.trim(),
         endereco:         document.getElementById('endereco').value.trim(),
         bairro:           document.getElementById('bairro').value.trim(),
