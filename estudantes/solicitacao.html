@@ -756,7 +756,7 @@
       const sel = document.getElementById('precheck-empresa-select');
       try {
         const lista = await apiListarEmpresasPrecheck();
-        sel.innerHTML = '<option value="">Selecione a empresa…</option>';
+        sel.innerHTML = '<option value="">Selecione a concedente…</option>';
         lista.forEach(function(e) {
           const opt = document.createElement('option');
           opt.value = e.cnpj.replace(/\D/g, '');
@@ -994,7 +994,7 @@
       try {
         const empresas = await apiListarEmpresas();
         if (empresas && empresas.length > 0) {
-          populateSelect('empresa', empresas.map(e => ({ value: e.cnpj, label: e.razaoSocial + ' — ' + e.cnpj })), 'Selecione a empresa...');
+          populateSelect('empresa', empresas.map(e => ({ value: e.cnpj, label: e.razaoSocial + ' — ' + e.cnpj })), 'Selecione a concedente...');
           select.disabled = false;
         } else {
           populateSelect('empresa', [], 'Nenhuma empresa validada disponível');
