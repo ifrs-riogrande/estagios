@@ -887,37 +887,41 @@
         precheckBanner(supSt, 'success', '✅ <strong>' + nome + '</strong> — cadastro aprovado.');
         btnPro.style.display = 'inline-flex';
         btnPro.onclick = async function() {
-          const empCnpjPre = document.getElementById('precheck-empresa-select').value;
-          const supCpfPre  = document.getElementById('precheck-supervisor-select').value;
+          const precheckEmpSel = document.getElementById('precheck-empresa-select');
+          const precheckSupSel = document.getElementById('precheck-supervisor-select');
+          const empCnpj = precheckEmpSel.value;
+          const empNome = (precheckEmpSel.options[precheckEmpSel.selectedIndex] || {}).dataset?.nome || '';
+          const supNome = (precheckSupSel.options[precheckSupSel.selectedIndex] || {}).dataset?.nome || '';
 
-          // Pré-seleciona empresa na seção 5
           const selEmp = document.getElementById('empresa');
-          if (selEmp && empCnpjPre) {
-            selEmp.value = empCnpjPre;
-            selEmp.disabled = true;
+          const selSup = document.getElementById('supervisor');
 
-            // Carrega supervisores para esse CNPJ e pré-seleciona na seção 6
-            const selSup = document.getElementById('supervisor');
-            try {
-              const supervisores = await apiListarSupervisores(empCnpjPre);
-              if (supervisores && supervisores.length > 0) {
-                supervisoresCache = supervisores;
-                populateSelect('supervisor',
-                  supervisores.map(s => ({ value: s.cpf, label: s.nome + (s.cargo ? ' — ' + s.cargo : '') })),
-                  'Selecione o supervisor...'
-                );
-                if (supCpfPre) {
-                  selSup.value = supCpfPre;
-                  // Preenche área/setor automaticamente
-                  const sup = supervisoresCache.find(s => s.cpf === supCpfPre);
-                  if (sup && sup.setor) {
-                    document.getElementById('area-setor').value = sup.setor;
-                  }
-                }
-              }
-            } catch(_) {}
-            if (selSup) selSup.disabled = true;
-          }
+          // Seção 5: substitui conteúdo por única opção (a validada no precheck)
+          selEmp.innerHTML = '';
+          const optEmp = document.createElement('option');
+          optEmp.value = empCnpj;
+          optEmp.textContent = empNome + (empCnpj ? ' — ' + empCnpj : '');
+          selEmp.appendChild(optEmp);
+          selEmp.value = empCnpj;
+          selEmp.disabled = true;
+
+          // Seção 6: carrega supervisores validados para obter o CPF, cruza pelo nome
+          selSup.innerHTML = '<option value="">Carregando…</option>';
+          selSup.disabled = true;
+          try {
+            const supervisores = await apiListarSupervisores(empCnpj);
+            supervisoresCache = supervisores || [];
+            const sup = supervisoresCache.find(s => s.nome === supNome) || supervisoresCache[0];
+            if (sup) {
+              selSup.innerHTML = '';
+              const optSup = document.createElement('option');
+              optSup.value = sup.cpf;
+              optSup.textContent = sup.nome + (sup.cargo ? ' — ' + sup.cargo : '');
+              selSup.appendChild(optSup);
+              selSup.value = sup.cpf;
+              if (sup.setor) document.getElementById('area-setor').value = sup.setor;
+            }
+          } catch(_) {}
 
           document.getElementById('painel-precheck').style.display = 'none';
           document.getElementById('form-solicitacao').style.display = '';
