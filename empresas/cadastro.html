@@ -701,8 +701,18 @@
         }
 
         // Desabilita o form após sucesso para evitar reenvio
+        btnEnviar.classList.remove('is-loading');
         form.querySelectorAll('input, select, textarea, button').forEach(el => el.disabled = true);
         btnLimpar.disabled = true;
+
+        // Botão para cadastrar supervisor
+        const refParam = _emailEstudanteRef ? '&ref=' + encodeURIComponent(_emailEstudanteRef) : '';
+        const cnpjParam = '?empresa=' + encodeURIComponent(dados.cnpj);
+        const divNext = document.createElement('div');
+        divNext.style.cssText = 'margin-top:var(--space-5);text-align:center;';
+        divNext.innerHTML = '<a href="supervisor.html' + cnpjParam + refParam + '" class="btn btn-primary">'
+          + 'Cadastrar supervisor →</a>';
+        form.appendChild(divNext);
 
       } catch (err) {
         showFormFeedback('form-feedback', 'error',
