@@ -492,7 +492,7 @@
         emailSetor:       document.getElementById('email-setor').value.trim(),
         enderecoSetor:    document.getElementById('endereco-setor').value.trim(),
         nome:             document.getElementById('nome').value.trim(),
-        cpf:              document.getElementById('cpf').value.trim(),
+        cpf:              document.getElementById('cpf').value.replace(/\D/g, ''),
         cargo:            document.getElementById('cargo').value.trim(),
         telSupervisor:    document.getElementById('tel-supervisor').value.trim(),
         emailSupervisor:  document.getElementById('email-supervisor').value.trim(),
