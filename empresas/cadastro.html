@@ -659,7 +659,7 @@
         nomeRep:          document.getElementById('nome-rep').value.trim(),
         cargoRep:         document.getElementById('cargo-rep').value.trim(),
         emailRep:         document.getElementById('email-rep').value.trim(),
-        cpfRep:           document.getElementById('cpf-rep').value.trim(),
+        cpfRep:           document.getElementById('cpf-rep').value.replace(/\D/g, ''),
         declaracao:       'Sim',
         emailEstudanteRef: _emailEstudanteRef,
         possuiConvenio:   document.getElementById('possui-convenio').value,
