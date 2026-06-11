@@ -404,22 +404,34 @@
               Seção 7 — Orientador(a)
             </h2>
             <div class="form-group">
-              <label class="form-label required" for="orientador">Professor orientador</label>
-              <select id="orientador" name="orientador" class="form-control" required aria-required="true" aria-describedby="orientador-hint orientador-error" disabled>
-                <option value="">Selecione primeiro o curso (cadastro)...</option>
-              </select>
+              <label class="form-label required">
+                Professor orientador
+                <span class="tooltip-help" aria-label="Orientador(a) de estágio: é o(a) professor(a) da instituição de ensino designado(a) para orientar, acompanhar e avaliar estudantes de cursos de sua área de atuação, durante a prática de estágio obrigatório e não obrigatório.">?</span>
+              </label>
+
+              <!-- Combobox de busca -->
+              <div class="search-select" id="orientador-search-container">
+                <div class="search-select-input-wrap">
+                  <svg class="search-select-icon" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                    <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/>
+                  </svg>
+                  <input type="text" id="orientador-busca" class="form-control search-select-input"
+                    placeholder="Selecione primeiro o curso (cadastro)..."
+                    autocomplete="off" disabled
+                    aria-haspopup="listbox" aria-controls="orientador-lista" aria-expanded="false"
+                    aria-describedby="orientador-hint orientador-error">
+                </div>
+                <ul id="orientador-lista" class="search-select-lista" role="listbox" hidden></ul>
+              </div>
+
+              <!-- Hidden: armazena o SIAPE selecionado -->
+              <input type="hidden" id="orientador" name="orientador">
+
               <span id="orientador-hint" class="form-hint">Lista filtrada pelo curso do seu cadastro.</span>
               <span id="orientador-error" class="form-error hidden" role="alert"></span>
             </div>
 
-            <!-- Orientador não encontrado — convite por e-mail -->
-            <div id="orientador-nao-encontrado-toggle" hidden style="margin-top: -8px; margin-bottom: var(--space-3);">
-              <button type="button" id="btn-orientador-nao-encontrado" class="btn btn-ghost btn-sm"
-                onclick="toggleOrientadorConvite()" style="font-size: var(--font-size-sm); padding: 4px 10px;">
-                ＋ Orientador(a) não está na lista?
-              </button>
-            </div>
-
+            <!-- Área de convite (exibida quando orientador não está cadastrado) -->
             <div id="orientador-convite-area" hidden style="background: #eff6ff; border: 1px solid #93c5fd; border-radius: var(--radius-md); padding: var(--space-4); margin-bottom: var(--space-3);">
               <p style="font-size: var(--font-size-sm); font-weight: 600; color: #1d4ed8; margin-bottom: var(--space-3);">
                 📧 Convidar orientador(a) não cadastrado(a)
@@ -445,7 +457,7 @@
                 </div>
               </div>
               <button type="button" class="btn btn-ghost btn-sm" onclick="cancelarOrientadorConvite()"
-                style="font-size: var(--font-size-sm);">✕ Cancelar — usar lista</button>
+                style="font-size: var(--font-size-sm);">✕ Cancelar — voltar à lista</button>
             </div>
           </div>
 
@@ -1129,14 +1141,70 @@
     // ── Estado: modo convite do orientador ──────────────────────────────────
     let modoConviteOrientador = false;
 
+    function _oriInput()  { return document.getElementById('orientador-busca'); }
+    function _oriHidden() { return document.getElementById('orientador'); }
+    function _oriLista()  { return document.getElementById('orientador-lista'); }
+
+    function _renderOrientadorLista(q) {
+      const lista = _oriLista();
+      const filtrados = q
+        ? orientadoresCache.filter(o => o.nome.toLowerCase().includes(q.toLowerCase()))
+        : orientadoresCache;
+
+      lista.innerHTML = '';
+
+      if (filtrados.length === 0 && q) {
+        const li = document.createElement('li');
+        li.textContent = 'Nenhum orientador encontrado para "' + q + '".';
+        li.dataset.empty = '1';
+        lista.appendChild(li);
+      } else {
+        filtrados.forEach(function(o) {
+          const li = document.createElement('li');
+          li.textContent = o.nome;
+          li.setAttribute('role', 'option');
+          li.addEventListener('click', function() { _selecionarOrientador(o); });
+          lista.appendChild(li);
+        });
+      }
+
+      // Opção fixa: não encontrei
+      const liNao = document.createElement('li');
+      liNao.className = 'search-select-nao-encontrado';
+      liNao.setAttribute('role', 'option');
+      liNao.textContent = '+ Não encontrei meu orientador';
+      liNao.addEventListener('click', function() {
+        _oriLista().hidden = true;
+        toggleOrientadorConvite();
+      });
+      lista.appendChild(liNao);
+    }
+
+    function _selecionarOrientador(o) {
+      _oriInput().value  = o.nome;
+      _oriHidden().value = o.siape;
+      _oriInput().setAttribute('aria-expanded', 'false');
+      _oriLista().hidden = true;
+      clearFieldError('orientador');
+    }
+
+    // Fecha lista ao clicar fora
+    document.addEventListener('click', function(e) {
+      const container = document.getElementById('orientador-search-container');
+      if (container && !container.contains(e.target)) {
+        const lista = _oriLista();
+        if (lista) lista.hidden = true;
+        const inp = _oriInput();
+        if (inp) inp.setAttribute('aria-expanded', 'false');
+      }
+    });
+
     function toggleOrientadorConvite() {
       modoConviteOrientador = true;
       document.getElementById('orientador-convite-area').hidden = false;
-      document.getElementById('orientador-nao-encontrado-toggle').hidden = true;
-      // Libera o select de required (será ignorado no modo convite)
-      const sel = document.getElementById('orientador');
-      sel.required = false;
-      sel.value = '';
+      _oriLista().hidden = true;
+      _oriInput().value  = '';
+      _oriHidden().value = '';
     }
 
     function cancelarOrientadorConvite() {
@@ -1145,12 +1213,6 @@
       document.getElementById('orientador-email-convite').value = '';
       document.getElementById('orientador-nome-convite').value = '';
       document.getElementById('orientador-email-convite-error').classList.add('hidden');
-      // Restaura o select
-      const sel = document.getElementById('orientador');
-      sel.required = true;
-      if (document.getElementById('orientador-nao-encontrado-toggle').dataset.temOrientadores) {
-        document.getElementById('orientador-nao-encontrado-toggle').hidden = false;
-      }
     }
 
     function validarEmailOrientadorConvite() {
@@ -1169,39 +1231,48 @@
 
     // ── Carrega orientadores (opcional: filtro por curso) ────────────────────
     async function carregarOrientadores(curso) {
-      const select = document.getElementById('orientador');
-      populateSelect('orientador', [], 'Carregando orientadores...');
-      select.disabled = true;
-      select.required = true;
-      orientadoresCache = [];
-      // Reseta modo convite ao trocar de curso
+      const inp = _oriInput();
+      inp.disabled = true;
+      inp.value    = '';
+      inp.placeholder = 'Carregando orientadores...';
+      _oriHidden().value = '';
+      _oriLista().hidden = true;
+      orientadoresCache  = [];
       modoConviteOrientador = false;
       document.getElementById('orientador-convite-area').hidden = true;
-      document.getElementById('orientador-nao-encontrado-toggle').hidden = true;
-      document.getElementById('orientador-nao-encontrado-toggle').dataset.temOrientadores = '';
+
+      // Eventos de interação (registrados uma única vez via flag no elemento)
+      if (!inp.dataset.eventsAttached) {
+        inp.dataset.eventsAttached = '1';
+        inp.addEventListener('input', function() {
+          _renderOrientadorLista(this.value.trim());
+          _oriLista().hidden = false;
+          this.setAttribute('aria-expanded', 'true');
+          // Se o usuário apaga o texto, limpa a seleção oculta
+          if (!this.value.trim()) _oriHidden().value = '';
+        });
+        inp.addEventListener('focus', function() {
+          if (!this.disabled && orientadoresCache.length > 0) {
+            _renderOrientadorLista(this.value.trim());
+            _oriLista().hidden = false;
+            this.setAttribute('aria-expanded', 'true');
+          }
+        });
+      }
 
       try {
         const params = curso ? { curso: curso } : {};
         const orientadores = await API.get('listarOrientadores', params);
         if (orientadores && orientadores.length > 0) {
           orientadoresCache = orientadores;
-          populateSelect('orientador', orientadores.map(o => ({ value: o.siape, label: o.nome })), 'Selecione o orientador...');
-          select.disabled = false;
-          // Exibe botão de convite
-          const toggleEl = document.getElementById('orientador-nao-encontrado-toggle');
-          toggleEl.hidden = false;
-          toggleEl.dataset.temOrientadores = '1';
+          inp.disabled = false;
+          inp.placeholder = 'Buscar orientador(a) por nome...';
         } else {
-          populateSelect('orientador', [], 'Nenhum orientador disponível — use a opção abaixo');
-          select.disabled = true;
-          // Sem orientadores: abre o modo convite automaticamente
-          document.getElementById('orientador-nao-encontrado-toggle').hidden = false;
-          document.getElementById('orientador-nao-encontrado-toggle').dataset.temOrientadores = '';
+          inp.placeholder = 'Nenhum orientador disponível';
           toggleOrientadorConvite();
         }
       } catch (e) {
-        populateSelect('orientador', [], 'Erro ao carregar orientadores');
-        document.getElementById('orientador-nao-encontrado-toggle').hidden = false;
+        inp.placeholder = 'Erro ao carregar — tente novamente';
       }
     }
 
@@ -1512,7 +1583,7 @@
         : (oriObj.email || '');
       const oriNomeConvite = modoConviteOrientador
         ? (document.getElementById('orientador-nome-convite').value.trim() || oriEmailConvite.split('@')[0])
-        : (oriObj.nome || document.getElementById('orientador').options[document.getElementById('orientador').selectedIndex]?.text || '');
+        : (oriObj.nome || document.getElementById('orientador-busca').value.trim() || '');
 
       const dados = {
         nomeResponsavel:    document.getElementById('nome-responsavel').value.trim(),
@@ -1619,6 +1690,13 @@
       idadeEstudante   = 0;
       supervisoresCache = [];
       orientadoresCache = [];
+      const oriInp = document.getElementById('orientador-busca');
+      if (oriInp) { oriInp.value = ''; oriInp.placeholder = 'Selecione primeiro o curso (cadastro)...'; oriInp.disabled = true; }
+      const oriHid = document.getElementById('orientador');
+      if (oriHid) oriHid.value = '';
+      const oriLst = document.getElementById('orientador-lista');
+      if (oriLst) oriLst.hidden = true;
+      document.getElementById('orientador-convite-area').hidden = true;
       document.getElementById('msg-idade-bloqueio').style.display  = 'none';
       document.getElementById('secao-responsavel-sol').style.display = 'none';
       document.getElementById('btn-enviar').disabled = true;

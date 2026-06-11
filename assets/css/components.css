@@ -303,6 +303,78 @@ textarea.form-control {
   cursor: pointer;
 }
 
+/* Search-select (combobox com busca por texto) */
+.search-select {
+  position: relative;
+}
+
+.search-select-input-wrap {
+  position: relative;
+}
+
+.search-select-input-wrap .search-select-icon {
+  position: absolute;
+  left: var(--space-3);
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  color: var(--color-text-muted);
+  pointer-events: none;
+  flex-shrink: 0;
+}
+
+.search-select-input {
+  padding-left: calc(var(--space-3) * 2 + 16px) !important;
+}
+
+.search-select-lista {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 16px rgba(0,0,0,.1);
+  max-height: 240px;
+  overflow-y: auto;
+  z-index: 200;
+  list-style: none;
+  padding: var(--space-1) 0;
+  margin: 0;
+}
+
+.search-select-lista li {
+  padding: var(--space-2) var(--space-4);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  color: var(--color-text);
+  line-height: var(--line-height-normal);
+}
+
+.search-select-lista li:hover {
+  background: var(--color-surface-secondary, #f3f4f6);
+}
+
+.search-select-lista li[data-empty] {
+  color: var(--color-text-muted);
+  cursor: default;
+  font-style: italic;
+}
+
+.search-select-lista li.search-select-nao-encontrado {
+  color: var(--color-primary);
+  font-weight: 500;
+  border-top: 1px solid var(--color-border);
+  padding-top: var(--space-3);
+  margin-top: var(--space-1);
+}
+
+.search-select-lista li.search-select-nao-encontrado:hover {
+  background: #eff6ff;
+}
+
 /* Grupo de checkboxes/radios */
 .form-check-group {
   display: flex;
