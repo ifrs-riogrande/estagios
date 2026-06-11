@@ -321,18 +321,38 @@
               <svg class="alert-icon" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/></svg>
               <div class="alert-content">No estágio obrigatório, o pagamento de bolsa e auxílio-transporte é <strong>opcional</strong>, podendo ser oferecido pela concedente.</div>
             </div>
-            <div class="form-row-3">
-              <div class="form-group">
-                <label class="form-label" for="bolsa-obrig">Valor da bolsa (R$)</label>
-                <input type="text" id="bolsa-obrig" name="bolsaObrig" class="form-control" placeholder="Ex.: 800,00">
+
+            <div class="form-group">
+              <label class="form-label required">O estágio será remunerado?</label>
+              <div class="radio-group" id="remunerado-obrig" role="radiogroup" aria-required="true" aria-describedby="remunerado-obrig-error">
+                <div class="radio-option">
+                  <input type="radio" id="remunerado-obrig-nao" name="remuneradoObrig" value="Não" required
+                    onchange="toggleSection('campos-rem-obrig', false)">
+                  <label for="remunerado-obrig-nao">Não</label>
+                </div>
+                <div class="radio-option">
+                  <input type="radio" id="remunerado-obrig-sim" name="remuneradoObrig" value="Sim"
+                    onchange="toggleSection('campos-rem-obrig', true)">
+                  <label for="remunerado-obrig-sim">Sim</label>
+                </div>
               </div>
-              <div class="form-group">
-                <label class="form-label" for="transp-obrig">Auxílio-transporte (R$)</label>
-                <input type="text" id="transp-obrig" name="transpObrig" class="form-control" placeholder="Ex.: 150,00">
-              </div>
-              <div class="form-group">
-                <label class="form-label" for="outro-aux-obrig">Outro auxílio</label>
-                <input type="text" id="outro-aux-obrig" name="outroAuxObrig" class="form-control" placeholder="Descreva se houver">
+              <span id="remunerado-obrig-error" class="form-error hidden" role="alert"></span>
+            </div>
+
+            <div id="campos-rem-obrig" class="hidden">
+              <div class="form-row-3" style="margin-top:var(--space-4);">
+                <div class="form-group">
+                  <label class="form-label" for="bolsa-obrig">Valor da bolsa (R$)</label>
+                  <input type="text" id="bolsa-obrig" name="bolsaObrig" class="form-control" placeholder="Ex.: 800,00">
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="transp-obrig">Auxílio-transporte (R$)</label>
+                  <input type="text" id="transp-obrig" name="transpObrig" class="form-control" placeholder="Ex.: 150,00">
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="outro-aux-obrig">Outro auxílio</label>
+                  <input type="text" id="outro-aux-obrig" name="outroAuxObrig" class="form-control" placeholder="Descreva se houver">
+                </div>
               </div>
             </div>
           </div>
@@ -1075,6 +1095,11 @@
         toggleSection('secao-rem-naobrig', isNaoObrig);
         document.getElementById('bolsa-naobrig').required    = isNaoObrig;
         document.getElementById('transp-naobrig').required   = isNaoObrig;
+        // Ao trocar de tipo, reseta o radio de remuneração obrigatória
+        if (isObrig) {
+          document.querySelectorAll('input[name="remuneradoObrig"]').forEach(function(rb) { rb.checked = false; });
+          toggleSection('campos-rem-obrig', false);
+        }
       });
     });
 
@@ -1507,6 +1532,11 @@
       if (!document.querySelector('input[name="formando"]:checked')?.value)      fail('formando', 'Informe se é formando(a).');
       if (!document.querySelector('input[name="tipoEstagio"]:checked')?.value)   fail('tipo-estagio', 'Selecione o tipo de estágio.');
 
+      if (document.querySelector('input[name="tipoEstagio"]:checked')?.value === 'Obrigatório') {
+        if (!document.querySelector('input[name="remuneradoObrig"]:checked')?.value)
+          fail('remunerado-obrig', 'Informe se o estágio será remunerado.');
+      }
+
       if (document.querySelector('input[name="tipoEstagio"]:checked')?.value === 'Não Obrigatório') {
         if (!document.getElementById('bolsa-naobrig').value.trim()) fail('bolsa-naobrig', 'Informe o valor da bolsa.');
         if (!document.getElementById('transp-naobrig').value.trim()) fail('transp-naobrig', 'Informe o valor do auxílio-transporte.');
@@ -1710,6 +1740,8 @@
       hideFormFeedback('form-feedback');
       toggleSection('secao-rem-obrig', false);
       toggleSection('secao-rem-naobrig', false);
+      document.querySelectorAll('input[name="remuneradoObrig"]').forEach(function(r) { r.checked = false; });
+      toggleSection('campos-rem-obrig', false);
       // Re-habilita opções de tipo de estágio e oculta msg de restrição
       document.querySelectorAll('input[name="tipoEstagio"]').forEach(r => { r.disabled = false; r.checked = false; });
       const msgModalidade = document.getElementById('msg-modalidade-bloqueio');
