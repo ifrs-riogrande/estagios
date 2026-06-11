@@ -86,12 +86,17 @@
                 <span id="data-nascimento-error" class="form-error hidden" role="alert"></span>
               </div>
               <div class="form-group">
-                <label class="form-label required" for="nee">Portador de Necessidades Específicas (NEE)?</label>
-                <select id="nee" name="nee" class="form-control" required aria-required="true" aria-describedby="nee-hint nee-error">
-                  <option value="">Selecione...</option>
-                  <option value="Não">Não</option>
-                  <option value="Sim">Sim</option>
-                </select>
+                <label class="form-label required">Portador de Necessidades Específicas (NEE)?</label>
+                <div class="radio-group" id="nee" role="radiogroup" aria-required="true" aria-describedby="nee-hint nee-error">
+                  <div class="radio-option">
+                    <input type="radio" id="nee-nao" name="nee" value="Não" required>
+                    <label for="nee-nao">Não</label>
+                  </div>
+                  <div class="radio-option">
+                    <input type="radio" id="nee-sim" name="nee" value="Sim">
+                    <label for="nee-sim">Sim</label>
+                  </div>
+                </div>
                 <span id="nee-hint" class="form-hint">Estudantes NEE têm carga horária máxima de 20h semanais.</span>
                 <span id="nee-error" class="form-error hidden" role="alert"></span>
               </div>
@@ -484,7 +489,7 @@
       }
 
       if (!document.getElementById('data-nascimento').value) fail('data-nascimento', 'Informe sua data de nascimento.');
-      if (!document.getElementById('nee').value) fail('nee', 'Informe se é portador de Necessidades Específicas.');
+      if (!document.querySelector('input[name="nee"]:checked')?.value) fail('nee', 'Informe se é portador de Necessidades Específicas.');
 
       // Contato
       const emailInst = document.getElementById('email-inst').value.trim();
@@ -545,7 +550,7 @@
         nome:            document.getElementById('nome').value.trim(),
         cpf:             document.getElementById('cpf').value.trim(),
         dataNascimento:  dataNasc,
-        nee:             document.getElementById('nee').value,
+        nee:             document.querySelector('input[name="nee"]:checked')?.value || '',
         emailPessoal:    document.getElementById('email-pessoal').value.trim(),
         telefone:        document.getElementById('telefone').value.trim(),
         endereco:        document.getElementById('endereco').value.trim(),

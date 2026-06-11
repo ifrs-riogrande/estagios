@@ -310,6 +310,58 @@ textarea.form-control {
   gap: var(--space-3);
 }
 
+/* Radio group estilo pill — para perguntas binárias (Sim/Não) e escolhas exclusivas de 2-3 opções */
+.radio-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.radio-option input[type="radio"] {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.radio-option input[type="radio"] + label {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--space-2) var(--space-4);
+  border: 1.5px solid var(--color-border);
+  border-radius: 9999px;
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  background: var(--color-surface);
+  transition: border-color .15s, background .15s, color .15s;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.radio-option input[type="radio"]:checked + label {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: #fff;
+}
+
+.radio-option input[type="radio"]:focus-visible + label {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.radio-option input[type="radio"]:disabled + label {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.radio-group.is-invalid .radio-option input[type="radio"] + label,
+.radio-group[aria-invalid="true"] .radio-option input[type="radio"] + label {
+  border-color: var(--color-error);
+}
+
 /* Linha dupla (dois campos lado a lado) */
 .form-row {
   display: grid;

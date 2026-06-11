@@ -265,12 +265,17 @@
             </div>
 
             <div class="form-group">
-              <label class="form-label required" for="formando">É formando(a) neste semestre/ano letivo?</label>
-              <select id="formando" name="formando" class="form-control" required aria-required="true" aria-describedby="formando-hint formando-error">
-                <option value="">Selecione...</option>
-                <option value="Não">Não</option>
-                <option value="Sim">Sim — estou no último semestre/ano</option>
-              </select>
+              <label class="form-label required">É formando(a) neste semestre/ano letivo?</label>
+              <div class="radio-group" id="formando" role="radiogroup" aria-required="true" aria-describedby="formando-hint formando-error">
+                <div class="radio-option">
+                  <input type="radio" id="formando-nao" name="formando" value="Não" required>
+                  <label for="formando-nao">Não</label>
+                </div>
+                <div class="radio-option">
+                  <input type="radio" id="formando-sim" name="formando" value="Sim">
+                  <label for="formando-sim">Sim — estou no último semestre/ano</label>
+                </div>
+              </div>
               <span id="formando-hint" class="form-hint">Formando: último semestre ou ano do curso. O término do estágio deve ocorrer até 15 dias antes do encerramento do período letivo.</span>
               <span id="formando-error" class="form-error hidden" role="alert"></span>
             </div>
@@ -292,11 +297,16 @@
                 Tipo de estágio solicitado
                 <span class="tooltip-help" aria-label="Estágio obrigatório: é aquele constituído como componente curricular integrante do Projeto Pedagógico do Curso, indicado como requisito para aprovação e obtenção de diploma de conclusão de curso. | Estágio não obrigatório: é aquele desenvolvido como atividade opcional e complementar à formação acadêmica-profissional do estudante, acrescida à carga horária regular e obrigatória, e conforme previsto no Projeto Pedagógico do Curso.">?</span>
               </label>
-              <select id="tipo-estagio" name="tipoEstagio" class="form-control" required aria-required="true" aria-describedby="tipo-estagio-error">
-                <option value="">Selecione...</option>
-                <option value="Obrigatório">Estágio Obrigatório</option>
-                <option value="Não Obrigatório">Estágio Não Obrigatório</option>
-              </select>
+              <div class="radio-group" id="tipo-estagio" role="radiogroup" aria-required="true" aria-describedby="tipo-estagio-error">
+                <div class="radio-option">
+                  <input type="radio" id="tipo-estagio-obrig" name="tipoEstagio" value="Obrigatório" required>
+                  <label for="tipo-estagio-obrig">Estágio Obrigatório</label>
+                </div>
+                <div class="radio-option">
+                  <input type="radio" id="tipo-estagio-nao" name="tipoEstagio" value="Não Obrigatório">
+                  <label for="tipo-estagio-nao">Estágio Não Obrigatório</label>
+                </div>
+              </div>
               <span id="tipo-estagio-error" class="form-error hidden" role="alert"></span>
             </div>
           </div>
@@ -1045,13 +1055,15 @@
     });
 
     // ── Tipo de estágio → exibe seção de remuneração correta ──
-    document.getElementById('tipo-estagio').addEventListener('change', function () {
-      const isObrig = this.value === 'Obrigatório';
-      const isNaoObrig = this.value === 'Não Obrigatório';
-      toggleSection('secao-rem-obrig', isObrig);
-      toggleSection('secao-rem-naobrig', isNaoObrig);
-      document.getElementById('bolsa-naobrig').required = isNaoObrig;
-      document.getElementById('transp-naobrig').required = isNaoObrig;
+    document.querySelectorAll('input[name="tipoEstagio"]').forEach(function (r) {
+      r.addEventListener('change', function () {
+        const isObrig    = this.value === 'Obrigatório';
+        const isNaoObrig = this.value === 'Não Obrigatório';
+        toggleSection('secao-rem-obrig', isObrig);
+        toggleSection('secao-rem-naobrig', isNaoObrig);
+        document.getElementById('bolsa-naobrig').required    = isNaoObrig;
+        document.getElementById('transp-naobrig').required   = isNaoObrig;
+      });
     });
 
     // ── Empresa → carrega supervisores em cascata ──
@@ -1314,17 +1326,16 @@
     function atualizarBloqueioTipoEstagio() {
       const curso    = document.getElementById('curso-estagio').value;
       const semestre = document.getElementById('semestre-atual').value;
-      const selTipo  = document.getElementById('tipo-estagio');
-      const optObrig    = selTipo.querySelector('option[value="Obrigatório"]');
-      const optNaoObrig = selTipo.querySelector('option[value="Não Obrigatório"]');
+      const radObrig    = document.querySelector('input[name="tipoEstagio"][value="Obrigatório"]');
+      const radNaoObrig = document.querySelector('input[name="tipoEstagio"][value="Não Obrigatório"]');
       const msgEl    = document.getElementById('msg-modalidade-bloqueio');
       const textoEl  = document.getElementById('msg-modalidade-texto');
-      if (!optObrig) return;
+      if (!radObrig) return;
 
       // Sem curso: restaura tudo
       if (!curso) {
-        optObrig.disabled    = false;
-        optNaoObrig.disabled = false;
+        radObrig.disabled    = false;
+        radNaoObrig.disabled = false;
         if (msgEl) msgEl.style.display = 'none';
         return;
       }
@@ -1352,17 +1363,18 @@
       const bloqObrig    = cfgBloqObrig    || semBloqObrig;
       const bloqNaoObrig = cfgBloqNaoObrig;
 
-      optObrig.disabled    = bloqObrig;
-      optNaoObrig.disabled = bloqNaoObrig;
+      radObrig.disabled    = bloqObrig;
+      radNaoObrig.disabled = bloqNaoObrig;
 
       // Reseta seleção se a opção escolhida foi desabilitada
-      if (bloqObrig && selTipo.value === 'Obrigatório') {
-        selTipo.value = '';
+      const tipoSelecionado = document.querySelector('input[name="tipoEstagio"]:checked')?.value || '';
+      if (bloqObrig && tipoSelecionado === 'Obrigatório') {
+        radObrig.checked = false;
         toggleSection('secao-rem-obrig', false);
         toggleSection('secao-rem-naobrig', false);
       }
-      if (bloqNaoObrig && selTipo.value === 'Não Obrigatório') {
-        selTipo.value = '';
+      if (bloqNaoObrig && tipoSelecionado === 'Não Obrigatório') {
+        radNaoObrig.checked = false;
         toggleSection('secao-rem-obrig', false);
         toggleSection('secao-rem-naobrig', false);
       }
@@ -1421,10 +1433,10 @@
 
       if (!document.getElementById('turno').value)             fail('turno', 'Selecione o turno.');
       if (!document.getElementById('semestre-atual').value)    fail('semestre-atual', 'Selecione o período/semestre atual.');
-      if (!document.getElementById('formando').value)          fail('formando', 'Informe se é formando(a).');
-      if (!document.getElementById('tipo-estagio').value)      fail('tipo-estagio', 'Selecione o tipo de estágio.');
+      if (!document.querySelector('input[name="formando"]:checked')?.value)      fail('formando', 'Informe se é formando(a).');
+      if (!document.querySelector('input[name="tipoEstagio"]:checked')?.value)   fail('tipo-estagio', 'Selecione o tipo de estágio.');
 
-      if (document.getElementById('tipo-estagio').value === 'Não Obrigatório') {
+      if (document.querySelector('input[name="tipoEstagio"]:checked')?.value === 'Não Obrigatório') {
         if (!document.getElementById('bolsa-naobrig').value.trim()) fail('bolsa-naobrig', 'Informe o valor da bolsa.');
         if (!document.getElementById('transp-naobrig').value.trim()) fail('transp-naobrig', 'Informe o valor do auxílio-transporte.');
       }
@@ -1511,12 +1523,12 @@
         emailInstEstagio:   emailInstEstagio,
         turno:              document.getElementById('turno').value,
         semestreAtual:      document.getElementById('semestre-atual').value,
-        formando:           document.getElementById('formando').value,
-        tipoEstagio:        document.getElementById('tipo-estagio').value,
-        bolsa:              document.getElementById('tipo-estagio').value === 'Obrigatório'
+        formando:           document.querySelector('input[name="formando"]:checked')?.value || '',
+        tipoEstagio:        document.querySelector('input[name="tipoEstagio"]:checked')?.value || '',
+        bolsa:              document.querySelector('input[name="tipoEstagio"]:checked')?.value === 'Obrigatório'
                               ? document.getElementById('bolsa-obrig').value.trim()
                               : document.getElementById('bolsa-naobrig').value.trim(),
-        auxTransporte:      document.getElementById('tipo-estagio').value === 'Obrigatório'
+        auxTransporte:      document.querySelector('input[name="tipoEstagio"]:checked')?.value === 'Obrigatório'
                               ? document.getElementById('transp-obrig').value.trim()
                               : document.getElementById('transp-naobrig').value.trim(),
         // Empresa — chaves que o backend espera
@@ -1621,8 +1633,7 @@
       toggleSection('secao-rem-obrig', false);
       toggleSection('secao-rem-naobrig', false);
       // Re-habilita opções de tipo de estágio e oculta msg de restrição
-      const selTipoLimpar = document.getElementById('tipo-estagio');
-      selTipoLimpar.querySelectorAll('option').forEach(o => { o.disabled = false; });
+      document.querySelectorAll('input[name="tipoEstagio"]').forEach(r => { r.disabled = false; r.checked = false; });
       const msgModalidade = document.getElementById('msg-modalidade-bloqueio');
       if (msgModalidade) msgModalidade.style.display = 'none';
       _resetDiasWidget();
