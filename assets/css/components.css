@@ -1197,9 +1197,11 @@ input[type="file"].form-control-file {
 }
 .ss-option:hover { background: #eff6ff; }
 .ss-option--nao {
-  color: var(--color-danger, #dc2626);
+  color: var(--color-primary, #2563eb);
+  font-weight: 500;
   border-top: 1px solid var(--color-border); margin-top: 4px; padding-top: 10px;
 }
+.ss-option--nao:hover { background: #eff6ff; }
 .ss-empty {
   padding: 10px 12px; font-size: var(--font-size-sm);
   color: var(--color-text-muted); font-style: italic;

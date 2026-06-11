@@ -883,7 +883,7 @@
         const optNao = document.createElement('option');
         optNao.value = '__NAO__';
         const optNaoFirst = sel.querySelector('option[value=""]');
-        optNao.textContent = '— Não encontrei minha concedente';
+        optNao.textContent = '+ Não encontrei minha concedente';
         sel.insertBefore(optNao, optNaoFirst ? optNaoFirst.nextSibling : sel.firstChild);
         sel.disabled = false;
         makeSearchable('precheck-empresa-select', 'Digite o nome da concedente…');
@@ -918,7 +918,7 @@
         // Opção "não encontrei"
         const optNao = document.createElement('option');
         optNao.value = '__NAO__';
-        optNao.textContent = '— Não encontrei meu supervisor';
+        optNao.textContent = '+ Não encontrei meu supervisor';
         const optPlaceholderSup = sel.querySelector('option[value=""]');
         sel.insertBefore(optNao, optPlaceholderSup ? optPlaceholderSup.nextSibling : sel.firstChild);
         sel.disabled = false;
