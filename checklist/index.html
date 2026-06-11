@@ -891,7 +891,7 @@
     if (info.nomeResp) {
       html += `<div class="sol-divider">Responsável Legal</div>`;
       html += `<div><span class="sol-label">Nome</span>${v(info.nomeResp)}</div>`;
-      html += `<div><span class="sol-label">CPF</span>${v(info.cpfResp)}</div>`;
+      html += `<div><span class="sol-label">CPF</span>${v(mascararCPF(info.cpfResp))}</div>`;
       if (info.telResp) html += `<div><span class="sol-label">Telefone</span>${v(info.telResp)}</div>`;
     }
 

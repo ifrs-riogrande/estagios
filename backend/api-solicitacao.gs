@@ -754,7 +754,7 @@ function verificarAceiteOrientador_(e) {
       telefoneEstudante:  String(dados[i][COL_SOL.TELEFONE]         || ''),
       // ── Responsável Legal (menores) ───────────────────────────
       nomeResp:           String(dados[i][COL_SOL.NOME_RESP]        || ''),
-      cpfResp:            String(dados[i][COL_SOL.CPF_RESP]         || ''),
+      cpfResp:            mascararCPF_(dados[i][COL_SOL.CPF_RESP]),
       // ── Empresa ───────────────────────────────────────────────
       nomeEmpresa:        String(dados[i][COL_SOL.NOME_EMPRESA]     || ''),
       cnpjEmpresa:        _cnpj,
@@ -1131,7 +1131,7 @@ function listarMeusEstagios_(e) {
         semestreAtual:        String(r[COL_SOL.SEMESTRE_SOL]        || ''),
         formando:             String(r[COL_SOL.FORMANDO]            || ''),
         nomeResponsavel:      String(r[COL_SOL.NOME_RESP]           || ''),
-        cpfResponsavel:       String(r[COL_SOL.CPF_RESP]            || ''),
+        cpfResponsavel:       mascararCPF_(r[COL_SOL.CPF_RESP]),
         telResponsavel:       String(r[COL_SOL.TEL_RESP]            || ''),
         // ── Status / Observações ──
         motivoReprovacao:     String(r[COL_SOL.MOTIVO_REPROVACAO]   || ''),

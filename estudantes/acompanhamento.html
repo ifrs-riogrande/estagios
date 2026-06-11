@@ -1019,7 +1019,7 @@
         html += `<p class="info-section-title">Responsável Legal</p>
           <div class="detail-grid" style="margin-bottom:var(--space-4)">`;
         html += dr('Nome', escapeHtml(s.nomeResponsavel));
-        if (s.cpfResponsavel) html += dr('CPF', escapeHtml(s.cpfResponsavel));
+        if (s.cpfResponsavel) html += dr('CPF', escapeHtml(mascararCPF(s.cpfResponsavel)));
         if (s.telResponsavel) html += dr('Telefone', escapeHtml(s.telResponsavel));
         html += `</div>`;
       }

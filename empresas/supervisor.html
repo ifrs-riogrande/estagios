@@ -348,12 +348,7 @@
         // Tenta selecionar assim que as opções carregarem
         window._preSelectEmpresa = empParam.replace(/\D/g, '');
       }
-      // Pré-preenche CPF se vier via ?cpf=
-      const cpfParam = (new URLSearchParams(window.location.search)).get('cpf') || '';
-      if (cpfParam) {
-        const el = document.getElementById('cpf');
-        if (el) { el.value = cpfParam; }
-      }
+      // CPF não deve trafegar em URL — campo preenchido pelo próprio usuário
     })();
 
     // ── Carrega lista de empresas validadas ──

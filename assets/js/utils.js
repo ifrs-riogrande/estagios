@@ -385,6 +385,12 @@ function setSelectLoading(selectId, loading) {
  * Escapa HTML para evitar XSS ao inserir texto dinâmico no DOM.
  * Use sempre que inserir dado do usuário ou da API via innerHTML.
  */
+function mascararCPF(cpf) {
+  const s = String(cpf || '').replace(/\D/g, '');
+  if (s.length !== 11) return cpf || '';
+  return '***.' + s.slice(3, 6) + '.' + s.slice(6, 9) + '-**';
+}
+
 function escapeHtml(text) {
   const div = document.createElement('div');
   div.appendChild(document.createTextNode(String(text ?? '')));
