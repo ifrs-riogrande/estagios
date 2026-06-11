@@ -39,6 +39,24 @@ function mascararTelefone_(tel) {
   return s.slice(0, 2) + ' *****-' + s.slice(-4);
 }
 
+/**
+ * Valida telefone brasileiro: mínimo 10 dígitos (DDD + número), máximo 11.
+ * @param {string} tel  Qualquer formato (com ou sem pontuação)
+ */
+function validarTelefone_(tel) {
+  var d = String(tel || '').replace(/\D/g, '');
+  return d.length >= 10 && d.length <= 11;
+}
+
+/**
+ * Valida CEP brasileiro: exatamente 8 dígitos.
+ * @param {string} cep  Qualquer formato (com ou sem hífen)
+ */
+function validarCEP_(cep) {
+  var d = String(cep || '').replace(/\D/g, '');
+  return d.length === 8;
+}
+
 // ---------------------------------------------------------------------------
 // Sanitização e validação
 // ---------------------------------------------------------------------------

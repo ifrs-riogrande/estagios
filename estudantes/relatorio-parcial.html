@@ -224,17 +224,15 @@
       if (!validateForm()) return;
 
       const dados = {
-        idEstagio:                document.getElementById('id-estagio').value.trim().toUpperCase(),
-        dataReferencia:           document.getElementById('data-referencia').value,
-        resumoAtividades:         document.getElementById('resumo-atividades').value.trim(),
-        competenciasDesenvolvidas: document.getElementById('competencias-desenvolvidas').value.trim(),
-        contribuicaoFormacao:     document.getElementById('contribuicao-formacao').value.trim(),
-        avaliacaoConcedente:      document.getElementById('avaliacao-concedente').value,
-        avaliacaoOrientador:      document.getElementById('avaliacao-orientador').value,
-        recomendaria:             document.getElementById('recomendaria').value,
-        consideracoesFinais:      document.getElementById('consideracoes-finais').value.trim(),
-        declaracao:               'Sim',
-        tipo:                     'parcial',
+        idEstagio:            document.getElementById('id-estagio').value.trim().toUpperCase(),
+        periodoRef:           document.getElementById('data-referencia').value,
+        // Mapeamento para os campos esperados pelo backend (enviarRelatorioParcial_)
+        atividadesRealizadas: document.getElementById('resumo-atividades').value.trim(),
+        aprendizagens:        document.getElementById('competencias-desenvolvidas').value.trim(),
+        relacaoCurso:         document.getElementById('contribuicao-formacao').value.trim(),
+        avaliacaoEstagio:     document.getElementById('avaliacao-concedente').value,
+        dificuldades:         document.getElementById('avaliacao-orientador').value,
+        sugestoes:            document.getElementById('consideracoes-finais')?.value.trim() || '',
       };
 
       await submitWithFeedback(

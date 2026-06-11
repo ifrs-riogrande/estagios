@@ -235,6 +235,23 @@ function solicitarEstagio_(dados) {
   if (!dataInicio)     return jsonError_('Data de início é obrigatória.', 'VALIDATION');
   if (!dataTermino)    return jsonError_('Data de término é obrigatória.', 'VALIDATION');
   if (!cargaHor)       return jsonError_('Carga horária é obrigatória.', 'VALIDATION');
+
+  // Valida carga horária máxima conforme NEE (Lei nº 11.788/2008)
+  var cargaHorNums = parseInt(String(cargaHor).replace(/\D/g, ''), 10) || 0;
+  if (estudante.nee === 'Sim' && cargaHorNums > 20) {
+    return jsonError_('Estudantes com NEE têm carga horária máxima de 20h semanais.', 'VALIDATION');
+  }
+  if (cargaHorNums > 40) {
+    return jsonError_('Carga horária semanal não pode exceder 40h.', 'VALIDATION');
+  }
+  if (cargaHorNums < 1) {
+    return jsonError_('Carga horária inválida.', 'VALIDATION');
+  }
+
+  // Verifica aceite da declaração de veracidade (assinatura eletrônica)
+  if (String(dados.declaracoes || '').trim() !== 'Todas aceitas') {
+    return jsonError_('É necessário aceitar a declaração de veracidade das informações.', 'VALIDATION');
+  }
   // Data início deve ser >= hoje + 7 dias
   var hoje    = new Date(); hoje.setHours(0, 0, 0, 0);
   var minInicio = new Date(hoje.getTime() + 7 * 86400000);

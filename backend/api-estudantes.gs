@@ -130,6 +130,9 @@ function cadastrarEstudante_(dados) {
   if (!validarCPF_(cpf)) return jsonError_('CPF inválido.', 'VALIDATION');
   if (!dataNasc)   return jsonError_('Data de nascimento é obrigatória.', 'VALIDATION');
   if (!telefone)   return jsonError_('Telefone é obrigatório.', 'VALIDATION');
+  if (!validarTelefone_(telefone)) return jsonError_('Telefone inválido. Informe DDD + número (10 ou 11 dígitos).', 'VALIDATION');
+  var cepDigitos = String(dados.cep || '').replace(/\D/g, '');
+  if (cepDigitos && !validarCEP_(cepDigitos)) return jsonError_('CEP inválido. Informe os 8 dígitos.', 'VALIDATION');
   if (emailPes && !validarEmail_(emailPes)) return jsonError_('E-mail pessoal inválido.', 'VALIDATION');
 
   var sheet = abrirAba_(CFG_EST.SS_ID, CFG_EST.ABA);
