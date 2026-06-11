@@ -501,20 +501,10 @@
                 <span id="data-termino-error" class="form-error hidden" role="alert"></span>
               </div>
             </div>
-            <div class="form-row">
-              <div class="form-group">
-                <label class="form-label required" for="carga-horaria">Carga horária semanal</label>
-                <input type="text" id="carga-horaria" name="cargaHoraria" class="form-control" readonly
-                  placeholder="Calculada automaticamente" aria-describedby="carga-horaria-hint carga-horaria-error"
-                  style="background:var(--color-surface-secondary,#f8f9fa);cursor:default;">
-                <span id="carga-horaria-hint" class="form-hint">Calculada automaticamente a partir dos dias e horários. Máx.: 20h (NEE) · 30h (regular) · 40h (alternância, se previsto no PPC). Vedado período noturno (22h–6h).</span>
-                <span id="carga-horaria-error" class="form-error hidden" role="alert"></span>
-              </div>
-              <div class="form-group">
-                <label class="form-label required" for="area-setor">Área / Setor do estágio</label>
-                <input type="text" id="area-setor" name="areaSetor" class="form-control" placeholder="Ex.: Setor de TI, Laboratório de Química" required aria-required="true" aria-describedby="area-setor-error">
-                <span id="area-setor-error" class="form-error hidden" role="alert"></span>
-              </div>
+            <div class="form-group">
+              <label class="form-label required" for="area-setor">Área / Setor do estágio</label>
+              <input type="text" id="area-setor" name="areaSetor" class="form-control" placeholder="Ex.: Setor de TI, Laboratório de Química" required aria-required="true" aria-describedby="area-setor-error">
+              <span id="area-setor-error" class="form-error hidden" role="alert"></span>
             </div>
             <div class="form-group">
               <label class="form-label required">Dias e horários de estágio</label>
@@ -540,6 +530,18 @@
               <!-- Valor serializado enviado ao backend -->
               <input type="hidden" id="dias-horarios-value" name="diasHorarios">
               <span id="dias-horarios-error" class="form-error hidden" role="alert"></span>
+            </div>
+            <!-- Carga horária total — calculada a partir dos dias/horários + período -->
+            <div class="form-group" style="max-width:320px;">
+              <label class="form-label required" for="carga-horaria">Carga horária total do estágio</label>
+              <input type="text" id="carga-horaria" class="form-control" readonly
+                placeholder="Preencha as datas e os dias de estágio"
+                aria-describedby="carga-horaria-hint carga-horaria-error"
+                style="background:var(--color-surface-secondary,#f8f9fa);cursor:default;">
+              <span id="carga-horaria-hint" class="form-hint">Calculada automaticamente: ocorrências de cada dia entre início e término. Máx. semanal: 20h (NEE) · 30h (regular) · 40h (alternância). Vedado período noturno (22h–6h).</span>
+              <span id="carga-horaria-error" class="form-error hidden" role="alert"></span>
+              <!-- Carga semanal — usado apenas para validação no backend -->
+              <input type="hidden" id="carga-horaria-semanal" name="cargaHoraria">
             </div>
             <div class="form-group">
               <label class="form-label required" for="atividades-prev">Atividades previstas</label>
@@ -1643,7 +1645,8 @@
         emailOrientador:    oriEmailConvite,
         dataInicio:         document.getElementById('data-inicio').value,
         dataTermino:        document.getElementById('data-termino').value,
-        cargaHoraria:       document.getElementById('carga-horaria').value,
+        cargaHoraria:       document.getElementById('carga-horaria-semanal').value,
+        cargaHorariaTotal:  document.getElementById('carga-horaria').value,
         diasHorarios:       document.getElementById('dias-horarios-value').value.trim(),
         areaSetor:          document.getElementById('area-setor').value.trim(),
         atividadesPrevistas:document.getElementById('atividades-prev').value.trim(),
@@ -1797,15 +1800,16 @@
       var container = document.getElementById('dias-rows');
       var vazio     = document.getElementById('dias-vazio');
       var totalEl   = document.getElementById('dias-total');
-      var cargaEl   = document.getElementById('carga-horaria');
+      var semanalEl = document.getElementById('carga-horaria-semanal');
       var hiddenEl  = document.getElementById('dias-horarios-value');
 
       if (_diasLista.length === 0) {
         container.innerHTML = '';
         vazio.style.display = 'block';
         totalEl.textContent = 'Total semanal: —';
-        if (cargaEl)  cargaEl.value  = '';
-        if (hiddenEl) hiddenEl.value = '';
+        if (semanalEl) semanalEl.value = '';
+        if (hiddenEl)  hiddenEl.value  = '';
+        _atualizarCargaTotal();
         return;
       }
 
@@ -1853,9 +1857,77 @@
 
       if (totalStr) linhas.push('Total semanal: ' + totalStr);
 
-      if (cargaEl)  cargaEl.value  = totalStr ? totalStr + ' semanais' : '';
-      if (hiddenEl) hiddenEl.value = linhas.join('\n');
+      if (semanalEl) semanalEl.value = totalStr ? totalStr + ' semanais' : '';
+      if (hiddenEl)  hiddenEl.value  = linhas.join('\n');
+      _atualizarCargaTotal();
     }
+
+    // ── Carga horária total: contagem real de ocorrências por dia da semana ──
+    var _DIAS_WEEKDAY = {
+      'Domingo': 0, 'Segunda-feira': 1, 'Terça-feira': 2, 'Quarta-feira': 3,
+      'Quinta-feira': 4, 'Sexta-feira': 5, 'Sábado': 6
+    };
+
+    function _calcularCargaHorariaTotal() {
+      var inicio = document.getElementById('data-inicio').value;
+      var fim    = document.getElementById('data-termino').value;
+      if (!inicio || !fim || _diasLista.length === 0) return '';
+
+      var d1 = new Date(inicio + 'T00:00:00');
+      var d2 = new Date(fim    + 'T00:00:00');
+      if (isNaN(d1) || isNaN(d2) || d2 < d1) return '';
+
+      // Agrega minutos por dia da semana (pode haver dois registros no mesmo dia)
+      var minsPorDia = {};
+      _diasLista.forEach(function(d) {
+        var wday = _DIAS_WEEKDAY[d.dia];
+        if (wday === undefined) return;
+        var mins = _calcMins(d.entrada, d.saida);
+        if (mins <= 0) return;
+        minsPorDia[wday] = (minsPorDia[wday] || 0) + mins;
+      });
+      if (Object.keys(minsPorDia).length === 0) return '';
+
+      // Conta ocorrências de cada dia da semana no período (ambos extremos incluídos)
+      var totalDias  = Math.floor((d2 - d1) / 86400000) + 1;
+      var semanas    = Math.floor(totalDias / 7);
+      var resto      = totalDias % 7;
+      var diaInicio  = d1.getDay();
+      var totalMins  = 0;
+
+      Object.keys(minsPorDia).forEach(function(wday) {
+        wday = parseInt(wday, 10);
+        var ocorrencias = semanas;
+        for (var i = 0; i < resto; i++) {
+          if ((diaInicio + i) % 7 === wday) ocorrencias++;
+        }
+        totalMins += ocorrencias * minsPorDia[wday];
+      });
+
+      if (totalMins <= 0) return '';
+      var h = Math.floor(totalMins / 60);
+      var m = totalMins % 60;
+      return h + (m > 0 ? 'h' + m + 'min' : 'h');
+    }
+
+    function _atualizarCargaTotal() {
+      var el = document.getElementById('carga-horaria');
+      if (!el) return;
+      var total = _calcularCargaHorariaTotal();
+      if (total) {
+        el.value = total;
+      } else if (_diasLista.length > 0) {
+        el.value = '';
+        el.placeholder = 'Preencha as datas de início e término';
+      } else {
+        el.value = '';
+        el.placeholder = 'Preencha as datas e os dias de estágio';
+      }
+    }
+
+    // Recalcula ao mudar período
+    document.getElementById('data-inicio')?.addEventListener('change', _atualizarCargaTotal);
+    document.getElementById('data-termino')?.addEventListener('change', _atualizarCargaTotal);
 
     function _resetDiasWidget() {
       _diasLista = [];
