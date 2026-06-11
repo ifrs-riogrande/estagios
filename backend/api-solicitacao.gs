@@ -1552,7 +1552,7 @@ function listarHistoricoEstagio_(e) {
                             ? Utilities.formatDate(new Date(dFinal[k][COL_FINAL.TIMESTAMP]),
                                 Session.getScriptTimeZone(), 'dd/MM/yyyy HH:mm')
                             : '',
-        dataEncerramento: normalizarDataISO_(dFinal[k][COL_FINAL.DATA_ENCERRAMENTO]),
+        dataEncerramento: formatarData_(dFinal[k][COL_FINAL.DATA_ENCERRAMENTO]),
         avalConcedente:   String(dFinal[k][COL_FINAL.AVAL_CONCEDENTE] || ''),
         avalOrientador:   String(dFinal[k][COL_FINAL.AVAL_ORIENTADOR] || ''),
         recomendaria:     String(dFinal[k][COL_FINAL.RECOMENDARIA]    || ''),
