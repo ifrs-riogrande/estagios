@@ -2686,11 +2686,11 @@ function _defaultFluxoLembrete_() {
 
 function _defaultConfigNotificacoes_() {
   return {
-    adminEmails:                    CFG_ADMIN.ADMIN_EMAILS.slice(),
-    notificationEmail:              'estagios@riogrande.ifrs.edu.br',
-    notificationEmailObrigatorio:   '',
-    notificationEmailNaoObrigatorio:'',
-    errorEmail:                     'estagios@riogrande.ifrs.edu.br',
+    adminEmails:                     CFG_ADMIN.ADMIN_EMAILS.slice(),
+    notificationEmails:              ['estagios@riogrande.ifrs.edu.br'],
+    notificationEmailsObrigatorio:   [],
+    notificationEmailsNaoObrigatorio:[],
+    errorEmail:                      'estagios@riogrande.ifrs.edu.br',
     lembretes: {
       checklist:   _defaultFluxoLembrete_(),
       assinaturas: _defaultFluxoLembrete_(),
@@ -2732,9 +2732,22 @@ function obterConfigNotificacoes_() {
     if (raw) {
       var cfg = JSON.parse(raw);
       var def = _defaultConfigNotificacoes_();
-      // Backfill campos de destinatários opcionais
-      if (cfg.notificationEmailObrigatorio    === undefined) cfg.notificationEmailObrigatorio    = '';
-      if (cfg.notificationEmailNaoObrigatorio === undefined) cfg.notificationEmailNaoObrigatorio = '';
+      // Migra campos de e-mail de string/ausente para array
+      if (!Array.isArray(cfg.notificationEmails)) {
+        var old = cfg.notificationEmail || cfg.notificationEmails || '';
+        cfg.notificationEmails = old ? [old] : ['estagios@riogrande.ifrs.edu.br'];
+        delete cfg.notificationEmail;
+      }
+      if (!Array.isArray(cfg.notificationEmailsObrigatorio)) {
+        var oldO = cfg.notificationEmailObrigatorio || '';
+        cfg.notificationEmailsObrigatorio = oldO ? [oldO] : [];
+        delete cfg.notificationEmailObrigatorio;
+      }
+      if (!Array.isArray(cfg.notificationEmailsNaoObrigatorio)) {
+        var oldN = cfg.notificationEmailNaoObrigatorio || '';
+        cfg.notificationEmailsNaoObrigatorio = oldN ? [oldN] : [];
+        delete cfg.notificationEmailNaoObrigatorio;
+      }
       // Migra estrutura antiga de lembretes se necessário
       if (!cfg.lembretes) {
         cfg.lembretes = def.lembretes;
@@ -2763,13 +2776,16 @@ function salvarConfigNotificacoes_(body) {
     .filter(function(e) { return reEmail.test(e); });
   if (adminEmails.length === 0) throw new Error('É necessário pelo menos um e-mail de administrador válido.');
 
-  var notificationEmail = String(config.notificationEmail || '').trim().toLowerCase();
-  if (!reEmail.test(notificationEmail)) throw new Error('E-mail de notificações inválido.');
+  function _filtrarEmails_(arr) {
+    return (Array.isArray(arr) ? arr : [])
+      .map(function(e) { return String(e).trim().toLowerCase(); })
+      .filter(function(e) { return reEmail.test(e); });
+  }
+  var notificationEmails = _filtrarEmails_(config.notificationEmails);
+  if (notificationEmails.length === 0) throw new Error('É necessário pelo menos um e-mail geral do setor válido.');
 
-  var notifObrig    = String(config.notificationEmailObrigatorio    || '').trim().toLowerCase();
-  var notifNaoObrig = String(config.notificationEmailNaoObrigatorio || '').trim().toLowerCase();
-  if (notifObrig    && !reEmail.test(notifObrig))    throw new Error('E-mail de Estágio Obrigatório inválido.');
-  if (notifNaoObrig && !reEmail.test(notifNaoObrig)) throw new Error('E-mail de Estágio Não Obrigatório inválido.');
+  var notifObrig    = _filtrarEmails_(config.notificationEmailsObrigatorio);
+  var notifNaoObrig = _filtrarEmails_(config.notificationEmailsNaoObrigatorio);
 
   var errorEmail = String(config.errorEmail || '').trim().toLowerCase();
   if (!reEmail.test(errorEmail)) throw new Error('E-mail de erros inválido.');
@@ -2798,18 +2814,18 @@ function salvarConfigNotificacoes_(body) {
   });
 
   var toSave = {
-    adminEmails:                    adminEmails,
-    notificationEmail:              notificationEmail,
-    notificationEmailObrigatorio:   notifObrig,
-    notificationEmailNaoObrigatorio: notifNaoObrig,
-    errorEmail:                     errorEmail,
-    lembretes:                      lembretesToSave
+    adminEmails:                     adminEmails,
+    notificationEmails:              notificationEmails,
+    notificationEmailsObrigatorio:   notifObrig,
+    notificationEmailsNaoObrigatorio: notifNaoObrig,
+    errorEmail:                      errorEmail,
+    lembretes:                       lembretesToSave
   };
 
   var props = PropertiesService.getScriptProperties();
   props.setProperty(NOTIF_CONFIG_KEY_,    JSON.stringify(toSave));
   props.setProperty('ADMIN_EMAILS',       adminEmails.join(','));
-  props.setProperty('NOTIFICATION_EMAIL', notificationEmail);
+  props.setProperty('NOTIFICATION_EMAIL', notificationEmails[0] || '');
   props.setProperty('ERROR_EMAIL',        errorEmail);
 
   return jsonOk_({ mensagem: 'Configurações de notificações salvas com sucesso.' });

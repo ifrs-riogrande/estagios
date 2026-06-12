@@ -64,12 +64,13 @@
     /* ── Fluxo card ── */
     .fluxo-card {
       border:1px solid var(--color-border); border-radius:var(--radius-md,8px);
-      margin-bottom:var(--space-4); overflow:hidden;
+      margin-bottom:var(--space-4);
     }
     .fluxo-card-header {
       display:flex; align-items:center; justify-content:space-between;
       padding:var(--space-4) var(--space-5); background:var(--color-surface,#f9fafb);
       cursor:pointer; user-select:none; gap:var(--space-4);
+      border-radius:var(--radius-md,8px);
     }
     .fluxo-card-header:hover { background:#f3f4f6; }
     .fluxo-card-title { font-weight:600; font-size:.9rem; display:flex; align-items:center; gap:var(--space-3); }
@@ -181,42 +182,58 @@
           <div class="config-section">
             <p class="config-section-title">E-mails Operacionais</p>
 
+            <!-- Geral -->
             <div class="form-group">
               <div class="label-tt">
-                <label class="form-label" for="notif-email">E-mail Geral do Setor</label>
+                <label class="form-label">E-mails Gerais do Setor</label>
                 <span class="tt-wrap" tabindex="0">
                   <svg class="tt-icon" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5h.253a.25.25 0 01.244.304l-.459 2.066A1.75 1.75 0 0010.747 15H11a.75.75 0 000-1.5h-.253a.25.25 0 01-.244-.304l.459-2.066A1.75 1.75 0 009.253 9H9z" clip-rule="evenodd"/></svg>
-                  <span class="tt-box">Recebe cópia de todas as notificações do sistema, independente da modalidade do estágio (obrigatório ou não obrigatório). Campo obrigatório.</span>
+                  <span class="tt-box">Recebem cópia de todas as notificações do sistema, independente da modalidade. Mínimo de 1 endereço. Campo obrigatório.</span>
                 </span>
               </div>
-              <input type="email" id="notif-email" class="form-input" placeholder="estagios@riogrande.ifrs.edu.br">
-              <p class="form-help">Sempre recebe tudo — obrigatório e não obrigatório.</p>
+              <p class="form-help" style="margin-bottom:var(--space-3);">Sempre recebem tudo — obrigatório e não obrigatório.</p>
+              <div class="email-list" id="notif-emails-geral-list"></div>
+              <div class="email-add-row">
+                <input type="email" id="novo-notif-email-geral" class="form-input" placeholder="setor@riogrande.ifrs.edu.br" style="flex:1;">
+                <button type="button" class="btn btn-secondary" onclick="adicionarEmail('geral')">+ Adicionar</button>
+              </div>
             </div>
 
+            <!-- Obrigatório -->
             <div class="form-group">
               <div class="label-tt">
-                <label class="form-label" for="notif-email-obrig">E-mail — Estágio Obrigatório</label>
+                <label class="form-label">E-mails — Estágio Obrigatório</label>
                 <span class="tt-wrap" tabindex="0">
                   <svg class="tt-icon" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5h.253a.25.25 0 01.244.304l-.459 2.066A1.75 1.75 0 0010.747 15H11a.75.75 0 000-1.5h-.253a.25.25 0 01-.244-.304l.459-2.066A1.75 1.75 0 009.253 9H9z" clip-rule="evenodd"/></svg>
-                  <span class="tt-box">Cópia adicional das notificações de estágios obrigatórios. Opcional — se vazio, apenas o e-mail geral recebe. Útil quando setores diferentes cuidam de cada modalidade.</span>
+                  <span class="tt-box">Cópia adicional das notificações de estágios obrigatórios. Opcional — se vazio, apenas os e-mails gerais recebem.</span>
                 </span>
               </div>
-              <input type="email" id="notif-email-obrig" class="form-input" placeholder="Opcional — ex: obrigatorio@riogrande.ifrs.edu.br">
-              <p class="form-help">Opcional. Recebe cópia adicional de notificações de estágios obrigatórios.</p>
+              <p class="form-help" style="margin-bottom:var(--space-3);">Opcional. Recebem cópia adicional de notificações de estágios obrigatórios.</p>
+              <div class="email-list" id="notif-emails-obrig-list"></div>
+              <div class="email-add-row">
+                <input type="email" id="novo-notif-email-obrig" class="form-input" placeholder="Opcional" style="flex:1;">
+                <button type="button" class="btn btn-secondary" onclick="adicionarEmail('obrig')">+ Adicionar</button>
+              </div>
             </div>
 
+            <!-- Não Obrigatório -->
             <div class="form-group">
               <div class="label-tt">
-                <label class="form-label" for="notif-email-nao-obrig">E-mail — Estágio Não Obrigatório</label>
+                <label class="form-label">E-mails — Estágio Não Obrigatório</label>
                 <span class="tt-wrap" tabindex="0">
                   <svg class="tt-icon" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5h.253a.25.25 0 01.244.304l-.459 2.066A1.75 1.75 0 0010.747 15H11a.75.75 0 000-1.5h-.253a.25.25 0 01-.244-.304l.459-2.066A1.75 1.75 0 009.253 9H9z" clip-rule="evenodd"/></svg>
-                  <span class="tt-box">Cópia adicional das notificações de estágios não obrigatórios. Opcional — se vazio, apenas o e-mail geral recebe.</span>
+                  <span class="tt-box">Cópia adicional das notificações de estágios não obrigatórios. Opcional — se vazio, apenas os e-mails gerais recebem.</span>
                 </span>
               </div>
-              <input type="email" id="notif-email-nao-obrig" class="form-input" placeholder="Opcional — ex: nao.obrigatorio@riogrande.ifrs.edu.br">
-              <p class="form-help">Opcional. Recebe cópia adicional de notificações de estágios não obrigatórios.</p>
+              <p class="form-help" style="margin-bottom:var(--space-3);">Opcional. Recebem cópia adicional de notificações de estágios não obrigatórios.</p>
+              <div class="email-list" id="notif-emails-nao-obrig-list"></div>
+              <div class="email-add-row">
+                <input type="email" id="novo-notif-email-nao-obrig" class="form-input" placeholder="Opcional" style="flex:1;">
+                <button type="button" class="btn btn-secondary" onclick="adicionarEmail('nao-obrig')">+ Adicionar</button>
+              </div>
             </div>
 
+            <!-- Erros -->
             <div class="form-group" style="margin-bottom:0;">
               <div class="label-tt">
                 <label class="form-label" for="error-email">E-mail de Alertas de Erros</label>
@@ -226,7 +243,7 @@
                 </span>
               </div>
               <input type="email" id="error-email" class="form-input" placeholder="estagios@riogrande.ifrs.edu.br">
-              <p class="form-help">Alertas de erros internos do sistema.</p>
+              <p class="form-help">Alertas de erros internos do sistema. Campo único obrigatório.</p>
             </div>
           </div>
 
@@ -638,67 +655,89 @@
 
   // ── TAB 1 — Destinatários ─────────────────────────────────────────────────────
   var adminEmailsArray = [];
+  var notifEmailsGeral    = [];
+  var notifEmailsObrig    = [];
+  var notifEmailsNaoObrig = [];
+
+  var EMAIL_LISTS = {
+    'admin':     { arr: function() { return adminEmailsArray; },    setArr: function(a) { adminEmailsArray = a; },    listId: 'admin-emails-list',           inputId: 'novo-admin-email',           minimo: 1, label: 'administrador' },
+    'geral':     { arr: function() { return notifEmailsGeral; },    setArr: function(a) { notifEmailsGeral = a; },    listId: 'notif-emails-geral-list',     inputId: 'novo-notif-email-geral',     minimo: 1, label: 'e-mail geral do setor' },
+    'obrig':     { arr: function() { return notifEmailsObrig; },    setArr: function(a) { notifEmailsObrig = a; },    listId: 'notif-emails-obrig-list',     inputId: 'novo-notif-email-obrig',     minimo: 0, label: 'e-mail de Obrigatório' },
+    'nao-obrig': { arr: function() { return notifEmailsNaoObrig; }, setArr: function(a) { notifEmailsNaoObrig = a; }, listId: 'notif-emails-nao-obrig-list', inputId: 'novo-notif-email-nao-obrig', minimo: 0, label: 'e-mail de Não Obrigatório' },
+  };
+
+  function renderEmailTagsFor(tipo) {
+    var cfg  = EMAIL_LISTS[tipo];
+    var arr  = cfg.arr();
+    var list = document.getElementById(cfg.listId);
+    list.innerHTML = arr.map(function (e, i) {
+      return '<span class="email-tag">' + escapeHtml(e) +
+        '<button type="button" aria-label="Remover ' + escapeHtml(e) + '" onclick="removerEmail(\'' + tipo + '\',' + i + ')">✕</button></span>';
+    }).join('');
+  }
+
+  function adicionarEmail(tipo) {
+    var cfg   = EMAIL_LISTS[tipo];
+    var input = document.getElementById(cfg.inputId);
+    var val   = input.value.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) { alert('Informe um e-mail válido.'); return; }
+    if (cfg.arr().includes(val)) { alert('E-mail já está na lista.'); return; }
+    cfg.arr().push(val);
+    renderEmailTagsFor(tipo);
+    input.value = ''; input.focus();
+  }
+
+  function removerEmail(tipo, idx) {
+    var cfg = EMAIL_LISTS[tipo];
+    if (cfg.arr().length <= cfg.minimo) { alert('É necessário manter pelo menos ' + cfg.minimo + ' ' + cfg.label + '.'); return; }
+    cfg.arr().splice(idx, 1);
+    renderEmailTagsFor(tipo);
+  }
+
+  // Alias para compatibilidade com botão de admin existente
+  function adicionarEmailAdmin() { adicionarEmail('admin'); }
+  function removerEmailAdmin(idx) { removerEmail('admin', idx); }
+
+  document.getElementById('novo-admin-email').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') { e.preventDefault(); adicionarEmail('admin'); }
+  });
+  ['novo-notif-email-geral','novo-notif-email-obrig','novo-notif-email-nao-obrig'].forEach(function (id) {
+    var tipo = id.replace('novo-notif-email-','').replace('novo-','') || 'geral';
+    // mapear id → tipo
+    var mapa = { 'novo-notif-email-geral':'geral', 'novo-notif-email-obrig':'obrig', 'novo-notif-email-nao-obrig':'nao-obrig' };
+    document.getElementById(id).addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') { e.preventDefault(); adicionarEmail(mapa[id]); }
+    });
+  });
 
   function preencherDestinatarios(cfg) {
-    adminEmailsArray = (cfg.adminEmails || []).slice();
-    renderEmailTags();
-    document.getElementById('notif-email').value          = cfg.notificationEmail              || '';
-    document.getElementById('notif-email-obrig').value    = cfg.notificationEmailObrigatorio    || '';
-    document.getElementById('notif-email-nao-obrig').value= cfg.notificationEmailNaoObrigatorio || '';
-    document.getElementById('error-email').value          = cfg.errorEmail                     || '';
+    adminEmailsArray    = (cfg.adminEmails                     || []).slice();
+    notifEmailsGeral    = (cfg.notificationEmails              || []).slice();
+    notifEmailsObrig    = (cfg.notificationEmailsObrigatorio   || []).slice();
+    notifEmailsNaoObrig = (cfg.notificationEmailsNaoObrigatorio|| []).slice();
+    ['admin','geral','obrig','nao-obrig'].forEach(renderEmailTagsFor);
+    document.getElementById('error-email').value          = cfg.errorEmail || '';
     document.getElementById('loading-dest').style.display = 'none';
     document.getElementById('dest-content').style.display = '';
   }
 
-  function renderEmailTags() {
-    var list = document.getElementById('admin-emails-list');
-    list.innerHTML = adminEmailsArray.map(function (e, i) {
-      return '<span class="email-tag">' + escapeHtml(e) +
-        '<button type="button" aria-label="Remover ' + escapeHtml(e) + '" onclick="removerEmailAdmin(' + i + ')">✕</button></span>';
-    }).join('');
-  }
-
-  function adicionarEmailAdmin() {
-    var input = document.getElementById('novo-admin-email');
-    var val   = input.value.trim().toLowerCase();
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) { alert('Informe um e-mail válido.'); return; }
-    if (adminEmailsArray.includes(val))            { alert('E-mail já está na lista.'); return; }
-    adminEmailsArray.push(val);
-    renderEmailTags();
-    input.value = '';
-    input.focus();
-  }
-
-  function removerEmailAdmin(idx) {
-    if (adminEmailsArray.length <= 1) { alert('É necessário manter pelo menos 1 e-mail de administrador.'); return; }
-    adminEmailsArray.splice(idx, 1);
-    renderEmailTags();
-  }
-
-  document.getElementById('novo-admin-email').addEventListener('keydown', function (e) {
-    if (e.key === 'Enter') { e.preventDefault(); adicionarEmailAdmin(); }
-  });
-
   async function salvarDestinatarios() {
-    var btn           = document.getElementById('btn-salvar-dest');
-    var reEmail       = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    var notifEmail    = document.getElementById('notif-email').value.trim().toLowerCase();
-    var notifObrig    = document.getElementById('notif-email-obrig').value.trim().toLowerCase();
-    var notifNaoObrig = document.getElementById('notif-email-nao-obrig').value.trim().toLowerCase();
-    var errorEmail    = document.getElementById('error-email').value.trim().toLowerCase();
+    var btn        = document.getElementById('btn-salvar-dest');
+    var reEmail    = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    var errorEmail = document.getElementById('error-email').value.trim().toLowerCase();
 
-    if (adminEmailsArray.length === 0)        { mostrarFbGlobal('error','Adicione pelo menos um e-mail de administrador.'); return; }
-    if (!reEmail.test(notifEmail))            { mostrarFbGlobal('error','E-mail geral do setor inválido.'); return; }
-    if (notifObrig    && !reEmail.test(notifObrig))    { mostrarFbGlobal('error','E-mail de Obrigatório inválido.'); return; }
-    if (notifNaoObrig && !reEmail.test(notifNaoObrig)) { mostrarFbGlobal('error','E-mail de Não Obrigatório inválido.'); return; }
-    if (!reEmail.test(errorEmail))            { mostrarFbGlobal('error','E-mail de erros inválido.'); return; }
+    if (adminEmailsArray.length === 0)    { mostrarFbGlobal('error','Adicione pelo menos um e-mail de administrador.'); return; }
+    if (notifEmailsGeral.length === 0)    { mostrarFbGlobal('error','Adicione pelo menos um e-mail geral do setor.'); return; }
+    if (!reEmail.test(errorEmail))        { mostrarFbGlobal('error','E-mail de alertas de erros inválido.'); return; }
 
     btn.classList.add('is-loading'); btn.disabled = true;
     try {
       var config = Object.assign({}, configCarregada || {}, {
-        adminEmails: adminEmailsArray, notificationEmail: notifEmail,
-        notificationEmailObrigatorio: notifObrig, notificationEmailNaoObrigatorio: notifNaoObrig,
-        errorEmail: errorEmail,
+        adminEmails:                     adminEmailsArray,
+        notificationEmails:              notifEmailsGeral,
+        notificationEmailsObrigatorio:   notifEmailsObrig,
+        notificationEmailsNaoObrigatorio:notifEmailsNaoObrig,
+        errorEmail:                      errorEmail,
       });
       await API.post('salvarConfigNotificacoes', { authToken: getAccessToken(), config: config });
       configCarregada = config;
