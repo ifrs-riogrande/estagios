@@ -421,21 +421,6 @@
 
       let html = '';
 
-      // ── 1. Pasta do Estágio no Drive ─────────────────────────────────────────
-      html += sec('1. 📁 Pasta do Estágio no Drive',
-        s.driveUrl
-          ? `<div class="avulso-list">
-               <div class="avulso-item">
-                 <div class="avulso-item-info">
-                   <div class="avulso-item-title">Pasta do Estágio</div>
-                   <div class="avulso-item-meta">Todos os documentos gerados são salvos aqui</div>
-                 </div>
-                 <a href="${escapeHtml(s.driveUrl)}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">📁 Abrir pasta ↗</a>
-               </div>
-             </div>`
-          : vazio('Pasta ainda não disponível.')
-      );
-
       // ── 2. Documentos de Admissão ─────────────────────────────────────────────
       {
         const admDocs = [
