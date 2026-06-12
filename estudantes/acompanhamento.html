@@ -439,9 +439,9 @@
       // ── 2. Documentos de Admissão ─────────────────────────────────────────────
       {
         const admDocs = [
-          { num: '2.1', label: 'Comprovante de Matrícula', url: s.linkDocMatricula, tipo: 'admissao_matricula' },
-          { num: '2.2', label: 'Documento de Identidade',  url: s.linkDocIdentidade, tipo: 'admissao_identidade' },
-          { num: '2.3', label: 'Boletim / Histórico',      url: s.linkDocBoletim,   tipo: 'admissao_boletim' },
+          { num: '2.1', label: 'Comprovante de Matrícula', url: s.linkDocMatricula },
+          { num: '2.2', label: 'Documento de Identidade',  url: s.linkDocIdentidade },
+          { num: '2.3', label: 'Boletim / Histórico',      url: s.linkDocBoletim },
         ];
         html += sec('2. 📄 Documentos de Admissão',
           `<div class="avulso-list">` +
@@ -452,9 +452,7 @@
                  <div class="avulso-item-meta">Enviado pelo estudante na solicitação</div>
                </div>
                ${d.url
-                 ? `<button type="button" class="btn btn-secondary btn-sm"
-                      data-estagio="${escapeHtml(s.id)}" data-tipo="${d.tipo}" data-ref=""
-                      onclick="enviarDocBtn(this)">✉ Enviar para mim</button>`
+                 ? `<span style="font-size:var(--font-size-xs);font-weight:600;color:var(--color-success)">✓ Enviado</span>`
                  : `<span style="font-size:var(--font-size-xs);color:var(--color-text-muted)">Não enviado</span>`}
              </div>`
           ).join('') + `</div>`
@@ -471,6 +469,11 @@
         let fluxoHtml = '';
         if (temFluxo) {
           // 3.1 Solicitação
+          const solBtnHtml = s.checklistPdfUrl
+            ? `<button type="button" class="btn btn-secondary btn-sm"
+                 data-estagio="${escapeHtml(s.id)}" data-tipo="solicitacao" data-ref=""
+                 onclick="enviarDocBtn(this)">✉ Enviar para mim</button>`
+            : `<span style="font-size:var(--font-size-xs);color:var(--color-text-muted)">PDF em preparação</span>`;
           fluxoHtml += `<div style="margin-bottom:var(--space-4)">
             <div style="font-size:var(--font-size-xs);font-weight:600;text-transform:uppercase;
                         color:var(--color-text-muted);letter-spacing:.04em;margin-bottom:var(--space-3)">
@@ -480,9 +483,9 @@
               <div class="avulso-item">
                 <div class="avulso-item-info">
                   <div class="avulso-item-title">📄 Solicitação de Estágio</div>
-                  <div class="avulso-item-meta">Disponível na pasta do Drive</div>
+                  <div class="avulso-item-meta">Documento com assinaturas do checklist</div>
                 </div>
-                ${s.driveUrl ? `<a href="${escapeHtml(s.driveUrl)}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">📁 Abrir pasta ↗</a>` : ''}
+                ${solBtnHtml}
               </div>
             </div>
           </div>`;

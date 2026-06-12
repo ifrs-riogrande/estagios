@@ -1136,6 +1136,15 @@ function listarMeusEstagios_(e) {
         // ── Status / Observações ──
         motivoReprovacao:     String(r[COL_SOL.MOTIVO_REPROVACAO]   || ''),
         observacaoSetor:      String(r[COL_SOL.OBS_SETOR]           || ''),
+        // ── PDF Checklist ──
+        checklistPdfUrl:      (function() {
+          try {
+            var ck = PropertiesService.getScriptProperties().getProperty('checklist_' + String(r[COL_SOL.ID_ESTAGIO] || ''));
+            if (!ck) return '';
+            var ckObj = JSON.parse(ck);
+            return String(ckObj.urlPdfChecklist || '');
+          } catch(_) { return ''; }
+        })(),
       });
     }
 
@@ -1994,7 +2003,7 @@ function enviarDocumentoPorEmail_(body) {
   // Whitelist de tipos válidos — rejeita qualquer outro valor
   var TIPOS_VALIDOS = {
     admissao_matricula:  true, admissao_identidade: true, admissao_boletim: true,
-    tce: true, avaliacao: true, parecer: true, avulso: true,
+    tce: true, avaliacao: true, parecer: true, avulso: true, solicitacao: true,
   };
   if (!TIPOS_VALIDOS[tipoDoc]) {
     return jsonError_('Tipo de documento inválido.', 'INVALID_PARAMS');
@@ -2095,6 +2104,8 @@ function _envDoc_obterBlob_(tipoDoc, docRef, idEstagio, dados, linhaIdx, ss) {
       return _envDoc_blobParecer_(idEstagio);
     case 'avulso':
       return _envDoc_blobAvulso_(docRef, idEstagio, ss);
+    case 'solicitacao':
+      return _envDoc_blobSolicitacao_(idEstagio);
     default:
       throw new Error('Tipo desconhecido: ' + tipoDoc);
   }
@@ -2163,4 +2174,14 @@ function _envDoc_blobAvulso_(linkDrive, idEstagio, ss) {
     }
   }
   throw new Error('Documento não pertence a este estágio.');
+}
+
+/** Retorna o blob do PDF da solicitação (checklist assinado). */
+function _envDoc_blobSolicitacao_(idEstagio) {
+  var raw = PropertiesService.getScriptProperties().getProperty('checklist_' + idEstagio);
+  if (!raw) throw new Error('PDF da solicitação não disponível.');
+  var ck;
+  try { ck = JSON.parse(raw); } catch(_) { throw new Error('Dados do checklist inválidos.'); }
+  if (!ck.urlPdfChecklist) throw new Error('PDF da solicitação ainda não foi gerado.');
+  return _envDoc_blobUrl_(ck.urlPdfChecklist, 'Solicitacao_Estagio_' + idEstagio + '.pdf', 'Solicitação de Estágio');
 }
