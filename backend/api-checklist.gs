@@ -723,12 +723,69 @@ function _notificarAdminAjusteChecklist_(idEstagio, ator, obs) {
   });
 }
 
-// ── Trigger diário: verificar prazos D-2 ─────────────────────────────────────
+// ── Trigger diário: verificar prazos D-N ─────────────────────────────────────
+
+/** Lê dias de antecedência do lembrete a partir de config_notificacoes (default: 2). */
+/** Retorna a config de um fluxo específico de lembrete (nova estrutura por fluxo). */
+function _obterConfigFluxoLembrete_(fluxo) {
+  var def = { ativo: true, diasAntes: 2, posVencimento: { frequenciaDias: 3, maxReenvios: 5, escalarAdminApartirDe: 2 } };
+  try {
+    var raw = PropertiesService.getScriptProperties().getProperty('config_notificacoes');
+    if (raw) {
+      var cfg = JSON.parse(raw);
+      var lemb = cfg.lembretes;
+      if (!lemb) return def;
+      // Compatibilidade com estrutura antiga (diasAntes global + fluxos flat)
+      if (lemb.diasAntes !== undefined) {
+        var ativo = lemb.fluxos ? lemb.fluxos[fluxo] !== false : true;
+        return { ativo: ativo, diasAntes: parseInt(lemb.diasAntes, 10) || 2, posVencimento: def.posVencimento };
+      }
+      if (lemb[fluxo]) {
+        var fl = lemb[fluxo];
+        return {
+          ativo:        fl.ativo !== false,
+          diasAntes:    parseInt(fl.diasAntes, 10) || 2,
+          posVencimento: {
+            frequenciaDias:       parseInt((fl.posVencimento || {}).frequenciaDias,       10) || 3,
+            maxReenvios:          parseInt((fl.posVencimento || {}).maxReenvios,          10) || 5,
+            escalarAdminApartirDe:parseInt((fl.posVencimento || {}).escalarAdminApartirDe,10) || 2
+          }
+        };
+      }
+    }
+  } catch (_) {}
+  return def;
+}
+
+/** Mantido para compatibilidade com chamadas legadas. */
+function _obterDiasLembrete_() {
+  return _obterConfigFluxoLembrete_('checklist').diasAntes;
+}
 
 function verificarPrazos() {
-  _verificarPrazosChecklist_();
-  _verificarPrazosAssinaturas_();
+  var cfgCk   = _obterConfigFluxoLembrete_('checklist');
+  var cfgAss  = _obterConfigFluxoLembrete_('assinaturas');
+  if (cfgCk.ativo)  _verificarPrazosChecklist_();
+  if (cfgAss.ativo) _verificarPrazosAssinaturas_();
   try { verificarAvaliacoesDevidas(); } catch (eAv) { logErro_('verificarPrazos.avaliacoes', eAv); }
+}
+
+/** Calcula dias úteis decorridos APÓS o vencimento (retorna 0 se ainda não venceu). */
+function _diasUteisApos_(dataISO) {
+  if (!dataISO) return 0;
+  try {
+    var hoje = new Date(); hoje.setHours(0,0,0,0);
+    var alvo = new Date(dataISO); alvo.setHours(0,0,0,0);
+    if (hoje <= alvo) return 0;
+    var d = new Date(alvo); d.setDate(d.getDate() + 1);
+    var dias = 0;
+    while (d <= hoje) {
+      var dow = d.getDay();
+      if (dow !== 0 && dow !== 6) dias++;
+      d.setDate(d.getDate() + 1);
+    }
+    return dias;
+  } catch (e) { return 0; }
 }
 
 function _diasUteisAte_(dataISO) {
@@ -752,6 +809,7 @@ function _diasUteisAte_(dataISO) {
 
 function _verificarPrazosChecklist_() {
   try {
+    var cfg   = _obterConfigFluxoLembrete_('checklist');
     var sheet = SpreadsheetApp.openById(SS_ID).getSheetByName(CHECKLIST_SHEET);
     if (!sheet) return;
     var dados = sheet.getDataRange().getValues();
@@ -764,37 +822,62 @@ function _verificarPrazosChecklist_() {
       if (!checklist) continue;
 
       var sol = _obterDadosSolicitacaoCompleto_(id);
+      var emailAdmin = _obterEmailNotificacaoAdmin_();
       var emailsAtores = {
         orientador:  sol.emailOrientador  || '',
-        // Usa E-mail Setor do supervisor (mesma lógica do envio inicial)
         supervisor:  _obterEmailSetorSupervisor_(sol.nomeSupervisor, sol.emailSupervisor),
         coordenador: _ckObterEmailCoordenador_(sol.curso || ''),
-        admin:       'estagios@riogrande.ifrs.edu.br',
+        admin:       emailAdmin,
       };
 
       var modificado = false;
       ['orientador', 'supervisor', 'coordenador', 'admin'].forEach(function (ator) {
         var ck = checklist[ator];
         if (!ck || ck.status !== CK_STATUS.PENDENTE || !ck.prazoVencimento) return;
-        if (_diasUteisAte_(ck.prazoVencimento) !== 2) return;
-        if ((ck.lembretesEnviados || 0) >= 1) return;
         var email = emailsAtores[ator];
         if (!email) return;
-        // Monta URL com token (magic-link) para supervisor e coordenador; sem token para admin
+
+        var diasAte   = _diasUteisAte_(ck.prazoVencimento);
+        var diasApos  = _diasUteisApos_(ck.prazoVencimento);
+        var jaEnviados = ck.lembretesEnviados || 0;
+        var pv = cfg.posVencimento;
+        var deveEnviar = false;
+
+        if (diasApos === 0) {
+          // Antes do vencimento: envia lembrete exatamente N dias antes, 1 única vez
+          if (diasAte === cfg.diasAntes && jaEnviados === 0) deveEnviar = true;
+        } else {
+          // Pós-vencimento: envia a cada frequenciaDias úteis, até maxReenvios
+          var numPosEnviados = Math.max(0, jaEnviados - 1); // desconta o lembrete pré-vencimento
+          if (pv.maxReenvios > 0 && numPosEnviados < pv.maxReenvios) {
+            if (diasApos > 0 && diasApos % pv.frequenciaDias === 0) deveEnviar = true;
+          }
+        }
+
+        if (!deveEnviar) return;
+
+        // Escalonamento: a partir do N-ésimo reenvio pós-vencimento, copia o admin
+        var numPosEnviadosAtual = Math.max(0, jaEnviados - 1);
+        var copiarAdmin = (diasApos > 0) && (numPosEnviadosAtual + 1 >= pv.escalarAdminApartirDe) && (ator !== 'admin');
+
         var urlLembrete;
         if ((ator === 'supervisor' || ator === 'coordenador') && ck.token) {
           urlLembrete = BASE_URL_SGE_ + '/checklist/?id=' + encodeURIComponent(id)
                       + '&token=' + encodeURIComponent(ck.token);
         }
-        MAIL.enviarEmailLembreteChecklist({
+        var params = {
           idEstagio:       id,
           nomeEstudante:   sol.nomeEstudante || '',
           labelAtor:       LABELS_ATORES_CK_[ator],
           prazoVencimento: ck.prazoVencimento,
           email:           email,
           urlChecklist:    urlLembrete || '',
-        });
-        ck.lembretesEnviados = (ck.lembretesEnviados || 0) + 1;
+        };
+        MAIL.enviarEmailLembreteChecklist(params);
+        if (copiarAdmin && emailAdmin && emailAdmin !== email) {
+          MAIL.enviarEmailLembreteChecklist(Object.assign({}, params, { email: emailAdmin }));
+        }
+        ck.lembretesEnviados = jaEnviados + 1;
         modificado = true;
       });
 
@@ -807,6 +890,7 @@ function _verificarPrazosChecklist_() {
 
 function _verificarPrazosAssinaturas_() {
   try {
+    var cfg   = _obterConfigFluxoLembrete_('assinaturas');
     var sheet = SpreadsheetApp.openById(SS_ID).getSheetByName(ASSINATURAS_SHEET);
     if (!sheet) return;
     var dados = sheet.getDataRange().getValues();
@@ -819,14 +903,34 @@ function _verificarPrazosAssinaturas_() {
       if (!fluxo) continue;
 
       var sol = _obterDadosSolicitacaoCompleto_(id);
+      var emailAdmin = _obterEmailNotificacaoAdmin_();
       var modificado = false;
+      var pv = cfg.posVencimento;
 
       fluxo.etapas.forEach(function (et) {
         if (et.status !== ASS_STATUS.AGUARDANDO || !et.prazoVencimento) return;
-        if (_diasUteisAte_(et.prazoVencimento) !== 2) return;
-        if ((et.lembretesEnviados || 0) >= 1) return;
         if (!et.email) return;
-        MAIL.enviarEmailLembreteAssinatura({
+
+        var diasAte   = _diasUteisAte_(et.prazoVencimento);
+        var diasApos  = _diasUteisApos_(et.prazoVencimento);
+        var jaEnviados = et.lembretesEnviados || 0;
+        var deveEnviar = false;
+
+        if (diasApos === 0) {
+          if (diasAte === cfg.diasAntes && jaEnviados === 0) deveEnviar = true;
+        } else {
+          var numPosEnviados = Math.max(0, jaEnviados - 1);
+          if (pv.maxReenvios > 0 && numPosEnviados < pv.maxReenvios) {
+            if (diasApos > 0 && diasApos % pv.frequenciaDias === 0) deveEnviar = true;
+          }
+        }
+
+        if (!deveEnviar) return;
+
+        var numPosEnviadosAtual = Math.max(0, jaEnviados - 1);
+        var copiarAdmin = (diasApos > 0) && (numPosEnviadosAtual + 1 >= pv.escalarAdminApartirDe);
+
+        var params = {
           idEstagio:       id,
           nomeEstudante:   sol.nomeEstudante || '',
           labelAtor:       et.label,
@@ -834,8 +938,12 @@ function _verificarPrazosAssinaturas_() {
           email:           et.email,
           numeroEtapa:     et.numero,
           tipo:            et.tipo,
-        });
-        et.lembretesEnviados = (et.lembretesEnviados || 0) + 1;
+        };
+        MAIL.enviarEmailLembreteAssinatura(params);
+        if (copiarAdmin && emailAdmin && emailAdmin !== et.email) {
+          MAIL.enviarEmailLembreteAssinatura(Object.assign({}, params, { email: emailAdmin }));
+        }
+        et.lembretesEnviados = jaEnviados + 1;
         modificado = true;
       });
 

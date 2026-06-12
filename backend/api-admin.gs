@@ -144,6 +144,7 @@ function doGetAdmin(e) {
       case 'obterDiretoriaDEN':        return jsonOk_(_obterDiretoriaAdmin_('DEN'));
       case 'obterDiretoriaDEX':        return jsonOk_(_obterDiretoriaAdmin_('DEX'));
       case 'obterConfigTCE':           return obterConfigTCE_();
+      case 'obterConfigNotificacoes':  return obterConfigNotificacoes_();
       default: return jsonError_('Ação GET não reconhecida: ' + action, 'UNKNOWN_ACTION');
     }
   } catch (err) {
@@ -210,6 +211,7 @@ function doPostAdmin(e) {
       case 'salvarCurso':            return salvarCurso_(body);
       case 'deletarCurso':           return deletarCurso_(body);
       case 'salvarConfigTCE':        return salvarConfigTCE_(body);
+      case 'salvarConfigNotificacoes': return salvarConfigNotificacoes_(body);
       // Diretor Geral
       case 'salvarDiretorGeral':     return salvarDiretorGeral_(body);
       case 'salvarDiretoriaDEN':     return _salvarDiretoria_(body, 'DEN');
@@ -2672,5 +2674,144 @@ function testarEnvioEmail() {
       Logger.log('ERRO GmailApp: name=' + e2.name + ' | message=' + e2.message + ' | str=' + String(e2));
     }
   }
+}
+
+// ── Configurações de Notificações ────────────────────────────────────────────
+
+var NOTIF_CONFIG_KEY_ = 'config_notificacoes';
+
+function _defaultFluxoLembrete_() {
+  return { ativo: true, diasAntes: 2, posVencimento: { frequenciaDias: 3, maxReenvios: 5, escalarAdminApartirDe: 2 } };
+}
+
+function _defaultConfigNotificacoes_() {
+  return {
+    adminEmails:                    CFG_ADMIN.ADMIN_EMAILS.slice(),
+    notificationEmail:              'estagios@riogrande.ifrs.edu.br',
+    notificationEmailObrigatorio:   '',
+    notificationEmailNaoObrigatorio:'',
+    errorEmail:                     'estagios@riogrande.ifrs.edu.br',
+    lembretes: {
+      checklist:   _defaultFluxoLembrete_(),
+      assinaturas: _defaultFluxoLembrete_(),
+      avaliacoes:  _defaultFluxoLembrete_(),
+      adendo:      _defaultFluxoLembrete_()
+    }
+  };
+}
+
+/** Migra estrutura antiga (diasAntes + fluxos flat) para nova (por fluxo). */
+function _migrarLembretesAntigos_(lembretes) {
+  var fluxos = ['checklist', 'assinaturas', 'avaliacoes', 'adendo'];
+  var diasAntes = parseInt(lembretes.diasAntes, 10) || 2;
+  var resultado = {};
+  fluxos.forEach(function (f) {
+    var ativo = lembretes.fluxos ? lembretes.fluxos[f] !== false : true;
+    resultado[f] = { ativo: ativo, diasAntes: diasAntes, posVencimento: _defaultFluxoLembrete_().posVencimento };
+  });
+  return resultado;
+}
+
+function _backfillFluxo_(fluxo) {
+  var def = _defaultFluxoLembrete_();
+  if (typeof fluxo.ativo !== 'boolean')  fluxo.ativo = def.ativo;
+  if (!fluxo.diasAntes)                  fluxo.diasAntes = def.diasAntes;
+  if (!fluxo.posVencimento)              fluxo.posVencimento = def.posVencimento;
+  else {
+    if (!fluxo.posVencimento.frequenciaDias)      fluxo.posVencimento.frequenciaDias = def.posVencimento.frequenciaDias;
+    if (!fluxo.posVencimento.maxReenvios)         fluxo.posVencimento.maxReenvios = def.posVencimento.maxReenvios;
+    if (!fluxo.posVencimento.escalarAdminApartirDe) fluxo.posVencimento.escalarAdminApartirDe = def.posVencimento.escalarAdminApartirDe;
+  }
+  return fluxo;
+}
+
+/** GET obterConfigNotificacoes */
+function obterConfigNotificacoes_() {
+  try {
+    var raw = PropertiesService.getScriptProperties().getProperty(NOTIF_CONFIG_KEY_);
+    if (raw) {
+      var cfg = JSON.parse(raw);
+      var def = _defaultConfigNotificacoes_();
+      // Backfill campos de destinatários opcionais
+      if (cfg.notificationEmailObrigatorio    === undefined) cfg.notificationEmailObrigatorio    = '';
+      if (cfg.notificationEmailNaoObrigatorio === undefined) cfg.notificationEmailNaoObrigatorio = '';
+      // Migra estrutura antiga de lembretes se necessário
+      if (!cfg.lembretes) {
+        cfg.lembretes = def.lembretes;
+      } else if (cfg.lembretes.diasAntes !== undefined || cfg.lembretes.fluxos !== undefined) {
+        cfg.lembretes = _migrarLembretesAntigos_(cfg.lembretes);
+      } else {
+        ['checklist','assinaturas','avaliacoes','adendo'].forEach(function (f) {
+          cfg.lembretes[f] = _backfillFluxo_(cfg.lembretes[f] || {});
+        });
+      }
+      return jsonOk_(cfg);
+    }
+  } catch (_) {}
+  return jsonOk_(_defaultConfigNotificacoes_());
+}
+
+/** POST salvarConfigNotificacoes */
+function salvarConfigNotificacoes_(body) {
+  var config = body.config;
+  if (!config) throw new Error('Dados de configuração inválidos.');
+
+  var reEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  var adminEmails = (Array.isArray(config.adminEmails) ? config.adminEmails : [])
+    .map(function(e) { return String(e).trim().toLowerCase(); })
+    .filter(function(e) { return reEmail.test(e); });
+  if (adminEmails.length === 0) throw new Error('É necessário pelo menos um e-mail de administrador válido.');
+
+  var notificationEmail = String(config.notificationEmail || '').trim().toLowerCase();
+  if (!reEmail.test(notificationEmail)) throw new Error('E-mail de notificações inválido.');
+
+  var notifObrig    = String(config.notificationEmailObrigatorio    || '').trim().toLowerCase();
+  var notifNaoObrig = String(config.notificationEmailNaoObrigatorio || '').trim().toLowerCase();
+  if (notifObrig    && !reEmail.test(notifObrig))    throw new Error('E-mail de Estágio Obrigatório inválido.');
+  if (notifNaoObrig && !reEmail.test(notifNaoObrig)) throw new Error('E-mail de Estágio Não Obrigatório inválido.');
+
+  var errorEmail = String(config.errorEmail || '').trim().toLowerCase();
+  if (!reEmail.test(errorEmail)) throw new Error('E-mail de erros inválido.');
+
+  // Valida lembretes por fluxo
+  var fluxosNomes = ['checklist', 'assinaturas', 'avaliacoes', 'adendo'];
+  var lembretes = config.lembretes || {};
+  var lembretesToSave = {};
+  fluxosNomes.forEach(function (f) {
+    var fl = lembretes[f] || {};
+    var diasAntes = parseInt(fl.diasAntes || 2, 10);
+    if (isNaN(diasAntes) || diasAntes < 1 || diasAntes > 30)
+      throw new Error('Dias antes do vencimento para "' + f + '" deve ser entre 1 e 30.');
+    var pv = fl.posVencimento || {};
+    var freq   = parseInt(pv.frequenciaDias      || 3, 10);
+    var maxR   = parseInt(pv.maxReenvios         || 5, 10);
+    var escalar = parseInt(pv.escalarAdminApartirDe || 2, 10);
+    if (isNaN(freq)    || freq    < 1 || freq    > 30) throw new Error('Frequência pós-vencimento para "' + f + '" inválida.');
+    if (isNaN(maxR)    || maxR    < 0 || maxR    > 20) throw new Error('Máximo de reenvios para "' + f + '" deve ser entre 0 e 20.');
+    if (isNaN(escalar) || escalar < 1 || escalar > 20) throw new Error('Escalar admin a partir de para "' + f + '" inválido.');
+    lembretesToSave[f] = {
+      ativo:        fl.ativo !== false,
+      diasAntes:    diasAntes,
+      posVencimento: { frequenciaDias: freq, maxReenvios: maxR, escalarAdminApartirDe: escalar }
+    };
+  });
+
+  var toSave = {
+    adminEmails:                    adminEmails,
+    notificationEmail:              notificationEmail,
+    notificationEmailObrigatorio:   notifObrig,
+    notificationEmailNaoObrigatorio: notifNaoObrig,
+    errorEmail:                     errorEmail,
+    lembretes:                      lembretesToSave
+  };
+
+  var props = PropertiesService.getScriptProperties();
+  props.setProperty(NOTIF_CONFIG_KEY_,    JSON.stringify(toSave));
+  props.setProperty('ADMIN_EMAILS',       adminEmails.join(','));
+  props.setProperty('NOTIFICATION_EMAIL', notificationEmail);
+  props.setProperty('ERROR_EMAIL',        errorEmail);
+
+  return jsonOk_({ mensagem: 'Configurações de notificações salvas com sucesso.' });
 }
 
