@@ -421,12 +421,12 @@
 
       let html = '';
 
-      // ── 2. Documentos de Admissão ─────────────────────────────────────────────
+      // ── 1. Documentos de Admissão ─────────────────────────────────────────────
       {
         const admDocs = [
-          { num: '2.1', label: 'Comprovante de Matrícula', url: s.linkDocMatricula },
-          { num: '2.2', label: 'Documento de Identidade',  url: s.linkDocIdentidade },
-          { num: '2.3', label: 'Boletim / Histórico',      url: s.linkDocBoletim },
+          { num: '1.1', label: 'Comprovante de Matrícula', url: s.linkDocMatricula },
+          { num: '1.2', label: 'Documento de Identidade',  url: s.linkDocIdentidade },
+          { num: '1.3', label: 'Boletim / Histórico',      url: s.linkDocBoletim },
         ];
         html += sec('1. 📄 Documentos de Admissão',
           `<div class="avulso-list">` +
@@ -530,11 +530,11 @@
     function buildDocsAvaliacoes() {
       if (!_avaliacoes || !_avaliacoes.length) {
         return `<div style="margin-bottom:var(--space-3)">
-          <div style="font-size:var(--font-size-xs);font-weight:600;text-transform:uppercase;color:var(--color-text-muted);letter-spacing:.04em;margin-bottom:var(--space-3)">4.1 Avaliações Parciais</div>
+          <div style="font-size:var(--font-size-xs);font-weight:600;text-transform:uppercase;color:var(--color-text-muted);letter-spacing:.04em;margin-bottom:var(--space-3)">3.1 Avaliações Parciais</div>
           <p style="font-size:var(--font-size-sm);color:var(--color-text-muted)">Nenhuma avaliação parcial concluída.</p>
         </div>
         <div>
-          <div style="font-size:var(--font-size-xs);font-weight:600;text-transform:uppercase;color:var(--color-text-muted);letter-spacing:.04em;margin-bottom:var(--space-3)">4.2 Avaliação Final</div>
+          <div style="font-size:var(--font-size-xs);font-weight:600;text-transform:uppercase;color:var(--color-text-muted);letter-spacing:.04em;margin-bottom:var(--space-3)">3.2 Avaliação Final</div>
           <p style="font-size:var(--font-size-sm);color:var(--color-text-muted)">Avaliação final ainda não concluída.</p>
         </div>`;
       }
@@ -542,7 +542,7 @@
       const final    = _avaliacoes.find(a => a.tipo === 'final' && a.status === 'concluido' && a.pdfUrl);
 
       let html = `<div style="margin-bottom:var(--space-4)">
-        <div style="font-size:var(--font-size-xs);font-weight:600;text-transform:uppercase;color:var(--color-text-muted);letter-spacing:.04em;margin-bottom:var(--space-3)">4.1 Avaliações Parciais</div>`;
+        <div style="font-size:var(--font-size-xs);font-weight:600;text-transform:uppercase;color:var(--color-text-muted);letter-spacing:.04em;margin-bottom:var(--space-3)">3.1 Avaliações Parciais</div>`;
       if (parciais.length) {
         html += `<div class="avulso-list">` +
           parciais.map((a, i) => `
@@ -559,7 +559,7 @@
         html += `<p style="font-size:var(--font-size-sm);color:var(--color-text-muted)">Nenhuma avaliação parcial concluída.</p>`;
       }
       html += `</div><div>
-        <div style="font-size:var(--font-size-xs);font-weight:600;text-transform:uppercase;color:var(--color-text-muted);letter-spacing:.04em;margin-bottom:var(--space-3)">4.2 Avaliação Final</div>`;
+        <div style="font-size:var(--font-size-xs);font-weight:600;text-transform:uppercase;color:var(--color-text-muted);letter-spacing:.04em;margin-bottom:var(--space-3)">3.2 Avaliação Final</div>`;
       if (final) {
         html += `<div class="avulso-list">
           <div class="avulso-item">
