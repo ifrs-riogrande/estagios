@@ -1956,3 +1956,211 @@ function contarEstagiosAtivos_() {
     return jsonOk_({ obrigatorio: 0, naoObrigatorio: 0, total: 0 });
   }
 }
+
+// ---------------------------------------------------------------------------
+// enviarDocumentoPorEmail_ — POST action=enviarDocumentoPorEmail
+// ---------------------------------------------------------------------------
+
+/**
+ * Envia um documento finalizado por e-mail para o próprio estudante autenticado.
+ *
+ * Segurança:
+ *   - Requer token de estudante válido
+ *   - Verifica que idEstagio pertence ao e-mail do token (nunca ao parâmetro)
+ *   - Cooldown de 5 min por (email + tipoDoc + docRef) via PropertiesService
+ *   - E-mail de destino sempre extraído do token — nunca de parâmetro externo (LGPD)
+ *   - docRef validado cruzando com idEstagio no servidor
+ *
+ * Body: { authToken, idEstagio, tipoDoc, docRef? }
+ * tipoDoc: 'admissao_matricula' | 'admissao_identidade' | 'admissao_boletim'
+ *        | 'tce' | 'avaliacao' | 'parecer' | 'avulso'
+ * docRef: avalId (avaliacao) | linkDrive (avulso) | '' para os demais
+ */
+function enviarDocumentoPorEmail_(body) {
+  // ── 1. Autenticação ──────────────────────────────────────────────────────
+  var tokenInfo;
+  try { tokenInfo = validarTokenEstudante_(body.authToken); }
+  catch (e) { return jsonError_('Não autorizado: ' + e.message, 'AUTH_ERROR'); }
+
+  var emailEstudante = String(tokenInfo.email || '').toLowerCase().trim();
+  var idEstagio      = String(body.idEstagio || '').trim();
+  var tipoDoc        = String(body.tipoDoc   || '').trim();
+  var docRef         = String(body.docRef    || '').trim();
+
+  if (!emailEstudante || !idEstagio || !tipoDoc) {
+    return jsonError_('Parâmetros obrigatórios ausentes.', 'INVALID_PARAMS');
+  }
+
+  // Whitelist de tipos válidos — rejeita qualquer outro valor
+  var TIPOS_VALIDOS = {
+    admissao_matricula:  true, admissao_identidade: true, admissao_boletim: true,
+    tce: true, avaliacao: true, parecer: true, avulso: true,
+  };
+  if (!TIPOS_VALIDOS[tipoDoc]) {
+    return jsonError_('Tipo de documento inválido.', 'INVALID_PARAMS');
+  }
+
+  // ── 2. Verifica propriedade do estágio ───────────────────────────────────
+  var ss       = SpreadsheetApp.openById(CFG_SOL.SS_ID);
+  var sheetSol = ss.getSheetByName(CFG_SOL.ABA_SOL);
+  if (!sheetSol) return jsonError_('Dados não encontrados.', 'INTERNAL');
+
+  var dados    = sheetSol.getDataRange().getValues();
+  var linhaIdx = -1;
+  for (var i = 1; i < dados.length; i++) {
+    var eId  = String(dados[i][COL_SOL.ID_ESTAGIO]      || '').trim();
+    var eEml = String(dados[i][COL_SOL.EMAIL_ESTUDANTE] || '').toLowerCase().trim();
+    if (eId === idEstagio && eEml === emailEstudante) { linhaIdx = i; break; }
+  }
+  if (linhaIdx < 0) return jsonError_('Estágio não encontrado para este estudante.', 'NOT_FOUND');
+
+  // ── 3. Cooldown — 5 min por (email + tipoDoc + docRef) ──────────────────
+  var rateKey  = 'envDoc_' + Utilities.base64Encode(emailEstudante + '|' + tipoDoc + '|' + docRef).slice(0, 40);
+  var props    = PropertiesService.getScriptProperties();
+  var lastSent = parseInt(props.getProperty(rateKey) || '0', 10);
+  var agora    = Date.now();
+  if (agora - lastSent < 5 * 60 * 1000) {
+    var restante = Math.ceil((5 * 60 * 1000 - (agora - lastSent)) / 60000);
+    return jsonError_('Aguarde ' + restante + ' min antes de reenviar este documento.', 'RATE_LIMIT');
+  }
+
+  // ── 4. Obtém o blob do arquivo ───────────────────────────────────────────
+  var blob, nomeArquivo, labelDoc;
+  try {
+    var resultado = _envDoc_obterBlob_(tipoDoc, docRef, idEstagio, dados, linhaIdx, ss);
+    blob        = resultado.blob;
+    nomeArquivo = resultado.nome;
+    labelDoc    = resultado.label;
+  } catch (eBlob) {
+    logErro_('enviarDocumentoPorEmail_.blob', eBlob);
+    return jsonError_('Documento não disponível: ' + eBlob.message, 'DOC_ERROR');
+  }
+
+  // ── 5. Envia o e-mail ────────────────────────────────────────────────────
+  try {
+    MailApp.sendEmail({
+      to:          emailEstudante,
+      subject:     'SGE IFRS — ' + labelDoc + ' (' + idEstagio + ')',
+      body:        'Olá,\n\nSegue em anexo o documento solicitado do seu estágio.\n\n'
+                 + 'Estágio: ' + idEstagio + '\n'
+                 + 'Documento: ' + labelDoc + '\n\n'
+                 + 'Este e-mail foi gerado automaticamente pela Central de Estágios IFRS.\n'
+                 + 'Não responda a este e-mail.\n\n'
+                 + 'Central de Estágios — IFRS Campus Rio Grande\n'
+                 + 'estagios@riogrande.ifrs.edu.br',
+      attachments: [blob.setName(nomeArquivo)],
+      name:        'Central de Estágios IFRS',
+      replyTo:     'estagios@riogrande.ifrs.edu.br',
+    });
+  } catch (eMail) {
+    logErro_('enviarDocumentoPorEmail_.sendEmail', eMail);
+    return jsonError_('Erro ao enviar o e-mail. Tente novamente.', 'MAIL_ERROR');
+  }
+
+  // ── 6. Registra cooldown ─────────────────────────────────────────────────
+  try { props.setProperty(rateKey, String(agora)); } catch (_) {}
+
+  return jsonOk_({ mensagem: 'Documento enviado para o seu e-mail institucional.' });
+}
+
+// ---------------------------------------------------------------------------
+// Helpers internos — _envDoc_*
+// ---------------------------------------------------------------------------
+
+function _envDoc_obterBlob_(tipoDoc, docRef, idEstagio, dados, linhaIdx, ss) {
+  switch (tipoDoc) {
+    case 'admissao_matricula':
+      return _envDoc_blobUrl_(
+        String(dados[linhaIdx][COL_SOL.LINK_DOC_MAT] || ''),
+        'Comprovante_Matricula_' + idEstagio + '.pdf',
+        'Comprovante de Matrícula'
+      );
+    case 'admissao_identidade':
+      return _envDoc_blobUrl_(
+        String(dados[linhaIdx][COL_SOL.LINK_DOC_ID] || ''),
+        'Documento_Identidade_' + idEstagio + '.pdf',
+        'Documento de Identidade'
+      );
+    case 'admissao_boletim':
+      return _envDoc_blobUrl_(
+        String(dados[linhaIdx][COL_SOL.LINK_DOC_BOL] || ''),
+        'Boletim_' + idEstagio + '.pdf',
+        'Boletim / Histórico Escolar'
+      );
+    case 'tce':
+      return _envDoc_blobTce_(idEstagio);
+    case 'avaliacao':
+      return _envDoc_blobAvaliacao_(docRef, idEstagio);
+    case 'parecer':
+      return _envDoc_blobParecer_(idEstagio);
+    case 'avulso':
+      return _envDoc_blobAvulso_(docRef, idEstagio, ss);
+    default:
+      throw new Error('Tipo desconhecido: ' + tipoDoc);
+  }
+}
+
+/** Baixa um arquivo do Drive por URL e retorna o blob. */
+function _envDoc_blobUrl_(driveUrl, nome, label) {
+  if (!driveUrl) throw new Error('URL do documento não disponível.');
+  var m = driveUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
+  if (!m) m = driveUrl.match(/id=([a-zA-Z0-9_-]+)/);
+  if (!m) m = driveUrl.match(/[-\w]{25,}/);
+  if (!m) throw new Error('URL do Drive inválida.');
+  var file = DriveApp.getFileById(m[1] || m[0]);
+  return { blob: file.getBlob(), nome: nome, label: label };
+}
+
+/** Obtém o PDF do TCE concluído a partir do fluxo de assinaturas. */
+function _envDoc_blobTce_(idEstagio) {
+  var fluxoStr = PropertiesService.getScriptProperties().getProperty('fluxo_' + idEstagio);
+  if (!fluxoStr) throw new Error('Fluxo do TCE não encontrado.');
+  var fluxo = JSON.parse(fluxoStr);
+  if (fluxo.statusGeral !== 'concluido') throw new Error('TCE ainda não concluído.');
+  // Última etapa com driveUrl = versão final assinada
+  var urlFinal = '';
+  var etapas = fluxo.etapas || [];
+  for (var i = etapas.length - 1; i >= 0; i--) {
+    if (etapas[i].driveUrl) { urlFinal = etapas[i].driveUrl; break; }
+  }
+  if (!urlFinal) throw new Error('PDF do TCE não encontrado no fluxo.');
+  return _envDoc_blobUrl_(urlFinal, 'TCE_' + idEstagio + '.pdf', 'TCE — Termo de Compromisso de Estágio');
+}
+
+/** Obtém o PDF de uma avaliação concluída via PropertiesService. */
+function _envDoc_blobAvaliacao_(avalId, idEstagio) {
+  if (!avalId) throw new Error('Identificador da avaliação não informado.');
+  var str = PropertiesService.getScriptProperties().getProperty('aval_' + avalId);
+  if (!str) throw new Error('Avaliação não encontrada.');
+  var fluxo = JSON.parse(str);
+  // Valida que a avaliação pertence ao estágio do estudante autenticado
+  if (String(fluxo.idEstagio || '') !== idEstagio) throw new Error('Avaliação não pertence a este estágio.');
+  if (fluxo.statusGeral !== 'concluido' || !fluxo.pdfUrl) throw new Error('Avaliação não concluída ou sem PDF.');
+  return _envDoc_blobUrl_(fluxo.pdfUrl, 'Avaliacao_' + avalId + '.pdf', 'Avaliação de Estágio');
+}
+
+/** Obtém o PDF do parecer final. */
+function _envDoc_blobParecer_(idEstagio) {
+  var parecer = obterParecer_(idEstagio);
+  if (!parecer || !parecer.pdfUrl) throw new Error('Parecer final não disponível.');
+  return _envDoc_blobUrl_(parecer.pdfUrl, 'Parecer_Final_' + idEstagio + '.pdf', 'Parecer Final de Estágio');
+}
+
+/**
+ * Obtém o blob de um documento avulso identificado pelo linkDrive.
+ * Valida que o linkDrive pertence ao idEstagio do estudante antes de servir.
+ */
+function _envDoc_blobAvulso_(linkDrive, idEstagio, ss) {
+  if (!linkDrive) throw new Error('Link do documento não informado.');
+  var sheetDoc = ss.getSheetByName(CFG_SOL.ABA_DOC);
+  if (!sheetDoc) throw new Error('Aba de documentos não encontrada.');
+  var rows = sheetDoc.getDataRange().getValues();
+  for (var i = 1; i < rows.length; i++) {
+    if (String(rows[i][COL_DOC.ID_ESTAGIO]  || '') === idEstagio &&
+        String(rows[i][COL_DOC.LINK_DRIVE]   || '') === linkDrive) {
+      var nome = String(rows[i][COL_DOC.NOME_ARQUIVO] || rows[i][COL_DOC.TITULO] || 'documento') + '.pdf';
+      return _envDoc_blobUrl_(linkDrive, nome, String(rows[i][COL_DOC.TITULO] || 'Documento Avulso'));
+    }
+  }
+  throw new Error('Documento não pertence a este estágio.');
+}

@@ -146,8 +146,9 @@ var POST_ROUTES = {
   'enviarDocumentoDG':         doPostSolicitacao,
   'responderAceiteOrientador': doPostSolicitacao,
   'trocarOrientador':          doPostSolicitacao,
-  'uploadDocumentoEstagio':    doPostSolicitacao,
-  'marcarDocumentoRevisado':   doPostSolicitacao,
+  'uploadDocumentoEstagio':      doPostSolicitacao,
+  'marcarDocumentoRevisado':     doPostSolicitacao,
+  'enviarDocumentoPorEmail':     doPostSolicitacao,
 
   // Agentes (pÃºblico)
   'cadastrarAgente':           doPostAgentes,
@@ -354,8 +355,9 @@ function doPostSolicitacao(e) {
     case 'enviarDocumentoDG':          return enviarDocumentoDG_(body);
     case 'responderAceiteOrientador':  return responderAceiteOrientador_(body);
     case 'trocarOrientador':           return trocarOrientador_(body);
-    case 'uploadDocumentoEstagio':     return uploadDocumentoEstagio_(body);
-    case 'marcarDocumentoRevisado':    return marcarDocumentoRevisado_(body);
+    case 'uploadDocumentoEstagio':       return uploadDocumentoEstagio_(body);
+    case 'marcarDocumentoRevisado':      return marcarDocumentoRevisado_(body);
+    case 'enviarDocumentoPorEmail':      return enviarDocumentoPorEmail_(body);
     default: return jsonError_('Ação não implementada: ' + action, 'NOT_IMPLEMENTED');
   }
 }

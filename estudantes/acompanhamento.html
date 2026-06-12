@@ -439,9 +439,9 @@
       // ── 2. Documentos de Admissão ─────────────────────────────────────────────
       {
         const admDocs = [
-          { num: '2.1', label: 'Comprovante de Matrícula', url: s.linkDocMatricula },
-          { num: '2.2', label: 'Documento de Identidade',  url: s.linkDocIdentidade },
-          { num: '2.3', label: 'Boletim / Histórico',      url: s.linkDocBoletim },
+          { num: '2.1', label: 'Comprovante de Matrícula', url: s.linkDocMatricula, tipo: 'admissao_matricula' },
+          { num: '2.2', label: 'Documento de Identidade',  url: s.linkDocIdentidade, tipo: 'admissao_identidade' },
+          { num: '2.3', label: 'Boletim / Histórico',      url: s.linkDocBoletim,   tipo: 'admissao_boletim' },
         ];
         html += sec('2. 📄 Documentos de Admissão',
           `<div class="avulso-list">` +
@@ -451,7 +451,11 @@
                  <div class="avulso-item-title">📄 ${d.num}. ${escapeHtml(d.label)}</div>
                  <div class="avulso-item-meta">Enviado pelo estudante na solicitação</div>
                </div>
-               ${d.url ? `<a href="${escapeHtml(d.url)}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">Abrir ↗</a>` : `<span style="font-size:var(--font-size-xs);color:var(--color-text-muted)">Não enviado</span>`}
+               ${d.url
+                 ? `<button type="button" class="btn btn-secondary btn-sm"
+                      data-estagio="${escapeHtml(s.id)}" data-tipo="${d.tipo}" data-ref=""
+                      onclick="enviarDocBtn(this)">✉ Enviar para mim</button>`
+                 : `<span style="font-size:var(--font-size-xs);color:var(--color-text-muted)">Não enviado</span>`}
              </div>`
           ).join('') + `</div>`
         );
@@ -484,11 +488,14 @@
           </div>`;
 
           // 3.2 TCE
-          const tceUrl  = emAss ? `../assinaturas/?id=${encodeURIComponent(s.id)}` : (s.driveUrl || '');
           const tceMeta = emAss
             ? '🔏 Fluxo de assinaturas em andamento'
             : 'Todas as assinaturas concluídas · ✓ Concluído';
-          const tceBtnLabel = emAss ? 'Ir para Assinaturas ↗' : '📁 Abrir pasta ↗';
+          const tceBtnHtml = emAss
+            ? `<a href="../assinaturas/?id=${encodeURIComponent(s.id)}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">Ir para Assinaturas ↗</a>`
+            : `<button type="button" class="btn btn-secondary btn-sm"
+                 data-estagio="${escapeHtml(s.id)}" data-tipo="tce" data-ref=""
+                 onclick="enviarDocBtn(this)">✉ Enviar para mim</button>`;
           fluxoHtml += `<div>
             <div style="font-size:var(--font-size-xs);font-weight:600;text-transform:uppercase;
                         color:var(--color-text-muted);letter-spacing:.04em;margin-bottom:var(--space-3)">
@@ -500,7 +507,7 @@
                   <div class="avulso-item-title">📄 Termo de Compromisso de Estágio (TCE)</div>
                   <div class="avulso-item-meta">${escapeHtml(tceMeta)}</div>
                 </div>
-                ${tceUrl ? `<a href="${escapeHtml(tceUrl)}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">${escapeHtml(tceBtnLabel)}</a>` : ''}
+                ${tceBtnHtml}
               </div>
             </div>
           </div>`;
@@ -556,7 +563,9 @@
                 <div class="avulso-item-title">📄 Avaliação ${i + 1} — ${escapeHtml(a.periodoRef || a.periodo || '')}</div>
                 <div class="avulso-item-meta">✓ Concluída</div>
               </div>
-              <a href="${escapeHtml(a.pdfUrl)}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">Abrir ↗</a>
+              <button type="button" class="btn btn-secondary btn-sm"
+                data-estagio="${escapeHtml(_atual.id)}" data-tipo="avaliacao" data-ref="${escapeHtml(a.avalId)}"
+                onclick="enviarDocBtn(this)">✉ Enviar para mim</button>
             </div>`).join('') + `</div>`;
       } else {
         html += `<p style="font-size:var(--font-size-sm);color:var(--color-text-muted)">Nenhuma avaliação parcial concluída.</p>`;
@@ -570,7 +579,9 @@
               <div class="avulso-item-title">📄 Avaliação Final</div>
               <div class="avulso-item-meta">✓ Concluída</div>
             </div>
-            <a href="${escapeHtml(final.pdfUrl)}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">Abrir ↗</a>
+            <button type="button" class="btn btn-secondary btn-sm"
+              data-estagio="${escapeHtml(_atual.id)}" data-tipo="avaliacao" data-ref="${escapeHtml(final.avalId)}"
+              onclick="enviarDocBtn(this)">✉ Enviar para mim</button>
           </div>
         </div>`;
       } else {
@@ -593,7 +604,9 @@
             <div class="avulso-item-title">📄 Parecer Final de Estágio</div>
             <div class="avulso-item-meta">✓ Concluído${p.dataAprov ? ' · ' + escapeHtml(p.dataAprov) : ''}</div>
           </div>
-          <a href="${escapeHtml(p.pdfUrl)}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">Abrir ↗</a>
+          <button type="button" class="btn btn-secondary btn-sm"
+            data-estagio="${escapeHtml(_atual.id)}" data-tipo="parecer" data-ref=""
+            onclick="enviarDocBtn(this)">✉ Enviar para mim</button>
         </div>
       </div>`;
     }
@@ -612,10 +625,9 @@
             </div>
             <div class="hist-item-meta">Enviado por: ${escapeHtml(d.perfil === 'Admin' ? 'Setor de Estágios' : 'Você')}${d.nomeArquivo ? ' · ' + escapeHtml(d.nomeArquivo) : ''}</div>
             ${d.linkDrive
-              ? `<a href="${escapeHtml(d.linkDrive)}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm" style="margin-top:var(--space-2)">
-                   <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
-                   Baixar ↗
-                 </a>`
+              ? `<button type="button" class="btn btn-secondary btn-sm" style="margin-top:var(--space-2)"
+                   data-estagio="${escapeHtml(_atual.id)}" data-tipo="avulso" data-ref="${escapeHtml(d.linkDrive)}"
+                   onclick="enviarDocBtn(this)">✉ Enviar para mim</button>`
               : ''}
           </div>`
         ).join('') + `</div>`;
@@ -2590,6 +2602,59 @@
       janela.focus();
       setTimeout(() => janela.print(), 400);
     }
+
+    // ── Envio de documento por e-mail ─────────────────────────────────────────
+    // Cooldown client-side: evita clique duplo e spam (60s por documento)
+    const _envioTimers = {};
+
+    function enviarDocBtn(btn) {
+      enviarDoc(btn.dataset.estagio, btn.dataset.tipo, btn.dataset.ref || '', btn);
+    }
+
+    async function enviarDoc(idEstagio, tipoDoc, docRef, btn) {
+      const key = tipoDoc + '|' + (docRef || idEstagio);
+      const agora = Date.now();
+      if (_envioTimers[key] && agora - _envioTimers[key] < 60000) {
+        const restante = Math.ceil((60000 - (agora - _envioTimers[key])) / 1000);
+        _exibirFeedbackEnvio(btn, 'warn', `Aguarde ${restante}s para reenviar.`);
+        return;
+      }
+      const origHtml = btn.innerHTML;
+      btn.disabled = true;
+      btn.textContent = 'Enviando…';
+      try {
+        await API.post('enviarDocumentoPorEmail', {
+          authToken: getAccessToken(),
+          idEstagio,
+          tipoDoc,
+          docRef: docRef || '',
+        });
+        _envioTimers[key] = Date.now();
+        btn.textContent = '✓ Enviado!';
+        btn.style.color = 'var(--color-success)';
+        setTimeout(() => {
+          btn.innerHTML = origHtml;
+          btn.disabled = false;
+          btn.style.color = '';
+        }, 4000);
+      } catch (err) {
+        btn.innerHTML = origHtml;
+        btn.disabled = false;
+        const msg = (err && err.message) ? err.message : 'Erro ao enviar.';
+        _exibirFeedbackEnvio(btn, 'error', msg);
+      }
+    }
+
+    function _exibirFeedbackEnvio(btn, tipo, msg) {
+      const cor = tipo === 'error' ? 'var(--color-error)' : 'var(--color-warning, #b45309)';
+      const el = document.createElement('span');
+      el.style.cssText = `font-size:var(--font-size-xs);color:${cor};margin-left:8px;`;
+      el.textContent = msg;
+      btn.parentNode.insertBefore(el, btn.nextSibling);
+      setTimeout(() => el.remove(), 5000);
+    }
+    // ── fim envio de documento ────────────────────────────────────────────────
+
   </script>
 
   <!-- ── [TESTE] Modal preview adendo ── -->
