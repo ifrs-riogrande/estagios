@@ -85,6 +85,123 @@
       .dias-row .dias-diaria   { grid-column: 1; text-align: left; }
       .dias-row .dias-remove-btn { grid-column: 2; justify-self: end; }
     }
+
+    /* ── Accordion de Seções ─────────────────────────────────────────────── */
+    .acc-progress-wrap {
+      margin-bottom: var(--space-5);
+    }
+    .acc-progress-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: var(--space-2);
+      font-size: var(--font-size-sm);
+      color: var(--color-text-muted);
+    }
+    .acc-progress-top strong {
+      color: var(--color-text);
+      font-weight: 600;
+    }
+    .acc-progress-bar {
+      height: 4px;
+      background: var(--color-border);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .acc-progress-fill {
+      height: 100%;
+      background: var(--color-primary, #2563eb);
+      border-radius: 2px;
+      transition: width .4s ease;
+    }
+    .acc-card {
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      transition: border-color .2s;
+      margin-bottom: var(--space-2);
+    }
+    .acc-card + .acc-card { }
+    .acc-card.acc-open { border-color: var(--color-primary, #2563eb); }
+    .acc-card.acc-done { border-color: var(--color-success, #16a34a); }
+    .acc-hdr {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      width: 100%;
+      padding: var(--space-3) var(--space-4);
+      background: var(--color-surface-secondary, #f8f9fa);
+      border: none;
+      cursor: pointer;
+      text-align: left;
+      font-family: inherit;
+      transition: background .15s;
+    }
+    .acc-hdr:hover { background: var(--color-border, #e5e7eb); }
+    .acc-card.acc-open .acc-hdr { background: var(--color-surface-secondary, #f8f9fa); }
+    .acc-badge {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: var(--font-size-sm);
+      font-weight: 600;
+      flex-shrink: 0;
+      border: 2px solid var(--color-border);
+      color: var(--color-text-muted);
+      background: var(--color-surface, #fff);
+      transition: all .2s;
+    }
+    .acc-card.acc-open  .acc-badge { border-color: var(--color-primary, #2563eb); color: var(--color-primary, #2563eb); }
+    .acc-card.acc-done  .acc-badge { border-color: var(--color-success, #16a34a); background: var(--color-success, #16a34a); color: #fff; }
+    .acc-title {
+      flex: 1;
+      font-size: var(--font-size-sm);
+      font-weight: 600;
+      color: var(--color-text);
+    }
+    .acc-status {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 10px;
+      border-radius: 20px;
+      white-space: nowrap;
+      background: var(--color-surface-secondary, #f0f0f0);
+      color: var(--color-text-muted);
+    }
+    .acc-card.acc-open .acc-status  { background: #eff6ff; color: #1d4ed8; }
+    .acc-card.acc-done .acc-status  { background: #f0fdf4; color: #15803d; }
+    .acc-chevron {
+      width: 18px; height: 18px;
+      flex-shrink: 0;
+      color: var(--color-text-muted);
+      transition: transform .25s;
+    }
+    .acc-card.acc-open .acc-chevron { transform: rotate(180deg); }
+    .acc-body {
+      display: none;
+      padding: var(--space-4) var(--space-4) 0;
+      border-top: 1px solid var(--color-border);
+    }
+    .acc-card.acc-open .acc-body { display: block; }
+    .acc-body .form-section-title { display: none; }
+    .acc-footer {
+      display: flex;
+      justify-content: flex-end;
+      padding: var(--space-3) 0 var(--space-4);
+      margin-top: var(--space-2);
+      border-top: 1px solid var(--color-border);
+      margin-top: var(--space-4);
+    }
+    .acc-btn-adv {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      font-size: var(--font-size-sm);
+      font-weight: 600;
+      color: var(--color-primary, #2563eb);
+      border-color: var(--color-primary, #2563eb);
+    }
+    .acc-btn-adv:hover { background: #eff6ff; }
   </style>
 </head>
 <body>
@@ -1041,6 +1158,7 @@
 
           document.getElementById('painel-precheck').style.display = 'none';
           document.getElementById('form-solicitacao').style.display = '';
+          _accInit();
         };
       } else if (status === 'Pendente') {
         precheckBanner(supSt, 'warning',
@@ -2009,6 +2127,179 @@
       _renderDias();
     });
     // ── fim Widget Dias e Horários ─────────────────────────────────────────
+
+    // ── Accordion de Seções ───────────────────────────────────────────────
+    var _accSections = [];
+
+    function _accInit() {
+      var formEl = document.getElementById('form-solicitacao');
+      if (!formEl || formEl.dataset.accInited) return;
+      formEl.dataset.accInited = '1';
+
+      // Barra de progresso
+      var prog = document.createElement('div');
+      prog.className = 'acc-progress-wrap';
+      prog.innerHTML =
+        '<div class="acc-progress-top">' +
+          '<span>Progresso da solicitação</span>' +
+          '<strong id="acc-prog-label">0 de 0 concluídas</strong>' +
+        '</div>' +
+        '<div class="acc-progress-bar"><div class="acc-progress-fill" id="acc-prog-fill" style="width:0%"></div></div>';
+      formEl.insertBefore(prog, formEl.firstChild);
+
+      // Coleta seções na ordem do DOM
+      var sections = Array.from(formEl.querySelectorAll('.form-section'));
+      _accSections = [];
+
+      sections.forEach(function(sec, i) {
+        var id = 'acc-s' + (i + 1);
+        var h2 = sec.querySelector('.form-section-title');
+        // Extrai texto limpo do h2 (sem o SVG)
+        var titleText = '';
+        if (h2) {
+          var clone = h2.cloneNode(true);
+          var svgEl = clone.querySelector('svg');
+          if (svgEl) svgEl.remove();
+          titleText = clone.textContent.trim();
+        }
+
+        // Monta header
+        var hdr = document.createElement('button');
+        hdr.type = 'button';
+        hdr.className = 'acc-hdr';
+        hdr.setAttribute('aria-expanded', i === 0 ? 'true' : 'false');
+        hdr.setAttribute('aria-controls', 'acc-body-' + id);
+        hdr.innerHTML =
+          '<div class="acc-badge" id="acc-badge-' + id + '">' + (i + 1) + '</div>' +
+          '<span class="acc-title">' + escapeHtml(titleText) + '</span>' +
+          '<span class="acc-status" id="acc-status-' + id + '">Aguardando</span>' +
+          '<svg class="acc-chevron" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">' +
+            '<path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/>' +
+          '</svg>';
+        (function(sid) {
+          hdr.addEventListener('click', function() { _accToggle(sid); });
+        })(id);
+
+        // Monta body — move todos os filhos atuais para dentro
+        var body = document.createElement('div');
+        body.className = 'acc-body';
+        body.id = 'acc-body-' + id;
+        while (sec.firstChild) body.appendChild(sec.firstChild);
+
+        // Botão "Confirmar e avançar" em todas exceto a última visível
+        if (i < sections.length - 1) {
+          var footer = document.createElement('div');
+          footer.className = 'acc-footer';
+          var btnAdv = document.createElement('button');
+          btnAdv.type = 'button';
+          btnAdv.className = 'btn btn-ghost btn-sm acc-btn-adv';
+          btnAdv.innerHTML =
+            'Confirmar e avançar ' +
+            '<svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">' +
+              '<path fill-rule="evenodd" d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z" clip-rule="evenodd"/>' +
+            '</svg>';
+          (function(sid) {
+            btnAdv.addEventListener('click', function() { _accAdvance(sid); });
+          })(id);
+          footer.appendChild(btnAdv);
+          body.appendChild(footer);
+        }
+
+        sec.classList.add('acc-card');
+        sec.appendChild(hdr);
+        sec.appendChild(body);
+
+        _accSections.push({ el: sec, id: id, state: 'pending' });
+      });
+
+      // Abre a primeira seção visível
+      _accSetState(0, 'active');
+      _accOpen(0);
+      _accUpdateProgress();
+    }
+
+    function _accFindIdx(id) {
+      for (var i = 0; i < _accSections.length; i++) {
+        if (_accSections[i].id === id) return i;
+      }
+      return -1;
+    }
+
+    function _accOpen(idx) {
+      if (idx < 0 || idx >= _accSections.length) return;
+      var s = _accSections[idx];
+      s.el.classList.add('acc-open');
+      var hdr = s.el.querySelector('.acc-hdr');
+      if (hdr) hdr.setAttribute('aria-expanded', 'true');
+    }
+
+    function _accClose(idx) {
+      if (idx < 0 || idx >= _accSections.length) return;
+      var s = _accSections[idx];
+      s.el.classList.remove('acc-open');
+      var hdr = s.el.querySelector('.acc-hdr');
+      if (hdr) hdr.setAttribute('aria-expanded', 'false');
+    }
+
+    function _accSetState(idx, state) {
+      if (idx < 0 || idx >= _accSections.length) return;
+      var s = _accSections[idx];
+      s.state = state;
+      var badge  = document.getElementById('acc-badge-'  + s.id);
+      var status = document.getElementById('acc-status-' + s.id);
+      s.el.classList.remove('acc-open', 'acc-done');
+      if (state === 'done') {
+        s.el.classList.add('acc-done');
+        if (badge)  badge.innerHTML = '<svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>';
+        if (status) status.textContent = 'Concluído';
+      } else if (state === 'active') {
+        if (badge)  badge.innerHTML = String(idx + 1);
+        if (status) status.textContent = 'Em andamento';
+      } else {
+        if (badge)  badge.innerHTML = String(idx + 1);
+        if (status) status.textContent = 'Aguardando';
+      }
+    }
+
+    function _accToggle(id) {
+      var idx = _accFindIdx(id);
+      if (idx < 0) return;
+      var isOpen = _accSections[idx].el.classList.contains('acc-open');
+      if (isOpen) {
+        _accClose(idx);
+      } else {
+        _accOpen(idx);
+        if (_accSections[idx].state === 'pending') _accSetState(idx, 'active');
+      }
+      _accUpdateProgress();
+    }
+
+    function _accAdvance(id) {
+      var idx = _accFindIdx(id);
+      if (idx < 0) return;
+      _accSetState(idx, 'done');
+      _accClose(idx);
+      // Abre a próxima seção visível (pula as hidden — ex.: 4A/4B condicionais)
+      for (var next = idx + 1; next < _accSections.length; next++) {
+        if (!_accSections[next].el.classList.contains('hidden')) {
+          _accSetState(next, 'active');
+          _accOpen(next);
+          _accSections[next].el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          break;
+        }
+      }
+      _accUpdateProgress();
+    }
+
+    function _accUpdateProgress() {
+      var total = _accSections.filter(function(s) { return !s.el.classList.contains('hidden'); }).length;
+      var done  = _accSections.filter(function(s) { return s.state === 'done' && !s.el.classList.contains('hidden'); }).length;
+      var fill  = document.getElementById('acc-prog-fill');
+      var label = document.getElementById('acc-prog-label');
+      if (fill)  fill.style.width = (total > 0 ? Math.round((done / total) * 100) : 0) + '%';
+      if (label) label.textContent = done + ' de ' + total + ' concluídas';
+    }
+    // ── fim Accordion ─────────────────────────────────────────────────────
 
   </script>
 </body>
