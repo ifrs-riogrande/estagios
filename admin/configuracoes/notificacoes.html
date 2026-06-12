@@ -10,6 +10,121 @@
   <link rel="stylesheet" href="../../assets/css/base.css">
   <link rel="stylesheet" href="../../assets/css/components.css">
   <link rel="stylesheet" href="../../assets/css/layout.css">
+  <style>
+    /* ── Tabs ── */
+    .page-tabs { display:flex; gap:0; border-bottom:2px solid var(--color-border); margin-bottom:var(--space-6); }
+    .page-tab {
+      padding:var(--space-3) var(--space-5); font-size:.9rem; font-weight:500;
+      color:var(--color-text-secondary); cursor:pointer;
+      border-bottom:2px solid transparent; margin-bottom:-2px;
+      background:none; border-top:none; border-left:none; border-right:none;
+      transition:color .15s,border-color .15s;
+    }
+    .page-tab:hover { color:var(--color-text); }
+    .page-tab.is-active { color:var(--color-primary); border-bottom-color:var(--color-primary); font-weight:600; }
+    .tab-panel { display:none; }
+    .tab-panel.is-active { display:block; }
+
+    /* ── Tooltip ── */
+    .tt-wrap {
+      position:relative; display:inline-flex; align-items:center;
+    }
+    .tt-icon {
+      width:15px; height:15px; flex-shrink:0; margin-left:5px;
+      color:#9ca3af; cursor:help; vertical-align:middle;
+    }
+    .tt-box {
+      visibility:hidden; opacity:0; pointer-events:none;
+      position:absolute; bottom:calc(100% + 8px); left:50%;
+      transform:translateX(-50%);
+      background:#1f2937; color:#f9fafb;
+      font-size:.78rem; font-weight:400; line-height:1.55;
+      padding:9px 13px; border-radius:8px;
+      width:260px; white-space:normal;
+      z-index:200; transition:opacity .15s;
+      box-shadow:0 4px 12px rgba(0,0,0,.25);
+    }
+    .tt-box::after {
+      content:''; position:absolute; top:100%; left:50%;
+      transform:translateX(-50%);
+      border:5px solid transparent; border-top-color:#1f2937;
+    }
+    .tt-wrap:hover .tt-box,
+    .tt-wrap:focus-within .tt-box { visibility:visible; opacity:1; }
+
+    /* ── Label com tooltip ── */
+    .label-tt { display:flex; align-items:center; gap:4px; margin-bottom:4px; }
+    .label-tt .form-label { margin-bottom:0; }
+
+    /* ── Email tags (destinatários) ── */
+    .email-list { display:flex; flex-wrap:wrap; gap:var(--space-2); margin-bottom:var(--space-3); min-height:36px; }
+    .email-tag {
+      display:inline-flex; align-items:center; gap:6px;
+      background:#eff6ff; border:1px solid #bfdbfe; color:#1d4ed8;
+      border-radius:99px; padding:3px 10px 3px 12px; font-size:.82rem; font-weight:500;
+    }
+    .email-tag button {
+      background:none; border:none; cursor:pointer; color:#93c5fd;
+      padding:0; line-height:1; font-size:14px; display:flex; align-items:center;
+    }
+    .email-tag button:hover { color:#dc2626; }
+    .email-add-row { display:flex; gap:var(--space-2); }
+
+    /* ── Seção de configuração ── */
+    .config-section { margin-bottom:var(--space-8); }
+    .config-section-title {
+      font-size:.72rem; font-weight:700; text-transform:uppercase;
+      letter-spacing:.06em; color:var(--color-text-muted);
+      margin-bottom:var(--space-4); padding-bottom:var(--space-2);
+      border-bottom:1px solid var(--color-border);
+    }
+
+    /* ── Toggle switch ── */
+    .toggle-row { display:flex; align-items:center; justify-content:space-between; padding:var(--space-3) 0; border-bottom:1px solid var(--color-border); }
+    .toggle-row:last-child { border-bottom:none; }
+    .toggle-label { display:flex; align-items:center; gap:var(--space-2); font-size:.9rem; }
+    .toggle-switch { position:relative; width:40px; height:22px; flex-shrink:0; }
+    .toggle-switch input { opacity:0; width:0; height:0; position:absolute; }
+    .toggle-track {
+      position:absolute; inset:0; border-radius:99px;
+      background:#d1d5db; cursor:pointer; transition:background .2s;
+    }
+    .toggle-track::after {
+      content:''; position:absolute; left:3px; top:3px;
+      width:16px; height:16px; border-radius:50%;
+      background:#fff; transition:transform .2s;
+      box-shadow:0 1px 3px rgba(0,0,0,.2);
+    }
+    .toggle-switch input:checked + .toggle-track { background:var(--color-primary); }
+    .toggle-switch input:checked + .toggle-track::after { transform:translateX(18px); }
+
+    /* ── Reenvios ── */
+    .reenvio-card {
+      background:var(--color-surface, #f9fafb); border:1px solid var(--color-border);
+      border-radius:var(--radius-md, 8px); padding:var(--space-4);
+      margin-bottom:var(--space-3);
+    }
+    .reenvio-card-title { font-weight:600; margin-bottom:var(--space-2); font-size:.9rem; }
+    .reenvio-status { font-size:.82rem; color:var(--color-text-secondary); margin-bottom:var(--space-3); }
+    .reenvio-actions { display:flex; flex-wrap:wrap; gap:var(--space-2); }
+    .estado-vazio { text-align:center; padding:var(--space-10) var(--space-4); color:var(--color-text-secondary); font-size:.9rem; }
+
+    /* ── Templates ── */
+    .template-item {
+      display:grid; grid-template-columns:auto 1fr auto;
+      align-items:start; gap:var(--space-4);
+      padding:var(--space-4) 0; border-bottom:1px solid var(--color-border);
+    }
+    .template-item:last-child { border-bottom:none; }
+    .template-icon { width:36px; height:36px; border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+    .template-icon svg { width:18px; height:18px; }
+    .template-name { font-weight:600; font-size:.88rem; margin-bottom:2px; }
+    .template-desc { font-size:.82rem; color:var(--color-text-secondary); line-height:1.5; }
+    .template-vars { display:flex; flex-wrap:wrap; gap:4px; margin-top:var(--space-2); }
+    .var-chip { background:#f3f4f6; color:#374151; border-radius:4px; padding:1px 7px; font-size:.72rem; font-family:monospace; }
+    .template-dest { text-align:right; font-size:.78rem; color:var(--color-text-muted); white-space:nowrap; }
+    .template-group { font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--color-text-muted); padding:var(--space-5) 0 var(--space-2); }
+  </style>
 </head>
 <body>
   <header id="app-header">
@@ -32,16 +147,374 @@
   <main id="main-content">
     <section class="page-hero">
       <div class="container">
-        <h1>Notificações</h1>
-        <p>Configure destinatários de e-mail, alertas automáticos e preferências de notificação.</p>
+        <h1 class="page-hero-title">Notificações</h1>
+        <p class="page-hero-desc">Configure destinatários, lembretes automáticos e reenvio de notificações do sistema.</p>
       </div>
     </section>
 
-    <div class="container" style="padding-top:var(--space-8);padding-bottom:var(--space-12);">
-      <div class="info-banner" role="note" style="max-width:640px;">
-        <strong>Em desenvolvimento.</strong> Esta seção estará disponível em breve.
+    <div class="container" style="padding-top:var(--space-6);padding-bottom:var(--space-12);">
+
+      <!-- Feedback global -->
+      <div id="feedback-global" style="display:none;margin-bottom:var(--space-5);max-width:700px;"></div>
+
+      <!-- Tabs -->
+      <div class="page-tabs" role="tablist">
+        <button class="page-tab is-active" role="tab" aria-selected="true"  aria-controls="tab-dest"      id="btn-tab-dest">Destinatários</button>
+        <button class="page-tab"           role="tab" aria-selected="false" aria-controls="tab-lembretes" id="btn-tab-lemb">Lembretes Automáticos</button>
+        <button class="page-tab"           role="tab" aria-selected="false" aria-controls="tab-reenvios"  id="btn-tab-reenv">Reenvios</button>
+        <button class="page-tab"           role="tab" aria-selected="false" aria-controls="tab-templates" id="btn-tab-tpl">Emails do Sistema</button>
       </div>
-    </div>
+
+      <!-- ════════════════════════════════════════════════════════
+           TAB 1 — Destinatários
+           ════════════════════════════════════════════════════════ -->
+      <div class="tab-panel is-active" id="tab-dest" role="tabpanel" aria-labelledby="btn-tab-dest" style="max-width:700px;">
+
+        <div id="loading-dest" style="text-align:center;padding:var(--space-10);color:var(--color-text-muted);">Carregando…</div>
+        <div id="dest-content" style="display:none;">
+
+          <!-- E-mails de Administradores -->
+          <div class="config-section">
+            <p class="config-section-title">Administradores do Sistema</p>
+
+            <div class="label-tt">
+              <label class="form-label">E-mails com acesso administrativo</label>
+              <span class="tt-wrap" tabindex="0" aria-label="Informação">
+                <svg class="tt-icon" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5h.253a.25.25 0 01.244.304l-.459 2.066A1.75 1.75 0 0010.747 15H11a.75.75 0 000-1.5h-.253a.25.25 0 01-.244-.304l.459-2.066A1.75 1.75 0 009.253 9H9z" clip-rule="evenodd"/></svg>
+                <span class="tt-box">Lista de e-mails que podem acessar o painel admin e recebem notificações gerais. Somente usuários com @riogrande.ifrs.edu.br ou outro domínio autorizado. Mínimo de 1 endereço.</span>
+              </span>
+            </div>
+            <p class="form-help" style="margin-bottom:var(--space-3);">Esses e-mails podem acessar o painel admin e são notificados sobre novas solicitações, erros e eventos importantes.</p>
+
+            <div class="email-list" id="admin-emails-list"></div>
+            <div class="email-add-row">
+              <input type="email" id="novo-admin-email" class="form-input" placeholder="novo@riogrande.ifrs.edu.br" style="flex:1;">
+              <button type="button" class="btn btn-secondary" onclick="adicionarEmailAdmin()">+ Adicionar</button>
+            </div>
+          </div>
+
+          <!-- E-mail de notificações do setor -->
+          <div class="config-section">
+            <p class="config-section-title">E-mails Operacionais</p>
+
+            <div class="form-group">
+              <div class="label-tt">
+                <label class="form-label" for="notif-email">E-mail de Notificações do Setor</label>
+                <span class="tt-wrap" tabindex="0" aria-label="Informação">
+                  <svg class="tt-icon" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5h.253a.25.25 0 01.244.304l-.459 2.066A1.75 1.75 0 0010.747 15H11a.75.75 0 000-1.5h-.253a.25.25 0 01-.244-.304l.459-2.066A1.75 1.75 0 009.253 9H9z" clip-rule="evenodd"/></svg>
+                  <span class="tt-box">Recebe uma cópia de todas as novas solicitações de estágio e atualizações de status. Normalmente é o e-mail geral do setor (ex: estagios@riogrande.ifrs.edu.br).</span>
+                </span>
+              </div>
+              <input type="email" id="notif-email" class="form-input" placeholder="estagios@riogrande.ifrs.edu.br">
+              <p class="form-help">Cópia de novas solicitações, aprovações e atualizações de status.</p>
+            </div>
+
+            <div class="form-group" style="margin-bottom:0;">
+              <div class="label-tt">
+                <label class="form-label" for="error-email">E-mail de Alertas de Erros</label>
+                <span class="tt-wrap" tabindex="0" aria-label="Informação">
+                  <svg class="tt-icon" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5h.253a.25.25 0 01.244.304l-.459 2.066A1.75 1.75 0 0010.747 15H11a.75.75 0 000-1.5h-.253a.25.25 0 01-.244-.304l.459-2.066A1.75 1.75 0 009.253 9H9z" clip-rule="evenodd"/></svg>
+                  <span class="tt-box">Recebe alertas automáticos quando o sistema encontra erros internos: PDF não gerado, falha ao enviar e-mail, erro de processamento. Útil para monitoramento técnico.</span>
+                </span>
+              </div>
+              <input type="email" id="error-email" class="form-input" placeholder="estagios@riogrande.ifrs.edu.br">
+              <p class="form-help">Alertas de erros internos do sistema (falhas de PDF, e-mails não enviados, etc.).</p>
+            </div>
+          </div>
+
+          <div style="margin-top:var(--space-6);">
+            <button class="btn btn-primary" id="btn-salvar-dest" type="button" onclick="salvarDestinatarios()">Salvar destinatários</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ════════════════════════════════════════════════════════
+           TAB 2 — Lembretes Automáticos
+           ════════════════════════════════════════════════════════ -->
+      <div class="tab-panel" id="tab-lembretes" role="tabpanel" aria-labelledby="btn-tab-lemb" style="max-width:700px;">
+
+        <div id="loading-lemb" style="text-align:center;padding:var(--space-10);color:var(--color-text-muted);">Carregando…</div>
+        <div id="lemb-content" style="display:none;">
+
+          <div class="info-banner" role="note" style="margin-bottom:var(--space-6);">
+            O sistema executa um <strong>verificador diário automático</strong> que dispara lembretes para os responsáveis quando o prazo de uma etapa estiver próximo do vencimento.
+          </div>
+
+          <!-- Dias de antecedência -->
+          <div class="config-section">
+            <p class="config-section-title">Antecedência do Lembrete</p>
+
+            <div class="form-group" style="max-width:300px;margin-bottom:0;">
+              <div class="label-tt">
+                <label class="form-label" for="dias-antes">Dias úteis antes do vencimento</label>
+                <span class="tt-wrap" tabindex="0" aria-label="Informação">
+                  <svg class="tt-icon" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5h.253a.25.25 0 01.244.304l-.459 2.066A1.75 1.75 0 0010.747 15H11a.75.75 0 000-1.5h-.253a.25.25 0 01-.244-.304l.459-2.066A1.75 1.75 0 009.253 9H9z" clip-rule="evenodd"/></svg>
+                  <span class="tt-box">O sistema envia exatamente 1 lembrete quando restar este número de dias úteis até o prazo. Exemplos: 1 = lembrete no último dia útil; 2 = padrão (2 dias antes); 3 = com mais antecedência. Sábados e domingos não são contados.</span>
+                </span>
+              </div>
+              <input type="number" id="dias-antes" class="form-input" min="1" max="10" value="2">
+              <p class="form-help">Entre 1 e 10 dias úteis. Padrão: 2. Sábados e domingos não são contados.</p>
+            </div>
+          </div>
+
+          <!-- Fluxos ativos -->
+          <div class="config-section">
+            <p class="config-section-title">Ativar lembretes por fluxo</p>
+
+            <div class="toggle-row">
+              <div class="toggle-label">
+                <span>Checklist de Solicitação</span>
+                <span class="tt-wrap" tabindex="0" aria-label="Informação">
+                  <svg class="tt-icon" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5h.253a.25.25 0 01.244.304l-.459 2.066A1.75 1.75 0 0010.747 15H11a.75.75 0 000-1.5h-.253a.25.25 0 01-.244-.304l.459-2.066A1.75 1.75 0 009.253 9H9z" clip-rule="evenodd"/></svg>
+                  <span class="tt-box">Envia lembrete para o ator ativo do checklist (orientador, supervisor, coordenador ou admin) quando o prazo de resposta estiver próximo.</span>
+                </span>
+              </div>
+              <label class="toggle-switch" aria-label="Ativar lembrete de checklist">
+                <input type="checkbox" id="toggle-checklist">
+                <span class="toggle-track"></span>
+              </label>
+            </div>
+
+            <div class="toggle-row">
+              <div class="toggle-label">
+                <span>Assinaturas do TCE</span>
+                <span class="tt-wrap" tabindex="0" aria-label="Informação">
+                  <svg class="tt-icon" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5h.253a.25.25 0 01.244.304l-.459 2.066A1.75 1.75 0 0010.747 15H11a.75.75 0 000-1.5h-.253a.25.25 0 01-.244-.304l.459-2.066A1.75 1.75 0 009.253 9H9z" clip-rule="evenodd"/></svg>
+                  <span class="tt-box">Envia lembrete para o signatário ativo da etapa TCE (estudante, empresa, direção ou central) quando o prazo de assinatura estiver próximo do vencimento.</span>
+                </span>
+              </div>
+              <label class="toggle-switch" aria-label="Ativar lembrete de assinaturas">
+                <input type="checkbox" id="toggle-assinaturas">
+                <span class="toggle-track"></span>
+              </label>
+            </div>
+
+            <div class="toggle-row">
+              <div class="toggle-label">
+                <span>Avaliações de Estágio</span>
+                <span class="tt-wrap" tabindex="0" aria-label="Informação">
+                  <svg class="tt-icon" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5h.253a.25.25 0 01.244.304l-.459 2.066A1.75 1.75 0 0010.747 15H11a.75.75 0 000-1.5h-.253a.25.25 0 01-.244-.304l.459-2.066A1.75 1.75 0 009.253 9H9z" clip-rule="evenodd"/></svg>
+                  <span class="tt-box">Envia lembrete para o preenchedor ou revisor de avaliação (supervisor, orientador, coordenador) quando o prazo de resposta estiver próximo.</span>
+                </span>
+              </div>
+              <label class="toggle-switch" aria-label="Ativar lembrete de avaliações">
+                <input type="checkbox" id="toggle-avaliacoes">
+                <span class="toggle-track"></span>
+              </label>
+            </div>
+
+            <div class="toggle-row">
+              <div class="toggle-label">
+                <span>Adendo / Aditamento ao TCE</span>
+                <span class="tt-wrap" tabindex="0" aria-label="Informação">
+                  <svg class="tt-icon" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5h.253a.25.25 0 01.244.304l-.459 2.066A1.75 1.75 0 0010.747 15H11a.75.75 0 000-1.5h-.253a.25.25 0 01-.244-.304l.459-2.066A1.75 1.75 0 009.253 9H9z" clip-rule="evenodd"/></svg>
+                  <span class="tt-box">Envia lembrete para o signatário ativo do fluxo de adendo (alteração de dados do estágio já em andamento) quando o prazo estiver próximo.</span>
+                </span>
+              </div>
+              <label class="toggle-switch" aria-label="Ativar lembrete de adendo">
+                <input type="checkbox" id="toggle-adendo">
+                <span class="toggle-track"></span>
+              </label>
+            </div>
+          </div>
+
+          <div style="margin-top:var(--space-6);">
+            <button class="btn btn-primary" id="btn-salvar-lemb" type="button" onclick="salvarLembretes()">Salvar lembretes</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ════════════════════════════════════════════════════════
+           TAB 3 — Reenvios
+           ════════════════════════════════════════════════════════ -->
+      <div class="tab-panel" id="tab-reenvios" role="tabpanel" aria-labelledby="btn-tab-reenv" style="max-width:700px;">
+
+        <p style="margin-bottom:var(--space-4);color:var(--color-text-secondary);font-size:.9rem;">
+          Reenvie notificações pendentes manualmente para um estágio específico. Útil quando o destinatário não recebeu ou perdeu o e-mail original.
+        </p>
+
+        <!-- Busca por ID de estágio -->
+        <div style="display:flex;gap:var(--space-2);margin-bottom:var(--space-6);">
+          <div style="flex:1;">
+            <div class="label-tt" style="margin-bottom:4px;">
+              <label class="form-label" for="busca-id" style="margin-bottom:0;">ID do Estágio</label>
+              <span class="tt-wrap" tabindex="0" aria-label="Informação">
+                <svg class="tt-icon" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5h.253a.25.25 0 01.244.304l-.459 2.066A1.75 1.75 0 0010.747 15H11a.75.75 0 000-1.5h-.253a.25.25 0 01-.244-.304l.459-2.066A1.75 1.75 0 009.253 9H9z" clip-rule="evenodd"/></svg>
+                <span class="tt-box">O ID do estágio aparece na lista de estágios do painel admin e nos e-mails enviados pelo sistema (ex: EST-2024-0042). Informe o ID para localizar as notificações pendentes.</span>
+              </span>
+            </div>
+            <input type="text" id="busca-id" class="form-input" placeholder="Ex: EST-2024-0042" style="font-family:monospace;">
+          </div>
+          <div style="display:flex;align-items:flex-end;">
+            <button class="btn btn-primary" type="button" onclick="buscarEstagio()">Buscar</button>
+          </div>
+        </div>
+
+        <div id="reenvio-feedback" style="display:none;margin-bottom:var(--space-4);"></div>
+        <div id="reenvio-resultado">
+          <div class="estado-vazio">Digite um ID de estágio acima para ver as notificações disponíveis.</div>
+        </div>
+      </div>
+
+      <!-- ════════════════════════════════════════════════════════
+           TAB 4 — Emails do Sistema
+           ════════════════════════════════════════════════════════ -->
+      <div class="tab-panel" id="tab-templates" role="tabpanel" aria-labelledby="btn-tab-tpl">
+
+        <p style="margin-bottom:var(--space-2);color:var(--color-text-secondary);font-size:.9rem;max-width:700px;">
+          Lista de todos os tipos de e-mail enviados automaticamente pelo sistema. Os templates estão definidos em <code>mail.gs</code> e não são editáveis pela interface.
+        </p>
+
+        <div style="max-width:800px;">
+
+          <p class="template-group">Solicitação de Estágio</p>
+          <div class="template-item">
+            <div class="template-icon" style="background:#eff6ff;color:#2563eb;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"/></svg>
+            </div>
+            <div>
+              <div class="template-name">Solicitação Recebida</div>
+              <div class="template-desc">Confirmação enviada ao estudante após submeter a solicitação de estágio. Informa que o processo foi iniciado e que o orientador será contactado.</div>
+              <div class="template-vars"><span class="var-chip">nomeEstudante</span><span class="var-chip">idEstagio</span><span class="var-chip">nomeEmpresa</span><span class="var-chip">tipoEstagio</span></div>
+            </div>
+            <div class="template-dest">→ Estudante</div>
+          </div>
+          <div class="template-item">
+            <div class="template-icon" style="background:#fef3c7;color:#d97706;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0"/></svg>
+            </div>
+            <div>
+              <div class="template-name">Nova Solicitação — Setor</div>
+              <div class="template-desc">Alerta enviado ao e-mail de notificações do setor informando que uma nova solicitação chegou e aguarda revisão administrativa.</div>
+              <div class="template-vars"><span class="var-chip">nomeEstudante</span><span class="var-chip">curso</span><span class="var-chip">nomeEmpresa</span><span class="var-chip">idEstagio</span></div>
+            </div>
+            <div class="template-dest">→ Setor de Estágios</div>
+          </div>
+
+          <p class="template-group">Checklist de Análise</p>
+          <div class="template-item">
+            <div class="template-icon" style="background:#f0fdf4;color:#16a34a;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </div>
+            <div>
+              <div class="template-name">Checklist — Ator Convocado</div>
+              <div class="template-desc">Enviado a cada ator (orientador, supervisor, coordenador) quando sua etapa do checklist é ativada. Inclui link de acesso com magic-link e prazo em dias úteis.</div>
+              <div class="template-vars"><span class="var-chip">nomeEstudante</span><span class="var-chip">labelAtor</span><span class="var-chip">prazoVencimento</span><span class="var-chip">urlChecklist</span></div>
+            </div>
+            <div class="template-dest">→ Orientador / Supervisor / Coordenador</div>
+          </div>
+          <div class="template-item">
+            <div class="template-icon" style="background:#fef3c7;color:#d97706;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </div>
+            <div>
+              <div class="template-name">Lembrete de Prazo — Checklist</div>
+              <div class="template-desc">Lembrete automático disparado pelo verificador diário quando restam N dias úteis (configurável acima) para o prazo do ator ativo. Enviado apenas 1 vez por etapa.</div>
+              <div class="template-vars"><span class="var-chip">nomeEstudante</span><span class="var-chip">labelAtor</span><span class="var-chip">prazoVencimento</span><span class="var-chip">diasRestantes</span></div>
+            </div>
+            <div class="template-dest">→ Ator ativo</div>
+          </div>
+          <div class="template-item">
+            <div class="template-icon" style="background:#fef2f2;color:#dc2626;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>
+            </div>
+            <div>
+              <div class="template-name">Ajuste Necessário — Admin</div>
+              <div class="template-desc">Enviado ao admin quando um ator do checklist sinaliza que há pendências ou informações incorretas na solicitação que precisam de correção.</div>
+              <div class="template-vars"><span class="var-chip">nomeEstudante</span><span class="var-chip">labelAtor</span><span class="var-chip">observacao</span></div>
+            </div>
+            <div class="template-dest">→ Admin</div>
+          </div>
+
+          <p class="template-group">Assinaturas do TCE</p>
+          <div class="template-item">
+            <div class="template-icon" style="background:#eff6ff;color:#2563eb;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10"/></svg>
+            </div>
+            <div>
+              <div class="template-name">Assinatura via Gov.br</div>
+              <div class="template-desc">Enviado aos signatários que devem assinar digitalmente via Gov.br (estudante, empresa, Diretor Geral). Inclui link direto para o documento e prazo da etapa.</div>
+              <div class="template-vars"><span class="var-chip">nomeEstudante</span><span class="var-chip">labelEtapa</span><span class="var-chip">prazoVencimento</span><span class="var-chip">urlDocumento</span></div>
+            </div>
+            <div class="template-dest">→ Estudante / Empresa / DG</div>
+          </div>
+          <div class="template-item">
+            <div class="template-icon" style="background:#f0fdf4;color:#16a34a;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z"/></svg>
+            </div>
+            <div>
+              <div class="template-name">Aprovação Interna</div>
+              <div class="template-desc">Enviado à central de estágios nas etapas de revisão interna do TCE (etapas 3 e 5). Solicita conferência dos documentos e aprovação no painel admin.</div>
+              <div class="template-vars"><span class="var-chip">nomeEstudante</span><span class="var-chip">numeroEtapa</span><span class="var-chip">prazoVencimento</span></div>
+            </div>
+            <div class="template-dest">→ Central de Estágios</div>
+          </div>
+          <div class="template-item">
+            <div class="template-icon" style="background:#fef3c7;color:#d97706;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </div>
+            <div>
+              <div class="template-name">Lembrete de Prazo — TCE</div>
+              <div class="template-desc">Lembrete automático para o signatário ativo da etapa TCE quando o prazo estiver próximo. Enviado 1 vez por etapa quando restam N dias úteis.</div>
+              <div class="template-vars"><span class="var-chip">nomeEstudante</span><span class="var-chip">labelEtapa</span><span class="var-chip">prazoVencimento</span></div>
+            </div>
+            <div class="template-dest">→ Signatário ativo</div>
+          </div>
+          <div class="template-item">
+            <div class="template-icon" style="background:#f0fdf4;color:#16a34a;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg>
+            </div>
+            <div>
+              <div class="template-name">PDF Final — TCE Assinado</div>
+              <div class="template-desc">Enviado a todos os envolvidos (estudante, empresa, orientador, central) após a conclusão de todas as etapas do TCE. Contém o arquivo PDF do contrato assinado.</div>
+              <div class="template-vars"><span class="var-chip">nomeEstudante</span><span class="var-chip">nomeEmpresa</span><span class="var-chip">linkPdf</span></div>
+            </div>
+            <div class="template-dest">→ Todos os envolvidos</div>
+          </div>
+
+          <p class="template-group">Adendo / Aditamento</p>
+          <div class="template-item">
+            <div class="template-icon" style="background:#eff6ff;color:#2563eb;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+            </div>
+            <div>
+              <div class="template-name">Fluxo de Assinatura do Adendo</div>
+              <div class="template-desc">Mesmo padrão do TCE: Gov.br para signatários externos, aprovação interna para a central. Inclui lembrete D-N e PDF final após conclusão.</div>
+              <div class="template-vars"><span class="var-chip">nomeEstudante</span><span class="var-chip">tipoAlteracao</span><span class="var-chip">prazoVencimento</span><span class="var-chip">urlDocumento</span></div>
+            </div>
+            <div class="template-dest">→ Signatários do adendo</div>
+          </div>
+
+          <p class="template-group">Avaliações de Estágio</p>
+          <div class="template-item">
+            <div class="template-icon" style="background:#faf5ff;color:#7c3aed;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M11.35 3.836c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m8.9-4.414c.376.023.75.05 1.124.08 1.131.094 1.976 1.057 1.976 2.192V16.5A2.25 2.25 0 0118 18.75h-2.25m-7.5-10.5H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V18.75m-7.5-10.5h6.375c.621 0 1.125.504 1.125 1.125v9.375m-8.25-3l1.5 1.5 3-3.75"/></svg>
+            </div>
+            <div>
+              <div class="template-name">Avaliação — Preenchimento / Revisão</div>
+              <div class="template-desc">Enviado ao supervisor para preenchimento da avaliação, e aos revisores (orientador, coordenador) quando sua análise é solicitada. Admin recebe para aprovação final.</div>
+              <div class="template-vars"><span class="var-chip">nomeEstudante</span><span class="var-chip">tipoAvaliacao</span><span class="var-chip">prazoVencimento</span><span class="var-chip">urlAvaliacao</span></div>
+            </div>
+            <div class="template-dest">→ Supervisor / Orientador / Coord / Admin</div>
+          </div>
+
+          <p class="template-group">Cadastros e Aceites</p>
+          <div class="template-item">
+            <div class="template-icon" style="background:#fef3c7;color:#d97706;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z"/></svg>
+            </div>
+            <div>
+              <div class="template-name">Aceite de Orientação / Novos Cadastros</div>
+              <div class="template-desc">Enviado ao orientador para aceitar ou recusar a orientação de um estágio. Também inclui notificações de novos cadastros de orientadores, coordenadores, supervisores e agentes aguardando validação.</div>
+              <div class="template-vars"><span class="var-chip">nomeEstudante</span><span class="var-chip">urlResposta</span><span class="var-chip">nomeCadastrado</span></div>
+            </div>
+            <div class="template-dest">→ Orientador / Admin</div>
+          </div>
+
+        </div><!-- /max-width -->
+      </div>
+
+    </div><!-- /container -->
   </main>
 
   <footer id="app-footer">
@@ -58,10 +531,280 @@
   <script src="../../assets/js/auth.js"></script>
   <script src="../../assets/js/api.js"></script>
   <script>
-    'use strict';
-    document.addEventListener('DOMContentLoaded', function () {
-      requireAdminAuth();
+  'use strict';
+
+  // ── Estado ───────────────────────────────────────────────────────────────────
+  var configCarregada = null; // cache da config salva
+  var lembCarregado   = false;
+
+  // ── Tabs ─────────────────────────────────────────────────────────────────────
+  document.querySelectorAll('.page-tab').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      document.querySelectorAll('.page-tab').forEach(function (b) {
+        b.classList.remove('is-active'); b.setAttribute('aria-selected', 'false');
+      });
+      document.querySelectorAll('.tab-panel').forEach(function (p) { p.classList.remove('is-active'); });
+      btn.classList.add('is-active'); btn.setAttribute('aria-selected', 'true');
+      var panel = document.getElementById(btn.getAttribute('aria-controls'));
+      if (panel) panel.classList.add('is-active');
+      // Lembretes: carrega junto com config (mesma chamada), lazy
+      if ((btn.id === 'btn-tab-lemb') && !lembCarregado && configCarregada) {
+        preencherLembretes(configCarregada);
+        lembCarregado = true;
+      }
     });
+  });
+
+  // ── Init ─────────────────────────────────────────────────────────────────────
+  document.addEventListener('DOMContentLoaded', function () {
+    if (!requireAdminAuth()) return;
+    carregarConfig();
+  });
+
+  async function carregarConfig() {
+    try {
+      var cfg = await API.get('obterConfigNotificacoes', { authToken: getAccessToken() });
+      configCarregada = cfg;
+      preencherDestinatarios(cfg);
+      document.getElementById('loading-dest').style.display  = 'none';
+      document.getElementById('dest-content').style.display  = '';
+      // Se tab de lembretes já estiver ativa (ex: hash), preenche também
+      if (document.getElementById('tab-lembretes').classList.contains('is-active')) {
+        preencherLembretes(cfg);
+        lembCarregado = true;
+      }
+    } catch (err) {
+      document.getElementById('loading-dest').innerHTML =
+        '<div class="error-banner">Erro ao carregar configurações: ' + escapeHtml(err.message || 'recarregue a página.') + '</div>';
+    }
+  }
+
+  // ── TAB 1 — Destinatários ────────────────────────────────────────────────────
+
+  var adminEmailsArray = [];
+
+  function preencherDestinatarios(cfg) {
+    adminEmailsArray = (cfg.adminEmails || []).slice();
+    renderEmailTags();
+    document.getElementById('notif-email').value  = cfg.notificationEmail || '';
+    document.getElementById('error-email').value  = cfg.errorEmail        || '';
+    document.getElementById('loading-dest').style.display = 'none';
+    document.getElementById('dest-content').style.display = '';
+  }
+
+  function renderEmailTags() {
+    var list = document.getElementById('admin-emails-list');
+    list.innerHTML = adminEmailsArray.map(function (e, i) {
+      return '<span class="email-tag">' + escapeHtml(e) +
+        '<button type="button" aria-label="Remover ' + escapeHtml(e) + '" onclick="removerEmailAdmin(' + i + ')">✕</button></span>';
+    }).join('');
+  }
+
+  function adicionarEmailAdmin() {
+    var input = document.getElementById('novo-admin-email');
+    var val   = input.value.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) {
+      alert('Informe um e-mail válido.'); return;
+    }
+    if (adminEmailsArray.includes(val)) {
+      alert('E-mail já está na lista.'); return;
+    }
+    adminEmailsArray.push(val);
+    renderEmailTags();
+    input.value = '';
+    input.focus();
+  }
+
+  function removerEmailAdmin(idx) {
+    if (adminEmailsArray.length <= 1) { alert('É necessário manter pelo menos 1 e-mail de administrador.'); return; }
+    adminEmailsArray.splice(idx, 1);
+    renderEmailTags();
+  }
+
+  document.getElementById('novo-admin-email').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') { e.preventDefault(); adicionarEmailAdmin(); }
+  });
+
+  async function salvarDestinatarios() {
+    var btn         = document.getElementById('btn-salvar-dest');
+    var notifEmail  = document.getElementById('notif-email').value.trim().toLowerCase();
+    var errorEmail  = document.getElementById('error-email').value.trim().toLowerCase();
+    var reEmail     = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (adminEmailsArray.length === 0) { mostrarFbGlobal('error', 'Adicione pelo menos um e-mail de administrador.'); return; }
+    if (!reEmail.test(notifEmail))     { mostrarFbGlobal('error', 'E-mail de notificações inválido.'); return; }
+    if (!reEmail.test(errorEmail))     { mostrarFbGlobal('error', 'E-mail de alertas de erros inválido.'); return; }
+
+    btn.classList.add('is-loading'); btn.disabled = true;
+    try {
+      var config = Object.assign({}, configCarregada || {}, {
+        adminEmails:       adminEmailsArray,
+        notificationEmail: notifEmail,
+        errorEmail:        errorEmail,
+      });
+      await API.post('salvarConfigNotificacoes', { authToken: getAccessToken(), config: config });
+      configCarregada = config;
+      mostrarFbGlobal('success', 'Destinatários salvos com sucesso.');
+    } catch (err) {
+      mostrarFbGlobal('error', err.message || 'Erro ao salvar.');
+    } finally {
+      btn.classList.remove('is-loading'); btn.disabled = false;
+    }
+  }
+
+  // ── TAB 2 — Lembretes ────────────────────────────────────────────────────────
+
+  function preencherLembretes(cfg) {
+    var lemb = cfg.lembretes || {};
+    document.getElementById('dias-antes').value          = lemb.diasAntes  || 2;
+    document.getElementById('toggle-checklist').checked  = lemb.fluxos ? lemb.fluxos.checklist   !== false : true;
+    document.getElementById('toggle-assinaturas').checked = lemb.fluxos ? lemb.fluxos.assinaturas !== false : true;
+    document.getElementById('toggle-avaliacoes').checked  = lemb.fluxos ? lemb.fluxos.avaliacoes  !== false : true;
+    document.getElementById('toggle-adendo').checked      = lemb.fluxos ? lemb.fluxos.adendo      !== false : true;
+    document.getElementById('loading-lemb').style.display = 'none';
+    document.getElementById('lemb-content').style.display = '';
+  }
+
+  async function salvarLembretes() {
+    var btn       = document.getElementById('btn-salvar-lemb');
+    var diasAntes = parseInt(document.getElementById('dias-antes').value, 10);
+    if (isNaN(diasAntes) || diasAntes < 1 || diasAntes > 10) {
+      mostrarFbGlobal('error', 'Dias de antecedência deve ser entre 1 e 10.'); return;
+    }
+    btn.classList.add('is-loading'); btn.disabled = true;
+    try {
+      var config = Object.assign({}, configCarregada || {}, {
+        lembretes: {
+          diasAntes: diasAntes,
+          fluxos: {
+            checklist:   document.getElementById('toggle-checklist').checked,
+            assinaturas: document.getElementById('toggle-assinaturas').checked,
+            avaliacoes:  document.getElementById('toggle-avaliacoes').checked,
+            adendo:      document.getElementById('toggle-adendo').checked,
+          }
+        }
+      });
+      await API.post('salvarConfigNotificacoes', { authToken: getAccessToken(), config: config });
+      configCarregada = config;
+      mostrarFbGlobal('success', 'Configurações de lembretes salvas com sucesso.');
+    } catch (err) {
+      mostrarFbGlobal('error', err.message || 'Erro ao salvar.');
+    } finally {
+      btn.classList.remove('is-loading'); btn.disabled = false;
+    }
+  }
+
+  // ── TAB 3 — Reenvios ─────────────────────────────────────────────────────────
+
+  async function buscarEstagio() {
+    var id = document.getElementById('busca-id').value.trim();
+    if (!id) { mostrarFbReenvio('error', 'Informe o ID do estágio.'); return; }
+
+    var resultado = document.getElementById('reenvio-resultado');
+    resultado.innerHTML = '<div class="estado-vazio">Buscando…</div>';
+    document.getElementById('reenvio-feedback').style.display = 'none';
+
+    var token = getAccessToken();
+    var checklist  = null;
+    var assinaturas = null;
+
+    try {
+      var results = await Promise.allSettled([
+        API.get('obterChecklist',             { authToken: token, idEstagio: id }),
+        API.get('obterFluxoAssinaturasAdmin', { authToken: token, idEstagio: id }),
+      ]);
+      if (results[0].status === 'fulfilled') checklist   = results[0].value;
+      if (results[1].status === 'fulfilled') assinaturas = results[1].value;
+    } catch (_) {}
+
+    if (!checklist && !assinaturas) {
+      resultado.innerHTML = '<div class="estado-vazio">Estágio não encontrado ou sem dados de notificações.</div>';
+      return;
+    }
+
+    var html = '';
+
+    // ── Checklist ──
+    if (checklist && checklist.status !== 'aprovado') {
+      var atores = ['orientador','supervisor','coordenador','admin'];
+      var atorAtivo = null;
+      atores.forEach(function (a) {
+        if (!atorAtivo && checklist[a] && checklist[a].status === 'pendente') atorAtivo = a;
+      });
+      var labAtor = { orientador:'Orientador', supervisor:'Supervisor', coordenador:'Coordenador', admin:'Admin/Setor' };
+      html += '<div class="reenvio-card">' +
+        '<div class="reenvio-card-title">Checklist de Solicitação</div>' +
+        '<div class="reenvio-status">Status: <strong>' + escapeHtml(checklist.status || '—') + '</strong>' +
+        (atorAtivo ? ' · Aguardando: <strong>' + labAtor[atorAtivo] + '</strong>' : '') + '</div>' +
+        '<div class="reenvio-actions">';
+      if (atorAtivo) {
+        html += '<button class="btn btn-sm btn-primary" onclick="reenviarChecklist(\'' + escapeHtml(id) + '\',\'' + atorAtivo + '\')">↻ Reenviar para ' + labAtor[atorAtivo] + '</button>';
+      }
+      atores.filter(function(a){ return a !== atorAtivo; }).forEach(function (a) {
+        if (checklist[a] && checklist[a].status !== 'aprovado' && checklist[a].status !== 'pendente') return;
+        if (!checklist[a]) return;
+        html += '<button class="btn btn-sm btn-secondary" onclick="reenviarChecklist(\'' + escapeHtml(id) + '\',\'' + a + '\')" title="Reenviar notificação para ' + labAtor[a] + '">Reenviar ' + labAtor[a] + '</button>';
+      });
+      html += '</div></div>';
+    }
+
+    // ── Assinaturas ──
+    if (assinaturas && assinaturas.etapas) {
+      var etapaAtiva = null;
+      assinaturas.etapas.forEach(function (et) { if (!etapaAtiva && et.status === 'aguardando') etapaAtiva = et; });
+      html += '<div class="reenvio-card">' +
+        '<div class="reenvio-card-title">Assinaturas do TCE</div>' +
+        '<div class="reenvio-status">Status geral: <strong>' + escapeHtml(assinaturas.status || '—') + '</strong>' +
+        (etapaAtiva ? ' · Etapa ativa: <strong>' + escapeHtml(etapaAtiva.label || 'Etapa ' + etapaAtiva.numero) + '</strong>' : '') + '</div>' +
+        '<div class="reenvio-actions">';
+      if (etapaAtiva) {
+        html += '<button class="btn btn-sm btn-primary" onclick="reenviarAssinatura(\'' + escapeHtml(id) + '\',' + etapaAtiva.numero + ')">↻ Reenviar Etapa ' + etapaAtiva.numero + ' — ' + escapeHtml(etapaAtiva.label || '') + '</button>';
+      }
+      html += '</div></div>';
+    }
+
+    if (!html) {
+      resultado.innerHTML = '<div class="estado-vazio">Nenhuma notificação pendente encontrada para este estágio.</div>';
+    } else {
+      resultado.innerHTML = html;
+    }
+  }
+
+  async function reenviarChecklist(idEstagio, ator) {
+    mostrarFbReenvio('', '');
+    try {
+      await API.post('reenviarNotificacaoChecklist', { authToken: getAccessToken(), idEstagio: idEstagio, ator: ator });
+      mostrarFbReenvio('success', 'Notificação reenviada com sucesso para o ' + ator + '.');
+    } catch (err) {
+      mostrarFbReenvio('error', err.message || 'Erro ao reenviar.');
+    }
+  }
+
+  async function reenviarAssinatura(idEstagio, numeroEtapa) {
+    mostrarFbReenvio('', '');
+    try {
+      await API.post('reenviarNotificacaoAssinatura', { authToken: getAccessToken(), idEstagio: idEstagio, numeroEtapa: numeroEtapa });
+      mostrarFbReenvio('success', 'Notificação da etapa ' + numeroEtapa + ' reenviada com sucesso.');
+    } catch (err) {
+      mostrarFbReenvio('error', err.message || 'Erro ao reenviar.');
+    }
+  }
+
+  function mostrarFbReenvio(tipo, msg) {
+    var el = document.getElementById('reenvio-feedback');
+    if (!tipo) { el.style.display = 'none'; return; }
+    el.className = tipo === 'success' ? 'success-banner' : 'error-banner';
+    el.textContent = msg; el.style.display = '';
+  }
+
+  // ── Feedback global ───────────────────────────────────────────────────────────
+  function mostrarFbGlobal(tipo, msg) {
+    var el = document.getElementById('feedback-global');
+    el.className = tipo === 'success' ? 'success-banner' : 'error-banner';
+    el.textContent = msg; el.style.display = '';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    setTimeout(function () { el.style.display = 'none'; }, 6000);
+  }
   </script>
 </body>
 </html>
