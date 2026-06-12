@@ -428,7 +428,7 @@
           { num: '2.2', label: 'Documento de Identidade',  url: s.linkDocIdentidade },
           { num: '2.3', label: 'Boletim / Histórico',      url: s.linkDocBoletim },
         ];
-        html += sec('2. 📄 Documentos de Admissão',
+        html += sec('1. 📄 Documentos de Admissão',
           `<div class="avulso-list">` +
           admDocs.map(d =>
             `<div class="avulso-item">
@@ -462,7 +462,7 @@
           fluxoHtml += `<div style="margin-bottom:var(--space-4)">
             <div style="font-size:var(--font-size-xs);font-weight:600;text-transform:uppercase;
                         color:var(--color-text-muted);letter-spacing:.04em;margin-bottom:var(--space-3)">
-              📄 3.1 Solicitação de Estágio
+              📄 2.1 Solicitação de Estágio
             </div>
             <div class="avulso-list">
               <div class="avulso-item">
@@ -487,7 +487,7 @@
           fluxoHtml += `<div>
             <div style="font-size:var(--font-size-xs);font-weight:600;text-transform:uppercase;
                         color:var(--color-text-muted);letter-spacing:.04em;margin-bottom:var(--space-3)">
-              📄 3.2 TCE — Termo de Compromisso de Estágio
+              📄 2.2 TCE — Termo de Compromisso de Estágio
             </div>
             <div class="avulso-list">
               <div class="avulso-item">
@@ -501,18 +501,18 @@
           </div>`;
         }
 
-        html += sec('3. 📄 Documentos do Fluxo',
+        html += sec('2. 📄 Documentos do Fluxo',
           temFluxo ? fluxoHtml : vazio('Os documentos do fluxo estarão disponíveis após aprovação da solicitação.')
         );
       }
 
       // ── 4. Avaliações de Estágio ─────────────────────────────────────────────
-      html += sec('4. 📄 Avaliações de Estágio',
+      html += sec('3. 📄 Avaliações de Estágio',
         `<div id="wrap-docs-aval">${buildDocsAvaliacoes()}</div>`
       );
 
       // ── 5. Parecer Final ─────────────────────────────────────────────────────
-      html += sec('5. 📄 Parecer Final',
+      html += sec('4. 📄 Parecer Final',
         `<div id="wrap-docs-parecer">${buildDocsParecer(null)}</div>`
       );
 
@@ -520,7 +520,7 @@
       {
         const avulsoUpload = buildSecaoUploadAvulso();
         const avulsoHist   = `<div id="wrap-hist-avulsos">${buildHistoricoAvulsos(null)}</div>`;
-        html += sec('6. 📄 Demais Documentos', avulsoUpload + avulsoHist);
+        html += sec('5. 📄 Demais Documentos', avulsoUpload + avulsoHist);
       }
 
       return html;
