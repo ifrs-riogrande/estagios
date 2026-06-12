@@ -42,6 +42,7 @@
       border-bottom: 1px solid var(--color-border);
     }
     .dias-row:last-child { border-bottom: none; }
+    .dias-row--erro { background: #fff5f5; }
     .dias-row .form-control { margin-bottom: 0; }
     .dias-diaria {
       font-size: var(--font-size-sm);
@@ -538,7 +539,7 @@
                 placeholder="Preencha as datas e os dias de estágio"
                 aria-describedby="carga-horaria-hint carga-horaria-error"
                 style="background:var(--color-surface-secondary,#f8f9fa);cursor:default;">
-              <span id="carga-horaria-hint" class="form-hint">Calculada automaticamente: ocorrências de cada dia entre início e término. Máx. semanal: 20h (NEE) · 30h (regular) · 40h (alternância). Vedado período noturno (22h–6h).</span>
+              <span id="carga-horaria-hint" class="form-hint">Calculada automaticamente: ocorrências de cada dia entre início e término. Máx. diária: 4h (NEE) · 6h (regular). Máx. semanal: 20h (NEE) · 30h (regular). Vedado período noturno (22h–6h).</span>
               <span id="carga-horaria-error" class="form-error hidden" role="alert"></span>
               <!-- Carga semanal — usado apenas para validação no backend -->
               <input type="hidden" id="carga-horaria-semanal" name="cargaHoraria">
@@ -1815,49 +1816,118 @@
 
       vazio.style.display = 'none';
 
-      var totalMins = 0;
-      var linhas    = [];
-      var html      = '';
+      var isNEE       = dadosEstudante && dadosEstudante.nee === 'Sim';
+      var maxDiaMins  = isNEE ? 240 : 360;   // 4h NEE · 6h regular
+      var maxSemMins  = isNEE ? 1200 : 1800; // 20h NEE · 30h regular
+
+      // ── Pré-processamento: minutos por linha e erros ───────────────────────
+
+      // 1. Detecta horário noturno e linha inválida (entrada ≥ saída)
+      var minsPorLinha = _diasLista.map(function(d) {
+        return _calcMins(d.entrada, d.saida);
+      });
+
+      function _toMin(t) { var p = (t||'').split(':'); return parseInt(p[0],10)*60 + parseInt(p[1]||0,10); }
+      function _noturno(t) { var m = _toMin(t); return m < 360 || m >= 1320; } // < 6h ou >= 22h
+
+      var erros = _diasLista.map(function(d, i) {
+        var mins = minsPorLinha[i];
+        if (!d.entrada || !d.saida) return 'inválido';
+        if (_noturno(d.entrada)) return 'noturno';
+        if (_noturno(d.saida) && d.saida !== '22:00') return 'noturno';
+        if (mins <= 0) return 'inválido';
+        return null;
+      });
+
+      // 2. Detecta conflito/sobreposição entre slots do mesmo dia
+      var porDia = {};
+      _diasLista.forEach(function(d, i) {
+        if (!porDia[d.dia]) porDia[d.dia] = [];
+        porDia[d.dia].push(i);
+      });
+
+      Object.keys(porDia).forEach(function(dia) {
+        var idxs = porDia[dia];
+        // Slots válidos (sem erro já detectado) ordenados por entrada
+        var validos = idxs
+          .filter(function(i) { return !erros[i] && minsPorLinha[i] > 0; })
+          .sort(function(a, b) {
+            return _diasLista[a].entrada.localeCompare(_diasLista[b].entrada);
+          });
+
+        // Sobreposição: saída de i > entrada de j (slots ordenados)
+        for (var x = 0; x < validos.length - 1; x++) {
+          var ia = validos[x], ib = validos[x + 1];
+          if (_diasLista[ia].saida > _diasLista[ib].entrada) {
+            erros[ia] = 'conflito';
+            erros[ib] = 'conflito';
+          }
+        }
+
+        // Limite diário: soma dos slots sem conflito ainda
+        var totalDia = idxs.reduce(function(sum, i) {
+          return sum + (erros[i] ? 0 : minsPorLinha[i]);
+        }, 0);
+        if (totalDia > maxDiaMins) {
+          idxs.forEach(function(i) { if (!erros[i]) erros[i] = 'limite-dia'; });
+        }
+      });
+
+      // 3. Limite semanal (soma de slots sem erro)
+      var totalMins = _diasLista.reduce(function(sum, d, i) {
+        return sum + (erros[i] ? 0 : minsPorLinha[i]);
+      }, 0);
+      var excedeSemana = totalMins > maxSemMins;
+
+      // ── Renderiza linhas ───────────────────────────────────────────────────
+
+      var linhas = [];
+      var html   = '';
+      var errMsg = { 'inválido': 'inválido', 'noturno': 'noturno (22h–6h)', 'conflito': 'conflito', 'limite-dia': isNEE ? 'máx. 4h/dia' : 'máx. 6h/dia' };
 
       _diasLista.forEach(function (d, i) {
-        var mins   = _calcMins(d.entrada, d.saida);
-        var valido = mins > 0;
-        if (valido) totalMins += mins;
+        var mins   = minsPorLinha[i];
+        var erro   = erros[i];
+        var valido = !erro && mins > 0;
 
-        var diariaTxt  = valido ? escapeHtml(_formatHoras(mins)) : 'inválido';
+        var diariaTxt  = valido ? escapeHtml(_formatHoras(mins)) : (errMsg[erro] || 'inválido');
         var diariaHtml = valido
-          ? '<span class="dias-diaria">'   + diariaTxt + '</span>'
+          ? '<span class="dias-diaria">' + diariaTxt + '</span>'
           : '<span class="dias-diaria invalido">' + diariaTxt + '</span>';
 
         var opcoesHtml = _DIAS_OPCOES.map(function (op) {
           return '<option value="' + op + '"' + (op === d.dia ? ' selected' : '') + '>' + op + '</option>';
         }).join('');
 
-        html += '<div class="dias-row">' +
+        html += '<div class="dias-row' + (erro ? ' dias-row--erro' : '') + '">' +
           '<select class="form-control form-control-sm dias-sel-dia" data-idx="' + i + '" aria-label="Dia da semana" onchange="_onDiaChange(this)">' + opcoesHtml + '</select>' +
-          '<input type="time" class="form-control form-control-sm dias-entrada" data-idx="' + i + '" value="' + d.entrada + '" aria-label="Horário de entrada" onchange="_onTimeChange(this,\'entrada\')">' +
-          '<input type="time" class="form-control form-control-sm dias-saida"   data-idx="' + i + '" value="' + d.saida   + '" aria-label="Horário de saída"   onchange="_onTimeChange(this,\'saida\')">' +
+          '<input type="time" class="form-control form-control-sm dias-entrada" data-idx="' + i + '" value="' + d.entrada + '" min="06:00" max="22:00" aria-label="Horário de entrada" onchange="_onTimeChange(this,\'entrada\')">' +
+          '<input type="time" class="form-control form-control-sm dias-saida"   data-idx="' + i + '" value="' + d.saida   + '" min="06:00" max="22:00" aria-label="Horário de saída"   onchange="_onTimeChange(this,\'saida\')">' +
           diariaHtml +
-          '<button type="button" class="dias-remove-btn" aria-label="Remover ' + d.dia + '" onclick="_removerDia(' + i + ')">' +
+          '<button type="button" class="dias-remove-btn" aria-label="Remover ' + escapeHtml(d.dia) + '" onclick="_removerDia(' + i + ')">' +
             '<svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>' +
           '</button>' +
         '</div>';
 
-        if (valido) {
-          linhas.push(d.dia + ': ' + d.entrada + '–' + d.saida + ' (' + _formatHoras(mins) + ')');
-        } else {
-          linhas.push(d.dia + ': ' + d.entrada + '–' + d.saida + ' (horário inválido)');
-        }
+        if (valido) linhas.push(d.dia + ': ' + d.entrada + '–' + d.saida + ' (' + _formatHoras(mins) + ')');
+        else        linhas.push(d.dia + ': ' + d.entrada + '–' + d.saida + ' (' + (errMsg[erro] || 'inválido') + ')');
       });
 
       container.innerHTML = html;
 
+      // ── Rodapé: total semanal + aviso de limite ────────────────────────────
       var totalStr = _formatHoras(totalMins);
-      totalEl.textContent = 'Total semanal: ' + (totalStr || '—');
+      var limiteLabel = isNEE ? '20h (NEE)' : '30h';
+      if (excedeSemana) {
+        totalEl.innerHTML = 'Total semanal: <span style="color:var(--color-error);font-weight:600;">' + (totalStr || '—') + ' — excede o máx. de ' + limiteLabel + '</span>';
+      } else {
+        totalEl.textContent = 'Total semanal: ' + (totalStr || '—');
+      }
 
       if (totalStr) linhas.push('Total semanal: ' + totalStr);
 
-      if (semanalEl) semanalEl.value = totalStr ? totalStr + ' semanais' : '';
+      var temErro = erros.some(function(e) { return !!e; }) || excedeSemana;
+      if (semanalEl) semanalEl.value = (!temErro && totalStr) ? totalStr + ' semanais' : '';
       if (hiddenEl)  hiddenEl.value  = linhas.join('\n');
       _atualizarCargaTotal();
     }
