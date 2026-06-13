@@ -143,6 +143,8 @@ function doGetAdmin(e) {
       case 'obterDiretorGeral':        return jsonOk_(obterDadosDiretorGeralAdmin_());
       case 'obterDiretoriaDEN':        return jsonOk_(_obterDiretoriaAdmin_('DEN'));
       case 'obterDiretoriaDEX':        return jsonOk_(_obterDiretoriaAdmin_('DEX'));
+      case 'obterDiretoriaNAPNE':      return jsonOk_(_obterDiretoriaAdmin_('NAPNE'));
+      case 'obterDiretoriaRegistro':   return jsonOk_(_obterDiretoriaAdmin_('Registro'));
       case 'obterConfigTCE':           return obterConfigTCE_();
       case 'obterConfigNotificacoes':  return obterConfigNotificacoes_();
       default: return jsonError_('Ação GET não reconhecida: ' + action, 'UNKNOWN_ACTION');
@@ -216,6 +218,8 @@ function doPostAdmin(e) {
       case 'salvarDiretorGeral':     return salvarDiretorGeral_(body);
       case 'salvarDiretoriaDEN':     return _salvarDiretoria_(body, 'DEN');
       case 'salvarDiretoriaDEX':     return _salvarDiretoria_(body, 'DEX');
+      case 'salvarDiretoriaNAPNE':   return _salvarDiretoria_(body, 'NAPNE');
+      case 'salvarDiretoriaRegistro': return _salvarDiretoria_(body, 'Registro');
       default: return jsonError_('Ação POST não reconhecida: ' + action, 'UNKNOWN_ACTION');
     }
   } catch (err) {
@@ -1564,7 +1568,8 @@ function _salvarDiretoria_(body, sigla) {
 
 function _obterOuCriarAbaDiretoria_(sigla) {
   var ss   = SpreadsheetApp.openById(CFG_ADMIN.SS_ID);
-  var nome = sigla === 'DEN' ? 'Diretoria Ensino' : 'Diretoria Extensão';
+  var mapa = { DEN: 'Diretoria Ensino', DEX: 'Diretoria Extensão', NAPNE: 'NAPNE', Registro: 'Registro Acadêmico' };
+  var nome = mapa[sigla] || sigla;
   var sh   = ss.getSheetByName(nome);
   if (!sh) {
     sh = ss.insertSheet(nome);
