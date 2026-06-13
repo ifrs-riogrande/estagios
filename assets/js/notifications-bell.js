@@ -172,7 +172,7 @@
     if (!area) return;
 
     var wrap = _buildBell();
-    area.insertBefore(wrap, area.firstChild);
+    area.parentNode.insertBefore(wrap, area);
 
     // Eventos
     document.getElementById('sge-bell-btn').addEventListener('click', function (e) {
