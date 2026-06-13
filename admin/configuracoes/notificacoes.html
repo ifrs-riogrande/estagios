@@ -91,6 +91,10 @@
     .num-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(180px,1fr)); gap:var(--space-4); margin-top:var(--space-4); }
     .num-grid .form-group { margin-bottom:0; }
 
+    /* ── Canal (via e-mail / via sistema) ── */
+    .canal-row { display:flex; gap:var(--space-4); flex-wrap:wrap; margin-bottom:var(--space-4); padding:var(--space-3) var(--space-4); background:#f8fafc; border-radius:8px; border:1px solid var(--color-border); }
+    .canal-item { display:flex; align-items:center; gap:var(--space-2); font-size:.85rem; font-weight:500; }
+
     /* ── Seção pós-vencimento ── */
     .pos-venc-section { margin-top:var(--space-5); padding-top:var(--space-4); border-top:1px dashed var(--color-border); }
     .pos-venc-title { font-size:.78rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--color-text-muted); margin-bottom:var(--space-3); }
@@ -282,6 +286,18 @@
               </div>
             </div>
             <div class="fluxo-card-body" id="body-checklist">
+              <div class="canal-row">
+                <label class="canal-item">
+                  <input type="checkbox" id="canal-email-checklist" checked>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"/></svg>
+                  Via e-mail
+                </label>
+                <label class="canal-item">
+                  <input type="checkbox" id="canal-sistema-checklist">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0"/></svg>
+                  Via sistema
+                </label>
+              </div>
               <div class="num-grid">
                 <div class="form-group">
                   <div class="label-tt"><label class="form-label" for="dias-antes-checklist">Dias úteis antes</label>
@@ -341,6 +357,18 @@
               </div>
             </div>
             <div class="fluxo-card-body" id="body-assinaturas">
+              <div class="canal-row">
+                <label class="canal-item">
+                  <input type="checkbox" id="canal-email-assinaturas" checked>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"/></svg>
+                  Via e-mail
+                </label>
+                <label class="canal-item">
+                  <input type="checkbox" id="canal-sistema-assinaturas">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0"/></svg>
+                  Via sistema
+                </label>
+              </div>
               <div class="num-grid">
                 <div class="form-group">
                   <div class="label-tt"><label class="form-label" for="dias-antes-assinaturas">Dias úteis antes</label>
@@ -400,6 +428,18 @@
               </div>
             </div>
             <div class="fluxo-card-body" id="body-avaliacoes">
+              <div class="canal-row">
+                <label class="canal-item">
+                  <input type="checkbox" id="canal-email-avaliacoes" checked>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"/></svg>
+                  Via e-mail
+                </label>
+                <label class="canal-item">
+                  <input type="checkbox" id="canal-sistema-avaliacoes">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0"/></svg>
+                  Via sistema
+                </label>
+              </div>
               <div class="num-grid">
                 <div class="form-group">
                   <div class="label-tt"><label class="form-label" for="dias-antes-avaliacoes">Dias úteis antes</label>
@@ -459,6 +499,18 @@
               </div>
             </div>
             <div class="fluxo-card-body" id="body-adendo">
+              <div class="canal-row">
+                <label class="canal-item">
+                  <input type="checkbox" id="canal-email-adendo" checked>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"/></svg>
+                  Via e-mail
+                </label>
+                <label class="canal-item">
+                  <input type="checkbox" id="canal-sistema-adendo">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0"/></svg>
+                  Via sistema
+                </label>
+              </div>
               <div class="num-grid">
                 <div class="form-group">
                   <div class="label-tt"><label class="form-label" for="dias-antes-adendo">Dias úteis antes</label>
@@ -600,6 +652,7 @@
 
   <script src="https://accounts.google.com/gsi/client" async></script>
   <script src="../../assets/js/utils.js"></script>
+  <script src="../../assets/js/notifications-bell.js"></script>
   <script src="../../assets/js/auth.js"></script>
   <script src="../../assets/js/api.js"></script>
   <script>
@@ -754,7 +807,10 @@
     FLUXOS.forEach(function (f) {
       var fl = (cfg.lembretes && cfg.lembretes[f]) || {};
       var pv = fl.posVencimento || {};
+      var canal = fl.canal || {};
       document.getElementById('ativo-' + f).checked         = fl.ativo !== false;
+      document.getElementById('canal-email-' + f).checked   = canal.viaEmail !== false;
+      document.getElementById('canal-sistema-' + f).checked = !!canal.viaSistema;
       document.getElementById('dias-antes-' + f).value      = fl.diasAntes           || 2;
       document.getElementById('freq-' + f).value            = pv.frequenciaDias      || 3;
       document.getElementById('max-' + f).value             = pv.maxReenvios         != null ? pv.maxReenvios : 5;
@@ -769,6 +825,10 @@
     return {
       ativo:     document.getElementById('ativo-' + f).checked,
       diasAntes: parseInt(document.getElementById('dias-antes-' + f).value, 10) || 2,
+      canal: {
+        viaEmail:   document.getElementById('canal-email-' + f).checked,
+        viaSistema: document.getElementById('canal-sistema-' + f).checked,
+      },
       posVencimento: {
         frequenciaDias:        parseInt(document.getElementById('freq-' + f).value,    10) || 3,
         maxReenvios:           parseInt(document.getElementById('max-' + f).value,     10),

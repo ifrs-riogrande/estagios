@@ -2681,7 +2681,7 @@ function testarEnvioEmail() {
 var NOTIF_CONFIG_KEY_ = 'config_notificacoes';
 
 function _defaultFluxoLembrete_() {
-  return { ativo: true, diasAntes: 2, posVencimento: { frequenciaDias: 3, maxReenvios: 5, escalarAdminApartirDe: 2 } };
+  return { ativo: true, diasAntes: 2, canal: { viaEmail: true, viaSistema: false }, posVencimento: { frequenciaDias: 3, maxReenvios: 5, escalarAdminApartirDe: 2 } };
 }
 
 function _defaultConfigNotificacoes_() {
@@ -2716,6 +2716,7 @@ function _backfillFluxo_(fluxo) {
   var def = _defaultFluxoLembrete_();
   if (typeof fluxo.ativo !== 'boolean')  fluxo.ativo = def.ativo;
   if (!fluxo.diasAntes)                  fluxo.diasAntes = def.diasAntes;
+  if (!fluxo.canal)                      fluxo.canal = def.canal;
   if (!fluxo.posVencimento)              fluxo.posVencimento = def.posVencimento;
   else {
     if (!fluxo.posVencimento.frequenciaDias)      fluxo.posVencimento.frequenciaDias = def.posVencimento.frequenciaDias;
@@ -2806,9 +2807,11 @@ function salvarConfigNotificacoes_(body) {
     if (isNaN(freq)    || freq    < 1 || freq    > 30) throw new Error('Frequência pós-vencimento para "' + f + '" inválida.');
     if (isNaN(maxR)    || maxR    < 0 || maxR    > 20) throw new Error('Máximo de reenvios para "' + f + '" deve ser entre 0 e 20.');
     if (isNaN(escalar) || escalar < 1 || escalar > 20) throw new Error('Escalar admin a partir de para "' + f + '" inválido.');
+    var canal = fl.canal || {};
     lembretesToSave[f] = {
       ativo:        fl.ativo !== false,
       diasAntes:    diasAntes,
+      canal:        { viaEmail: canal.viaEmail !== false, viaSistema: !!canal.viaSistema },
       posVencimento: { frequenciaDias: freq, maxReenvios: maxR, escalarAdminApartirDe: escalar }
     };
   });

@@ -81,11 +81,12 @@ var GET_ROUTES = {
   'validarTokenOportunidade':doGetPublicConfig,
 
   // Cursos + TCE config — admin
-  'listarTodosCursos':       doGetAdmin,
-  'obterDiretorGeral':       doGetAdmin,
-  'obterDiretoriaDEN':       doGetAdmin,
-  'obterDiretoriaDEX':       doGetAdmin,
-  'obterConfigTCE':          doGetAdmin,
+  'listarTodosCursos':            doGetAdmin,
+  'obterDiretorGeral':            doGetAdmin,
+  'obterDiretoriaDEN':            doGetAdmin,
+  'obterDiretoriaDEX':            doGetAdmin,
+  'obterConfigTCE':               doGetAdmin,
+  'obterConfigNotificacoes':      doGetAdmin,
 
   // Checklist
   'obterChecklist':          doGetChecklist,
@@ -111,6 +112,9 @@ var GET_ROUTES = {
   // Parecer Final
   'obterParecerFinal':            doGetParecer,
   'listarPareceresPendentes':     doGetParecer,
+
+  // Notificações in-app
+  'listarNotificacoes':           doGetNotificacoes,
 
 };
 
@@ -159,6 +163,7 @@ var POST_ROUTES = {
   // ConfiguraÃ§Ãµes (admin)
   'salvarConfigCursos':        doPostAdmin,
   'salvarConfigTCE':           doPostAdmin,
+  'salvarConfigNotificacoes':  doPostAdmin,
   'salvarDiretorGeral':        doPostAdmin,
   'salvarDiretoriaDEN':        doPostAdmin,
   'salvarDiretoriaDEX':        doPostAdmin,
@@ -243,6 +248,10 @@ var POST_ROUTES = {
   'aprovarAvaliacao':                 doPostAvaliacoes,
   'regenerarPdfAvaliacao':            doPostAvaliacoes,
   'reenviarNotificacaoAvaliacao':     doPostAvaliacoes,
+
+  // Notificações in-app
+  'marcarNotificacaoLida':            doPostNotificacoes,
+  'marcarTodasNotificacoesLidas':     doPostNotificacoes,
 };
 
 // â”€â”€ Ponto de entrada GET â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€

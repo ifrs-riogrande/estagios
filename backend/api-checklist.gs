@@ -726,6 +726,19 @@ function _notificarAdminAjusteChecklist_(idEstagio, ator, obs) {
 // ── Trigger diário: verificar prazos D-N ─────────────────────────────────────
 
 /** Lê dias de antecedência do lembrete a partir de config_notificacoes (default: 2). */
+/** Retorna a config de canal (viaEmail, viaSistema) de um fluxo. */
+function _obterCanalFluxo_(fluxo) {
+  try {
+    var raw = PropertiesService.getScriptProperties().getProperty('config_notificacoes');
+    if (raw) {
+      var cfg  = JSON.parse(raw);
+      var fl   = cfg.lembretes && cfg.lembretes[fluxo];
+      if (fl && fl.canal) return fl.canal;
+    }
+  } catch (_) {}
+  return { viaEmail: true, viaSistema: false };
+}
+
 /** Retorna a config de um fluxo específico de lembrete (nova estrutura por fluxo). */
 function _obterConfigFluxoLembrete_(fluxo) {
   var def = { ativo: true, diasAntes: 2, posVencimento: { frequenciaDias: 3, maxReenvios: 5, escalarAdminApartirDe: 2 } };
@@ -809,7 +822,8 @@ function _diasUteisAte_(dataISO) {
 
 function _verificarPrazosChecklist_() {
   try {
-    var cfg   = _obterConfigFluxoLembrete_('checklist');
+    var cfg    = _obterConfigFluxoLembrete_('checklist');
+    var canal  = _obterCanalFluxo_('checklist');
     var sheet = SpreadsheetApp.openById(SS_ID).getSheetByName(CHECKLIST_SHEET);
     if (!sheet) return;
     var dados = sheet.getDataRange().getValues();
@@ -873,9 +887,19 @@ function _verificarPrazosChecklist_() {
           email:           email,
           urlChecklist:    urlLembrete || '',
         };
-        MAIL.enviarEmailLembreteChecklist(params);
-        if (copiarAdmin && emailAdmin && emailAdmin !== email) {
-          MAIL.enviarEmailLembreteChecklist(Object.assign({}, params, { email: emailAdmin }));
+        if (canal.viaEmail !== false) {
+          MAIL.enviarEmailLembreteChecklist(params);
+          if (copiarAdmin && emailAdmin && emailAdmin !== email) {
+            MAIL.enviarEmailLembreteChecklist(Object.assign({}, params, { email: emailAdmin }));
+          }
+        }
+        if (canal.viaSistema) {
+          var perfilAtor = ator === 'admin' ? 'admin' : (ator === 'coordenador' ? 'coordenador' : (ator === 'supervisor' ? 'supervisor' : 'orientador'));
+          var msg = 'Prazo ' + (diasApos > 0 ? 'vencido' : 'próximo') + ' — Checklist de ' + (sol.nomeEstudante || id) + '. Vence: ' + (ck.prazoVencimento || '');
+          criarNotificacao_({ email: email, perfil: perfilAtor, idEstagio: id, tipo: 'lembrete_checklist', mensagem: msg });
+          if (copiarAdmin && emailAdmin && emailAdmin !== email) {
+            criarNotificacao_({ email: emailAdmin, perfil: 'admin', idEstagio: id, tipo: 'lembrete_checklist', mensagem: msg });
+          }
         }
         ck.lembretesEnviados = jaEnviados + 1;
         modificado = true;
@@ -891,6 +915,7 @@ function _verificarPrazosChecklist_() {
 function _verificarPrazosAssinaturas_() {
   try {
     var cfg   = _obterConfigFluxoLembrete_('assinaturas');
+    var canal = _obterCanalFluxo_('assinaturas');
     var sheet = SpreadsheetApp.openById(SS_ID).getSheetByName(ASSINATURAS_SHEET);
     if (!sheet) return;
     var dados = sheet.getDataRange().getValues();
@@ -939,9 +964,18 @@ function _verificarPrazosAssinaturas_() {
           numeroEtapa:     et.numero,
           tipo:            et.tipo,
         };
-        MAIL.enviarEmailLembreteAssinatura(params);
-        if (copiarAdmin && emailAdmin && emailAdmin !== et.email) {
-          MAIL.enviarEmailLembreteAssinatura(Object.assign({}, params, { email: emailAdmin }));
+        if (canal.viaEmail !== false) {
+          MAIL.enviarEmailLembreteAssinatura(params);
+          if (copiarAdmin && emailAdmin && emailAdmin !== et.email) {
+            MAIL.enviarEmailLembreteAssinatura(Object.assign({}, params, { email: emailAdmin }));
+          }
+        }
+        if (canal.viaSistema) {
+          var msgAss = 'Prazo ' + (diasApos > 0 ? 'vencido' : 'próximo') + ' — Assinatura TCE de ' + (sol.nomeEstudante || id) + '. Etapa ' + et.numero + '. Vence: ' + (et.prazoVencimento || '');
+          criarNotificacao_({ email: et.email, perfil: et.tipo || 'externo', idEstagio: id, tipo: 'lembrete_assinatura', mensagem: msgAss });
+          if (copiarAdmin && emailAdmin && emailAdmin !== et.email) {
+            criarNotificacao_({ email: emailAdmin, perfil: 'admin', idEstagio: id, tipo: 'lembrete_assinatura', mensagem: msgAss });
+          }
         }
         et.lembretesEnviados = jaEnviados + 1;
         modificado = true;

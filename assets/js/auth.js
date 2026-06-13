@@ -488,4 +488,9 @@ function updateHeaderUser(session) {
       btn.setAttribute('aria-expanded', 'false');
     }
   });
+
+  // Sino de notificações in-app (injeta se o script estiver disponível)
+  if (window.SGE_BELL && typeof window.SGE_BELL.init === 'function') {
+    window.SGE_BELL.init();
+  }
 }
