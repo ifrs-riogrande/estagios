@@ -220,6 +220,8 @@ function doPostAdmin(e) {
       case 'salvarDiretoriaDEX':     return _salvarDiretoria_(body, 'DEX');
       case 'salvarDiretoriaNAPNE':   return _salvarDiretoria_(body, 'NAPNE');
       case 'salvarDiretoriaRegistro': return _salvarDiretoria_(body, 'Registro');
+      case 'cadastrarEmpresaAdmin':    return cadastrarEmpresaAdmin_(body);
+      case 'cadastrarSupervisorAdmin': return cadastrarSupervisorAdmin_(body);
       default: return jsonError_('Ação POST não reconhecida: ' + action, 'UNKNOWN_ACTION');
     }
   } catch (err) {
@@ -1576,6 +1578,122 @@ function _obterOuCriarAbaDiretoria_(sigla) {
     sh.getRange(1, 1, 1, 5).setValues([['Nome', 'SIAPE', 'CPF', 'E-mail', 'Status']]);
   }
   return sh;
+}
+
+// ─────────────────────────────────────────────────────────────────
+// POST — Cadastrar empresa diretamente pelo admin (status = Validada)
+// ─────────────────────────────────────────────────────────────────
+function cadastrarEmpresaAdmin_(body) {
+  var san = function(v, max) { return String(v || '').replace(/<[^>]*>/g, '').trim().substring(0, max || 300); };
+
+  var razao = san(body.razaoSocial, 200);
+  var cnpj  = san(body.cnpj, 20).replace(/\D/g, '');
+  if (!razao) return jsonError_('Razão Social é obrigatória.', 'VALIDATION');
+  if (!cnpj)  return jsonError_('CNPJ é obrigatório.', 'VALIDATION');
+
+  var ss    = SpreadsheetApp.openById(CFG_ADMIN.SS_ID);
+  var sheet = ss.getSheetByName(CFG_ADMIN.ABA_EMPRESAS);
+  if (!sheet) return jsonError_('Aba de empresas não encontrada.', 'NOT_FOUND');
+
+  // Verifica duplicidade por CNPJ
+  var dados = sheet.getDataRange().getValues();
+  for (var i = 1; i < dados.length; i++) {
+    if (String(dados[i][5] || '').replace(/\D/g, '') === cnpj) {
+      return jsonError_('Já existe um cadastro com este CNPJ.', 'DUPLICATE');
+    }
+  }
+
+  // COL_EMP base-0: 0=Timestamp,1=Email,2=Tipo,3=RazaoSocial,4=NomeFantasia,5=CNPJ,
+  //   6=Ramo,7=Endereco,8=Bairro,9=Municipio,10=UF,11=CEP,12=Tel,13=Email,14=Site,
+  //   15=NomeRep,16=CargoRep,17=EmailRep,18=CpfRep,19=Status
+  var cnpjFmt = cnpj.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5');
+  var emailRep = san(body.emailRep, 200).toLowerCase();
+  var row = new Array(28).fill('');
+  row[0]  = new Date();
+  row[1]  = emailRep || 'admin';
+  row[2]  = 'Cadastro Admin';
+  row[3]  = razao;
+  row[4]  = san(body.nomeFantasia, 200);
+  row[5]  = cnpjFmt;
+  row[6]  = san(body.ramo, 100);
+  row[7]  = san(body.endereco, 300);
+  row[8]  = san(body.bairro, 100);
+  row[9]  = san(body.municipio, 100);
+  row[10] = san(body.uf, 2).toUpperCase();
+  row[11] = san(body.cep, 10);
+  row[12] = san(body.telefone, 30);
+  row[13] = san(body.email, 200).toLowerCase();
+  row[14] = validarUrl_(san(body.site, 300));
+  row[15] = san(body.nomeRep, 150);
+  row[16] = san(body.cargoRep, 100);
+  row[17] = emailRep;
+  row[18] = san(body.cpfRep, 15);
+  row[19] = 'Validada';
+
+  sheet.appendRow(row);
+  return jsonOk_({ mensagem: 'Empresa cadastrada com sucesso.' });
+}
+
+// ─────────────────────────────────────────────────────────────────
+// POST — Cadastrar supervisor diretamente pelo admin (status = Validado)
+// ─────────────────────────────────────────────────────────────────
+function cadastrarSupervisorAdmin_(body) {
+  var san = function(v, max) { return String(v || '').replace(/<[^>]*>/g, '').trim().substring(0, max || 300); };
+
+  var nome  = san(body.nome, 150);
+  var cpf   = san(body.cpf, 15).replace(/\D/g, '');
+  var email = san(body.email, 200).toLowerCase();
+  if (!nome)  return jsonError_('Nome é obrigatório.', 'VALIDATION');
+  if (!cpf)   return jsonError_('CPF é obrigatório.', 'VALIDATION');
+  if (!email) return jsonError_('E-mail é obrigatório.', 'VALIDATION');
+
+  var ss    = SpreadsheetApp.openById(CFG_ADMIN.SS_ID);
+  var sheet = ss.getSheetByName('Supervisores');
+  if (!sheet) return jsonError_('Aba de supervisores não encontrada.', 'NOT_FOUND');
+
+  // Verifica duplicidade por CPF
+  var dados = sheet.getDataRange().getValues();
+  for (var i = 1; i < dados.length; i++) {
+    if (String(dados[i][9] || '').replace(/\D/g, '') === cpf) {
+      return jsonError_('Já existe um supervisor com este CPF.', 'DUPLICATE');
+    }
+  }
+
+  // COL_SUP base-0: 0=Timestamp,1=EmailForm,2=Tipo,3=Empresa,4=Setor,5=EndSetor,
+  //   6=EmailSetor,7=TelSetor,8=Nome,9=CPF,10=Cargo,11=TelSup,12=EmailSup,
+  //   13=NivelFormacao,14=AreaFormacao,15=Instituicao,16=TempoExp,17=DescExp,
+  //   18=Declaracao,19=Status,20=ValidadoPor,21=DataValidacao
+  var cpfFmt = cpf.replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, '$1.$2.$3-$4');
+  var cnpjEmpresa = san(body.cnpjEmpresa, 20).replace(/\D/g, '');
+  var cnpjEmpFmt  = cnpjEmpresa
+    ? cnpjEmpresa.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5') + (body.razaoEmpresa ? ' — ' + san(body.razaoEmpresa, 200) : '')
+    : '';
+
+  var row = new Array(26).fill('');
+  row[0]  = new Date();
+  row[1]  = email;
+  row[2]  = 'Cadastro Admin';
+  row[3]  = cnpjEmpFmt;
+  row[4]  = san(body.setor, 100);
+  row[5]  = san(body.enderecoSetor, 300);
+  row[6]  = san(body.emailSetor, 200).toLowerCase();
+  row[7]  = san(body.telSetor, 30);
+  row[8]  = nome;
+  row[9]  = cpfFmt;
+  row[10] = san(body.cargo, 100);
+  row[11] = san(body.telefone, 30);
+  row[12] = email;
+  row[13] = san(body.nivelFormacao, 50);
+  row[14] = san(body.areaFormacao, 100);
+  row[15] = san(body.instituicao, 150);
+  row[16] = san(body.tempoExperiencia, 50);
+  row[17] = san(body.descExperiencia, 500);
+  row[19] = 'Validado';
+  row[20] = 'admin';
+  row[21] = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'dd/MM/yyyy');
+
+  sheet.appendRow(row);
+  return jsonOk_({ mensagem: 'Supervisor cadastrado com sucesso.' });
 }
 
 function enviarEmailAprovacao_(r, driveUrl) {

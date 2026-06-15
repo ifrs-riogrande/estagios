@@ -94,10 +94,107 @@
         </div>
         <div style="display:flex;gap:var(--space-2);align-items:flex-end;">
           <button id="btn-atualizar" class="btn btn-secondary btn-sm">Atualizar</button>
+          <button id="btn-cadastrar-empresa" class="btn btn-primary btn-sm">
+            <svg width="13" height="13" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" style="margin-right:4px"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"/></svg>
+            Cadastrar empresa
+          </button>
           <button id="btn-convidar-empresa" class="btn btn-ghost btn-sm" title="Enviar convite de cadastro a uma empresa">
             <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"/><path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"/></svg>
             Convidar empresa
           </button>
+        </div>
+      </div>
+
+      <!-- Modal de cadastro direto de empresa -->
+      <div id="modal-cadastrar-empresa" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="cad-emp-title">
+        <div class="modal" style="max-width:680px">
+          <div class="modal-header">
+            <h2 id="cad-emp-title">Cadastrar Empresa</h2>
+            <button class="modal-close" onclick="fecharCadastroEmp()" aria-label="Fechar">
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+            </button>
+          </div>
+          <div class="modal-body" style="max-height:70vh;overflow-y:auto">
+            <p style="font-size:var(--font-size-sm);color:var(--color-text-secondary);margin-bottom:var(--space-5);">A empresa será cadastrada com status <strong>Validada</strong> diretamente.</p>
+
+            <p style="font-size:var(--font-size-xs);font-weight:600;color:var(--color-text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:var(--space-3);">Dados da Empresa</p>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3) var(--space-4);margin-bottom:var(--space-5);">
+              <div class="form-group" style="grid-column:1/-1;margin-bottom:0">
+                <label class="form-label">Razão Social *</label>
+                <input id="ce-razao" class="form-control" placeholder="Razão Social" maxlength="200">
+              </div>
+              <div class="form-group" style="margin-bottom:0">
+                <label class="form-label">Nome Fantasia</label>
+                <input id="ce-fantasia" class="form-control" placeholder="Nome Fantasia" maxlength="200">
+              </div>
+              <div class="form-group" style="margin-bottom:0">
+                <label class="form-label">CNPJ *</label>
+                <input id="ce-cnpj" class="form-control" placeholder="00.000.000/0001-00" maxlength="18">
+              </div>
+              <div class="form-group" style="margin-bottom:0">
+                <label class="form-label">Ramo de Atividade</label>
+                <input id="ce-ramo" class="form-control" placeholder="Ex.: Tecnologia, Saúde…" maxlength="100">
+              </div>
+              <div class="form-group" style="margin-bottom:0">
+                <label class="form-label">Telefone</label>
+                <input id="ce-tel" class="form-control" placeholder="(53) 9 0000-0000" maxlength="30">
+              </div>
+              <div class="form-group" style="margin-bottom:0">
+                <label class="form-label">E-mail</label>
+                <input id="ce-email" type="email" class="form-control" placeholder="contato@empresa.com.br" maxlength="200">
+              </div>
+              <div class="form-group" style="grid-column:1/-1;margin-bottom:0">
+                <label class="form-label">Endereço</label>
+                <input id="ce-end" class="form-control" placeholder="Rua, número, complemento" maxlength="300">
+              </div>
+              <div class="form-group" style="margin-bottom:0">
+                <label class="form-label">Bairro</label>
+                <input id="ce-bairro" class="form-control" maxlength="100">
+              </div>
+              <div class="form-group" style="margin-bottom:0">
+                <label class="form-label">Município</label>
+                <input id="ce-mun" class="form-control" maxlength="100">
+              </div>
+              <div class="form-group" style="margin-bottom:0">
+                <label class="form-label">UF</label>
+                <input id="ce-uf" class="form-control" maxlength="2" placeholder="RS">
+              </div>
+              <div class="form-group" style="margin-bottom:0">
+                <label class="form-label">CEP</label>
+                <input id="ce-cep" class="form-control" maxlength="10" placeholder="00000-000">
+              </div>
+              <div class="form-group" style="margin-bottom:0">
+                <label class="form-label">Site</label>
+                <input id="ce-site" class="form-control" placeholder="https://…" maxlength="300">
+              </div>
+            </div>
+
+            <p style="font-size:var(--font-size-xs);font-weight:600;color:var(--color-text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:var(--space-3);border-top:1px solid var(--color-border);padding-top:var(--space-4);">Representante Legal</p>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3) var(--space-4);">
+              <div class="form-group" style="margin-bottom:0">
+                <label class="form-label">Nome</label>
+                <input id="ce-nome-rep" class="form-control" maxlength="150">
+              </div>
+              <div class="form-group" style="margin-bottom:0">
+                <label class="form-label">Cargo</label>
+                <input id="ce-cargo-rep" class="form-control" maxlength="100">
+              </div>
+              <div class="form-group" style="margin-bottom:0">
+                <label class="form-label">E-mail</label>
+                <input id="ce-email-rep" type="email" class="form-control" maxlength="200">
+              </div>
+              <div class="form-group" style="margin-bottom:0">
+                <label class="form-label">CPF</label>
+                <input id="ce-cpf-rep" class="form-control" placeholder="000.000.000-00" maxlength="15">
+              </div>
+            </div>
+
+            <div id="ce-feedback" style="display:none;margin-top:var(--space-4);font-size:var(--font-size-sm);padding:var(--space-3);border-radius:var(--radius-md);"></div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-ghost" onclick="fecharCadastroEmp()">Cancelar</button>
+            <button class="btn btn-primary" id="btn-salvar-empresa" onclick="salvarCadastroEmpresa()">Cadastrar empresa</button>
+          </div>
         </div>
       </div>
 
@@ -581,6 +678,71 @@
       el.textContent = msg;
       document.body.appendChild(el);
       setTimeout(() => el.remove(), 4000);
+    }
+
+    // ── Cadastro direto de empresa ────────────────────────────────────────────
+    document.getElementById('btn-cadastrar-empresa').addEventListener('click', () => {
+      document.getElementById('modal-cadastrar-empresa').classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+    });
+
+    function fecharCadastroEmp() {
+      document.getElementById('modal-cadastrar-empresa').classList.add('hidden');
+      document.body.style.overflow = '';
+      ['ce-razao','ce-fantasia','ce-cnpj','ce-ramo','ce-tel','ce-email','ce-end','ce-bairro',
+       'ce-mun','ce-uf','ce-cep','ce-site','ce-nome-rep','ce-cargo-rep','ce-email-rep','ce-cpf-rep']
+        .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+      const fb = document.getElementById('ce-feedback');
+      fb.style.display = 'none'; fb.textContent = '';
+    }
+
+    async function salvarCadastroEmpresa() {
+      const btn = document.getElementById('btn-salvar-empresa');
+      const fb  = document.getElementById('ce-feedback');
+      const razao = document.getElementById('ce-razao').value.trim();
+      const cnpj  = document.getElementById('ce-cnpj').value.trim();
+
+      fb.style.display = 'none';
+      if (!razao) { mostrarFeedbackCE('Informe a Razão Social.', 'erro'); return; }
+      if (!cnpj)  { mostrarFeedbackCE('Informe o CNPJ.', 'erro'); return; }
+
+      btn.disabled = true; btn.textContent = 'Cadastrando…';
+      try {
+        await API.post('cadastrarEmpresaAdmin', {
+          authToken:   getAccessToken(),
+          razaoSocial: razao,
+          nomeFantasia:document.getElementById('ce-fantasia').value.trim(),
+          cnpj,
+          ramo:        document.getElementById('ce-ramo').value.trim(),
+          telefone:    document.getElementById('ce-tel').value.trim(),
+          email:       document.getElementById('ce-email').value.trim(),
+          endereco:    document.getElementById('ce-end').value.trim(),
+          bairro:      document.getElementById('ce-bairro').value.trim(),
+          municipio:   document.getElementById('ce-mun').value.trim(),
+          uf:          document.getElementById('ce-uf').value.trim(),
+          cep:         document.getElementById('ce-cep').value.trim(),
+          site:        document.getElementById('ce-site').value.trim(),
+          nomeRep:     document.getElementById('ce-nome-rep').value.trim(),
+          cargoRep:    document.getElementById('ce-cargo-rep').value.trim(),
+          emailRep:    document.getElementById('ce-email-rep').value.trim(),
+          cpfRep:      document.getElementById('ce-cpf-rep').value.trim(),
+        });
+        toast('Empresa cadastrada com sucesso.', 'success');
+        fecharCadastroEmp();
+        carregar();
+      } catch(err) {
+        mostrarFeedbackCE('Erro: ' + (err.message || 'Falha ao cadastrar.'), 'erro');
+      } finally {
+        btn.disabled = false; btn.textContent = 'Cadastrar empresa';
+      }
+    }
+
+    function mostrarFeedbackCE(msg, tipo) {
+      const fb = document.getElementById('ce-feedback');
+      fb.style.display = 'block';
+      fb.style.background = tipo === 'erro' ? '#fee2e2' : '#dcfce7';
+      fb.style.color      = tipo === 'erro' ? '#991b1b' : '#166534';
+      fb.textContent = msg;
     }
 
     // ── Convite de cadastro para empresa ─────────────────────────────────────

@@ -105,10 +105,119 @@
         </div>
         <div style="display:flex;gap:var(--space-2);align-items:flex-end;">
           <button id="btn-atualizar" class="btn btn-secondary btn-sm">Atualizar</button>
+          <button id="btn-cadastrar-supervisor" class="btn btn-primary btn-sm">
+            <svg width="13" height="13" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" style="margin-right:4px"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"/></svg>
+            Cadastrar supervisor
+          </button>
           <button id="btn-convidar-supervisor" class="btn btn-ghost btn-sm" title="Enviar convite de cadastro a um supervisor">
             <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"/><path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"/></svg>
             Convidar supervisor
           </button>
+        </div>
+      </div>
+
+      <!-- Modal de cadastro direto de supervisor -->
+      <div id="modal-cadastrar-supervisor" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="cad-sup-title">
+        <div class="modal" style="max-width:680px">
+          <div class="modal-header">
+            <h2 id="cad-sup-title">Cadastrar Supervisor</h2>
+            <button class="modal-close" onclick="fecharCadastroSup()" aria-label="Fechar">
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+            </button>
+          </div>
+          <div class="modal-body" style="max-height:70vh;overflow-y:auto">
+            <p style="font-size:var(--font-size-sm);color:var(--color-text-secondary);margin-bottom:var(--space-5);">O supervisor será cadastrado com status <strong>Validado</strong> diretamente.</p>
+
+            <p style="font-size:var(--font-size-xs);font-weight:600;color:var(--color-text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:var(--space-3);">Dados do Supervisor</p>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3) var(--space-4);margin-bottom:var(--space-5);">
+              <div class="form-group" style="margin-bottom:0">
+                <label class="form-label">Nome completo *</label>
+                <input id="cs-nome" class="form-control" maxlength="150">
+              </div>
+              <div class="form-group" style="margin-bottom:0">
+                <label class="form-label">CPF *</label>
+                <input id="cs-cpf" class="form-control" placeholder="000.000.000-00" maxlength="15">
+              </div>
+              <div class="form-group" style="margin-bottom:0">
+                <label class="form-label">E-mail *</label>
+                <input id="cs-email" type="email" class="form-control" maxlength="200">
+              </div>
+              <div class="form-group" style="margin-bottom:0">
+                <label class="form-label">Telefone</label>
+                <input id="cs-tel" class="form-control" placeholder="(53) 9 0000-0000" maxlength="30">
+              </div>
+              <div class="form-group" style="margin-bottom:0">
+                <label class="form-label">Cargo</label>
+                <input id="cs-cargo" class="form-control" maxlength="100">
+              </div>
+              <div class="form-group" style="margin-bottom:0">
+                <label class="form-label">Nível de Formação</label>
+                <select id="cs-nivel" class="form-control">
+                  <option value="">Selecione…</option>
+                  <option>Ensino Médio</option>
+                  <option>Técnico</option>
+                  <option>Graduação</option>
+                  <option>Especialização</option>
+                  <option>Mestrado</option>
+                  <option>Doutorado</option>
+                  <option>Outro</option>
+                </select>
+              </div>
+              <div class="form-group" style="margin-bottom:0">
+                <label class="form-label">Área de Formação</label>
+                <input id="cs-area" class="form-control" maxlength="100">
+              </div>
+              <div class="form-group" style="margin-bottom:0">
+                <label class="form-label">Instituição</label>
+                <input id="cs-inst" class="form-control" maxlength="150">
+              </div>
+              <div class="form-group" style="grid-column:1/-1;margin-bottom:0">
+                <label class="form-label">Tempo de Experiência</label>
+                <select id="cs-tempo" class="form-control">
+                  <option value="">Selecione…</option>
+                  <option>Menos de 1 ano</option>
+                  <option>1 a 2 anos</option>
+                  <option>3 a 5 anos</option>
+                  <option>6 a 10 anos</option>
+                  <option>Mais de 10 anos</option>
+                </select>
+              </div>
+            </div>
+
+            <p style="font-size:var(--font-size-xs);font-weight:600;color:var(--color-text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:var(--space-3);border-top:1px solid var(--color-border);padding-top:var(--space-4);">Vínculo com a Concedente</p>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3) var(--space-4);">
+              <div class="form-group" style="margin-bottom:0">
+                <label class="form-label">CNPJ da Concedente</label>
+                <input id="cs-cnpj-emp" class="form-control" placeholder="00.000.000/0001-00" maxlength="18">
+              </div>
+              <div class="form-group" style="margin-bottom:0">
+                <label class="form-label">Razão Social da Concedente</label>
+                <input id="cs-razao-emp" class="form-control" maxlength="200">
+              </div>
+              <div class="form-group" style="margin-bottom:0">
+                <label class="form-label">Setor</label>
+                <input id="cs-setor" class="form-control" maxlength="100">
+              </div>
+              <div class="form-group" style="margin-bottom:0">
+                <label class="form-label">Telefone do Setor</label>
+                <input id="cs-tel-setor" class="form-control" maxlength="30">
+              </div>
+              <div class="form-group" style="margin-bottom:0">
+                <label class="form-label">E-mail do Setor</label>
+                <input id="cs-email-setor" type="email" class="form-control" maxlength="200">
+              </div>
+              <div class="form-group" style="margin-bottom:0">
+                <label class="form-label">Endereço do Setor</label>
+                <input id="cs-end-setor" class="form-control" maxlength="300">
+              </div>
+            </div>
+
+            <div id="cs-feedback" style="display:none;margin-top:var(--space-4);font-size:var(--font-size-sm);padding:var(--space-3);border-radius:var(--radius-md);"></div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-ghost" onclick="fecharCadastroSup()">Cancelar</button>
+            <button class="btn btn-primary" id="btn-salvar-supervisor" onclick="salvarCadastroSupervisor()">Cadastrar supervisor</button>
+          </div>
         </div>
       </div>
 
@@ -610,6 +719,71 @@
       el.textContent = msg;
       document.body.appendChild(el);
       setTimeout(() => el.remove(), 4000);
+    }
+
+    // ── Cadastro direto de supervisor ────────────────────────────────────────
+    document.getElementById('btn-cadastrar-supervisor').addEventListener('click', () => {
+      document.getElementById('modal-cadastrar-supervisor').classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+    });
+
+    function fecharCadastroSup() {
+      document.getElementById('modal-cadastrar-supervisor').classList.add('hidden');
+      document.body.style.overflow = '';
+      ['cs-nome','cs-cpf','cs-email','cs-tel','cs-cargo','cs-area','cs-inst',
+       'cs-cnpj-emp','cs-razao-emp','cs-setor','cs-tel-setor','cs-email-setor','cs-end-setor']
+        .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+      ['cs-nivel','cs-tempo'].forEach(id => { const el = document.getElementById(id); if (el) el.selectedIndex = 0; });
+      const fb = document.getElementById('cs-feedback');
+      fb.style.display = 'none'; fb.textContent = '';
+    }
+
+    async function salvarCadastroSupervisor() {
+      const btn  = document.getElementById('btn-salvar-supervisor');
+      const nome = document.getElementById('cs-nome').value.trim();
+      const cpf  = document.getElementById('cs-cpf').value.trim();
+      const email= document.getElementById('cs-email').value.trim();
+
+      if (!nome)  { mostrarFeedbackCS('Informe o nome do supervisor.', 'erro'); return; }
+      if (!cpf)   { mostrarFeedbackCS('Informe o CPF.', 'erro'); return; }
+      if (!email) { mostrarFeedbackCS('Informe o e-mail.', 'erro'); return; }
+
+      btn.disabled = true; btn.textContent = 'Cadastrando…';
+      try {
+        await API.post('cadastrarSupervisorAdmin', {
+          authToken:       getAccessToken(),
+          nome,
+          cpf,
+          email,
+          telefone:        document.getElementById('cs-tel').value.trim(),
+          cargo:           document.getElementById('cs-cargo').value.trim(),
+          nivelFormacao:   document.getElementById('cs-nivel').value,
+          areaFormacao:    document.getElementById('cs-area').value.trim(),
+          instituicao:     document.getElementById('cs-inst').value.trim(),
+          tempoExperiencia:document.getElementById('cs-tempo').value,
+          cnpjEmpresa:     document.getElementById('cs-cnpj-emp').value.trim(),
+          razaoEmpresa:    document.getElementById('cs-razao-emp').value.trim(),
+          setor:           document.getElementById('cs-setor').value.trim(),
+          telSetor:        document.getElementById('cs-tel-setor').value.trim(),
+          emailSetor:      document.getElementById('cs-email-setor').value.trim(),
+          enderecoSetor:   document.getElementById('cs-end-setor').value.trim(),
+        });
+        toast('Supervisor cadastrado com sucesso.', 'success');
+        fecharCadastroSup();
+        carregar();
+      } catch(err) {
+        mostrarFeedbackCS('Erro: ' + (err.message || 'Falha ao cadastrar.'), 'erro');
+      } finally {
+        btn.disabled = false; btn.textContent = 'Cadastrar supervisor';
+      }
+    }
+
+    function mostrarFeedbackCS(msg, tipo) {
+      const fb = document.getElementById('cs-feedback');
+      fb.style.display = 'block';
+      fb.style.background = tipo === 'erro' ? '#fee2e2' : '#dcfce7';
+      fb.style.color      = tipo === 'erro' ? '#991b1b' : '#166534';
+      fb.textContent = msg;
     }
 
     // ── Convite de cadastro para supervisor ───────────────────────────────────
