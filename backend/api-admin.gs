@@ -145,6 +145,7 @@ function doGetAdmin(e) {
       case 'obterDiretoriaDEX':        return jsonOk_(_obterDiretoriaAdmin_('DEX'));
       case 'obterDiretoriaNAPNE':      return jsonOk_(_obterDiretoriaAdmin_('NAPNE'));
       case 'obterDiretoriaRegistro':   return jsonOk_(_obterDiretoriaAdmin_('Registro'));
+      case 'listarAlertasAdmin':       return listarAlertasAdmin_();
       case 'obterConfigTCE':           return obterConfigTCE_();
       case 'obterConfigNotificacoes':  return obterConfigNotificacoes_();
       default: return jsonError_('Ação GET não reconhecida: ' + action, 'UNKNOWN_ACTION');
@@ -1578,6 +1579,56 @@ function _obterOuCriarAbaDiretoria_(sigla) {
     sh.getRange(1, 1, 1, 5).setValues([['Nome', 'SIAPE', 'CPF', 'E-mail', 'Status']]);
   }
   return sh;
+}
+
+// ─────────────────────────────────────────────────────────────────
+// GET — Alertas de pendências para o sino do admin
+// ─────────────────────────────────────────────────────────────────
+function listarAlertasAdmin_() {
+  var ss = SpreadsheetApp.openById(CFG_ADMIN.SS_ID);
+  var alertas = [];
+
+  // Empresas pendentes
+  var shEmp = ss.getSheetByName(CFG_ADMIN.ABA_EMPRESAS);
+  if (shEmp) {
+    var nEmp = 0;
+    var dadosEmp = shEmp.getDataRange().getValues();
+    for (var i = 1; i < dadosEmp.length; i++) {
+      if (String(dadosEmp[i][19] || '').trim() === 'Pendente') nEmp++;
+    }
+    if (nEmp > 0) {
+      alertas.push({
+        id:       'alerta_empresas_pendentes',
+        tipo:     'alerta_admin',
+        mensagem: nEmp + (nEmp === 1 ? ' empresa aguardando aprovação' : ' empresas aguardando aprovação'),
+        link:     'empresas.html',
+        timestamp: new Date().toISOString(),
+        idEstagio: '',
+      });
+    }
+  }
+
+  // Supervisores pendentes
+  var shSup = ss.getSheetByName('Supervisores');
+  if (shSup) {
+    var nSup = 0;
+    var dadosSup = shSup.getDataRange().getValues();
+    for (var i = 1; i < dadosSup.length; i++) {
+      if (String(dadosSup[i][19] || '').trim() === 'Pendente') nSup++;
+    }
+    if (nSup > 0) {
+      alertas.push({
+        id:       'alerta_supervisores_pendentes',
+        tipo:     'alerta_admin',
+        mensagem: nSup + (nSup === 1 ? ' supervisor aguardando aprovação' : ' supervisores aguardando aprovação'),
+        link:     'supervisores.html',
+        timestamp: new Date().toISOString(),
+        idEstagio: '',
+      });
+    }
+  }
+
+  return jsonOk_({ alertas: alertas });
 }
 
 // ─────────────────────────────────────────────────────────────────

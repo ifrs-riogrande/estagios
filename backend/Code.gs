@@ -67,6 +67,7 @@ var GET_ROUTES = {
   'listarSupervisoresAdmin':  doGetAdmin,
   'listarCoordenadoresAdmin': doGetAdmin,
   'listarCadastrosPendentes': doGetAdmin,
+  'listarAlertasAdmin':       doGetAdmin,
   'listarAdendosAdmin':       doGetAdmin,
   'listarAgentesAdmin':       doGetAdmin,
   'listarOportunidadesAdmin': doGetAdmin,
