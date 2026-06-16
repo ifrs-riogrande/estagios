@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Convênio de Estágio — IFRS Campus Rio Grande</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/base.css">
+  <link rel="stylesheet" href="../assets/css/components.css">
+  <link rel="stylesheet" href="../assets/css/layout.css">
+  <style>
+    /* ── Timeline ──────────────────────────────────────────────── */
+    .tl-wrap{position:relative;padding-left:36px;margin-bottom:var(--space-8);}
+    .tl-wrap::before{content:'';position:absolute;left:11px;top:12px;bottom:12px;width:2px;background:var(--color-border);}
+    .tl-item{position:relative;margin-bottom:var(--space-3);}
+    .tl-dot{position:absolute;left:-28px;top:12px;width:14px;height:14px;border-radius:50%;border:2px solid var(--color-border);background:var(--color-surface);z-index:1;}
+    .tl-item--concluido .tl-dot{background:var(--color-success);border-color:var(--color-success);}
+    .tl-item--aguardando .tl-dot{background:var(--color-secondary);border-color:var(--color-secondary);box-shadow:0 0 0 4px rgba(46,95,163,0.15);}
+    .tl-item--rejeitado .tl-dot{background:var(--color-error);border-color:var(--color-error);}
+    .tl-card{background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-md);padding:var(--space-4) var(--space-5);transition:border-color 0.15s;}
+    .tl-item--concluido .tl-card{border-color:var(--color-success-border);background:var(--color-success-light);}
+    .tl-item--aguardando .tl-card{border-color:var(--color-secondary);box-shadow:0 0 0 2px rgba(46,95,163,0.08);}
+    .tl-item--rejeitado .tl-card{border-color:var(--color-error-border);background:var(--color-error-light);}
+    .tl-item--pendente .tl-card{opacity:0.55;}
+    .tl-card-header{display:flex;align-items:center;gap:var(--space-3);flex-wrap:wrap;}
+    .tl-num{font-size:var(--font-size-xs);font-weight:var(--font-weight-semibold);color:var(--color-text-muted);min-width:20px;}
+    .tl-label{font-size:var(--font-size-sm);font-weight:var(--font-weight-semibold);color:var(--color-text);flex:1;}
+    .tl-status-badge{font-size:var(--font-size-xs);font-weight:var(--font-weight-medium);padding:2px var(--space-2);border-radius:var(--radius-sm);}
+    .badge-concluido{background:var(--color-success-light);color:var(--color-success);}
+    .badge-aguardando{background:#eff6ff;color:#1d4ed8;}
+    .badge-pendente{background:var(--color-bg);color:var(--color-text-muted);}
+    .badge-rejeitado{background:var(--color-error-light);color:var(--color-error);}
+    .tl-date{font-size:var(--font-size-xs);color:var(--color-text-muted);}
+    .tl-obs{margin-top:var(--space-2);font-size:var(--font-size-xs);color:var(--color-error);}
+    /* ── Painel de ação ─────────────────────────────────────────── */
+    .action-panel{background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:var(--space-6);margin-bottom:var(--space-6);}
+    .action-panel h2{font-size:var(--font-size-md);font-weight:var(--font-weight-semibold);margin-bottom:var(--space-4);}
+    /* ── Upload ─────────────────────────────────────────────────── */
+    .upload-zone{border:2px dashed var(--color-border);border-radius:var(--radius-md);padding:var(--space-8);text-align:center;cursor:pointer;transition:border-color .15s,background .15s;background:var(--color-bg);}
+    .upload-zone:hover,.upload-zone.drag-over{border-color:var(--color-primary);background:#eff6ff;}
+    .upload-zone p{font-size:var(--font-size-sm);color:var(--color-text-muted);margin:var(--space-2) 0 0;}
+    .upload-zone .file-name{font-size:var(--font-size-sm);font-weight:var(--font-weight-semibold);color:var(--color-primary);margin-top:var(--space-2);}
+    /* ── gov.br steps ───────────────────────────────────────────── */
+    .govbr-steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:var(--space-3);margin-bottom:var(--space-6);}
+    .govbr-step{background:var(--color-bg);border:1px solid var(--color-border);border-radius:var(--radius-md);padding:var(--space-4);text-align:center;}
+    .govbr-step-num{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--color-primary);color:#fff;font-size:var(--font-size-xs);font-weight:700;margin-bottom:var(--space-2);}
+    .govbr-step p{font-size:var(--font-size-xs);color:var(--color-text-muted);margin:0;}
+    /* ── Info card ──────────────────────────────────────────────── */
+    .info-card{background:var(--color-bg);border:1px solid var(--color-border);border-radius:var(--radius-md);padding:var(--space-4) var(--space-5);margin-bottom:var(--space-6);}
+    .info-card-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:var(--space-2) var(--space-5);}
+    .info-item label{font-size:11px;color:var(--color-text-muted);text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:2px;}
+    .info-item p{font-size:var(--font-size-sm);font-weight:500;margin:0;}
+    /* ── Aprovado ───────────────────────────────────────────────── */
+    .ass-concluido{text-align:center;padding:var(--space-12) var(--space-6);}
+    .ass-concluido .check-icon{width:64px;height:64px;background:var(--color-success-light);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto var(--space-4);}
+    /* ── Rejeição ───────────────────────────────────────────────── */
+    .motivo-recusa{background:var(--color-error-light);border:1px solid var(--color-error-border);border-radius:var(--radius-md);padding:var(--space-3) var(--space-4);margin-bottom:var(--space-4);}
+    .motivo-recusa p{font-size:var(--font-size-sm);color:var(--color-error);margin:0;}
+  </style>
+</head>
+<body>
+
+  <header id="app-header">
+    <div class="container">
+      <div class="header-inner">
+        <a href="../index.html" class="header-brand">
+          <span class="header-logo-wrap"><img src="../assets/img/logo-ifrs.png" alt="IFRS" class="header-logo"></span>
+        </a>
+        <div id="header-user-area"></div>
+      </div>
+    </div>
+  </header>
+
+  <main id="main-content">
+    <section class="page-hero">
+      <div class="container">
+        <h1 id="page-title">Convênio de Estágio</h1>
+        <p id="page-subtitle">Assinatura digital do Convênio de Estágio — IFRS Campus Rio Grande</p>
+      </div>
+    </section>
+
+    <div class="container" style="padding-top:var(--space-6);padding-bottom:var(--space-12);max-width:800px;">
+
+      <!-- Estado de carregamento -->
+      <div id="estado-carregando" style="text-align:center;padding:var(--space-12);">
+        <div class="table-loading">Carregando informações do convênio…</div>
+      </div>
+
+      <!-- Estado de erro -->
+      <div id="estado-erro" style="display:none;">
+        <div style="background:var(--color-error-light);border:1px solid var(--color-error-border);border-radius:var(--radius-md);padding:var(--space-6);text-align:center;">
+          <p id="msg-erro" style="color:var(--color-error);font-weight:600;"></p>
+          <p style="font-size:var(--font-size-sm);color:var(--color-text-muted);margin-top:var(--space-2);">
+            Em caso de dúvidas, entre em contato com a Central de Estágios: <a href="mailto:estagios@riogrande.ifrs.edu.br">estagios@riogrande.ifrs.edu.br</a>
+          </p>
+        </div>
+      </div>
+
+      <!-- Conteúdo principal -->
+      <div id="estado-conteudo" style="display:none;">
+
+        <!-- Info card -->
+        <div class="info-card" id="info-card"></div>
+
+        <!-- Painel gov.br -->
+        <div id="painel-govbr" class="action-panel" style="display:none;"></div>
+
+        <!-- Painel interno (admin) -->
+        <div id="painel-interno" class="action-panel" style="display:none;"></div>
+
+        <!-- Convênio aprovado -->
+        <div id="painel-aprovado" style="display:none;">
+          <div class="ass-concluido">
+            <div class="check-icon">
+              <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="var(--color-success)" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+            </div>
+            <h2 style="margin-bottom:var(--space-2);">Convênio aprovado!</h2>
+            <p style="color:var(--color-text-muted);max-width:400px;margin:0 auto;">Todas as partes assinaram. O convênio está vigente e novos estágios poderão ser vinculados a esta empresa.</p>
+          </div>
+        </div>
+
+        <!-- Timeline -->
+        <div>
+          <h2 style="font-size:var(--font-size-md);font-weight:600;margin-bottom:var(--space-4);">Histórico de assinaturas</h2>
+          <div class="tl-wrap" id="timeline"></div>
+        </div>
+
+      </div><!-- /estado-conteudo -->
+    </div>
+  </main>
+
+  <footer id="app-footer">
+    <div class="container">
+      <div class="footer-inner">
+        <span class="footer-copy">&copy; <script>document.write(new Date().getFullYear())</script> Central de Estágios — IFRS Campus Rio Grande</span>
+        <nav class="footer-links"><a href="mailto:estagios@riogrande.ifrs.edu.br">estagios@riogrande.ifrs.edu.br</a></nav>
+      </div>
+    </div>
+  </footer>
+
+  <script src="../assets/js/utils.js"></script>
+  <script src="../assets/js/api.js"></script>
+  <script>
+    'use strict';
+
+    // ── Estado ────────────────────────────────────────────────────────────────
+    const params    = new URLSearchParams(location.search);
+    const ID_CONV   = params.get('id')    || '';
+    const TOKEN     = params.get('token') || '';
+    let   _fluxo    = null;
+    let   _meuAtor  = null;
+
+    // ── Inicialização ─────────────────────────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', () => {
+      if (!ID_CONV) { mostrarErro('Link inválido: parâmetro id ausente.'); return; }
+      carregarFluxo();
+    });
+
+    async function carregarFluxo() {
+      mostrarEstado('carregando');
+      try {
+        const p = { id: ID_CONV };
+        if (TOKEN) p.token = TOKEN;
+        _fluxo   = await API.get('obterFluxoConvenio', p);
+        _meuAtor = _fluxo._meuAtor || null;
+        renderizar();
+        mostrarEstado('conteudo');
+      } catch(err) {
+        mostrarErro(err.message || 'Erro ao carregar convênio.');
+      }
+    }
+
+    // ── Renderização principal ────────────────────────────────────────────────
+    function renderizar() {
+      renderInfoCard();
+      renderTimeline();
+      renderPainel();
+    }
+
+    function renderInfoCard() {
+      const f = _fluxo;
+      document.getElementById('info-card').innerHTML = `
+        <p style="font-size:var(--font-size-xs);font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--color-text-muted);margin-bottom:var(--space-3);">Convênio de Estágio Nº ${escapeHtml(f.numero||'—')}</p>
+        <div class="info-card-grid">
+          <div class="info-item"><label>Empresa</label><p>${escapeHtml(f.razaoSocial||'—')}</p></div>
+          <div class="info-item"><label>CNPJ</label><p>${escapeHtml(f.cnpj||'—')}</p></div>
+          <div class="info-item"><label>Município/UF</label><p>${escapeHtml(f.municipio||'—')}</p></div>
+          <div class="info-item"><label>Representante</label><p>${escapeHtml(f.nomeRep||'—')}</p></div>
+          <div class="info-item"><label>Cargo</label><p>${escapeHtml(f.cargoRep||'—')}</p></div>
+        </div>`;
+    }
+
+    function renderTimeline() {
+      const statusLabels = { concluido: 'Concluído', aguardando: 'Aguardando', pendente: 'Pendente', rejeitado: 'Rejeitado' };
+      const tl = (_fluxo.etapas || []).map(et => {
+        const dataFmt = et.data ? formatarDataBr(et.data) : '';
+        return `
+          <div class="tl-item tl-item--${et.status}">
+            <div class="tl-dot"></div>
+            <div class="tl-card">
+              <div class="tl-card-header">
+                <span class="tl-num">${et.numero}</span>
+                <span class="tl-label">${escapeHtml(et.label)}</span>
+                <span class="tl-status-badge badge-${et.status}">${statusLabels[et.status]||et.status}</span>
+                <span style="font-size:10px;color:var(--color-text-muted);padding:2px 8px;border-radius:9999px;background:var(--color-bg);border:1px solid var(--color-border);">${et.tipo === 'govbr' ? 'gov.br' : 'Interno'}</span>
+              </div>
+              ${dataFmt ? `<p class="tl-date" style="margin-top:var(--space-1);">${escapeHtml(dataFmt)}</p>` : ''}
+              ${et.obs   ? `<p class="tl-obs">Rejeitado: ${escapeHtml(et.obs)}</p>` : ''}
+              ${et.temPdf && et.status === 'concluido' ? `<button class="btn btn-ghost btn-sm" style="margin-top:var(--space-2);" onclick="downloadPdf(${et.numero})">Baixar PDF assinado</button>` : ''}
+            </div>
+          </div>`;
+      }).join('');
+      document.getElementById('timeline').innerHTML = tl;
+    }
+
+    function renderPainel() {
+      const f = _fluxo;
+
+      if (f.statusGeral === 'concluido') {
+        document.getElementById('painel-aprovado').style.display = '';
+        return;
+      }
+
+      const etapaAtual = (f.etapas || []).find(et => et.status === 'aguardando');
+      if (!etapaAtual) return;
+
+      // Verificar se é minha etapa
+      const ehMinhaEtapa = _meuAtor === etapaAtual.ator
+                        || (_meuAtor === 'empresa'        && etapaAtual.ator === 'empresa')
+                        || (_meuAtor === 'direcao'        && etapaAtual.ator === 'direcao')
+                        || (_meuAtor === 'centralRevisao' && etapaAtual.ator === 'centralRevisao')
+                        || (_meuAtor === 'centralFinal'   && etapaAtual.ator === 'centralFinal');
+      if (!ehMinhaEtapa) return;
+
+      if (etapaAtual.tipo === 'govbr') renderizarPainelGovBr(etapaAtual);
+      else                              renderizarPainelInterno(etapaAtual);
+    }
+
+    // ── Painel gov.br ────────────────────────────────────────────────────────
+    function renderizarPainelGovBr(etapa) {
+      const painel = document.getElementById('painel-govbr');
+      painel.style.display = '';
+      painel.innerHTML = `
+        <h2>Sua assinatura (${escapeHtml(etapa.label)})</h2>
+
+        ${_fluxo.historicoRejeicoes && _fluxo.historicoRejeicoes.length ? renderBannerRejeicao() : ''}
+
+        <div class="govbr-steps">
+          <div class="govbr-step"><div class="govbr-step-num">1</div><p>Baixe o PDF do convênio</p></div>
+          <div class="govbr-step"><div class="govbr-step-num">2</div><p>Assine em <strong>assinador.iti.br</strong> com gov.br</p></div>
+          <div class="govbr-step"><div class="govbr-step-num">3</div><p>Faça upload do arquivo assinado abaixo</p></div>
+        </div>
+
+        <div style="margin-bottom:var(--space-4);">
+          <button class="btn btn-secondary" id="btn-download-pdf" onclick="downloadPdf(0)">
+            <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" style="margin-right:6px"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+            Baixar PDF para assinar
+          </button>
+        </div>
+
+        <label style="font-size:var(--font-size-sm);font-weight:600;display:block;margin-bottom:var(--space-2);">Upload do PDF assinado *</label>
+        <div class="upload-zone" id="upload-zone" onclick="document.getElementById('input-pdf').click()">
+          <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" style="margin:0 auto"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/></svg>
+          <p>Clique ou arraste o PDF assinado aqui</p>
+          <p id="upload-nome" class="file-name" style="display:none;"></p>
+        </div>
+        <input type="file" id="input-pdf" accept="application/pdf" style="display:none;" onchange="onPdfSelecionado(event)">
+
+        <div id="upload-feedback" style="display:none;margin-top:var(--space-3);font-size:var(--font-size-sm);padding:var(--space-2) var(--space-3);border-radius:var(--radius-md);"></div>
+
+        <div style="margin-top:var(--space-5);">
+          <button class="btn btn-primary" id="btn-enviar-pdf" onclick="enviarPdfGovBr(${etapa.numero})" disabled>Confirmar assinatura</button>
+        </div>`;
+
+      // Drag & drop
+      const zone = document.getElementById('upload-zone');
+      zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
+      zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+      zone.addEventListener('drop', e => {
+        e.preventDefault(); zone.classList.remove('drag-over');
+        const f = e.dataTransfer.files[0];
+        if (f) processarArquivoPdf(f);
+      });
+    }
+
+    let _pdfBase64 = null;
+    function onPdfSelecionado(e) {
+      const f = e.target.files[0];
+      if (f) processarArquivoPdf(f);
+    }
+    function processarArquivoPdf(file) {
+      if (file.type !== 'application/pdf') { mostrarFeedbackUpload('O arquivo deve ser PDF.', 'erro'); return; }
+      if (file.size > 10 * 1024 * 1024)   { mostrarFeedbackUpload('O arquivo não pode superar 10 MB.', 'erro'); return; }
+      const reader = new FileReader();
+      reader.onload = () => {
+        _pdfBase64 = reader.result.split(',')[1];
+        document.getElementById('upload-nome').textContent = file.name;
+        document.getElementById('upload-nome').style.display = '';
+        document.getElementById('btn-enviar-pdf').removeAttribute('disabled');
+        mostrarFeedbackUpload('', '');
+      };
+      reader.onerror = () => mostrarFeedbackUpload('Falha ao ler o arquivo.', 'erro');
+      reader.readAsDataURL(file);
+    }
+    function mostrarFeedbackUpload(msg, tipo) {
+      const el = document.getElementById('upload-feedback');
+      if (!msg) { el.style.display = 'none'; return; }
+      el.style.display   = '';
+      el.style.background = tipo === 'erro' ? 'var(--color-error-light)'   : 'var(--color-success-light)';
+      el.style.color      = tipo === 'erro' ? 'var(--color-error)'          : 'var(--color-success)';
+      el.textContent = msg;
+    }
+
+    async function enviarPdfGovBr(numeroEtapa) {
+      if (!_pdfBase64) { mostrarFeedbackUpload('Selecione o PDF assinado.', 'erro'); return; }
+      const btn = document.getElementById('btn-enviar-pdf');
+      btn.classList.add('is-loading'); btn.disabled = true;
+      try {
+        const res = await API.post('uploadPdfConvenioAssinado', {
+          idConvenio: ID_CONV,
+          numeroEtapa,
+          pdfBase64: _pdfBase64,
+          token: TOKEN,
+        });
+        _fluxo = res.fluxo || _fluxo;
+        _pdfBase64 = null;
+        renderizar();
+        mostrarFeedbackUpload('PDF enviado com sucesso!', 'ok');
+        document.getElementById('painel-govbr').style.display = 'none';
+      } catch(err) {
+        mostrarFeedbackUpload('Erro: ' + (err.message || 'Falha no envio.'), 'erro');
+        btn.classList.remove('is-loading'); btn.disabled = false;
+      }
+    }
+
+    // ── Painel interno (admin) ────────────────────────────────────────────────
+    function renderizarPainelInterno(etapa) {
+      const painel = document.getElementById('painel-interno');
+      painel.style.display = '';
+      painel.innerHTML = `
+        <h2>${escapeHtml(etapa.label)}</h2>
+        ${_fluxo.historicoRejeicoes && _fluxo.historicoRejeicoes.length ? renderBannerRejeicao() : ''}
+        <p style="font-size:var(--font-size-sm);color:var(--color-text-muted);margin-bottom:var(--space-4);">
+          Revise as etapas anteriores e aprove ou rejeite a etapa atual.
+        </p>
+        ${_fluxo.temPdfOriginal ? `<button class="btn btn-secondary btn-sm" onclick="downloadPdf(0)" style="margin-bottom:var(--space-5);">Baixar PDF original</button>` : ''}
+
+        <div id="painel-rejeicao-form" style="display:none;margin-bottom:var(--space-4);">
+          <label class="form-label" style="display:block;margin-bottom:var(--space-2);">Motivo da devolução *</label>
+          <textarea id="motivo-rejeicao" class="form-control" rows="3" maxlength="500"
+            placeholder="Informe o motivo para devolução à etapa anterior…"></textarea>
+          <div style="display:flex;align-items:center;gap:var(--space-2);margin-top:var(--space-3);">
+            <label class="form-label" for="sel-retorno-etapa" style="margin:0;white-space:nowrap;">Retornar para etapa:</label>
+            <select id="sel-retorno-etapa" class="form-control" style="max-width:260px;">
+              ${(_fluxo.etapas||[]).filter(e => e.numero < etapa.numero).map(e =>
+                `<option value="${e.numero}">${e.numero} — ${escapeHtml(e.label)}</option>`
+              ).join('')}
+            </select>
+          </div>
+          <div style="display:flex;gap:var(--space-2);margin-top:var(--space-3);">
+            <button class="btn btn-ghost btn-sm" onclick="document.getElementById('painel-rejeicao-form').style.display='none'">Cancelar</button>
+            <button class="btn btn-danger btn-sm" id="btn-confirmar-rejeicao" onclick="confirmarRejeicao(${etapa.numero})">Confirmar devolução</button>
+          </div>
+        </div>
+
+        <div id="painel-interno-feedback" style="display:none;margin-bottom:var(--space-4);font-size:var(--font-size-sm);padding:var(--space-2) var(--space-3);border-radius:var(--radius-md);"></div>
+
+        <div style="display:flex;gap:var(--space-3);flex-wrap:wrap;">
+          <button class="btn btn-danger btn-sm" onclick="document.getElementById('painel-rejeicao-form').style.display=''">Devolver</button>
+          <button class="btn btn-primary" id="btn-aprovar-interno" onclick="aprovarInterno(${etapa.numero})">Aprovar etapa</button>
+        </div>`;
+    }
+
+    async function aprovarInterno(numeroEtapa) {
+      const btn = document.getElementById('btn-aprovar-interno');
+      btn.classList.add('is-loading'); btn.disabled = true;
+      try {
+        const res = await API.post('concluirEtapaConvenio', {
+          idConvenio:   ID_CONV,
+          numeroEtapa,
+          token:        TOKEN || undefined,
+          authToken:    TOKEN ? undefined : getAccessToken(),
+        });
+        _fluxo = res.fluxo || _fluxo;
+        renderizar();
+        document.getElementById('painel-interno').style.display = 'none';
+      } catch(err) {
+        const fb = document.getElementById('painel-interno-feedback');
+        fb.style.display = '';
+        fb.style.background = 'var(--color-error-light)';
+        fb.style.color      = 'var(--color-error)';
+        fb.textContent = 'Erro: ' + (err.message || 'Falha ao aprovar.');
+        btn.classList.remove('is-loading'); btn.disabled = false;
+      }
+    }
+
+    async function confirmarRejeicao(numeroEtapa) {
+      const motivo         = (document.getElementById('motivo-rejeicao').value || '').trim();
+      const retornoParaEtapa = parseInt(document.getElementById('sel-retorno-etapa').value, 10);
+      if (!motivo) {
+        alert('Informe o motivo da devolução.');
+        return;
+      }
+      const btn = document.getElementById('btn-confirmar-rejeicao');
+      btn.classList.add('is-loading'); btn.disabled = true;
+      try {
+        const res = await API.post('rejeitarEtapaConvenio', {
+          idConvenio:      ID_CONV,
+          numeroEtapa,
+          motivo,
+          retornoParaEtapa,
+          token:           TOKEN || undefined,
+          authToken:       TOKEN ? undefined : getAccessToken(),
+        });
+        _fluxo = res.fluxo || _fluxo;
+        renderizar();
+        document.getElementById('painel-interno').style.display = 'none';
+      } catch(err) {
+        const fb = document.getElementById('painel-interno-feedback');
+        fb.style.display = '';
+        fb.style.background = 'var(--color-error-light)';
+        fb.style.color      = 'var(--color-error)';
+        fb.textContent = 'Erro: ' + (err.message || 'Falha ao rejeitar.');
+        btn.classList.remove('is-loading'); btn.disabled = false;
+      }
+    }
+
+    // ── Banner de rejeição ────────────────────────────────────────────────────
+    function renderBannerRejeicao() {
+      const rejeicoes = _fluxo.historicoRejeicoes || [];
+      if (!rejeicoes.length) return '';
+      const ult = rejeicoes[rejeicoes.length - 1];
+      return `<div class="motivo-recusa" style="margin-bottom:var(--space-4);">
+        <p><strong>⚠️ Correção solicitada:</strong> ${escapeHtml(ult.motivo||'Sem observação.')}</p>
+      </div>`;
+    }
+
+    // ── Download PDF ──────────────────────────────────────────────────────────
+    async function downloadPdf(etapa) {
+      const btn = document.getElementById('btn-download-pdf');
+      if (btn) { btn.classList.add('is-loading'); btn.disabled = true; }
+      try {
+        const p = { id: ID_CONV };
+        if (TOKEN) p.token = TOKEN;
+        else        p.authToken = getAccessToken();
+        if (etapa) p.etapa = etapa;
+        const res = await API.get('baixarPdfConvenio', p);
+        const blob = base64ToBlob(res.base64, 'application/pdf');
+        const url  = URL.createObjectURL(blob);
+        const a    = document.createElement('a');
+        a.href     = url;
+        a.download = res.nome || ('convenio_' + ID_CONV + '.pdf');
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 1000);
+      } catch(err) {
+        alert('Erro ao baixar PDF: ' + (err.message || 'Tente novamente.'));
+      } finally {
+        if (btn) { btn.classList.remove('is-loading'); btn.disabled = false; }
+      }
+    }
+
+    function base64ToBlob(b64, mime) {
+      const bytes = atob(b64);
+      const arr   = new Uint8Array(bytes.length);
+      for (let i = 0; i < bytes.length; i++) arr[i] = bytes.charCodeAt(i);
+      return new Blob([arr], { type: mime });
+    }
+
+    // ── Utilitários de UI ─────────────────────────────────────────────────────
+    function mostrarEstado(estado) {
+      document.getElementById('estado-carregando').style.display = estado === 'carregando' ? '' : 'none';
+      document.getElementById('estado-erro').style.display       = estado === 'erro'       ? '' : 'none';
+      document.getElementById('estado-conteudo').style.display   = estado === 'conteudo'   ? '' : 'none';
+    }
+
+    function mostrarErro(msg) {
+      document.getElementById('msg-erro').textContent = msg;
+      mostrarEstado('erro');
+    }
+
+    function formatarDataBr(iso) {
+      try {
+        const d = new Date(iso);
+        return d.toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
+      } catch(_) { return iso || ''; }
+    }
+
+    function escapeHtml(s) {
+      return String(s||'')
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+        .replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+    }
+
+    // Tenta usar getAccessToken do auth.js (se carregado via admin com OAuth)
+    function getAccessToken() {
+      if (typeof window.getAccessToken === 'function') return window.getAccessToken();
+      return '';
+    }
+  </script>
+
+  <!-- auth.js só carrega se não houver token na URL (fluxo admin interno) -->
+  <script>
+    if (!new URLSearchParams(location.search).get('token')) {
+      // Carrega auth para validação OAuth do admin
+      const s = document.createElement('script');
+      s.src = '../assets/js/auth.js';
+      document.head.appendChild(s);
+      const sg = document.createElement('script');
+      sg.src = 'https://accounts.google.com/gsi/client';
+      sg.async = true;
+      document.head.appendChild(sg);
+    }
+  </script>
+</body>
+</html>

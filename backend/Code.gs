@@ -117,6 +117,12 @@ var GET_ROUTES = {
   // Notificações in-app
   'listarNotificacoes':           doGetNotificacoes,
 
+  // Convênios
+  'listarEmpresasComConvenio':    doGetConvenios,
+  'listarConvenios':              doGetConvenios,
+  'obterFluxoConvenio':           doGetConvenios,
+  'baixarPdfConvenio':            doGetConvenios,
+
 };
 
 // â”€â”€ Mapeamento action â†’ mÃ³dulo (POST) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -255,6 +261,13 @@ var POST_ROUTES = {
   // Notificações in-app
   'marcarNotificacaoLida':            doPostNotificacoes,
   'marcarTodasNotificacoesLidas':     doPostNotificacoes,
+
+  // Convênios
+  'gerarConvenio':                    doPostConvenios,
+  'uploadPdfConvenioAssinado':        doPostConvenios,
+  'concluirEtapaConvenio':            doPostConvenios,
+  'rejeitarEtapaConvenio':            doPostConvenios,
+  'reenviarNotificacaoConvenio':      doPostConvenios,
 };
 
 // â”€â”€ Ponto de entrada GET â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€

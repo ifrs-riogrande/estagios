@@ -31,6 +31,23 @@
     .empty-state{text-align:center;padding:var(--space-12);color:var(--color-text-muted);}
     .empty-state svg{width:48px;height:48px;margin:0 auto var(--space-4);opacity:.3;}
     .table-loading{text-align:center;padding:var(--space-12);color:var(--color-text-muted);font-size:var(--font-size-sm);}
+    /* Abas */
+    .page-tabs{display:flex;gap:0;border-bottom:2px solid var(--color-border);margin-bottom:var(--space-6);}
+    .page-tab{padding:var(--space-3) var(--space-5);font-size:var(--font-size-sm);font-weight:500;color:var(--color-text-muted);cursor:pointer;border:none;background:none;border-bottom:2px solid transparent;margin-bottom:-2px;transition:color .15s,border-color .15s;}
+    .page-tab:hover{color:var(--color-text);}
+    .page-tab.active{color:var(--color-primary);border-bottom-color:var(--color-primary);font-weight:600;}
+    .tab-panel{display:none;} .tab-panel.active{display:block;}
+    /* Convênios */
+    .conv-status-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 10px;border-radius:9999px;font-size:11px;font-weight:600;}
+    .conv-status-badge.aprovado{background:#dcfce7;color:#166534;}
+    .conv-status-badge.andamento{background:#fef3c7;color:#92400e;}
+    .conv-status-badge.sem{background:var(--color-bg);color:var(--color-text-muted);}
+    .etapa-linha{display:flex;align-items:flex-start;gap:var(--space-3);padding:var(--space-2) 0;}
+    .etapa-dot{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;margin-top:2px;}
+    .dot-concluido{background:#dcfce7;color:#166534;}
+    .dot-aguardando{background:#fef3c7;color:#92400e;}
+    .dot-pendente{background:var(--color-bg);color:var(--color-text-muted);border:1px solid var(--color-border);}
+    .dot-rejeitado{background:#fee2e2;color:#991b1b;}
     /* Modal */
     .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;display:flex;align-items:flex-start;justify-content:center;padding:var(--space-8) var(--space-4);overflow-y:auto;}
     .modal-overlay.hidden{display:none;}
@@ -76,6 +93,15 @@
     </section>
 
     <div class="container" style="padding-top:var(--space-6);padding-bottom:var(--space-12);">
+
+      <!-- Navegação de abas -->
+      <div class="page-tabs" role="tablist">
+        <button class="page-tab active" id="tab-btn-empresas" role="tab" aria-selected="true" aria-controls="tab-empresas" onclick="mudarAba('empresas')">Empresas</button>
+        <button class="page-tab" id="tab-btn-convenios" role="tab" aria-selected="false" aria-controls="tab-convenios" onclick="mudarAba('convenios')">Convênios</button>
+      </div>
+
+      <!-- ABA: Empresas -->
+      <div id="tab-empresas" class="tab-panel active" role="tabpanel">
       <div class="admin-toolbar">
         <div class="form-group" style="min-width:240px;">
           <label for="busca-empresa">Buscar</label>
@@ -247,6 +273,45 @@
           </tbody>
         </table>
       </div>
+      </div><!-- /tab-empresas -->
+
+      <!-- ABA: Convênios -->
+      <div id="tab-convenios" class="tab-panel" role="tabpanel">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-4);flex-wrap:wrap;gap:var(--space-3);">
+          <div style="display:flex;gap:var(--space-2);align-items:center;">
+            <div class="form-group" style="margin-bottom:0;min-width:220px;">
+              <input type="search" id="busca-conv" class="form-control" placeholder="Razão social, CNPJ…" oninput="filtrarConv()">
+            </div>
+            <select id="filtro-conv-status" class="form-control" style="min-width:160px;" onchange="filtrarConv()">
+              <option value="">Todos os status</option>
+              <option value="sem">Sem convênio</option>
+              <option value="andamento">Em andamento</option>
+              <option value="aprovado">Aprovado</option>
+            </select>
+          </div>
+          <button id="btn-atualizar-conv" class="btn btn-secondary btn-sm" onclick="carregarConvenios()">Atualizar</button>
+        </div>
+
+        <div class="table-wrap">
+          <table class="data-table" aria-label="Convênios">
+            <thead>
+              <tr>
+                <th>Razão Social</th>
+                <th>CNPJ</th>
+                <th>Município/UF</th>
+                <th>Representante</th>
+                <th>Nº Convênio</th>
+                <th>Status Convênio</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-conv">
+              <tr><td colspan="7" class="table-loading">Selecione a aba para carregar…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div><!-- /tab-convenios -->
+
     </div>
   </main>
 
@@ -792,6 +857,177 @@
         btn.disabled = false;
         btn.textContent = 'Enviar convite';
       }
+    }
+
+    // ── Controle de abas ──────────────────────────────────────────────────────
+    let _convCarregado = false;
+    function mudarAba(aba) {
+      ['empresas','convenios'].forEach(id => {
+        document.getElementById('tab-' + id).classList.toggle('active', id === aba);
+        document.getElementById('tab-btn-' + id).classList.toggle('active', id === aba);
+        document.getElementById('tab-btn-' + id).setAttribute('aria-selected', id === aba ? 'true' : 'false');
+      });
+      if (aba === 'convenios' && !_convCarregado) carregarConvenios();
+    }
+
+    // ── Convênios ─────────────────────────────────────────────────────────────
+    let _convDados = [], _convFiltrados = [];
+
+    async function carregarConvenios() {
+      const tb = document.getElementById('tbody-conv');
+      tb.innerHTML = '<tr><td colspan="7" class="table-loading">Carregando…</td></tr>';
+      try {
+        const data = await API.get('listarEmpresasComConvenio', { authToken: getAccessToken() });
+        _convDados = Array.isArray(data.empresas) ? data.empresas : [];
+        _convCarregado = true;
+        filtrarConv();
+      } catch(err) {
+        tb.innerHTML = `<tr><td colspan="7" class="table-loading" style="color:var(--color-error)">Erro: ${escapeHtml(err.message)}</td></tr>`;
+      }
+    }
+
+    function filtrarConv() {
+      const busca  = (document.getElementById('busca-conv').value || '').toLowerCase().trim();
+      const status = document.getElementById('filtro-conv-status').value;
+      _convFiltrados = _convDados.filter(e => {
+        if (busca) {
+          const t = [e.razaoSocial, e.cnpj].join(' ').toLowerCase();
+          if (!t.includes(busca)) return false;
+        }
+        if (status) {
+          if (status === 'sem'       && e.convenio)                                    return false;
+          if (status === 'aprovado'  && (!e.convenio || e.convenio.status !== 'Aprovado')) return false;
+          if (status === 'andamento' && (!e.convenio || e.convenio.status === 'Aprovado')) return false;
+        }
+        return true;
+      });
+      renderConv();
+    }
+
+    function renderConv() {
+      const tb = document.getElementById('tbody-conv');
+      if (_convFiltrados.length === 0) {
+        tb.innerHTML = '<tr><td colspan="7"><div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg><p>Nenhum resultado.</p></div></td></tr>';
+        return;
+      }
+      tb.innerHTML = _convFiltrados.map(e => {
+        const conv = e.convenio;
+        const statusBadge = conv
+          ? (conv.status === 'Aprovado'
+              ? `<span class="conv-status-badge aprovado">Aprovado · ${escapeHtml(conv.numero)}</span>`
+              : `<span class="conv-status-badge andamento">Em andamento · ${escapeHtml(conv.numero)}</span>`)
+          : `<span class="conv-status-badge sem">Sem convênio</span>`;
+        const acoes = conv
+          ? `<button class="btn btn-secondary btn-sm" onclick="abrirConvenio(${JSON.stringify(conv.idConvenio).replace(/"/g,'&quot;')})">Ver fluxo</button>`
+          : `<button class="btn btn-primary btn-sm" onclick="confirmarGerarConvenio(${JSON.stringify(e).replace(/"/g,'&quot;')})">Gerar convênio</button>`;
+        return `<tr>
+          <td><span style="font-weight:500">${escapeHtml(e.razaoSocial||'—')}</span></td>
+          <td style="font-size:12px">${escapeHtml(e.cnpj||'—')}</td>
+          <td style="font-size:12px">${escapeHtml(e.municipio||'—')}${e.uf?'/'+escapeHtml(e.uf):''}</td>
+          <td>${escapeHtml(e.nomeRep||'—')}</td>
+          <td style="font-size:12px">${conv ? escapeHtml(conv.numero||'—') : '—'}</td>
+          <td>${statusBadge}</td>
+          <td><div class="td-actions">${acoes}${conv ? `<button class="btn btn-ghost btn-sm" onclick="reenviarConvenio('${escapeHtml(conv.idConvenio)}')">Reenviar</button>` : ''}</div></td>
+        </tr>`;
+      }).join('');
+    }
+
+    // ── Confirmar geração de convênio ─────────────────────────────────────────
+    let _empParaConv = null;
+    function confirmarGerarConvenio(emp) {
+      _empParaConv = emp;
+      document.getElementById('modal-title').textContent = 'Gerar Convênio';
+      document.getElementById('modal-body').innerHTML = `
+        <div style="padding:var(--space-2) 0;">
+          <p style="font-size:var(--font-size-sm);margin-bottom:var(--space-4);">Será gerado um Convênio de Estágio para a empresa abaixo e enviado o link de assinatura para o representante via e-mail.</p>
+          <div class="detail-grid">
+            <div class="detail-item"><label>Razão Social</label><p>${escapeHtml(emp.razaoSocial||'—')}</p></div>
+            <div class="detail-item"><label>CNPJ</label><p>${escapeHtml(emp.cnpj||'—')}</p></div>
+            <div class="detail-item"><label>Representante</label><p>${escapeHtml(emp.nomeRep||'—')}</p></div>
+            <div class="detail-item"><label>E-mail do rep.</label><p>${escapeHtml(emp.emailRep||'—')}</p></div>
+          </div>
+          ${!emp.emailRep ? '<div style="background:#fee2e2;border-radius:var(--radius-md);padding:var(--space-3);margin-top:var(--space-3);font-size:var(--font-size-sm);color:#991b1b;"><strong>Atenção:</strong> E-mail do representante não cadastrado. Edite a empresa antes de gerar o convênio.</div>' : ''}
+        </div>`;
+      document.getElementById('modal-footer').innerHTML = `
+        <button class="btn btn-ghost" onclick="fechar()">Cancelar</button>
+        <button class="btn btn-primary" id="btn-conf-gerar-conv" onclick="executarGerarConvenio()" ${!emp.emailRep ? 'disabled' : ''}>Gerar e enviar convênio</button>`;
+      document.getElementById('modal-overlay').classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+    }
+
+    async function executarGerarConvenio() {
+      const btn = document.getElementById('btn-conf-gerar-conv');
+      btn.classList.add('is-loading'); btn.disabled = true;
+      try {
+        const res = await API.post('gerarConvenio', { authToken: getAccessToken(), cnpj: _empParaConv.cnpj });
+        toast(`Convênio ${res.numero} gerado. E-mail enviado ao representante.`, 'success');
+        fechar();
+        _convCarregado = false;
+        carregarConvenios();
+      } catch(err) {
+        toast('Erro: ' + err.message, 'error');
+      } finally {
+        btn.classList.remove('is-loading'); btn.disabled = false;
+      }
+    }
+
+    // ── Ver fluxo do convênio ─────────────────────────────────────────────────
+    async function abrirConvenio(idConvenio) {
+      document.getElementById('modal-title').textContent = 'Fluxo do Convênio';
+      document.getElementById('modal-body').innerHTML = '<div class="table-loading">Carregando…</div>';
+      document.getElementById('modal-footer').innerHTML = '<button class="btn btn-ghost" onclick="fechar()">Fechar</button>';
+      document.getElementById('modal-overlay').classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+      try {
+        const fluxo = await API.get('obterFluxoConvenio', { id: idConvenio, authToken: getAccessToken() });
+        const statusGeral = fluxo.statusGeral === 'concluido'
+          ? '<span class="conv-status-badge aprovado">Aprovado</span>'
+          : '<span class="conv-status-badge andamento">Em andamento</span>';
+
+        const dotClass = { concluido: 'dot-concluido', aguardando: 'dot-aguardando', pendente: 'dot-pendente', rejeitado: 'dot-rejeitado' };
+        const dotIcon  = { concluido: '✓', aguardando: '…', pendente: '○', rejeitado: '✕' };
+        const etapasHtml = (fluxo.etapas || []).map(et => `
+          <div class="etapa-linha">
+            <div class="etapa-dot ${dotClass[et.status]||'dot-pendente'}">${dotIcon[et.status]||et.numero}</div>
+            <div style="flex:1;">
+              <div style="font-size:var(--font-size-sm);font-weight:600;">${escapeHtml(et.label)} <span style="font-size:11px;font-weight:400;color:var(--color-text-muted);">(${et.tipo === 'govbr' ? 'gov.br' : 'Interno'})</span></div>
+              ${et.data ? `<div style="font-size:11px;color:var(--color-text-muted);margin-top:2px;">${escapeHtml(formatarDataBr(et.data))}</div>` : ''}
+              ${et.obs  ? `<div style="font-size:11px;color:#dc2626;margin-top:2px;">Rejeitado: ${escapeHtml(et.obs)}</div>` : ''}
+            </div>
+          </div>`).join('');
+
+        document.getElementById('modal-body').innerHTML = `
+          <div class="detail-grid" style="margin-bottom:var(--space-4);">
+            <div class="detail-item"><label>Nº Convênio</label><p>${escapeHtml(fluxo.numero||'—')}</p></div>
+            <div class="detail-item"><label>Status</label><p>${statusGeral}</p></div>
+            <div class="detail-item detail-full"><label>Empresa</label><p>${escapeHtml(fluxo.razaoSocial||'—')} — CNPJ ${escapeHtml(fluxo.cnpj||'—')}</p></div>
+          </div>
+          <p style="font-size:var(--font-size-xs);font-weight:600;color:var(--color-text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:var(--space-2);">Etapas de assinatura</p>
+          <div style="border:1px solid var(--color-border);border-radius:var(--radius-md);padding:var(--space-3) var(--space-4);">${etapasHtml}</div>`;
+
+        document.getElementById('modal-footer').innerHTML = `
+          <button class="btn btn-ghost" onclick="fechar()">Fechar</button>
+          <button class="btn btn-secondary btn-sm" onclick="reenviarConvenio('${escapeHtml(idConvenio)}')">Reenviar notificação</button>`;
+      } catch(err) {
+        document.getElementById('modal-body').innerHTML = `<p style="color:var(--color-error)">Erro: ${escapeHtml(err.message)}</p>`;
+      }
+    }
+
+    async function reenviarConvenio(idConvenio) {
+      try {
+        await API.post('reenviarNotificacaoConvenio', { authToken: getAccessToken(), idConvenio });
+        toast('Notificação reenviada.', 'success');
+      } catch(err) {
+        toast('Erro: ' + err.message, 'error');
+      }
+    }
+
+    function formatarDataBr(iso) {
+      if (!iso) return '';
+      try {
+        const d = new Date(iso);
+        return d.toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
+      } catch(_) { return iso; }
     }
   </script>
 </body>
