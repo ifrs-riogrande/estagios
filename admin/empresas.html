@@ -993,6 +993,7 @@
               <div style="font-size:var(--font-size-sm);font-weight:600;">${escapeHtml(et.label)} <span style="font-size:11px;font-weight:400;color:var(--color-text-muted);">(${et.tipo === 'govbr' ? 'gov.br' : 'Interno'})</span></div>
               ${et.data ? `<div style="font-size:11px;color:var(--color-text-muted);margin-top:2px;">${escapeHtml(formatarDataBr(et.data))}</div>` : ''}
               ${et.obs  ? `<div style="font-size:11px;color:#dc2626;margin-top:2px;">Rejeitado: ${escapeHtml(et.obs)}</div>` : ''}
+              ${et.temPdf ? `<button class="btn btn-ghost btn-sm" style="margin-top:4px;font-size:11px;" onclick="baixarPdfConvenioEtapa('${escapeHtml(idConvenio)}',${et.numero})">⬇ PDF desta etapa</button>` : ''}
             </div>
           </div>`).join('');
 
@@ -1005,11 +1006,29 @@
           <p style="font-size:var(--font-size-xs);font-weight:600;color:var(--color-text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:var(--space-2);">Etapas de assinatura</p>
           <div style="border:1px solid var(--color-border);border-radius:var(--radius-md);padding:var(--space-3) var(--space-4);">${etapasHtml}</div>`;
 
+        const footerBtnPdf = fluxo.statusGeral === 'concluido'
+          ? `<button class="btn btn-primary btn-sm" onclick="baixarPdfConvenioEtapa('${escapeHtml(idConvenio)}',0)">⬇ Baixar PDF final</button>`
+          : '';
         document.getElementById('modal-footer').innerHTML = `
           <button class="btn btn-ghost" onclick="fechar()">Fechar</button>
-          <button class="btn btn-secondary btn-sm" onclick="reenviarConvenio('${escapeHtml(idConvenio)}')">Reenviar notificação</button>`;
+          ${fluxo.statusGeral !== 'concluido' ? `<button class="btn btn-secondary btn-sm" onclick="reenviarConvenio('${escapeHtml(idConvenio)}')">Reenviar notificação</button>` : ''}
+          ${footerBtnPdf}`;
       } catch(err) {
         document.getElementById('modal-body').innerHTML = `<p style="color:var(--color-error)">Erro: ${escapeHtml(err.message)}</p>`;
+      }
+    }
+
+    async function baixarPdfConvenioEtapa(idConvenio, etapa) {
+      try {
+        const params = { id: idConvenio, authToken: getAccessToken() };
+        if (etapa > 0) params.etapa = etapa;
+        const res = await API.get('baixarPdfConvenio', params);
+        const link = document.createElement('a');
+        link.href = 'data:application/pdf;base64,' + res.base64;
+        link.download = res.nome || ('convenio_' + idConvenio + '.pdf');
+        link.click();
+      } catch(err) {
+        toast('Erro ao baixar PDF: ' + err.message, 'error');
       }
     }
 
