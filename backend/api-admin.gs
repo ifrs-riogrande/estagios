@@ -1628,6 +1628,28 @@ function listarAlertasAdmin_() {
     }
   }
 
+  // Convênios em andamento em etapa interna (admin precisa agir)
+  var shConvFluxo = ss.getSheetByName('Fluxo Convenios');
+  if (shConvFluxo) {
+    var nConv = 0;
+    var dadosConv = shConvFluxo.getDataRange().getValues();
+    for (var iC = 1; iC < dadosConv.length; iC++) {
+      var statusGeral = String(dadosConv[iC][1] || '').trim();
+      var etapaAtual  = parseInt(dadosConv[iC][2] || '0', 10);
+      if (statusGeral === 'em_andamento' && (etapaAtual === 2 || etapaAtual === 4)) nConv++;
+    }
+    if (nConv > 0) {
+      alertas.push({
+        id:        'alerta_convenios_pendentes',
+        tipo:      'alerta_admin',
+        mensagem:  nConv + (nConv === 1 ? ' convênio aguardando revisão/aprovação' : ' convênios aguardando revisão/aprovação'),
+        link:      'empresas.html',
+        timestamp: new Date().toISOString(),
+        idEstagio: '',
+      });
+    }
+  }
+
   return jsonOk_({ alertas: alertas });
 }
 

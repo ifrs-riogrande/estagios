@@ -1164,6 +1164,32 @@ function notificarAtorAssinatura_(idEstagio, etapa, sol, fluxo) {
       motivoRejeicao:  motivoRejeicao,
     });
   }
+
+  // Bell notification para atores com acesso OAuth ao sistema
+  try {
+    if (etapa.ator === 'estudante' && etapa.email) {
+      criarNotificacao_({
+        email:     etapa.email,
+        perfil:    'estudante',
+        idEstagio: idEstagio,
+        tipo:      'lembrete_assinatura',
+        mensagem:  'TCE de estágio aguarda sua assinatura.',
+      });
+    } else if ((etapa.ator === 'centralRevisao' || etapa.ator === 'centralFinal') && CFG_ADMIN && CFG_ADMIN.ADMIN_EMAILS) {
+      var _msgTCE = etapa.ator === 'centralRevisao'
+        ? 'TCE aguarda revisão — ' + (sol.nomeEstudante || idEstagio)
+        : 'TCE aguarda finalização — ' + (sol.nomeEstudante || idEstagio);
+      CFG_ADMIN.ADMIN_EMAILS.forEach(function(adminEmail) {
+        criarNotificacao_({
+          email:     adminEmail,
+          perfil:    'admin',
+          idEstagio: idEstagio,
+          tipo:      'lembrete_assinatura',
+          mensagem:  _msgTCE,
+        });
+      });
+    }
+  } catch (_) {}
 }
 
 /**

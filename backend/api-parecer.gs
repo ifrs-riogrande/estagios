@@ -799,6 +799,19 @@ function _notificarParecerCoordenador_(parecer) {
   );
   _parecerEnviarEmail_(parecer.emailCoordenador,
     '[SGE] Parecer Final de Estágio — ' + (parecer.nomeAluno || parecer.idEstagio), html);
+
+  // Bell para coordenador (OAuth)
+  try {
+    if (parecer.emailCoordenador) {
+      criarNotificacao_({
+        email:     parecer.emailCoordenador,
+        perfil:    'coordenador',
+        idEstagio: parecer.idEstagio,
+        tipo:      'lembrete_avaliacao',
+        mensagem:  'Parecer final de estágio aguarda seu preenchimento — ' + (parecer.nomeAluno || parecer.idEstagio),
+      });
+    }
+  } catch (_) {}
 }
 
 function _notificarParecerDiretoria_(parecer) {
@@ -829,6 +842,21 @@ function _notificarParecerAdmin_(parecer) {
   );
   _parecerEnviarEmail_('estagios@riogrande.ifrs.edu.br',
     '[SGE] Parecer Final pronto para aprovação — ' + (parecer.nomeAluno || parecer.idEstagio), html);
+
+  // Bell para admins
+  if (CFG_ADMIN && CFG_ADMIN.ADMIN_EMAILS) {
+    CFG_ADMIN.ADMIN_EMAILS.forEach(function(adminEmail) {
+      try {
+        criarNotificacao_({
+          email:     adminEmail,
+          perfil:    'admin',
+          idEstagio: parecer.idEstagio,
+          tipo:      'lembrete_avaliacao',
+          mensagem:  'Parecer final pronto para aprovação — ' + (parecer.nomeAluno || parecer.idEstagio),
+        });
+      } catch (_) {}
+    });
+  }
 }
 
 function _notificarParecerReprovadoAdmin_(parecer, motivo) {

@@ -1072,6 +1072,22 @@ function _notificarRevisor_(fluxo, sol, qual) {
     '[SGE] Revisar e Assinar Avaliação de Estágio — ' + ((sol && sol.nomeEstudante) || fluxo.idEstagio),
     html
   );
+
+  // Bell para atores OAuth: estudante (revisor1 de concedente) e orientador (revisor2)
+  try {
+    var _perfilRevisor = null;
+    if (qual === 1 && fluxo.tipo === 'concedente') _perfilRevisor = 'estudante';
+    else if (qual === 2) _perfilRevisor = 'orientador';
+    if (_perfilRevisor && email) {
+      criarNotificacao_({
+        email:     email,
+        perfil:    _perfilRevisor,
+        idEstagio: fluxo.idEstagio,
+        tipo:      'lembrete_avaliacao',
+        mensagem:  'Avaliação de estágio aguarda sua revisão e assinatura.',
+      });
+    }
+  } catch (_) {}
 }
 
 function _notificarAdminParaAprovar_(fluxo, sol) {
@@ -1096,6 +1112,22 @@ function _notificarAdminParaAprovar_(fluxo, sol) {
     '[SGE] Avaliação pronta para aprovação — ' + ((sol && sol.nomeEstudante) || fluxo.idEstagio),
     html
   );
+
+  // Bell para admins
+  if (CFG_ADMIN && CFG_ADMIN.ADMIN_EMAILS) {
+    var _msgAvalAdmin = 'Avaliação ' + tipoLabel + ' pronta para aprovação — ' + ((sol && sol.nomeEstudante) || fluxo.idEstagio);
+    CFG_ADMIN.ADMIN_EMAILS.forEach(function(adminEmail) {
+      try {
+        criarNotificacao_({
+          email:     adminEmail,
+          perfil:    'admin',
+          idEstagio: fluxo.idEstagio,
+          tipo:      'lembrete_avaliacao',
+          mensagem:  _msgAvalAdmin,
+        });
+      } catch (_) {}
+    });
+  }
 }
 
 function _notificarConclusao_(fluxo, sol) {

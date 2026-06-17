@@ -527,6 +527,32 @@ function notificarAtorAdendo_(idEstagio, idAdendo, etapa, sol, fluxo) {
   } else {
     MAIL.enviarEmailAssinaturaAdendoInterno(dadosEmail);
   }
+
+  // Bell notification para atores com acesso OAuth ao sistema
+  try {
+    if (etapa.ator === 'estudante' && etapa.email) {
+      criarNotificacao_({
+        email:     etapa.email,
+        perfil:    'estudante',
+        idEstagio: idEstagio,
+        tipo:      'lembrete_adendo',
+        mensagem:  'Adendo ao TCE aguarda sua assinatura.',
+      });
+    } else if ((etapa.ator === 'centralRevisao' || etapa.ator === 'centralFinal') && CFG_ADMIN && CFG_ADMIN.ADMIN_EMAILS) {
+      var _msgAdendo = etapa.ator === 'centralRevisao'
+        ? 'Adendo TCE aguarda revisão — ' + (sol.nomeEstudante || idEstagio)
+        : 'Adendo TCE aguarda finalização — ' + (sol.nomeEstudante || idEstagio);
+      CFG_ADMIN.ADMIN_EMAILS.forEach(function(adminEmail) {
+        criarNotificacao_({
+          email:     adminEmail,
+          perfil:    'admin',
+          idEstagio: idEstagio,
+          tipo:      'lembrete_adendo',
+          mensagem:  _msgAdendo,
+        });
+      });
+    }
+  } catch (_) {}
 }
 
 function enviarPdfFinalAdendoParaTodos_(idEstagio, idAdendo, fluxo, driveUrl) {

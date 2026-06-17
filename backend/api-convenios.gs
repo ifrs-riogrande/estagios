@@ -104,7 +104,7 @@ function _obterEmpresaPorCnpjConv_(cnpj) {
 
 function _obterDadosDGConv_() {
   try {
-    var sheet = SpreadsheetApp.openById(SS_ID).getSheetByName('Diretor Geral');
+    var sheet = SpreadsheetApp.openById(CFG_ADMIN.SS_ID).getSheetByName('Diretor Geral');
     if (!sheet) return { nome: '', cpf: '', email: '' };
     var dados = sheet.getDataRange().getValues();
     // Cabeçalho: Nome | SIAPE | CPF | E-mail | Status
@@ -738,16 +738,19 @@ function _notificarAtorConvenio_(idConvenio, etapa, fluxo) {
 
   _enviarEmailConv_(etapa.email, assunto, html);
 
-  if (etapa.tipo === 'interno') {
-    try {
-      criarNotificacao_({
-        email:    etapa.email,
-        perfil:   'admin',
-        idEstagio:'',
-        tipo:     'convenio',
-        mensagem: 'Convênio ' + fluxo.numero + ' (' + fluxo.razaoSocial + '): ' + etapa.label + ' pendente.',
-      });
-    } catch (_) {}
+  if (etapa.tipo === 'interno' && CFG_ADMIN && CFG_ADMIN.ADMIN_EMAILS) {
+    var _msgConv = 'Convênio ' + fluxo.numero + ' (' + fluxo.razaoSocial + '): ' + etapa.label + ' pendente.';
+    CFG_ADMIN.ADMIN_EMAILS.forEach(function(adminEmail) {
+      try {
+        criarNotificacao_({
+          email:    adminEmail,
+          perfil:   'admin',
+          idEstagio:'',
+          tipo:     'convenio',
+          mensagem: _msgConv,
+        });
+      } catch (_) {}
+    });
   }
 }
 
@@ -804,13 +807,13 @@ function doGetConvenios(e) {
 
     case 'listarEmpresasComConvenio': {
       var tk = (e.parameter && e.parameter.authToken) || '';
-      try { validarTokenAdmin_(tk); } catch(eA) { return jsonError_('Não autorizado.', 'AUTH_ERROR'); }
+      try { validarTokenAdmin_(tk); } catch(eA) { return jsonError_('Não autorizado: ' + (eA.message || eA), 'AUTH_ERROR'); }
       return jsonOk_({ empresas: _listarEmpresasComConvenio_() });
     }
 
     case 'listarConvenios': {
       var tk2 = (e.parameter && e.parameter.authToken) || '';
-      try { validarTokenAdmin_(tk2); } catch(eA2) { return jsonError_('Não autorizado.', 'AUTH_ERROR'); }
+      try { validarTokenAdmin_(tk2); } catch(eA2) { return jsonError_('Não autorizado: ' + (eA2.message || eA2), 'AUTH_ERROR'); }
       return jsonOk_({ convenios: _listarConvenios_() });
     }
 
@@ -894,7 +897,7 @@ function doPostConvenios(e) {
   switch (action) {
 
     case 'gerarConvenio': {
-      try { validarTokenAdmin_(body.authToken); } catch(eA) { return jsonError_('Não autorizado.', 'AUTH_ERROR'); }
+      try { validarTokenAdmin_(body.authToken); } catch(eA) { return jsonError_('Não autorizado: ' + (eA.message || eA), 'AUTH_ERROR'); }
       var cnpj = String(body.cnpj || '').trim();
       if (!cnpj) return jsonError_('CNPJ obrigatório.', 'MISSING_PARAM');
       try {
@@ -917,7 +920,7 @@ function doPostConvenios(e) {
       var numEta = body.numeroEtapa;
 
       if (!etaTk) {
-        try { validarTokenAdmin_(body.authToken); } catch(eA2) { return jsonError_('Não autorizado.', 'AUTH_ERROR'); }
+        try { validarTokenAdmin_(body.authToken); } catch(eA2) { return jsonError_('Não autorizado: ' + (eA2.message || eA2), 'AUTH_ERROR'); }
         etaTk = fluxoCon.etapas.find(function(et) { return et.status === ASS_STATUS.AGUARDANDO; });
         if (!etaTk) return jsonError_('Nenhuma etapa aguardando.', 'INVALID_STATE');
       }
@@ -931,7 +934,7 @@ function doPostConvenios(e) {
 
       var etaRej = body.token ? _validarTokenConvenio_(fluxoRej, body.token) : null;
       if (!etaRej) {
-        try { validarTokenAdmin_(body.authToken); } catch(eA3) { return jsonError_('Não autorizado.', 'AUTH_ERROR'); }
+        try { validarTokenAdmin_(body.authToken); } catch(eA3) { return jsonError_('Não autorizado: ' + (eA3.message || eA3), 'AUTH_ERROR'); }
         etaRej = fluxoRej.etapas.find(function(et) { return et.status === ASS_STATUS.AGUARDANDO; });
         if (!etaRej) return jsonError_('Nenhuma etapa aguardando.', 'INVALID_STATE');
       }
@@ -939,7 +942,7 @@ function doPostConvenios(e) {
     }
 
     case 'reenviarNotificacaoConvenio': {
-      try { validarTokenAdmin_(body.authToken); } catch(eA4) { return jsonError_('Não autorizado.', 'AUTH_ERROR'); }
+      try { validarTokenAdmin_(body.authToken); } catch(eA4) { return jsonError_('Não autorizado: ' + (eA4.message || eA4), 'AUTH_ERROR'); }
       if (!idConvenio) return jsonError_('idConvenio obrigatório.', 'MISSING_PARAM');
       var fluxoRenv = _obterFluxoConvenio_(idConvenio);
       if (!fluxoRenv) return jsonError_('Fluxo não encontrado.', 'NOT_FOUND');
