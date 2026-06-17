@@ -497,11 +497,6 @@
         .replace(/"/g,'&quot;').replace(/'/g,'&#039;');
     }
 
-    // Tenta usar getAccessToken do auth.js (se carregado via admin com OAuth)
-    function getAccessToken() {
-      if (typeof window.getAccessToken === 'function') return window.getAccessToken();
-      return '';
-    }
   </script>
 
   <!-- auth.js só carrega se não houver token na URL (fluxo admin interno) -->
