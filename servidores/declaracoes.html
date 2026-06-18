@@ -206,7 +206,8 @@
 
       try {
         const res = await API.post('solicitarDeclaracao', {
-          authToken:     getAccessToken(),
+          authToken:      getAccessToken(),
+          _nomeServidor:  typeof getCurrentUserName === 'function' ? (getCurrentUserName() || '') : '',
           funcao,
           modalidade,
           periodoInicio,

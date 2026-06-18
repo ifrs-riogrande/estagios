@@ -140,10 +140,13 @@ function _processarDeclaracao_(body, emailServidor, emitidoPor, nomeEmitente) {
     return jsonError_('Modalidade inválida.', 'VALIDATION');
   }
 
-  // Busca nome do servidor na planilha
+  // Busca nome do servidor na planilha; fallback para nome do token Google
   var nomeServidor = _obterNomeServidor_(emailServidor);
+  if (!nomeServidor && body._nomeServidor) {
+    nomeServidor = sanitizar_(String(body._nomeServidor), 100).trim();
+  }
   if (!nomeServidor) {
-    return jsonError_('Servidor não encontrado: ' + emailServidor, 'NOT_FOUND');
+    nomeServidor = emailServidor.split('@')[0].replace(/\./g, ' ');
   }
 
   // Filtra estágios do servidor no período/modalidade/função
@@ -480,7 +483,7 @@ function _filtrarEstagiosDeclaracao_(emailServidor, funcao, modalidade, periodoI
   var dtFiltroIni = _normData(periodoIni);
   var dtFiltroFim = _normData(periodoFim);
 
-  var statusValidos = ['Ativo', 'Ativo (encerrado)', 'Concluído', 'Em análise', 'Aprovado'];
+  var statusValidos = ['Ativo', 'Concluído', 'Em análise', 'Aprovado', 'Aguardando DG'];
 
   for (var i = 1; i < dados.length; i++) {
     var linha = dados[i];
@@ -626,33 +629,35 @@ function _obterDeclaracaoPorId_(id) {
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function _obterNomeServidor_(email) {
-  var ss    = SpreadsheetApp.openById(CFG_ADMIN.SS_ID || SS_ID);
-  // Tenta aba Orientadores
-  var abas = ['Orientadores', 'Coordenadores', 'Servidores'];
-  for (var ai = 0; ai < abas.length; ai++) {
-    var sheet = ss.getSheetByName(abas[ai]);
-    if (!sheet) continue;
-    var dados = sheet.getDataRange().getValues();
-    for (var i = 1; i < dados.length; i++) {
-      var emailCol = String(dados[i][1] || '').toLowerCase().trim(); // col 1 = email (padrão das abas)
-      if (emailCol === email) {
-        return String(dados[i][0] || '').trim(); // col 0 = nome
+  var ss = SpreadsheetApp.openById(CFG_ADMIN.SS_ID || SS_ID);
+
+  // Aba Orientadores: COL_ORI.EMAIL = 8, COL_ORI.NOME = 4
+  var sheetOri = ss.getSheetByName('Orientadores');
+  if (sheetOri) {
+    var dadosOri = sheetOri.getDataRange().getValues();
+    for (var i = 1; i < dadosOri.length; i++) {
+      if (String(dadosOri[i][COL_ORI.EMAIL] || '').toLowerCase().trim() === email) {
+        return String(dadosOri[i][COL_ORI.NOME] || '').trim();
       }
     }
   }
-  // Fallback: busca na aba Solicitações
+
+  // Fallback: busca na aba Solicitações como orientador ou supervisor
   var sheetSol = ss.getSheetByName('Solicitações');
   if (sheetSol) {
     var dadosSol = sheetSol.getDataRange().getValues();
     for (var j = 1; j < dadosSol.length; j++) {
       if (String(dadosSol[j][COL_SOL.EMAIL_ORIENTADOR] || '').toLowerCase().trim() === email) {
-        return String(dadosSol[j][COL_SOL.NOME_ORIENTADOR] || '').trim();
+        var nome = String(dadosSol[j][COL_SOL.NOME_ORIENTADOR] || '').trim();
+        if (nome) return nome;
       }
       if (String(dadosSol[j][COL_SOL.EMAIL_SUPERVISOR] || '').toLowerCase().trim() === email) {
-        return String(dadosSol[j][COL_SOL.NOME_SUPERVISOR] || '').trim();
+        var nomeSup = String(dadosSol[j][COL_SOL.NOME_SUPERVISOR] || '').trim();
+        if (nomeSup) return nomeSup;
       }
     }
   }
+
   return '';
 }
 
