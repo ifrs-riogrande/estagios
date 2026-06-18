@@ -129,19 +129,28 @@ function listarEstagiosNapne_() {
     if (vistos[emailAluno]) continue;
     vistos[emailAluno] = true;
 
-    var ficha = fichasMap[emailAluno] || null;
+    var ficha      = fichasMap[emailAluno] || null;
+    var idEstagio  = String(r[COL.ID_ESTAGIO]).trim();
+
+    // Verifica se há etapa NAPNE pendente no checklist
+    var ckNapnePendente = false;
+    try {
+      var ck = obterChecklist_(idEstagio);
+      if (ck && ck.napne && ck.napne.status === 'pendente') ckNapnePendente = true;
+    } catch (_) {}
 
     lista.push({
-      idEstagio:      String(r[COL.ID_ESTAGIO]).trim(),
-      emailEstudante: emailAluno,
-      nomeEstudante:  String(r[COL.NOME_ESTUDANTE] || ''),
-      curso:          String(r[COL.CURSO] || ''),
-      status:         status,
-      neeDeclarado:   neeDeclarado === 'Sim',
-      fichaPreenchida:temFicha,
-      ehNee:          ficha ? ficha.ehNee : null,
-      tiposNee:       ficha ? ficha.tiposNee : [],
-      atualizadoEm:   ficha ? ficha.atualizadoEm : null,
+      idEstagio:          idEstagio,
+      emailEstudante:     emailAluno,
+      nomeEstudante:      String(r[COL.NOME_ESTUDANTE] || ''),
+      curso:              String(r[COL.CURSO] || ''),
+      status:             status,
+      neeDeclarado:       neeDeclarado === 'Sim',
+      fichaPreenchida:    temFicha,
+      ckNapnePendente:    ckNapnePendente,
+      ehNee:              ficha ? ficha.ehNee : null,
+      tiposNee:           ficha ? ficha.tiposNee : [],
+      atualizadoEm:       ficha ? ficha.atualizadoEm : null,
     });
   }
 
@@ -190,6 +199,7 @@ function salvarFichaNapne_(body) {
   var emailAluno = String(body.emailAluno || '').toLowerCase().trim();
   if (!emailAluno) return jsonError_('E-mail do aluno obrigatório.', 'VALIDATION');
 
+  var idEstagio     = String(body.idEstagio     || '').trim();
   var nomeAluno     = String(body.nomeAluno     || '').trim().slice(0, 200);
   var ehNee         = (body.ehNee === true || body.ehNee === 'true' || body.ehNee === 'Sim');
   var tiposNee      = Array.isArray(body.tiposNee) ? body.tiposNee : [];
@@ -228,6 +238,7 @@ function salvarFichaNapne_(body) {
       sh.getRange(i + 1, 1, 1, novaLinha.length).setValues([novaLinha]);
       _registrarLogNapne_(ss, napneEmail, emailAluno, 'atualizar_ficha',
         'ehNee:' + (ehNee ? 'Sim' : 'Não') + ' tipos:' + tiposNee.join(','));
+      if (idEstagio) { try { avancarEtapaNapne_(idEstagio); } catch (_) {} }
       return jsonOk_({ mensagem: 'Ficha atualizada com sucesso.' });
     }
   }
@@ -235,6 +246,7 @@ function salvarFichaNapne_(body) {
   sh.appendRow(novaLinha);
   _registrarLogNapne_(ss, napneEmail, emailAluno, 'criar_ficha',
     'ehNee:' + (ehNee ? 'Sim' : 'Não') + ' tipos:' + tiposNee.join(','));
+  if (idEstagio) { try { avancarEtapaNapne_(idEstagio); } catch (_) {} }
   return jsonOk_({ mensagem: 'Ficha criada com sucesso.' });
 }
 

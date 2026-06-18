@@ -469,10 +469,14 @@
         var btnLabel = est.fichaPreenchida ? 'Editar ficha' : '<span class="napne-pendente-dot"></span>Preencher ficha';
         var btnClass = est.fichaPreenchida ? 'btn btn-ghost btn-sm' : 'btn btn-primary btn-sm';
 
+        var ckBadge = est.ckNapnePendente
+          ? '<span class="badge badge-warning" style="margin-left:var(--space-2);" title="Checklist aguardando preenchimento da ficha">Checklist pendente</span>'
+          : '';
+
         return '<div class="napne-card" data-email="' + escapeHtml(est.emailEstudante) + '" data-nome="' + escapeHtml(est.nomeEstudante.toLowerCase()) + '" data-curso="' + escapeHtml(est.curso.toLowerCase()) + '" data-ficha="' + (est.fichaPreenchida ? 'preenchida' : 'pendente') + '">' +
           '<div class="napne-card-avatar">' + escapeHtml(iniciais) + '</div>' +
           '<div class="napne-card-info">' +
-            '<div class="napne-card-name">' + escapeHtml(est.nomeEstudante) + '</div>' +
+            '<div class="napne-card-name">' + escapeHtml(est.nomeEstudante) + ckBadge + '</div>' +
             '<div class="napne-card-sub">' + escapeHtml(est.curso) + ' &middot; ' + badgeStatus + '</div>' +
             tagsHtml +
           '</div>' +
@@ -617,6 +621,7 @@
 
       try {
         await API.post('salvarFichaNapne', {
+          idEstagio:     _alunoAtual.idEstagio,
           emailAluno:    _alunoAtual.emailEstudante,
           nomeAluno:     _alunoAtual.nomeEstudante,
           ehNee:         ehNee,
@@ -628,9 +633,10 @@
         // Atualiza lista local
         var idx = _listaEstagios.findIndex(function(e) { return e.emailEstudante === _alunoAtual.emailEstudante; });
         if (idx !== -1) {
-          _listaEstagios[idx].fichaPreenchida = true;
-          _listaEstagios[idx].ehNee           = ehNee;
-          _listaEstagios[idx].tiposNee        = tiposNee;
+          _listaEstagios[idx].fichaPreenchida  = true;
+          _listaEstagios[idx].ehNee            = ehNee;
+          _listaEstagios[idx].tiposNee         = tiposNee;
+          _listaEstagios[idx].ckNapnePendente  = false;
         }
 
         fecharModal();

@@ -148,6 +148,7 @@ function obterPrazos_() {
   } catch (e) { /* usa defaults */ }
   return {
     checklist: {
+      napne:       3,
       orientador:  5,
       supervisor:  5,
       coordenador: 5,
@@ -258,10 +259,93 @@ function iniciarChecklist_(idEstagio, opts) {
     admin: null,
   };
 
-  salvarChecklist_(idEstagio, checklist);
-  _registrarChecklistNaPlanilha_(idEstagio, checklist);
-  try { _notificarOrientadorNovoChecklist_(idEstagio, checklist); } catch (e) { logErro_('iniciarChecklist_.notificarOrientador', e); }
+  // Se o estudante é NEE → primeiro ator é o NAPNE (orientador espera)
+  var ehNEE = String(solCompleto.nee || '').trim().toLowerCase() === 'sim';
+  if (ehNEE) {
+    checklist.napne = {
+      status:            CK_STATUS.PENDENTE,
+      data:              null,
+      obs:               '',
+      prazoVencimento:   calcularPrazoVencimento_(prazos.checklist.napne || 3),
+      lembretesEnviados: 0,
+    };
+    checklist.etapaAtiva  = 'napne';
+    checklist.orientador  = null; // liberado após NAPNE concluir
+    salvarChecklist_(idEstagio, checklist);
+    _registrarChecklistNaPlanilha_(idEstagio, checklist);
+    try { _notificarNapneNovoChecklist_(idEstagio, checklist, solCompleto); } catch (e) { logErro_('iniciarChecklist_.notificarNapne', e); }
+  } else {
+    salvarChecklist_(idEstagio, checklist);
+    _registrarChecklistNaPlanilha_(idEstagio, checklist);
+    try { _notificarOrientadorNovoChecklist_(idEstagio, checklist); } catch (e) { logErro_('iniciarChecklist_.notificarOrientador', e); }
+  }
   return checklist;
+}
+
+/**
+ * Chamado pelo api-napne.gs após salvar a ficha NEE.
+ * Marca a etapa NAPNE como concluída e libera o orientador.
+ */
+function avancarEtapaNapne_(idEstagio) {
+  var checklist = obterChecklist_(idEstagio);
+  if (!checklist || !checklist.napne || checklist.napne.status !== CK_STATUS.PENDENTE) return;
+
+  checklist.napne.status = CK_STATUS.APROVADO;
+  checklist.napne.data   = new Date().toISOString();
+
+  // Cria bloco do orientador (mesmo padrão de iniciarChecklist_)
+  var prazos          = obterPrazos_();
+  var tokenOrientador = Utilities.getUuid();
+  var solCompleto     = _obterDadosSolicitacaoCompleto_(idEstagio);
+  var itemAceite      = {
+    id: 'aceite_orientacao', label: 'Aceito formalmente a orientação deste estágio',
+    valor: '', sensivel: false, isDoc: false, secao: 'aceite',
+    checked: false, obs: '', auto: false, obrigatorio: true,
+  };
+  checklist.orientador = {
+    status:            CK_STATUS.PENDENTE,
+    data:              null,
+    obs:               '',
+    prazoVencimento:   calcularPrazoVencimento_(prazos.checklist.orientador),
+    lembretesEnviados: 0,
+    token:             tokenOrientador,
+    itens:             [itemAceite].concat(itensCamposSolicitacao_(solCompleto)),
+    assinatura:        null,
+  };
+  checklist.etapaAtiva = 'orientador';
+
+  salvarChecklist_(idEstagio, checklist);
+  _atualizarStatusChecklistNaPlanilha_(idEstagio, checklist);
+  try { _notificarOrientadorNovoChecklist_(idEstagio, checklist); } catch (e) { logErro_('avancarEtapaNapne_.notificarOrientador', e); }
+}
+
+/** Notifica o NAPNE que há um novo estágio NEE aguardando ficha. */
+function _notificarNapneNovoChecklist_(idEstagio, checklist, sol) {
+  var cfgNapne   = _obterDiretoriaAdmin_('NAPNE');
+  var emailNapne = (cfgNapne && cfgNapne.email) ? cfgNapne.email.trim() : '';
+  if (!emailNapne) return;
+
+  MAIL.enviarEmailChecklistAtor({
+    idEstagio:       idEstagio,
+    nomeEstudante:   sol.nomeEstudante || '',
+    curso:           sol.curso         || '',
+    nomeEmpresa:     sol.nomeEmpresa   || '',
+    nomeSupervisor:  sol.nomeSupervisor || '',
+    labelAtor:       LABELS_ATORES_CK_.napne,
+    prazoVencimento: checklist.napne ? checklist.napne.prazoVencimento : '',
+    email:           emailNapne,
+    urlChecklist:    BASE_URL_SGE_ + '/napne/',
+  });
+
+  try {
+    criarNotificacao_({
+      email:     emailNapne,
+      perfil:    'napne',
+      idEstagio: idEstagio,
+      tipo:      'lembrete_napne',
+      mensagem:  'Novo estágio NEE aguardando ficha: ' + (sol.nomeEstudante || idEstagio),
+    });
+  } catch (_) {}
 }
 
 /**
@@ -608,6 +692,7 @@ function calcularIdade_(dataNasc, dataRef) {
 // ── Labels ────────────────────────────────────────────────────────────────────
 
 var LABELS_ATORES_CK_ = {
+  napne:       'NAPNE',
   orientador:  'Orientador(a) de Estágio',
   supervisor:  'Supervisor(a) na Empresa',
   coordenador: 'Coordenador(a) de Curso',
@@ -837,7 +922,10 @@ function _verificarPrazosChecklist_() {
 
       var sol = _obterDadosSolicitacaoCompleto_(id);
       var emailAdmin = _obterEmailNotificacaoAdmin_();
+      var cfgNapneEmail = '';
+      try { cfgNapneEmail = (_obterDiretoriaAdmin_('NAPNE') || {}).email || ''; } catch (_) {}
       var emailsAtores = {
+        napne:       cfgNapneEmail,
         orientador:  sol.emailOrientador  || '',
         supervisor:  _obterEmailSetorSupervisor_(sol.nomeSupervisor, sol.emailSupervisor),
         coordenador: _ckObterEmailCoordenador_(sol.curso || ''),
@@ -845,7 +933,7 @@ function _verificarPrazosChecklist_() {
       };
 
       var modificado = false;
-      ['orientador', 'supervisor', 'coordenador', 'admin'].forEach(function (ator) {
+      ['napne', 'orientador', 'supervisor', 'coordenador', 'admin'].forEach(function (ator) {
         var ck = checklist[ator];
         if (!ck || ck.status !== CK_STATUS.PENDENTE || !ck.prazoVencimento) return;
         var email = emailsAtores[ator];
@@ -1000,6 +1088,7 @@ function _buildHistoricoPublico_(ck) {
     conclusao:   String(ck.timestampConclusao || ''),
     etapaAtiva:  String(ck.etapaAtiva  || ''),
     statusGeral: String(ck.statusGeral || ''),
+    napne:       _atorInfo(ck.napne),
     orientador:  _atorInfo(ck.orientador),
     supervisor:  _atorInfo(ck.supervisor),
     coordenador: _atorInfo(ck.coordenador),
