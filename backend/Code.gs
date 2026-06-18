@@ -132,6 +132,11 @@ var GET_ROUTES = {
   'obterFluxoConvenio':           doGetConvenios,
   'baixarPdfConvenio':            doGetConvenios,
 
+  // Declarações
+  'listarDeclaracoesServidor':    doGetDeclaracoes,
+  'listarDeclaracoesAdmin':       doGetDeclaracoes,
+  'validarDeclaracao':            doGetDeclaracoes,  // público — sem auth
+
 };
 
 // â”€â”€ Mapeamento action â†’ mÃ³dulo (POST) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -282,6 +287,10 @@ var POST_ROUTES = {
   'concluirEtapaConvenio':            doPostConvenios,
   'rejeitarEtapaConvenio':            doPostConvenios,
   'reenviarNotificacaoConvenio':      doPostConvenios,
+
+  // Declarações
+  'solicitarDeclaracao':              doPostDeclaracoes,
+  'gerarDeclaracaoAdmin':             doPostDeclaracoes,
 };
 
 // â”€â”€ Ponto de entrada GET â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€

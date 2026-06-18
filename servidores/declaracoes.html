@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Declarações — Central de Estágios IFRS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/base.css">
+  <link rel="stylesheet" href="../assets/css/components.css">
+  <link rel="stylesheet" href="../assets/css/layout.css">
+</head>
+<body>
+  <header id="app-header">
+    <div class="container">
+      <div class="header-inner">
+        <a href="../index.html" class="header-brand">
+          <span class="header-logo-wrap"><img src="../assets/img/logo-ifrs.png" alt="IFRS" class="header-logo"></span>
+        </a>
+        <div style="display:flex;align-items:center;gap:var(--space-3);">
+          <div id="header-user-area"></div>
+          <a href="hub-orientador.html" class="back-link">
+            <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd"/></svg>
+            Orientador
+          </a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main id="main-content">
+    <section class="page-hero">
+      <div class="container">
+        <h1>Declarações</h1>
+        <p>Gere declarações de orientação e/ou supervisão de estágio para um período específico.</p>
+      </div>
+    </section>
+
+    <div class="container" style="padding-top:var(--space-8);padding-bottom:var(--space-12);">
+      <div style="max-width:800px;margin:0 auto;">
+
+        <!-- Formulário de solicitação -->
+        <div class="card" style="margin-bottom:var(--space-8);">
+          <div class="card-header">
+            <h2 class="card-title">Nova Declaração</h2>
+          </div>
+          <div class="card-body">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-5);margin-bottom:var(--space-5);">
+              <div class="form-group">
+                <label class="form-label" for="periodo-inicio">Período — início <span style="color:var(--color-error)">*</span></label>
+                <input type="date" id="periodo-inicio" class="form-control">
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="periodo-fim">Período — fim <span style="color:var(--color-error)">*</span></label>
+                <input type="date" id="periodo-fim" class="form-control">
+              </div>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-5);margin-bottom:var(--space-6);">
+              <div class="form-group">
+                <label class="form-label">Função <span style="color:var(--color-error)">*</span></label>
+                <div style="display:flex;gap:var(--space-3);flex-wrap:wrap;margin-top:var(--space-2);">
+                  <label class="radio-pill">
+                    <input type="radio" name="funcao" value="orientador"> Orientador(a)
+                  </label>
+                  <label class="radio-pill">
+                    <input type="radio" name="funcao" value="supervisor"> Supervisor(a)
+                  </label>
+                  <label class="radio-pill">
+                    <input type="radio" name="funcao" value="ambos"> Ambos
+                  </label>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Modalidade <span style="color:var(--color-error)">*</span></label>
+                <div style="display:flex;gap:var(--space-3);flex-wrap:wrap;margin-top:var(--space-2);">
+                  <label class="radio-pill">
+                    <input type="radio" name="modalidade" value="Obrigatório"> Obrigatório
+                  </label>
+                  <label class="radio-pill">
+                    <input type="radio" name="modalidade" value="Não Obrigatório"> Não Obrigatório
+                  </label>
+                  <label class="radio-pill">
+                    <input type="radio" name="modalidade" value="Ambos"> Ambos
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <div style="background:var(--color-info-light,#eff6ff);border:1px solid var(--color-info-border,#bfdbfe);border-radius:var(--radius-md);padding:var(--space-4);margin-bottom:var(--space-5);font-size:var(--font-size-sm);color:var(--color-text);">
+              A declaração será gerada em PDF e enviada para o seu e-mail institucional. O documento inclui lista de estágios, assinatura eletrônica e QR Code de validação.
+            </div>
+
+            <button id="btn-solicitar" class="btn btn-primary" onclick="solicitarDeclaracao(this)">
+              Gerar e enviar por e-mail
+            </button>
+          </div>
+        </div>
+
+        <!-- Histórico -->
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">Histórico de Declarações</h2>
+          </div>
+          <div class="card-body" id="historico-container">
+            <div class="empty-state">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg>
+              <p>Nenhuma declaração emitida ainda.</p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <footer id="app-footer">
+    <div class="container">
+      <div class="footer-inner">
+        <span class="footer-copy">&copy; <script>document.write(new Date().getFullYear())</script> Central de Estágios — IFRS Campus Rio Grande</span>
+        <nav class="footer-links"><a href="mailto:estagios@riogrande.ifrs.edu.br">estagios@riogrande.ifrs.edu.br</a></nav>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://accounts.google.com/gsi/client" async></script>
+  <script src="../assets/js/utils.js"></script>
+  <script src="../assets/js/notifications-bell.js"></script>
+  <script src="../assets/js/auth.js"></script>
+  <script src="../assets/js/api.js"></script>
+  <script>
+    'use strict';
+
+    document.addEventListener('DOMContentLoaded', function () {
+      if (!requireStaffAuth()) return;
+      carregarHistorico();
+    });
+
+    async function carregarHistorico() {
+      try {
+        const lista = await API.get('listarDeclaracoesServidor', { authToken: getAccessToken() });
+        renderizarHistorico(Array.isArray(lista) ? lista : []);
+      } catch (err) {
+        document.getElementById('historico-container').innerHTML =
+          '<div class="alert alert-error">Erro ao carregar histórico: ' + escapeHtml(err.message) + '</div>';
+      }
+    }
+
+    function renderizarHistorico(lista) {
+      const c = document.getElementById('historico-container');
+      if (!lista.length) {
+        c.innerHTML = `
+          <div class="empty-state">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg>
+            <p>Nenhuma declaração emitida ainda.</p>
+          </div>`;
+        return;
+      }
+
+      const fmtData = (iso) => {
+        if (!iso) return '—';
+        try { return new Date(iso).toLocaleDateString('pt-BR'); } catch (_) { return iso; }
+      };
+      const fmtPeriodo = (v) => {
+        if (!v) return '—';
+        const m = String(v).match(/^(\d{4})-(\d{2})-(\d{2})/);
+        if (m) return `${m[3]}/${m[2]}/${m[1]}`;
+        return v;
+      };
+      const labelFuncao = (f) => f === 'orientador' ? 'Orientação' : f === 'supervisor' ? 'Supervisão' : 'Orientação e Supervisão';
+
+      let html = '<div class="table-wrapper"><table class="data-table"><thead><tr>'
+        + '<th>ID</th><th>Data</th><th>Função</th><th>Modalidade</th><th>Período</th><th>Estágios</th>'
+        + '</tr></thead><tbody>';
+
+      lista.forEach(d => {
+        html += `<tr>
+          <td style="font-size:12px;font-family:monospace">${escapeHtml(d.id)}</td>
+          <td>${fmtData(d.dataEmissao)}</td>
+          <td>${escapeHtml(labelFuncao(d.funcao))}</td>
+          <td>${escapeHtml(d.modalidade)}</td>
+          <td style="white-space:nowrap">${fmtPeriodo(d.periodoInicio)} a ${fmtPeriodo(d.periodoFim)}</td>
+          <td style="text-align:center">${d.totalEstagios}</td>
+        </tr>`;
+      });
+
+      html += '</tbody></table></div>';
+      c.innerHTML = html;
+    }
+
+    async function solicitarDeclaracao(btn) {
+      const periodoInicio = document.getElementById('periodo-inicio').value;
+      const periodoFim    = document.getElementById('periodo-fim').value;
+      const funcao        = document.querySelector('input[name="funcao"]:checked')?.value;
+      const modalidade    = document.querySelector('input[name="modalidade"]:checked')?.value;
+
+      if (!periodoInicio || !periodoFim) { showToast('Informe o período completo.', 'error'); return; }
+      if (!funcao)     { showToast('Selecione a função.', 'error'); return; }
+      if (!modalidade) { showToast('Selecione a modalidade.', 'error'); return; }
+      if (periodoInicio > periodoFim) { showToast('A data de início deve ser anterior à data de fim.', 'error'); return; }
+
+      const orig = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = 'Gerando…';
+
+      try {
+        const res = await API.post('solicitarDeclaracao', {
+          authToken:     getAccessToken(),
+          funcao,
+          modalidade,
+          periodoInicio,
+          periodoFim,
+        });
+        showToast(`✅ Declaração gerada (${res.totalEstagios} estágio(s)). Verifique seu e-mail.`, 'success');
+        await carregarHistorico();
+      } catch (err) {
+        showToast('Erro: ' + err.message, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = orig;
+      }
+    }
+  </script>
+</body>
+</html>

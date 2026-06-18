@@ -152,7 +152,7 @@
   <section class="page-hero">
     <div class="container">
       <h1>Validação de Documento</h1>
-      <p>Verifique a autenticidade das assinaturas eletrônicas do Checklist de Estágio.</p>
+      <p>Verifique a autenticidade de documentos emitidos pela Central de Estágios IFRS.</p>
     </div>
   </section>
 
@@ -206,19 +206,75 @@
 
     async function carregarValidacao(token, id) {
       try {
-        var params = token ? { t: token } : { id: id };
-        var dados = await API.get('validarChecklist', params);
-
-        // Acesso por ID sem token: só confirma existência, sem dados pessoais
-        if (!token && dados.aviso) {
-          renderizarApenasExistencia(dados);
-          return;
+        // Tenta primeiro como declaração (prefixo DECL- no token), depois como checklist
+        var dados;
+        var ehDeclaracao = false;
+        if (token) {
+          try {
+            dados = await API.get('validarDeclaracao', { t: token });
+            if (dados && dados.tipo === 'declaracao') { ehDeclaracao = true; }
+          } catch (_) {
+            // Não é declaração — tenta checklist
+          }
+        }
+        if (!ehDeclaracao) {
+          var params = token ? { t: token } : { id: id };
+          dados = await API.get('validarChecklist', params);
+          if (!token && dados.aviso) {
+            renderizarApenasExistencia(dados);
+            return;
+          }
         }
 
-        renderizarValidacao(dados);
+        if (ehDeclaracao) {
+          renderizarDeclaracao(dados);
+        } else {
+          renderizarValidacao(dados);
+        }
       } catch (err) {
         mostrarErro(err.message || 'Não foi possível validar o documento. Tente novamente ou entre em contato com o setor de estágios.');
       }
+    }
+
+    function renderizarDeclaracao(d) {
+      document.getElementById('val-loading').hidden = true;
+
+      var fmtP = function (v) {
+        if (!v) return '—';
+        var m = String(v).match(/^(\d{4})-(\d{2})-(\d{2})/);
+        if (m) return m[3] + '/' + m[2] + '/' + m[1];
+        return v;
+      };
+      var fmtDH = function (iso) {
+        if (!iso) return '—';
+        try { return new Date(iso).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' }); }
+        catch (_) { return iso; }
+      };
+      var v = function (val) { return escapeHtml(String(val || '—')); };
+
+      var labelFuncao = d.funcao === 'orientador' ? 'Orientação' :
+                        d.funcao === 'supervisor'  ? 'Supervisão' : 'Orientação e Supervisão';
+
+      var html = '<div class="val-card val-ok">';
+      html += '<span class="val-badge val-badge--ok">✓ Declaração Autêntica</span>';
+      html += '<div class="val-title">Declaração de ' + escapeHtml(labelFuncao) + ' de Estágio</div>';
+      html += '<div class="val-subtitle">' + v(d.nomeServidor) + ' · ' + v(d.emailServidor) + '</div>';
+      html += '<div class="val-info-grid">';
+      html += '<div><span class="val-info-label">ID</span><span class="val-info-value">' + v(d.id) + '</span></div>';
+      html += '<div><span class="val-info-label">Data de Emissão</span><span class="val-info-value">' + fmtDH(d.dataEmissao) + '</span></div>';
+      html += '<div><span class="val-info-label">Período</span><span class="val-info-value">' + fmtP(d.periodoInicio) + ' a ' + fmtP(d.periodoFim) + '</span></div>';
+      html += '<div><span class="val-info-label">Modalidade</span><span class="val-info-value">' + v(d.modalidade) + '</span></div>';
+      html += '<div><span class="val-info-label">Estágios declarados</span><span class="val-info-value">' + v(d.totalEstagios) + '</span></div>';
+      html += '</div></div>';
+
+      html += '<p style="font-size:var(--font-size-xs);color:var(--color-text-muted);text-align:center;margin-top:var(--space-6);">';
+      html += 'O e-mail é exibido de forma parcial para proteger a privacidade.<br>';
+      html += 'Para verificação completa, entre em contato com o Setor de Estágios do IFRS Campus Rio Grande.';
+      html += '</p>';
+
+      var contentEl = document.getElementById('val-content');
+      contentEl.innerHTML = html;
+      contentEl.hidden = false;
     }
 
     function renderizarApenasExistencia(d) {
