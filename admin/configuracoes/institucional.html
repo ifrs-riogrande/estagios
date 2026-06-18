@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Configurações de Acesso — Configurações · Admin · Central de Estágios IFRS</title>
+  <title>Responsáveis Institucionais — Configurações · Admin · Central de Estágios IFRS</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
@@ -107,15 +107,15 @@
   <main id="main-content">
     <section class="page-hero">
       <div class="container">
-        <h1 class="page-hero-title">Configurações de Acesso</h1>
-        <p class="page-hero-desc">Defina o responsável e o e-mail de acesso de cada módulo. Apenas o e-mail cadastrado poderá acessar aquele setor do sistema.</p>
+        <h1 class="page-hero-title">Responsáveis Institucionais</h1>
+        <p class="page-hero-desc">Cadastre o responsável de cada setor. O e-mail informado será usado para envio de documentos e notificações do sistema.</p>
       </div>
     </section>
 
     <div class="container" style="padding-bottom:var(--space-10)">
       <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:var(--space-4) var(--space-5);margin-bottom:var(--space-2);display:flex;gap:10px;align-items:flex-start">
         <svg viewBox="0 0 20 20" fill="currentColor" style="width:18px;height:18px;color:#2563eb;flex-shrink:0;margin-top:1px" aria-hidden="true"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5h.253a.25.25 0 01.244.304l-.459 2.066A1.75 1.75 0 0010.747 15H11a.75.75 0 000-1.5h-.253a.25.25 0 01-.244-.304l.459-2.066A1.75 1.75 0 009.253 9H9z" clip-rule="evenodd"/></svg>
-        <p style="font-size:.85rem;color:#1e40af;margin:0">O e-mail configurado em cada módulo é utilizado para <strong>acesso ao painel</strong> e para <strong>recebimento de notificações</strong> do sistema.</p>
+        <p style="font-size:.85rem;color:#1e40af;margin:0">O e-mail configurado em cada setor é utilizado para <strong>envio de documentos</strong> e <strong>notificações do sistema</strong>. Esses e-mails não concedem acesso ao painel administrativo.</p>
       </div>
 
       <div class="inst-grid" id="inst-grid">
@@ -290,7 +290,7 @@
         '<div class="inst-field">' +
           '<label class="inst-label" for="inp-email-' + id + '">E-mail institucional</label>' +
           '<input class="inst-input" id="inp-email-' + id + '" type="email" value="' + email + '" placeholder="Ex.: setor@riogrande.ifrs.edu.br" maxlength="200">' +
-          '<div class="inst-info"><svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5h.253a.25.25 0 01.244.304l-.459 2.066A1.75 1.75 0 0010.747 15H11a.75.75 0 000-1.5h-.253a.25.25 0 01-.244-.304l.459-2.066A1.75 1.75 0 009.253 9H9z" clip-rule="evenodd"/></svg>Usado para acesso ao painel e recebimento de notificações.</div>' +
+          '<div class="inst-info"><svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5h.253a.25.25 0 01.244.304l-.459 2.066A1.75 1.75 0 0010.747 15H11a.75.75 0 000-1.5h-.253a.25.25 0 01-.244-.304l.459-2.066A1.75 1.75 0 009.253 9H9z" clip-rule="evenodd"/></svg>Usado para envio de documentos e notificações deste setor.</div>' +
         '</div>';
 
       var statusEl = document.getElementById('status-' + id);
