@@ -327,11 +327,10 @@ function _gerarPdfDeclaracao_(dados) {
 
   // Assinatura 1: Central de Estágios (assinatura institucional)
   var agora = new Date().toISOString();
-  var centralInfo = _obterDiretoriaAdmin_('ADMIN') || {};
   body.appendParagraph('');
   var titCentral = body.appendParagraph('1. Central de Estágios — IFRS Campus Rio Grande');
   titCentral.editAsText().setFontFamily('Arial').setFontSize(10).setBold(true);
-  _linha('Responsável', centralInfo.nome || 'Setor de Estágios');
+  _linha('Responsável', 'Setor de Estágios');
   _linha('E-mail', 'estagios@riogrande.ifrs.edu.br');
   _linha('Data e Hora', Utilities.formatDate(new Date(agora), Session.getScriptTimeZone(), 'dd/MM/yyyy HH:mm:ss'));
   var rodCentral = body.appendParagraph('Documento emitido eletronicamente pelo SGE — IFRS Campus Rio Grande.');
@@ -429,9 +428,7 @@ function _enviarEmailDeclaracao_(emailServidor, nomeServidor, id, pdfBlob, info)
     + '<p style="font-size:13px;color:#6b7280;">Dúvidas: '
     + '<a href="mailto:estagios@riogrande.ifrs.edu.br" style="color:#6b7280;">estagios@riogrande.ifrs.edu.br</a></p>';
 
-  var htmlBody = MAIL.htmlBase_(titulo, corpo);
-  // htmlBase_ é interno ao MAIL IIFE — usamos o helper de e-mail direto
-  var htmlFull = '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">'
+  var htmlFull ='<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">'
     + '<style>body{font-family:Arial,sans-serif;font-size:14px;color:#374151;margin:0;padding:0;background:#f9fafb;}'
     + '.wrapper{max-width:600px;margin:32px auto;background:#fff;border-radius:8px;overflow:hidden;border:1px solid #e5e7eb;}'
     + '.header{background:#1d4ed8;padding:24px 32px;} .header h1{color:#fff;margin:0;font-size:20px;}'
