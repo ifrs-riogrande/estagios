@@ -1296,6 +1296,12 @@ function doPostChecklist(e) {
     case 'regenerarPdfChecklist':
       return regenerarPdfChecklist_(body);
 
+    case 'bypassEtapaNapne':
+      return bypassEtapaNapneAdmin_(body);
+
+    case 'devolverAoAluno':
+      return devolverChecklistAoAluno_(body);
+
     default:
       return jsonError_('Ação POST desconhecida: ' + action, 'UNKNOWN_ACTION');
   }
@@ -1328,6 +1334,11 @@ function reenviarNotificacaoChecklist_(body) {
   }
 
   try {
+    if (etapa === 'napne') {
+      var solNapne = _obterDadosSolicitacaoCompleto_(idEstagio);
+      _notificarNapneNovoChecklist_(idEstagio, checklist, solNapne);
+      return jsonOk_({ reenviado: true, etapa: etapa, label: LABELS_ATORES_CK_.napne });
+    }
     if (etapa === 'orientador') {
       _notificarOrientadorNovoChecklist_(idEstagio, checklist);
       return jsonOk_({ reenviado: true, etapa: etapa, label: LABELS_ATORES_CK_.orientador });
@@ -1350,10 +1361,121 @@ function reenviarNotificacaoChecklist_(body) {
       _notificarCoordenadorChecklist_(idEstagio, checklist);
       return jsonOk_({ reenviado: true, etapa: etapa, label: LABELS_ATORES_CK_.coordenador, email: emailCoordenador });
     }
+    if (etapa === 'admin') {
+      _notificarAdminNovoChecklist_(idEstagio, {}, checklist);
+      return jsonOk_({ reenviado: true, etapa: etapa, label: LABELS_ATORES_CK_.admin });
+    }
     return jsonError_('Etapa desconhecida: ' + etapa, 'INVALID_STATE');
   } catch (e) {
     return jsonError_('Erro ao reenviar notificação: ' + e.message, 'SEND_ERROR');
   }
+}
+
+/**
+ * Bypass da etapa NAPNE pelo admin.
+ * NAPNE não tem assinatura eletrônica no fluxo, portanto pode ser bypassado.
+ * Avança o checklist diretamente para o orientador.
+ */
+function bypassEtapaNapneAdmin_(body) {
+  try { validarTokenAdmin_(body.authToken); }
+  catch (eAuth) { return jsonError_('Não autorizado: ' + eAuth.message, 'AUTH_ERROR'); }
+
+  var idEstagio = body.idEstagio;
+  if (!idEstagio) return jsonError_('Parâmetro idEstagio obrigatório.', 'MISSING_PARAM');
+
+  var checklist = obterChecklist_(idEstagio);
+  if (!checklist) return jsonError_('Checklist não encontrado.', 'NOT_FOUND');
+  if (!checklist.napne || checklist.napne.status !== CK_STATUS.PENDENTE) {
+    return jsonError_('Etapa NAPNE não está pendente.', 'INVALID_STATE');
+  }
+
+  checklist.napne.status      = CK_STATUS.APROVADO;
+  checklist.napne.data        = new Date().toISOString();
+  checklist.napne.bypassAdmin = true;
+  checklist.napne.obs         = sanitizar_(body.obs || 'Liberado pelo setor de estágios.', 500);
+
+  // Cria bloco do orientador (mesmo padrão de avancarEtapaNapne_)
+  var prazos          = obterPrazos_();
+  var tokenOrientador = Utilities.getUuid();
+  var solCompleto     = _obterDadosSolicitacaoCompleto_(idEstagio);
+  checklist.orientador = {
+    status:            CK_STATUS.PENDENTE,
+    data:              null,
+    obs:               '',
+    prazoVencimento:   calcularPrazoVencimento_(prazos.checklist.orientador),
+    lembretesEnviados: 0,
+    token:             tokenOrientador,
+    itens:             [{
+      id: 'aceite_orientacao', label: 'Aceito formalmente a orientação deste estágio',
+      valor: '', sensivel: false, isDoc: false, secao: 'aceite',
+      checked: false, obs: '', auto: false, obrigatorio: true,
+    }].concat(itensCamposSolicitacao_(solCompleto)),
+    assinatura: null,
+  };
+  checklist.etapaAtiva = 'orientador';
+
+  salvarChecklist_(idEstagio, checklist);
+  _atualizarStatusChecklistNaPlanilha_(idEstagio, checklist);
+  try { _notificarOrientadorNovoChecklist_(idEstagio, checklist); } catch (e) { logErro_('bypassEtapaNapneAdmin_.notificarOrientador', e); }
+
+  return jsonOk_({ mensagem: 'Etapa NAPNE liberada pelo setor. Orientador notificado.' });
+}
+
+/**
+ * Admin devolve a solicitação ao aluno para correção.
+ * Cancela o checklist atual, atualiza o status na planilha e notifica o estudante.
+ */
+function devolverChecklistAoAluno_(body) {
+  try { validarTokenAdmin_(body.authToken); }
+  catch (eAuth) { return jsonError_('Não autorizado: ' + eAuth.message, 'AUTH_ERROR'); }
+
+  var idEstagio = body.idEstagio;
+  var motivo    = sanitizar_(body.motivo || '', 1000);
+  if (!idEstagio) return jsonError_('Parâmetro idEstagio obrigatório.', 'MISSING_PARAM');
+  if (!motivo)    return jsonError_('Motivo obrigatório.', 'VALIDATION');
+
+  var checklist = obterChecklist_(idEstagio);
+  if (!checklist) return jsonError_('Checklist não encontrado.', 'NOT_FOUND');
+  if (checklist.statusGeral === CK_STATUS.APROVADO) {
+    return jsonError_('Checklist já concluído. Não é possível devolver.', 'INVALID_STATE');
+  }
+
+  // Cancela o checklist atual
+  checklist.statusGeral     = 'cancelado';
+  checklist.etapaAtiva      = 'devolvido';
+  checklist.motivoDevolucao = motivo;
+  checklist.dataDevolucao   = new Date().toISOString();
+  salvarChecklist_(idEstagio, checklist);
+  _atualizarStatusChecklistNaPlanilha_(idEstagio, checklist);
+
+  // Atualiza status na planilha de Solicitações
+  try {
+    var ss    = SpreadsheetApp.openById(SS_ID);
+    var sheet = ss.getSheetByName('Solicitações');
+    if (sheet) {
+      var dados = sheet.getDataRange().getValues();
+      for (var i = 1; i < dados.length; i++) {
+        if (String(dados[i][COL_SOL.ID_ESTAGIO] || '') !== idEstagio) continue;
+        sheet.getRange(i + 1, COL_SOL.STATUS     + 1).setValue('Devolvido para correção');
+        sheet.getRange(i + 1, COL_SOL.OBS_SETOR  + 1).setValue('Devolvido pelo setor: ' + motivo);
+        break;
+      }
+    }
+  } catch (eSheet) { logErro_('devolverChecklistAoAluno_.sheet', eSheet); }
+
+  // Notifica estudante por e-mail
+  var sol = _obterDadosSolicitacaoCompleto_(idEstagio);
+  try {
+    MAIL.enviarEmailDevolucaoChecklistAluno({
+      nomeEstudante:  sol.nomeEstudante  || '',
+      emailEstudante: sol.emailEstudante || '',
+      idEstagio:      idEstagio,
+      motivo:         motivo,
+      urlSolicitacao: BASE_URL_SGE_ + '/estudantes/solicitacao.html',
+    });
+  } catch (eMail) { logErro_('devolverChecklistAoAluno_.mail', eMail); }
+
+  return jsonOk_({ mensagem: 'Solicitação devolvida ao estudante para correção.' });
 }
 
 /**
