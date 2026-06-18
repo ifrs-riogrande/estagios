@@ -288,8 +288,8 @@ function _gerarPdfDeclaracao_(dados) {
   var numCols    = cabecalhos.length;
   var numLinhas  = dados.estagios.length + 1; // +1 para cabeçalho
 
+  body.appendParagraph('').setSpacingBefore(6).setSpacingAfter(0);
   var tabela = body.appendTable();
-  tabela.setSpacingBefore(6).setSpacingAfter(16);
 
   // Cabeçalho da tabela
   var linhaCab = tabela.appendTableRow();
