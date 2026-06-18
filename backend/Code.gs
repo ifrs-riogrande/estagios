@@ -92,9 +92,11 @@ var GET_ROUTES = {
   'obterConfigNotificacoes':      doGetAdmin,
 
   // NAPNE
-  'verificarAcessoNapne':    doGetNapne,
-  'listarEstagiosNapne':     doGetNapne,
-  'obterFichaNapne':         doGetNapne,
+  'verificarAcessoNapne':      doGetNapne,
+  'listarEstagiosNapne':       doGetNapne,
+  'obterFichaNapne':           doGetNapne,
+  'obterFichaNapneAdmin':      doGetAdmin,
+  'obterFichaNapneOrientador': doGetServidores,
 
   // Checklist
   'obterChecklist':          doGetChecklist,
@@ -357,7 +359,8 @@ function doGetServidores(e) {
   if (action === 'listarMeusOrientandos')        return listarMeusOrientandos_(e);
   if (action === 'listarEstagiosCoordenador')    return listarEstagiosCoordenador_(e);
   if (action === 'verificarCadastroOrientador')  return verificarCadastroOrientador_(e);
-  return jsonError_('AÃ§Ã£o nÃ£o implementada: ' + action, 'NOT_IMPLEMENTED');
+  if (action === 'obterFichaNapneOrientador')    return obterFichaNapneOrientador_(e);
+  return jsonError_('Ação não implementada: ' + action, 'NOT_IMPLEMENTED');
 }
 
 function doPostServidores(e) {

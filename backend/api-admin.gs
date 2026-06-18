@@ -148,6 +148,7 @@ function doGetAdmin(e) {
       case 'listarAlertasAdmin':       return listarAlertasAdmin_();
       case 'obterConfigTCE':           return obterConfigTCE_();
       case 'obterConfigNotificacoes':  return obterConfigNotificacoes_();
+      case 'obterFichaNapneAdmin':     return jsonOk_(obterFichaNapnePublica_(e.parameter.emailAluno || ''));
       default: return jsonError_('Ação GET não reconhecida: ' + action, 'UNKNOWN_ACTION');
     }
   } catch (err) {
@@ -297,6 +298,7 @@ function listarSolicitacoesAdmin_() {
       linkDocIdentidade:String(r[COL.LINK_DOC_ID]  || ''),
       linkDocBoletim:   String(r[COL.LINK_DOC_BOL]  || ''),
       dataSolicitacao:  formatarData_(r[COL.TIMESTAMP]),
+      nee:              String(r[COL.NEE] || '').trim(),
     });
   }
   lista.reverse(); // mais recentes primeiro

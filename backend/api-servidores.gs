@@ -457,12 +457,40 @@ function listarMeusOrientandos_(e) {
       status:              String(linha[COL_SOL.STATUS]          || ''),
       obsSetor:            String(linha[COL_SOL.OBS_SETOR]       || ''),
       driveUrl:            String(linha[COL_SOL.DRIVE_URL]       || ''),
+      neeDeclarado:        String(linha[COL_SOL.NEE]             || '').trim() === 'Sim',
     });
   }
 
   // Mais recentes primeiro
   lista.reverse();
   return jsonOk_(lista);
+}
+
+function obterFichaNapneOrientador_(e) {
+  var authToken  = e.parameter && e.parameter.authToken;
+  var tokenInfo  = validarTokenServidor_(authToken);
+  var emailOrientador = tokenInfo.email.toLowerCase().trim();
+  var emailAluno = String(e.parameter.emailAluno || '').toLowerCase().trim();
+
+  if (!emailAluno) return jsonError_('E-mail do aluno obrigatório.', 'VALIDATION');
+
+  // Verifica que o aluno é orientando deste servidor
+  var ss    = SpreadsheetApp.openById(CFG_SRV.SS_ID);
+  var sheet = ss.getSheetByName('Solicitações');
+  if (!sheet) return jsonError_('Dados não encontrados.', 'NOT_FOUND');
+
+  var dados   = sheet.getDataRange().getValues();
+  var eOrientando = false;
+  for (var i = 1; i < dados.length; i++) {
+    var emailOri = String(dados[i][COL_SOL.EMAIL_ORIENTADOR] || '').toLowerCase().trim();
+    var emailEst = String(dados[i][COL_SOL.EMAIL_ESTUDANTE]  || '').toLowerCase().trim();
+    if (emailOri === emailOrientador && emailEst === emailAluno) { eOrientando = true; break; }
+  }
+
+  if (!eOrientando) return jsonError_('Acesso negado: aluno não é seu orientando.', 'AUTH_ERROR');
+
+  var ficha = obterFichaNapnePublica_(emailAluno);
+  return jsonOk_(ficha || {});
 }
 
 // ---------------------------------------------------------------------------

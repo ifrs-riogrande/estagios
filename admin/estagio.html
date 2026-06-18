@@ -340,6 +340,7 @@
     let _adendos        = [];
     let _docsAvulsos    = [];
     let _checklistInfo  = null;   // dados do checklist (obterChecklist)
+    let _fichaNapne     = null;   // ficha NAPNE (apenas se aluno for NEE)
     let _arquivoAvulso  = null;
     let _sensivelVisivel = false;
     let _avaliacoes     = [];
@@ -390,6 +391,15 @@
         _avaliacoes     = Array.isArray(avalRaw) ? avalRaw : [];
         _parecer        = (parecerRaw && !parecerRaw.error) ? parecerRaw : null;
 
+        // Carrega ficha NAPNE se o aluno declarou NEE
+        if (_estagio.nee === 'Sim') {
+          _fichaNapne = await API.get('obterFichaNapneAdmin', {
+            authToken: token, emailAluno: _estagio.emailEstudante
+          }).catch(() => null);
+        } else {
+          _fichaNapne = null;
+        }
+
         renderHero();
         renderDados();
         renderDocumentos();
@@ -423,6 +433,57 @@
         escapeHtml(s.empresa || '—') +
         '<span class="hero-sep">·</span>' +
         badgeStatus(s.status);
+    }
+
+    /* ─── Seção NAPNE (exibida na aba Dados quando aluno é NEE) ─── */
+    function _renderNapneAdmin() {
+      if (!_fichaNapne) return '';
+      const f = _fichaNapne;
+      // Sem ficha ainda
+      if (!f.emailAluno) {
+        return `
+          <div style="margin-bottom:var(--space-6);border:1px solid #fde047;border-radius:var(--radius-lg);padding:var(--space-5) var(--space-6);background:#fefce8;">
+            <div style="display:flex;align-items:center;gap:var(--space-2);margin-bottom:var(--space-2)">
+              <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" style="color:#a16207;flex-shrink:0"><path fill-rule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clip-rule="evenodd"/></svg>
+              <strong style="font-size:var(--font-size-sm);color:#78350f">Informações NAPNE — Dados protegidos pela LGPD</strong>
+            </div>
+            <p style="font-size:var(--font-size-sm);color:#92400e">Estudante declarou NEE mas a ficha NAPNE ainda não foi preenchida.</p>
+          </div>`;
+      }
+      const tiposTags = (f.tiposNee || []).map(t =>
+        `<span style="display:inline-block;padding:2px 8px;border-radius:99px;font-size:.72rem;font-weight:500;background:#ede9fe;color:#5b21b6;margin:2px">${escapeHtml(t)}</span>`
+      ).join('');
+      return `
+        <div style="margin-bottom:var(--space-6);border:1px solid #fde047;border-radius:var(--radius-lg);padding:var(--space-5) var(--space-6);background:#fefce8;">
+          <div style="display:flex;align-items:center;gap:var(--space-2);margin-bottom:var(--space-4)">
+            <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" style="color:#a16207;flex-shrink:0"><path fill-rule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clip-rule="evenodd"/></svg>
+            <strong style="font-size:var(--font-size-sm);color:#78350f">Informações NAPNE — Dados protegidos pela LGPD</strong>
+          </div>
+          <div class="detail-grid" style="margin-bottom:0">
+            <div class="detail-item">
+              <label>Possui NEE</label>
+              <p>${escapeHtml(f.ehNee ? 'Sim' : 'Não')}</p>
+            </div>
+            <div class="detail-item">
+              <label>Tipos de Necessidade</label>
+              <p>${tiposTags || '—'}</p>
+            </div>
+            ${f.adaptacoes ? `
+            <div class="detail-item detail-full">
+              <label>Adaptações necessárias</label>
+              <p style="white-space:pre-wrap">${escapeHtml(f.adaptacoes)}</p>
+            </div>` : ''}
+            ${f.obsOrientador ? `
+            <div class="detail-item detail-full">
+              <label>Observações para o orientador</label>
+              <p style="white-space:pre-wrap">${escapeHtml(f.obsOrientador)}</p>
+            </div>` : ''}
+            <div class="detail-item">
+              <label>Preenchida em</label>
+              <p>${f.atualizadoEm ? new Date(f.atualizadoEm).toLocaleDateString('pt-BR') : '—'}</p>
+            </div>
+          </div>
+        </div>`;
     }
 
     /* ─── Aba: Dados ─── */
@@ -537,6 +598,8 @@
             <p style="white-space:pre-wrap">${escapeHtml(s.observacaoSetor)}</p>
           </div>` : ''}
         </div>
+
+        ${_renderNapneAdmin()}
 
         <div class="fluxo-links">
           ${s.driveUrl ? `
