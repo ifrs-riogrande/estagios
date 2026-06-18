@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Meus Supervisionados — Central de Estágios IFRS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/base.css">
+  <link rel="stylesheet" href="../assets/css/components.css">
+  <link rel="stylesheet" href="../assets/css/layout.css">
+  <style>
+    .filtros-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-3);
+      align-items: flex-end;
+      margin-bottom: var(--space-6);
+    }
+    .filtros-bar .form-group { margin: 0; }
+    .filtros-bar label { font-size: var(--font-size-xs); color: var(--color-text-muted); font-weight: 600;
+      text-transform: uppercase; letter-spacing: .05em; display: block; margin-bottom: 4px; }
+    .filtros-bar select,
+    .filtros-bar input[type="search"] {
+      height: 36px;
+      padding: 0 var(--space-3);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      font-size: var(--font-size-sm);
+      background: var(--color-surface);
+      color: var(--color-text);
+      min-width: 140px;
+    }
+    .filtros-bar input[type="search"] { min-width: 220px; }
+
+    .table-wrapper { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: var(--font-size-sm); }
+    th { text-align: left; padding: var(--space-3) var(--space-4); font-size: var(--font-size-xs);
+      font-weight: 600; color: var(--color-text-muted); text-transform: uppercase; letter-spacing: .05em;
+      border-bottom: 2px solid var(--color-border); white-space: nowrap; }
+    td { padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--color-border);
+      vertical-align: middle; color: var(--color-text); }
+    tr:last-child td { border-bottom: none; }
+    tbody tr:hover { background: var(--color-surface-hover, rgba(0,0,0,.03)); }
+
+    .badge { display: inline-flex; align-items: center; padding: 2px 10px; border-radius: 999px;
+      font-size: 11px; font-weight: 600; white-space: nowrap; }
+    .badge-pendente   { background: #fef3c7; color: #92400e; }
+    .badge-analise    { background: #dbeafe; color: #1e40af; }
+    .badge-aguardando { background: #ede9fe; color: #5b21b6; }
+    .badge-ativo      { background: #d1fae5; color: #065f46; }
+    .badge-encerrado  { background: #f3f4f6; color: #6b7280; }
+    .badge-reprovado  { background: #fee2e2; color: #991b1b; }
+    .badge-default    { background: #f3f4f6; color: #6b7280; }
+
+    .action-links { display: flex; gap: var(--space-2); flex-wrap: nowrap; }
+    .action-links a { font-size: 12px; padding: 3px 10px; border-radius: var(--radius-sm);
+      border: 1px solid var(--color-border); color: var(--color-text); text-decoration: none;
+      white-space: nowrap; transition: background .15s; }
+    .action-links a:hover { background: var(--color-surface-hover, #f3f4f6); }
+    .action-links a.disabled { opacity: .4; pointer-events: none; }
+
+    #lista-vazia { display: none; text-align: center; padding: var(--space-12) var(--space-4);
+      color: var(--color-text-muted); }
+    #lista-vazia p { margin: var(--space-2) 0 0; font-size: var(--font-size-sm); }
+
+    #painel-carregando, #painel-erro { display: none; text-align: center;
+      padding: var(--space-12) var(--space-4); color: var(--color-text-muted); }
+    .spinner { width: 36px; height: 36px; border: 3px solid var(--color-border);
+      border-top-color: var(--color-primary); border-radius: 50%; animation: spin .8s linear infinite;
+      margin: 0 auto var(--space-4); }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <header id="app-header">
+    <div class="container">
+      <div class="header-inner">
+        <a href="../index.html" class="header-brand">
+          <span class="header-logo-wrap"><img src="../assets/img/logo-ifrs.png" alt="IFRS" class="header-logo"></span>
+        </a>
+        <div style="display:flex;align-items:center;gap:var(--space-3);">
+          <div id="header-user-area"></div>
+          <a href="hub-supervisor.html" class="back-link">
+            <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd"/></svg>
+            Supervisor
+          </a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main id="main-content">
+    <section class="page-hero">
+      <div class="container">
+        <h1>Meus Supervisionados</h1>
+        <p>Estágios sob sua supervisão no IFRS Campus Rio Grande — acompanhe status, documentos e prazos.</p>
+      </div>
+    </section>
+
+    <div class="container" style="padding-top:var(--space-6);padding-bottom:var(--space-12);">
+
+      <div id="painel-carregando">
+        <div class="spinner"></div>
+        <p>Carregando supervisionados…</p>
+      </div>
+
+      <div id="painel-erro">
+        <p id="msg-erro">Não foi possível carregar seus supervisionados.</p>
+        <button class="btn btn-secondary" onclick="carregarSupervisionados()">Tentar novamente</button>
+      </div>
+
+      <div id="conteudo" style="display:none;">
+
+        <div class="filtros-bar">
+          <div class="form-group">
+            <label for="filtro-status">Status</label>
+            <select id="filtro-status" onchange="filtrar()">
+              <option value="">Todos</option>
+              <option value="Pendente">Pendente</option>
+              <option value="Em análise">Em análise</option>
+              <option value="Aguardando Documentos">Aguardando Documentos</option>
+              <option value="Aguardando Validação Final">Aguardando Validação Final</option>
+              <option value="Ativo">Ativo</option>
+              <option value="Encerrado">Encerrado</option>
+              <option value="Reprovado">Reprovado</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="filtro-tipo">Tipo</label>
+            <select id="filtro-tipo" onchange="filtrar()">
+              <option value="">Todos</option>
+              <option value="Obrigatório">Obrigatório</option>
+              <option value="Não Obrigatório">Não Obrigatório</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="filtro-busca">Buscar</label>
+            <input type="search" id="filtro-busca" placeholder="Nome, matrícula, curso…" oninput="filtrar()">
+          </div>
+          <div class="form-group" style="margin-left:auto;">
+            <label style="visibility:hidden">_</label>
+            <span id="contador-resultados" style="font-size:var(--font-size-sm);color:var(--color-text-muted);line-height:36px;white-space:nowrap;"></span>
+          </div>
+        </div>
+
+        <div class="card" style="padding:0;overflow:hidden;">
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Estudante</th>
+                  <th>Curso</th>
+                  <th>Tipo</th>
+                  <th>Período</th>
+                  <th>Status</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody id="corpo-tabela"></tbody>
+            </table>
+          </div>
+
+          <div id="lista-vazia">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin:0 auto;display:block;color:var(--color-text-muted)">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z"/>
+            </svg>
+            <p id="msg-vazia">Nenhum supervisionado encontrado.</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <div id="toast-container" style="position:fixed;bottom:var(--space-6);right:var(--space-6);z-index:9999;display:flex;flex-direction:column;gap:var(--space-2);pointer-events:none;"></div>
+
+  <footer id="app-footer">
+    <div class="container">
+      <div class="footer-inner">
+        <span class="footer-copy">&copy; <script>document.write(new Date().getFullYear())</script> Central de Estágios — IFRS Campus Rio Grande</span>
+        <nav class="footer-links"><a href="mailto:estagios@riogrande.ifrs.edu.br">estagios@riogrande.ifrs.edu.br</a></nav>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://accounts.google.com/gsi/client" async></script>
+  <script src="../assets/js/utils.js"></script>
+  <script src="../assets/js/notifications-bell.js"></script>
+  <script src="../assets/js/auth.js"></script>
+  <script src="../assets/js/api.js"></script>
+  <script>
+    'use strict';
+
+    var _todos = [];
+
+    function formatarData(iso) {
+      if (!iso) return '—';
+      var p = String(iso).split('-');
+      if (p.length === 3) return p[2] + '/' + p[1] + '/' + p[0];
+      return iso;
+    }
+
+    function badgeStatus(status) {
+      var cls = 'badge-default';
+      var s = String(status || '');
+      if (s === 'Pendente')                      cls = 'badge-pendente';
+      else if (s === 'Em análise')               cls = 'badge-analise';
+      else if (s === 'Aguardando Documentos' || s === 'Aguardando Validação Final') cls = 'badge-aguardando';
+      else if (s === 'Ativo')                    cls = 'badge-ativo';
+      else if (s === 'Encerrado')                cls = 'badge-encerrado';
+      else if (s === 'Reprovado')                cls = 'badge-reprovado';
+      return '<span class="badge ' + cls + '">' + escapeHtml(s || '—') + '</span>';
+    }
+
+    function mostrarPainel(id) {
+      ['painel-carregando', 'painel-erro', 'conteudo'].forEach(function (p) {
+        document.getElementById(p).style.display = p === id ? 'block' : 'none';
+      });
+    }
+
+    function carregarSupervisionados() {
+      mostrarPainel('painel-carregando');
+      API.get('listarMeusSupervisionados', { authToken: getAccessToken() }).then(function (data) {
+        _todos = Array.isArray(data) ? data : [];
+        mostrarPainel('conteudo');
+        filtrar();
+      }).catch(function (err) {
+        document.getElementById('msg-erro').textContent =
+          'Não foi possível carregar seus supervisionados. ' + (err && err.message ? err.message : '');
+        mostrarPainel('painel-erro');
+      });
+    }
+
+    function filtrar() {
+      var status = document.getElementById('filtro-status').value.toLowerCase();
+      var tipo   = document.getElementById('filtro-tipo').value.toLowerCase();
+      var busca  = document.getElementById('filtro-busca').value.toLowerCase().trim();
+
+      var filtrados = _todos.filter(function (s) {
+        if (status && String(s.status || '').toLowerCase() !== status) return false;
+        if (tipo   && String(s.tipoEstagio || '').toLowerCase() !== tipo) return false;
+        if (busca) {
+          var haystack = [s.nomeEstudante, s.matricula, s.curso, s.id].join(' ').toLowerCase();
+          if (haystack.indexOf(busca) === -1) return false;
+        }
+        return true;
+      });
+
+      renderTabela(filtrados);
+    }
+
+    function renderTabela(lista) {
+      var tbody   = document.getElementById('corpo-tabela');
+      var vazioEl = document.getElementById('lista-vazia');
+      var contEl  = document.getElementById('contador-resultados');
+
+      contEl.textContent = lista.length + ' registro' + (lista.length !== 1 ? 's' : '');
+
+      if (lista.length === 0) {
+        tbody.innerHTML = '';
+        vazioEl.style.display = 'block';
+        document.getElementById('msg-vazia').textContent =
+          _todos.length === 0
+            ? 'Você ainda não possui supervisionados cadastrados no IFRS Campus Rio Grande.'
+            : 'Nenhum resultado para os filtros aplicados.';
+        return;
+      }
+
+      vazioEl.style.display = 'none';
+
+      var html = lista.map(function (s) {
+        var periodo = '';
+        if (s.dataInicio || s.dataTermino) {
+          periodo = (s.dataInicio ? formatarData(s.dataInicio) : '?') + ' – ' + (s.dataTermino ? formatarData(s.dataTermino) : '?');
+        }
+
+        var links = '';
+        if (s.driveUrl && safeUrl(s.driveUrl)) {
+          links += '<a href="' + escapeHtml(safeUrl(s.driveUrl)) + '" target="_blank" rel="noopener" title="Pasta no Drive">📁 Abrir pasta ↗</a>';
+        } else {
+          links += '<a class="disabled" title="Pasta no Drive não disponível">📁 Pasta</a>';
+        }
+
+        return '<tr>' +
+          '<td><code style="font-size:11px;color:var(--color-text-muted)">' + escapeHtml(s.id || '—') + '</code></td>' +
+          '<td>' +
+            '<div style="font-weight:500;line-height:1.3">' + escapeHtml(s.nomeEstudante || '—') + '</div>' +
+            (s.matricula ? '<div style="font-size:11px;color:var(--color-text-muted)">Matr. ' + escapeHtml(s.matricula) + '</div>' : '') +
+          '</td>' +
+          '<td style="max-width:160px;white-space:normal">' + escapeHtml(s.curso || '—') + '</td>' +
+          '<td style="white-space:nowrap">' + escapeHtml(s.tipoEstagio || '—') + '</td>' +
+          '<td style="white-space:nowrap;font-size:12px">' + escapeHtml(periodo || '—') + '</td>' +
+          '<td>' + badgeStatus(s.status) + '</td>' +
+          '<td><div class="action-links">' + links + '</div></td>' +
+          '</tr>';
+      }).join('');
+
+      tbody.innerHTML = html;
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+      if (!requireStaffAuth()) return;
+      carregarSupervisionados();
+    });
+  </script>
+</body>
+</html>

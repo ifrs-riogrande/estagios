@@ -46,6 +46,7 @@ var GET_ROUTES = {
   'obterMeuCadastroOrientador':      doGetServidores,
   'obterMeuCadastroCoordenador':     doGetServidores,
   'listarMeusOrientandos':           doGetServidores,
+  'listarMeusSupervisionados':       doGetServidores,
   'listarEstagiosCoordenador':       doGetServidores,
   'verificarCadastroOrientador':     doGetServidores,
 
@@ -369,6 +370,7 @@ function doGetServidores(e) {
   if (action === 'listarEstagiosCoordenador')    return listarEstagiosCoordenador_(e);
   if (action === 'verificarCadastroOrientador')  return verificarCadastroOrientador_(e);
   if (action === 'obterFichaNapneOrientador')    return obterFichaNapneOrientador_(e);
+  if (action === 'listarMeusSupervisionados')    return listarMeusSupervisionados_(e);
   return jsonError_('Ação não implementada: ' + action, 'NOT_IMPLEMENTED');
 }
 

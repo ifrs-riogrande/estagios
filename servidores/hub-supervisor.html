@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Supervisor — Central de Estágios IFRS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/base.css">
+  <link rel="stylesheet" href="../assets/css/components.css">
+  <link rel="stylesheet" href="../assets/css/layout.css">
+</head>
+<body>
+  <header id="app-header">
+    <div class="container">
+      <div class="header-inner">
+        <a href="../index.html" class="header-brand">
+          <span class="header-logo-wrap"><img src="../assets/img/logo-ifrs.png" alt="IFRS" class="header-logo"></span>
+        </a>
+        <div style="display:flex;align-items:center;gap:var(--space-3);">
+          <div id="header-user-area"></div>
+          <a href="../institucional/index.html" class="back-link">
+            <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd"/></svg>
+            Institucional
+          </a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main id="main-content">
+    <section class="page-hero">
+      <div class="container">
+        <h1>Supervisor</h1>
+        <p>Acompanhe os estágios sob sua supervisão no IFRS Campus Rio Grande.</p>
+      </div>
+    </section>
+
+    <div class="container">
+      <div style="width:100%;max-width:860px;margin:0 auto">
+      <div class="hub-grid hub-grid--home" role="list">
+
+        <!-- Meus Supervisionados -->
+        <a href="meus-supervisionados.html" class="hub-card" role="listitem">
+          <svg class="hub-card__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+            <path stroke-linecap="round" stroke-linejoin="round" d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/>
+          </svg>
+          <span class="hub-card__label">Meus Supervisionados</span>
+          <span class="hub-card-arrow" style="background:#f3f4f6;color:#6b7280">→</span>
+        </a>
+
+      </div>
+      </div>
+    </div>
+  </main>
+
+  <footer id="app-footer">
+    <div class="container">
+      <div class="footer-inner">
+        <span class="footer-copy">&copy; <script>document.write(new Date().getFullYear())</script> Central de Estágios — IFRS Campus Rio Grande</span>
+        <nav class="footer-links"><a href="mailto:estagios@riogrande.ifrs.edu.br">estagios@riogrande.ifrs.edu.br</a></nav>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://accounts.google.com/gsi/client" async></script>
+  <script src="../assets/js/utils.js"></script>
+  <script src="../assets/js/notifications-bell.js"></script>
+  <script src="../assets/js/auth.js"></script>
+  <script src="../assets/js/api.js"></script>
+  <script>
+    'use strict';
+    document.addEventListener('DOMContentLoaded', function () {
+      requireStaffAuth();
+    });
+  </script>
+</body>
+</html>
