@@ -624,13 +624,24 @@ function _linhaParaDecl_(linha) {
     nomeServidor:  String(linha[COL_DECL.NOME_SERVIDOR]  || ''),
     funcao:        String(linha[COL_DECL.FUNCAO]         || ''),
     modalidade:    String(linha[COL_DECL.MODALIDADE]     || ''),
-    periodoInicio: String(linha[COL_DECL.PERIODO_INICIO] || ''),
-    periodoFim:    String(linha[COL_DECL.PERIODO_FIM]    || ''),
+    periodoInicio: _fmtCelulaData_(linha[COL_DECL.PERIODO_INICIO]),
+    periodoFim:    _fmtCelulaData_(linha[COL_DECL.PERIODO_FIM]),
     token:         String(linha[COL_DECL.TOKEN]          || ''),
     totalEstagios: estagios.length,
     emitidoPor:    String(linha[COL_DECL.EMITIDO_POR]   || ''),
     nomeEmitente:  String(linha[COL_DECL.NOME_EMITENTE] || ''),
   };
+}
+
+function _fmtCelulaData_(v) {
+  if (!v) return '';
+  if (v instanceof Date) {
+    if (isNaN(v.getTime())) return '';
+    var mm = String(v.getMonth() + 1).padStart(2, '0');
+    var dd = String(v.getDate()).padStart(2, '0');
+    return v.getFullYear() + '-' + mm + '-' + dd;
+  }
+  return String(v);
 }
 
 function _obterDeclaracaoPorId_(id) {
