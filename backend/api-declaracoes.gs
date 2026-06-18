@@ -478,15 +478,25 @@ function _filtrarEstagiosDeclaracao_(emailServidor, funcao, modalidade, periodoI
   var dados = sheet.getDataRange().getValues();
   var resultado = [];
 
-  // Normaliza datas de filtro (aceita YYYY-MM-DD ou DD/MM/YYYY)
+  // Normaliza qualquer valor de data (Date, YYYY-MM-DD, DD/MM/YYYY) para objeto Date
   var _normData = function (v) {
     if (!v) return null;
+    if (v instanceof Date) return isNaN(v.getTime()) ? null : v;
     var s = String(v).trim();
     var m1 = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
-    if (m1) return new Date(m1[1], parseInt(m1[2]) - 1, parseInt(m1[3]));
+    if (m1) return new Date(parseInt(m1[1]), parseInt(m1[2]) - 1, parseInt(m1[3]));
     var m2 = s.match(/^(\d{2})\/(\d{2})\/(\d{4})/);
-    if (m2) return new Date(m2[3], parseInt(m2[2]) - 1, parseInt(m2[1]));
+    if (m2) return new Date(parseInt(m2[3]), parseInt(m2[2]) - 1, parseInt(m2[1]));
     return null;
+  };
+
+  // Formata Date para YYYY-MM-DD (para armazenar no registro e exibir no PDF)
+  var _fmtISO = function (v) {
+    var d = _normData(v);
+    if (!d) return '';
+    var mm = String(d.getMonth() + 1).padStart(2, '0');
+    var dd = String(d.getDate()).padStart(2, '0');
+    return d.getFullYear() + '-' + mm + '-' + dd;
   };
 
   var dtFiltroIni = _normData(periodoIni);
@@ -523,8 +533,8 @@ function _filtrarEstagiosDeclaracao_(emailServidor, funcao, modalidade, periodoI
     if (modalidade !== 'Ambos' && tipoEstagio !== modalidade) continue;
 
     // Filtro de período: estágio deve se sobrepor ao período solicitado
-    var dtIni = _normData(String(linha[COL_SOL.DATA_INICIO]   || ''));
-    var dtFim = _normData(String(linha[COL_SOL.DATA_TERMINO]  || ''));
+    var dtIni = _normData(linha[COL_SOL.DATA_INICIO]);
+    var dtFim = _normData(linha[COL_SOL.DATA_TERMINO]);
 
     if (dtFiltroIni && dtFiltroFim && dtIni && dtFim) {
       // Sobreposição: início do estágio <= fim do filtro E fim do estágio >= início do filtro
@@ -532,11 +542,11 @@ function _filtrarEstagiosDeclaracao_(emailServidor, funcao, modalidade, periodoI
     }
 
     resultado.push({
-      idEstagio:     String(linha[COL_SOL.ID_ESTAGIO]      || ''),
-      nomeEstudante: String(linha[COL_SOL.NOME_ESTUDANTE]  || ''),
-      nomeEmpresa:   String(linha[COL_SOL.NOME_EMPRESA]    || ''),
-      dataInicio:    String(linha[COL_SOL.DATA_INICIO]     || ''),
-      dataTermino:   String(linha[COL_SOL.DATA_TERMINO]    || ''),
+      idEstagio:     String(linha[COL_SOL.ID_ESTAGIO]     || ''),
+      nomeEstudante: String(linha[COL_SOL.NOME_ESTUDANTE] || ''),
+      nomeEmpresa:   String(linha[COL_SOL.NOME_EMPRESA]   || ''),
+      dataInicio:    _fmtISO(linha[COL_SOL.DATA_INICIO]),
+      dataTermino:   _fmtISO(linha[COL_SOL.DATA_TERMINO]),
       tipoEstagio:   tipoEstagio,
       funcao:        funcaoEstag,
     });
