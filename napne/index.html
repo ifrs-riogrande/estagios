@@ -10,6 +10,222 @@
   <link rel="stylesheet" href="../assets/css/base.css">
   <link rel="stylesheet" href="../assets/css/components.css">
   <link rel="stylesheet" href="../assets/css/layout.css">
+  <style>
+    /* ── Layout ── */
+    .napne-grid {
+      display: grid;
+      gap: var(--space-4);
+    }
+    .napne-stats {
+      display: flex;
+      gap: var(--space-3);
+      flex-wrap: wrap;
+      margin-bottom: var(--space-6);
+    }
+    .napne-stat {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: 10px;
+      padding: var(--space-3) var(--space-5);
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 130px;
+    }
+    .napne-stat-value {
+      font-size: 1.6rem;
+      font-weight: 600;
+      color: var(--color-text);
+      line-height: 1;
+    }
+    .napne-stat-label {
+      font-size: var(--font-size-xs);
+      color: var(--color-text-secondary);
+    }
+    .napne-stat.pendente .napne-stat-value { color: var(--color-warning); }
+    .napne-stat.ok .napne-stat-value       { color: var(--color-success); }
+
+    /* ── Filtro ── */
+    .napne-filter-bar {
+      display: flex;
+      gap: var(--space-3);
+      align-items: center;
+      margin-bottom: var(--space-4);
+      flex-wrap: wrap;
+    }
+    .napne-search {
+      flex: 1;
+      min-width: 200px;
+      padding: var(--space-2) var(--space-3);
+      border: 1.5px solid var(--color-border);
+      border-radius: var(--radius-md);
+      font-size: var(--font-size-sm);
+      background: var(--color-surface);
+      color: var(--color-text);
+    }
+    .napne-search:focus { outline: none; border-color: var(--color-primary); }
+
+    /* ── Cards de alunos ── */
+    .napne-card {
+      background: var(--color-surface);
+      border: 1.5px solid var(--color-border);
+      border-radius: 12px;
+      padding: var(--space-4) var(--space-5);
+      display: flex;
+      align-items: center;
+      gap: var(--space-4);
+      transition: border-color .15s, box-shadow .15s;
+    }
+    .napne-card:hover { border-color: var(--color-primary); box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+    .napne-card-avatar {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: var(--color-primary-light, #eff6ff);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-weight: 600;
+      font-size: 1rem;
+      color: var(--color-primary);
+    }
+    .napne-card-info { flex: 1; min-width: 0; }
+    .napne-card-name {
+      font-weight: 600;
+      font-size: var(--font-size-sm);
+      color: var(--color-text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .napne-card-sub {
+      font-size: var(--font-size-xs);
+      color: var(--color-text-secondary);
+      margin-top: 2px;
+    }
+    .napne-card-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-2);
+      margin-top: var(--space-2);
+    }
+    .napne-tag {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 99px;
+      font-size: .72rem;
+      font-weight: 500;
+      background: #ede9fe;
+      color: #5b21b6;
+      white-space: nowrap;
+    }
+    .napne-card-action { flex-shrink: 0; }
+    .napne-pendente-dot {
+      display: inline-block;
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--color-warning);
+      margin-right: 4px;
+    }
+
+    /* ── Modal ── */
+    .napne-modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.45);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 200;
+      padding: var(--space-4);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .2s;
+    }
+    .napne-modal-overlay.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .napne-modal {
+      background: var(--color-surface);
+      border-radius: 16px;
+      width: 100%;
+      max-width: 620px;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 20px 60px rgba(0,0,0,.18);
+      transform: translateY(16px);
+      transition: transform .2s;
+    }
+    .napne-modal-overlay.open .napne-modal { transform: translateY(0); }
+    .napne-modal-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      padding: var(--space-5) var(--space-6) var(--space-4);
+      border-bottom: 1px solid var(--color-border);
+      gap: var(--space-3);
+    }
+    .napne-modal-header h2 { font-size: var(--font-size-lg); font-weight: 600; }
+    .napne-modal-header p  { font-size: var(--font-size-sm); color: var(--color-text-secondary); margin-top: 2px; }
+    .napne-modal-close {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 4px;
+      color: var(--color-text-muted);
+      border-radius: 6px;
+      flex-shrink: 0;
+    }
+    .napne-modal-close:hover { background: var(--color-bg); color: var(--color-text); }
+    .napne-modal-body { padding: var(--space-5) var(--space-6); }
+    .napne-modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: var(--space-3);
+      padding: var(--space-4) var(--space-6) var(--space-5);
+      border-top: 1px solid var(--color-border);
+    }
+
+    /* ── Checkboxes NEE em grade ── */
+    .nee-tipos-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-2) var(--space-4);
+    }
+    @media (max-width: 480px) { .nee-tipos-grid { grid-template-columns: 1fr; } }
+    .nee-tipos-wrap {
+      margin-top: var(--space-3);
+      padding: var(--space-4);
+      background: var(--color-bg);
+      border: 1px solid var(--color-border);
+      border-radius: 10px;
+    }
+    .nee-tipos-wrap.hidden { display: none; }
+
+    /* ── LGPD notice ── */
+    .lgpd-notice {
+      display: flex;
+      gap: var(--space-2);
+      align-items: flex-start;
+      padding: var(--space-3) var(--space-4);
+      background: #fefce8;
+      border: 1px solid #fde047;
+      border-radius: 8px;
+      font-size: var(--font-size-xs);
+      color: #78350f;
+      margin-bottom: var(--space-5);
+    }
+
+    /* ── Estado vazio ── */
+    .napne-empty {
+      text-align: center;
+      padding: var(--space-16) var(--space-6);
+      color: var(--color-text-muted);
+    }
+    .napne-empty svg { margin: 0 auto var(--space-4); display: block; opacity: .25; }
+  </style>
 </head>
 <body>
   <header id="app-header">
@@ -32,29 +248,96 @@
   <main id="main-content">
     <section class="page-hero">
       <div class="container">
-        <h1>NAPNE</h1>
-        <p>Núcleo de Atendimento às Pessoas com Necessidades Educacionais Específicas — IFRS Campus Rio Grande.</p>
+        <h1 class="page-hero-title">NAPNE</h1>
+        <p class="page-hero-desc">Núcleo de Atendimento às Pessoas com Necessidades Educacionais Específicas — IFRS Campus Rio Grande.</p>
       </div>
     </section>
 
     <div class="container" style="padding-top:var(--space-6);padding-bottom:var(--space-12);">
       <div id="portal-content">
-        <div style="text-align:center;padding:var(--space-16) var(--space-6);color:var(--color-text-muted);">
-          <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" style="margin:0 auto var(--space-4);opacity:.25;display:block;">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"/>
-            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75l1.5 1.5 3-3"/>
-          </svg>
-          <h2 style="font-size:var(--font-size-lg);margin-bottom:var(--space-2);">Módulo em desenvolvimento</h2>
-          <p style="font-size:var(--font-size-sm);max-width:440px;margin:0 auto;">
-            O portal do NAPNE está sendo desenvolvido. Em breve estará disponível aqui o acompanhamento de estágios de estudantes com necessidades educacionais específicas e as funcionalidades de suporte do núcleo.
-          </p>
-          <p style="margin-top:var(--space-6);">
-            <a href="../admin/dashboard.html" class="btn btn-secondary">Ver painel administrativo</a>
-          </p>
+        <div style="text-align:center;padding:var(--space-12);">
+          <div class="spinner" style="margin:0 auto;"></div>
+          <p style="margin-top:var(--space-4);color:var(--color-text-secondary);font-size:var(--font-size-sm);">Verificando acesso…</p>
         </div>
       </div>
     </div>
   </main>
+
+  <!-- Modal ficha NEE -->
+  <div class="napne-modal-overlay" id="modal-ficha" role="dialog" aria-modal="true" aria-labelledby="modal-titulo">
+    <div class="napne-modal">
+      <div class="napne-modal-header">
+        <div>
+          <h2 id="modal-titulo">Ficha NEE</h2>
+          <p id="modal-subtitulo"></p>
+        </div>
+        <button class="napne-modal-close" id="btn-fechar-modal" aria-label="Fechar">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+        </button>
+      </div>
+
+      <div class="napne-modal-body">
+        <div class="lgpd-notice">
+          <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" style="flex-shrink:0;margin-top:1px"><path fill-rule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clip-rule="evenodd"/></svg>
+          <span>Dados sensíveis protegidos pela LGPD. Visíveis apenas para NAPNE, Orientador e Admin. Acesso auditado.</span>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label required">Este estudante possui Necessidade Educacional Específica (NEE)?</label>
+          <div class="radio-group" id="radio-eh-nee" role="radiogroup">
+            <div class="radio-option">
+              <input type="radio" id="nee-sim" name="eh_nee" value="sim">
+              <label for="nee-sim">Sim</label>
+            </div>
+            <div class="radio-option">
+              <input type="radio" id="nee-nao" name="eh_nee" value="nao">
+              <label for="nee-nao">Não</label>
+            </div>
+          </div>
+        </div>
+
+        <div class="nee-tipos-wrap hidden" id="wrap-tipos">
+          <label class="form-label required" style="margin-bottom:var(--space-3);">Tipo(s) de necessidade</label>
+          <div class="nee-tipos-grid">
+            <label class="form-check"><input type="checkbox" name="tipo_nee" value="TEA"><span class="form-check-label">TEA — Transtorno do Espectro Autista</span></label>
+            <label class="form-check"><input type="checkbox" name="tipo_nee" value="TDAH"><span class="form-check-label">TDAH — Déficit de Atenção/Hiperatividade</span></label>
+            <label class="form-check"><input type="checkbox" name="tipo_nee" value="TAG"><span class="form-check-label">TAG — Ansiedade Generalizada</span></label>
+            <label class="form-check"><input type="checkbox" name="tipo_nee" value="TOC"><span class="form-check-label">TOC — Transtorno Obsessivo-Compulsivo</span></label>
+            <label class="form-check"><input type="checkbox" name="tipo_nee" value="TOD"><span class="form-check-label">TOD — Transtorno Opositivo Desafiador</span></label>
+            <label class="form-check"><input type="checkbox" name="tipo_nee" value="Dislexia"><span class="form-check-label">Dislexia</span></label>
+            <label class="form-check"><input type="checkbox" name="tipo_nee" value="Discalculia"><span class="form-check-label">Discalculia</span></label>
+            <label class="form-check"><input type="checkbox" name="tipo_nee" value="Def. física"><span class="form-check-label">Deficiência física</span></label>
+            <label class="form-check"><input type="checkbox" name="tipo_nee" value="Def. visual"><span class="form-check-label">Deficiência visual</span></label>
+            <label class="form-check"><input type="checkbox" name="tipo_nee" value="Def. auditiva"><span class="form-check-label">Deficiência auditiva</span></label>
+            <label class="form-check"><input type="checkbox" name="tipo_nee" value="Def. intelectual"><span class="form-check-label">Deficiência intelectual</span></label>
+            <label class="form-check"><input type="checkbox" name="tipo_nee" value="Altas habilidades"><span class="form-check-label">Altas habilidades / Superdotação</span></label>
+            <label class="form-check" style="grid-column:1/-1"><input type="checkbox" name="tipo_nee" value="Outro"><span class="form-check-label">Outro</span></label>
+          </div>
+          <span id="erro-tipos" class="form-error hidden" role="alert">Selecione pelo menos um tipo.</span>
+        </div>
+
+        <div class="form-group" style="margin-top:var(--space-4);">
+          <label class="form-label" for="inp-adaptacoes">Adaptações necessárias</label>
+          <textarea id="inp-adaptacoes" class="form-input" rows="3" maxlength="2000"
+            placeholder="Descreva as adaptações de ambiente, tempo, recursos etc."></textarea>
+          <span class="form-hint">Informações repassadas ao orientador para adequação do acompanhamento.</span>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="inp-obs">Observações para o orientador</label>
+          <textarea id="inp-obs" class="form-input" rows="3" maxlength="2000"
+            placeholder="Orientações específicas, cuidados ou informações relevantes para o orientador."></textarea>
+        </div>
+
+        <div id="modal-feedback" style="margin-top:var(--space-3);"></div>
+      </div>
+
+      <div class="napne-modal-footer">
+        <button class="btn btn-ghost" id="btn-cancelar-modal">Cancelar</button>
+        <button class="btn btn-primary" id="btn-salvar-ficha">Salvar ficha</button>
+      </div>
+    </div>
+  </div>
 
   <footer id="app-footer">
     <div class="container">
@@ -67,11 +350,306 @@
 
   <script src="https://accounts.google.com/gsi/client" async></script>
   <script src="../assets/js/utils.js"></script>
+  <script src="../assets/js/api.js"></script>
   <script src="../assets/js/notifications-bell.js"></script>
   <script src="../assets/js/auth.js"></script>
   <script>
     'use strict';
-    document.addEventListener('DOMContentLoaded', function () { requireStaffAuth(); });
+
+    var _listaEstagios = [];
+    var _alunoAtual    = null;
+
+    // ── Inicialização ────────────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', function () {
+      if (!requireStaffAuth()) return;
+      verificarAcessoEInicializar();
+    });
+
+    async function verificarAcessoEInicializar() {
+      try {
+        var res = await API.get('verificarAcessoNapne', { authToken: getAccessToken() });
+        inicializarPainel(res);
+      } catch (err) {
+        if (err.code === 'AUTH_ERROR') {
+          mostrarAcessoNegado(err.message);
+        } else {
+          mostrarErroCritico('Não foi possível conectar ao sistema. Tente novamente.');
+        }
+      }
+    }
+
+    function mostrarAcessoNegado(msg) {
+      document.getElementById('portal-content').innerHTML =
+        '<div class="auth-gate">' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">' +
+            '<path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/>' +
+          '</svg>' +
+          '<h2>Acesso não autorizado</h2>' +
+          '<p>' + escapeHtml(msg) + '</p>' +
+          '<button onclick="logout(\'../\')" class="btn btn-ghost">Sair e usar outra conta</button>' +
+        '</div>';
+    }
+
+    function mostrarErroCritico(msg) {
+      document.getElementById('portal-content').innerHTML =
+        '<div class="napne-empty">' +
+          '<p style="color:var(--color-error)">' + escapeHtml(msg) + '</p>' +
+          '<button onclick="location.reload()" class="btn btn-secondary" style="margin-top:var(--space-4)">Tentar novamente</button>' +
+        '</div>';
+    }
+
+    // ── Painel principal ─────────────────────────────────────────
+    async function inicializarPainel(usuario) {
+      document.getElementById('portal-content').innerHTML =
+        '<div style="text-align:center;padding:var(--space-12);">' +
+          '<div class="spinner" style="margin:0 auto;"></div>' +
+          '<p style="margin-top:var(--space-4);color:var(--color-text-secondary);font-size:var(--font-size-sm);">Carregando estágios…</p>' +
+        '</div>';
+
+      try {
+        var lista = await API.get('listarEstagiosNapne', { authToken: getAccessToken() });
+        _listaEstagios = Array.isArray(lista) ? lista : [];
+        renderPainel();
+      } catch (err) {
+        mostrarErroCritico('Erro ao carregar lista de estágios: ' + err.message);
+      }
+    }
+
+    function renderPainel() {
+      var total     = _listaEstagios.length;
+      var pendentes = _listaEstagios.filter(function(e) { return !e.fichaPreenchida; }).length;
+      var preench   = total - pendentes;
+
+      var html =
+        '<div class="napne-stats">' +
+          '<div class="napne-stat"><span class="napne-stat-value">' + total + '</span><span class="napne-stat-label">Alunos NEE</span></div>' +
+          '<div class="napne-stat ok"><span class="napne-stat-value">' + preench + '</span><span class="napne-stat-label">Fichas preenchidas</span></div>' +
+          '<div class="napne-stat pendente"><span class="napne-stat-value">' + pendentes + '</span><span class="napne-stat-label">Fichas pendentes</span></div>' +
+        '</div>' +
+        '<div class="napne-filter-bar">' +
+          '<input class="napne-search" id="busca-aluno" type="search" placeholder="Buscar por nome ou curso…" aria-label="Buscar aluno">' +
+          '<select class="form-input" id="filtro-status" style="width:auto;min-width:160px;">' +
+            '<option value="">Todos</option>' +
+            '<option value="pendente">Ficha pendente</option>' +
+            '<option value="preenchida">Ficha preenchida</option>' +
+          '</select>' +
+        '</div>' +
+        '<div class="napne-grid" id="lista-alunos">' +
+          renderCards(_listaEstagios) +
+        '</div>';
+
+      document.getElementById('portal-content').innerHTML = html;
+
+      document.getElementById('busca-aluno').addEventListener('input', filtrarLista);
+      document.getElementById('filtro-status').addEventListener('change', filtrarLista);
+    }
+
+    function renderCards(lista) {
+      if (!lista.length) {
+        return '<div class="napne-empty">' +
+          '<svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">' +
+            '<path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"/>' +
+          '</svg>' +
+          '<h3 style="font-size:var(--font-size-md);margin-bottom:var(--space-2)">Nenhum aluno encontrado</h3>' +
+          '<p style="font-size:var(--font-size-sm)">Não há estágios ativos com alunos NEE ou nenhum resultado para o filtro aplicado.</p>' +
+        '</div>';
+      }
+
+      return lista.map(function(est) {
+        var iniciais = (est.nomeEstudante || '?').split(' ').slice(0,2).map(function(p) { return p[0]; }).join('').toUpperCase();
+        var badgeStatus = badgeEstagio(est.status);
+
+        var tagsHtml = '';
+        if (est.fichaPreenchida && est.ehNee && est.tiposNee && est.tiposNee.length) {
+          tagsHtml = '<div class="napne-card-badges">' +
+            est.tiposNee.map(function(t) { return '<span class="napne-tag">' + escapeHtml(t) + '</span>'; }).join('') +
+          '</div>';
+        }
+
+        var btnLabel = est.fichaPreenchida ? 'Editar ficha' : '<span class="napne-pendente-dot"></span>Preencher ficha';
+        var btnClass = est.fichaPreenchida ? 'btn btn-ghost btn-sm' : 'btn btn-primary btn-sm';
+
+        return '<div class="napne-card" data-email="' + escapeHtml(est.emailEstudante) + '" data-nome="' + escapeHtml(est.nomeEstudante.toLowerCase()) + '" data-curso="' + escapeHtml(est.curso.toLowerCase()) + '" data-ficha="' + (est.fichaPreenchida ? 'preenchida' : 'pendente') + '">' +
+          '<div class="napne-card-avatar">' + escapeHtml(iniciais) + '</div>' +
+          '<div class="napne-card-info">' +
+            '<div class="napne-card-name">' + escapeHtml(est.nomeEstudante) + '</div>' +
+            '<div class="napne-card-sub">' + escapeHtml(est.curso) + ' &middot; ' + badgeStatus + '</div>' +
+            tagsHtml +
+          '</div>' +
+          '<div class="napne-card-action">' +
+            '<button class="' + btnClass + '" onclick="abrirModalFicha(' + JSON.stringify(est) + ')">' + btnLabel + '</button>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+    }
+
+    function badgeEstagio(status) {
+      var map = {
+        'Ativo':                   'badge badge-success',
+        'Aprovado':                'badge badge-info',
+        'Em análise':              'badge badge-warning',
+        'Aguardando Documentos':   'badge badge-warning',
+        'Aguardando DG':           'badge badge-warning',
+        'Aguardando Validação Final':'badge badge-warning',
+        'Concluído':               'badge badge-neutral',
+      };
+      var cls = map[status] || 'badge badge-neutral';
+      return '<span class="' + cls + '">' + escapeHtml(status) + '</span>';
+    }
+
+    function filtrarLista() {
+      var busca  = (document.getElementById('busca-aluno').value || '').toLowerCase().trim();
+      var filtro = document.getElementById('filtro-status').value;
+
+      var filtrado = _listaEstagios.filter(function(est) {
+        var matchBusca = !busca ||
+          est.nomeEstudante.toLowerCase().includes(busca) ||
+          est.curso.toLowerCase().includes(busca);
+        var matchFiltro = !filtro ||
+          (filtro === 'pendente'   && !est.fichaPreenchida) ||
+          (filtro === 'preenchida' &&  est.fichaPreenchida);
+        return matchBusca && matchFiltro;
+      });
+
+      document.getElementById('lista-alunos').innerHTML = renderCards(filtrado);
+    }
+
+    // ── Modal ────────────────────────────────────────────────────
+    function abrirModalFicha(est) {
+      _alunoAtual = est;
+
+      document.getElementById('modal-titulo').textContent    = est.nomeEstudante;
+      document.getElementById('modal-subtitulo').textContent = est.curso;
+      document.getElementById('modal-feedback').innerHTML    = '';
+
+      // Reset form
+      document.querySelectorAll('input[name="eh_nee"]').forEach(function(r) { r.checked = false; });
+      document.querySelectorAll('input[name="tipo_nee"]').forEach(function(c) { c.checked = false; });
+      document.getElementById('inp-adaptacoes').value = '';
+      document.getElementById('inp-obs').value        = '';
+      document.getElementById('wrap-tipos').classList.add('hidden');
+      document.getElementById('erro-tipos').classList.add('hidden');
+
+      // Se já tem ficha, carrega
+      if (est.fichaPreenchida) {
+        carregarFichaNoModal(est.emailEstudante);
+      }
+
+      document.getElementById('modal-ficha').classList.add('open');
+      document.getElementById('btn-salvar-ficha').disabled = false;
+      document.getElementById('btn-salvar-ficha').classList.remove('is-loading');
+    }
+
+    async function carregarFichaNoModal(emailAluno) {
+      try {
+        var ficha = await API.get('obterFichaNapne', { authToken: getAccessToken(), emailAluno: emailAluno });
+
+        if (ficha.ehNee === true) {
+          document.getElementById('nee-sim').checked = true;
+          document.getElementById('wrap-tipos').classList.remove('hidden');
+          if (Array.isArray(ficha.tiposNee)) {
+            ficha.tiposNee.forEach(function(tipo) {
+              var cb = document.querySelector('input[name="tipo_nee"][value="' + tipo + '"]');
+              if (cb) cb.checked = true;
+            });
+          }
+        } else if (ficha.ehNee === false) {
+          document.getElementById('nee-nao').checked = true;
+        }
+        document.getElementById('inp-adaptacoes').value = ficha.adaptacoes    || '';
+        document.getElementById('inp-obs').value        = ficha.obsOrientador || '';
+
+      } catch (_) { /* fica em branco se falhar */ }
+    }
+
+    function fecharModal() {
+      document.getElementById('modal-ficha').classList.remove('open');
+      _alunoAtual = null;
+    }
+
+    document.getElementById('btn-fechar-modal').addEventListener('click', fecharModal);
+    document.getElementById('btn-cancelar-modal').addEventListener('click', fecharModal);
+    document.getElementById('modal-ficha').addEventListener('click', function(e) {
+      if (e.target === this) fecharModal();
+    });
+
+    // Mostra/oculta tipos ao mudar radio NEE
+    document.querySelectorAll('input[name="eh_nee"]').forEach(function(r) {
+      r.addEventListener('change', function() {
+        var isNee = this.value === 'sim';
+        document.getElementById('wrap-tipos').classList.toggle('hidden', !isNee);
+        if (!isNee) {
+          document.querySelectorAll('input[name="tipo_nee"]').forEach(function(c) { c.checked = false; });
+        }
+      });
+    });
+
+    // Salvar ficha
+    document.getElementById('btn-salvar-ficha').addEventListener('click', async function() {
+      if (!_alunoAtual) return;
+
+      var ehNeeEl = document.querySelector('input[name="eh_nee"]:checked');
+      if (!ehNeeEl) {
+        mostrarFeedbackModal('error', 'Informe se o estudante possui NEE.');
+        return;
+      }
+
+      var ehNee   = ehNeeEl.value === 'sim';
+      var tiposNee = [];
+      if (ehNee) {
+        document.querySelectorAll('input[name="tipo_nee"]:checked').forEach(function(c) {
+          tiposNee.push(c.value);
+        });
+        if (!tiposNee.length) {
+          document.getElementById('erro-tipos').classList.remove('hidden');
+          return;
+        }
+      }
+      document.getElementById('erro-tipos').classList.add('hidden');
+
+      var adaptacoes    = document.getElementById('inp-adaptacoes').value.trim();
+      var obsOrientador = document.getElementById('inp-obs').value.trim();
+
+      var btn = this;
+      btn.classList.add('is-loading');
+      btn.disabled = true;
+      document.getElementById('modal-feedback').innerHTML = '';
+
+      try {
+        await API.post('salvarFichaNapne', {
+          emailAluno:    _alunoAtual.emailEstudante,
+          nomeAluno:     _alunoAtual.nomeEstudante,
+          ehNee:         ehNee,
+          tiposNee:      tiposNee,
+          adaptacoes:    adaptacoes,
+          obsOrientador: obsOrientador,
+        });
+
+        // Atualiza lista local
+        var idx = _listaEstagios.findIndex(function(e) { return e.emailEstudante === _alunoAtual.emailEstudante; });
+        if (idx !== -1) {
+          _listaEstagios[idx].fichaPreenchida = true;
+          _listaEstagios[idx].ehNee           = ehNee;
+          _listaEstagios[idx].tiposNee        = tiposNee;
+        }
+
+        fecharModal();
+        renderPainel();
+
+      } catch (err) {
+        mostrarFeedbackModal('error', err.message || 'Erro ao salvar. Tente novamente.');
+        btn.classList.remove('is-loading');
+        btn.disabled = false;
+      }
+    });
+
+    function mostrarFeedbackModal(tipo, msg) {
+      var el = document.getElementById('modal-feedback');
+      el.innerHTML =
+        '<div class="form-feedback form-feedback-' + tipo + '" role="alert">' +
+          '<p>' + escapeHtml(msg) + '</p>' +
+        '</div>';
+    }
   </script>
 </body>
 </html>

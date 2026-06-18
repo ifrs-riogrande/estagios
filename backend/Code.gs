@@ -91,6 +91,11 @@ var GET_ROUTES = {
   'obterConfigTCE':               doGetAdmin,
   'obterConfigNotificacoes':      doGetAdmin,
 
+  // NAPNE
+  'verificarAcessoNapne':    doGetNapne,
+  'listarEstagiosNapne':     doGetNapne,
+  'obterFichaNapne':         doGetNapne,
+
   // Checklist
   'obterChecklist':          doGetChecklist,
   'obterPrazos':             doGetChecklist,
@@ -180,6 +185,9 @@ var POST_ROUTES = {
   'salvarDiretoriaRegistro':   doPostAdmin,
   'salvarCurso':               doPostAdmin,
   'deletarCurso':              doPostAdmin,
+
+  // NAPNE
+  'salvarFichaNapne':          doPostNapne,
 
   // Admin
   'aprovarSolicitacao':        doPostAdmin,
