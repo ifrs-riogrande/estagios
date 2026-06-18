@@ -103,9 +103,18 @@ function validarDeclaracao_(e) {
 // ── POST: servidor solicita declaração ────────────────────────────────────────
 
 function solicitarDeclaracao_(body) {
-  var tokenInfo = validarTokenServidor_(body.authToken);
-  var emailServidor = tokenInfo.email.toLowerCase().trim();
-  return _processarDeclaracao_(body, emailServidor, 'servidor', null);
+  try {
+    var tokenInfo = validarTokenServidor_(body.authToken);
+    var emailServidor = tokenInfo.email.toLowerCase().trim();
+    return _processarDeclaracao_(body, emailServidor, 'servidor', null);
+  } catch (e) {
+    logErro_('solicitarDeclaracao_', e);
+    if (e && (e.code === 'AUTH_ERROR' || e.name === 'ErroAutenticacao')) {
+      return jsonError_(e.message, 'AUTH_ERROR');
+    }
+    // Retorna mensagem detalhada para diagnóstico
+    return jsonError_('Erro ao gerar declaração: ' + e.message + (e.stack ? ' | ' + String(e.stack).substring(0, 300) : ''), 'INTERNAL');
+  }
 }
 
 // ── POST: admin emite declaração em nome de servidor ──────────────────────────
