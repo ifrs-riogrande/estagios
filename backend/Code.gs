@@ -86,6 +86,8 @@ var GET_ROUTES = {
   'obterDiretorGeral':            doGetAdmin,
   'obterDiretoriaDEN':            doGetAdmin,
   'obterDiretoriaDEX':            doGetAdmin,
+  'obterDiretoriaNAPNE':          doGetAdmin,
+  'obterDiretoriaRegistro':       doGetAdmin,
   'obterConfigTCE':               doGetAdmin,
   'obterConfigNotificacoes':      doGetAdmin,
 
@@ -174,6 +176,8 @@ var POST_ROUTES = {
   'salvarDiretorGeral':        doPostAdmin,
   'salvarDiretoriaDEN':        doPostAdmin,
   'salvarDiretoriaDEX':        doPostAdmin,
+  'salvarDiretoriaNAPNE':      doPostAdmin,
+  'salvarDiretoriaRegistro':   doPostAdmin,
   'salvarCurso':               doPostAdmin,
   'deletarCurso':              doPostAdmin,
 
