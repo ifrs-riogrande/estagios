@@ -522,8 +522,10 @@ function listarEstagiosRegistro_(e) {
 
   for (var i = 1; i < dados.length; i++) {
     var linha = dados[i];
-    if (String(linha[COL_SOL.STATUS]      || '') !== 'Concluído')   continue;
-    if (String(linha[COL_SOL.TIPO_ESTAGIO]|| '') !== 'Obrigatório') continue;
+    var statusLinha = String(linha[COL_SOL.STATUS]       || '').trim();
+    var tipoLinha   = String(linha[COL_SOL.TIPO_ESTAGIO] || '').trim();
+    if (statusLinha !== 'Concluído' && statusLinha !== 'Em execução') continue;
+    if (tipoLinha !== 'Obrigatório') continue;
 
     lista.push({
       id:             String(linha[COL_SOL.ID_ESTAGIO]     || ''),
