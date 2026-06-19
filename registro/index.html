@@ -127,8 +127,6 @@
                 <tr>
                   <th>ID</th>
                   <th>Estudante</th>
-                  <th>DEBUG status</th>
-                  <th>DEBUG tipo</th>
                   <th>Curso</th>
                   <th>Empresa</th>
                   <th>Orientador</th>
@@ -264,8 +262,6 @@
 
         return '<tr>' +
           '<td><code style="font-size:11px;color:var(--color-text-muted)">' + escapeHtml(s.id || '—') + '</code></td>' +
-          '<td style="font-size:11px;background:#fef9c3">"' + escapeHtml(s._status || '') + '"</td>' +
-          '<td style="font-size:11px;background:#fef9c3">"' + escapeHtml(s._tipo || '') + '"</td>' +
           '<td>' +
             '<div style="font-weight:500;line-height:1.3">' + escapeHtml(s.nomeEstudante || '—') + '</div>' +
             (s.matricula ? '<div style="font-size:11px;color:var(--color-text-muted)">Matr. ' + escapeHtml(s.matricula) + '</div>' : '') +

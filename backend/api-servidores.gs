@@ -522,8 +522,11 @@ function listarEstagiosRegistro_(e) {
 
   for (var i = 1; i < dados.length; i++) {
     var linha = dados[i];
-    // DEBUG: sem filtro — retorna todos os registros para diagnóstico
     if (!linha[COL_SOL.ID_ESTAGIO]) continue;
+    var statusLinha = String(linha[COL_SOL.STATUS]       || '').trim();
+    var tipoLinha   = String(linha[COL_SOL.TIPO_ESTAGIO] || '').trim();
+    if (statusLinha !== 'Concluído') continue;
+    if (tipoLinha   !== 'Obrigatório') continue;
 
     lista.push({
       id:             String(linha[COL_SOL.ID_ESTAGIO]     || ''),
@@ -535,9 +538,6 @@ function listarEstagiosRegistro_(e) {
       dataInicio:     normalizarDataISO_(linha[COL_SOL.DATA_INICIO]),
       dataTermino:    normalizarDataISO_(linha[COL_SOL.DATA_TERMINO]),
       driveUrl:       String(linha[COL_SOL.DRIVE_URL]      || ''),
-      // DEBUG
-      _status:        String(linha[COL_SOL.STATUS]         || ''),
-      _tipo:          String(linha[COL_SOL.TIPO_ESTAGIO]   || ''),
     });
   }
 
