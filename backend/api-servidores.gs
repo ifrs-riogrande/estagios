@@ -509,6 +509,39 @@ function listarMeusSupervisionados_(e) {
   return jsonOk_(lista);
 }
 
+function listarEstagiosRegistro_(e) {
+  var authToken = e.parameter && e.parameter.authToken;
+  validarTokenServidor_(authToken); // apenas valida domínio; qualquer servidor pode acessar
+
+  var ss    = SpreadsheetApp.openById(CFG_SRV.SS_ID);
+  var sheet = ss.getSheetByName('Solicitações');
+  if (!sheet) return jsonOk_([]);
+
+  var dados = sheet.getDataRange().getValues();
+  var lista = [];
+
+  for (var i = 1; i < dados.length; i++) {
+    var linha = dados[i];
+    if (String(linha[COL_SOL.STATUS]      || '') !== 'Concluído')   continue;
+    if (String(linha[COL_SOL.TIPO_ESTAGIO]|| '') !== 'Obrigatório') continue;
+
+    lista.push({
+      id:             String(linha[COL_SOL.ID_ESTAGIO]     || ''),
+      nomeEstudante:  String(linha[COL_SOL.NOME_ESTUDANTE] || ''),
+      matricula:      String(linha[COL_SOL.MATRICULA]      || ''),
+      curso:          String(linha[COL_SOL.CURSO]          || ''),
+      empresa:        String(linha[COL_SOL.NOME_EMPRESA]   || ''),
+      nomeOrientador: String(linha[COL_SOL.NOME_ORIENTADOR]|| ''),
+      dataInicio:     normalizarDataISO_(linha[COL_SOL.DATA_INICIO]),
+      dataTermino:    normalizarDataISO_(linha[COL_SOL.DATA_TERMINO]),
+      driveUrl:       String(linha[COL_SOL.DRIVE_URL]      || ''),
+    });
+  }
+
+  lista.reverse();
+  return jsonOk_(lista);
+}
+
 function obterFichaNapneOrientador_(e) {
   var authToken  = e.parameter && e.parameter.authToken;
   var tokenInfo  = validarTokenServidor_(authToken);
