@@ -47,7 +47,6 @@ var GET_ROUTES = {
   'obterMeuCadastroCoordenador':     doGetServidores,
   'listarMeusOrientandos':           doGetServidores,
   'listarMeusSupervisionados':       doGetServidores,
-  'listarEstagiosRegistro':          doGetServidores,
   'listarEstagiosCoordenador':       doGetServidores,
   'verificarCadastroOrientador':     doGetServidores,
 
@@ -97,6 +96,10 @@ var GET_ROUTES = {
   'verificarAcessoNapne':      doGetNapne,
   'listarEstagiosNapne':       doGetNapne,
   'obterFichaNapne':           doGetNapne,
+
+  // Registro Acadêmico
+  'verificarAcessoRegistro':   doGetRegistro,
+  'listarEstagiosRegistro':    doGetRegistro,
   'obterFichaNapneAdmin':      doGetAdmin,
   'obterFichaNapneOrientador': doGetServidores,
 
@@ -372,7 +375,6 @@ function doGetServidores(e) {
   if (action === 'verificarCadastroOrientador')  return verificarCadastroOrientador_(e);
   if (action === 'obterFichaNapneOrientador')    return obterFichaNapneOrientador_(e);
   if (action === 'listarMeusSupervisionados')    return listarMeusSupervisionados_(e);
-  if (action === 'listarEstagiosRegistro')       return listarEstagiosRegistro_(e);
   return jsonError_('Ação não implementada: ' + action, 'NOT_IMPLEMENTED');
 }
 

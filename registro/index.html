@@ -279,8 +279,38 @@
 
     document.addEventListener('DOMContentLoaded', function () {
       if (!requireStaffAuth()) return;
-      carregar();
+      verificarAcessoEInicializar();
     });
+
+    async function verificarAcessoEInicializar() {
+      try {
+        await API.get('verificarAcessoRegistro', { authToken: getAccessToken() });
+        carregar();
+      } catch (err) {
+        if (err.code === 'AUTH_ERROR') {
+          mostrarAcessoNegado(err.message);
+        } else {
+          document.getElementById('painel-erro').style.display = 'block';
+          document.getElementById('msg-erro').textContent = 'Não foi possível conectar ao sistema. Tente novamente.';
+        }
+      }
+    }
+
+    function mostrarAcessoNegado(msg) {
+      document.getElementById('painel-carregando').style.display = 'none';
+      document.getElementById('portal-content') && (document.getElementById('portal-content').innerHTML = '');
+      var main = document.querySelector('.container[style*="padding-top"]') || document.getElementById('main-content');
+      var div = document.createElement('div');
+      div.style.cssText = 'text-align:center;padding:var(--space-16) var(--space-6);color:var(--color-text-muted);';
+      div.innerHTML =
+        '<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin:0 auto var(--space-4);display:block;opacity:.4">' +
+          '<path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"/>' +
+        '</svg>' +
+        '<h2 style="font-size:var(--font-size-lg);margin-bottom:var(--space-2)">Acesso restrito</h2>' +
+        '<p style="font-size:var(--font-size-sm);max-width:400px;margin:0 auto">' + escapeHtml(msg || 'Você não tem permissão para acessar este módulo.') + '</p>';
+      main.innerHTML = '';
+      main.appendChild(div);
+    }
   </script>
 </body>
 </html>
