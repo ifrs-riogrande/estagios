@@ -413,15 +413,41 @@ function solicitarEstagio_(dados) {
   linha[COL_SOL.TOKEN_ACEITE_ORI]  = aceiteToken;
   linha[COL_SOL.IDEMPOTENCY_KEY]   = idemKey;
 
-  // Persiste na planilha — se falhar, desfaz a pasta Drive criada acima (rollback best-effort)
+  // Lock atômico: impede que duas submissões simultâneas com a mesma chave de idempotência gravem duas linhas
+  var lockSol = LockService.getScriptLock();
   try {
-    sheet.appendRow(linha);
-  } catch (eSheet) {
+    lockSol.waitLock(10000);
+  } catch (_ls) {
+    try { if (driveRes && driveRes.folder) driveRes.folder.setTrashed(true); } catch (_) {}
+    throw new Error('Servidor ocupado. Aguarde alguns instantes e tente novamente.');
+  }
+  try {
+    // Re-verifica idempotência dentro do lock (outro thread pode ter gravado entre a pré-checagem e agora)
+    if (idemKey) {
+      var idemVals2 = sheet.getDataRange().getValues();
+      for (var ik2 = 1; ik2 < idemVals2.length; ik2++) {
+        if (String(idemVals2[ik2][COL_SOL.IDEMPOTENCY_KEY] || '').trim() === idemKey) {
+          var idExist2 = String(idemVals2[ik2][COL_SOL.ID_ESTAGIO] || '');
+          try { if (driveRes && driveRes.folder) driveRes.folder.setTrashed(true); } catch (_) {}
+          return jsonOk_({
+            idEstagio:           idExist2,
+            orientadorConvidado: false,
+            mensagem:            'Solicitação já registrada anteriormente (ID: ' + idExist2 + '). Verifique seu e-mail de confirmação.',
+            idempotente:         true,
+          });
+        }
+      }
+    }
+    // Persiste na planilha — se falhar, desfaz a pasta Drive criada acima (rollback best-effort)
     try {
-      if (driveRes && driveRes.folder) driveRes.folder.setTrashed(true);
-    } catch (_) {}
-    logErro_('solicitarEstagio_.appendRow', eSheet);
-    return jsonError_('Erro ao registrar a solicitação. Tente novamente.', 'INTERNAL');
+      sheet.appendRow(linha);
+    } catch (eSheet) {
+      try { if (driveRes && driveRes.folder) driveRes.folder.setTrashed(true); } catch (_) {}
+      logErro_('solicitarEstagio_.appendRow', eSheet);
+      return jsonError_('Erro ao registrar a solicitação. Tente novamente.', 'INTERNAL');
+    }
+  } finally {
+    lockSol.releaseLock();
   }
 
   // ── Inicia o checklist imediatamente (1º ator: orientador) ───────────────

@@ -137,37 +137,49 @@ function cadastrarEstudante_(dados) {
 
   var sheet = abrirAba_(CFG_EST.SS_ID, CFG_EST.ABA);
 
-  // Verifica duplicidade por CPF (matrícula não é verificada pois pode ter várias)
-  if (buscarNaColuna_(sheet, COL_EST.CPF, cpf) !== -1) {
-    return jsonError_('Já existe um estudante cadastrado com este CPF.', 'DUPLICATE');
+  // Lock atômico: impede que duas submissões simultâneas passem pela verificação de CPF e gravem juntas
+  var lockEst = LockService.getScriptLock();
+  try {
+    lockEst.waitLock(10000);
+  } catch (_le) {
+    throw new Error('Servidor ocupado. Aguarde alguns instantes e tente novamente.');
   }
 
-  var now   = new Date();
-  var linha = [];
-  linha[COL_EST.TIMESTAMP]     = now;
-  linha[COL_EST.NOME]          = nome;
-  linha[COL_EST.EMAIL_INST]    = emailInst;
-  linha[COL_EST.EMAIL_PESSOAL] = emailPes;
-  linha[COL_EST.MATRICULA]     = matriculaPrincipal;  // primeiro curso (compat.)
-  linha[COL_EST.CURSO]         = cursoPrincipal;       // primeiro curso (compat.)
-  linha[COL_EST.TURNO]         = '';                   // preenchido na solicitação
-  linha[COL_EST.SEMESTRE]      = '';                   // preenchido na solicitação
-  linha[COL_EST.CPF]           = cpf;
-  linha[COL_EST.DATA_NASC]     = dataNasc;
-  linha[COL_EST.TELEFONE]      = telefone;
-  linha[COL_EST.ENDERECO]      = endereco;
-  linha[COL_EST.BAIRRO]        = bairro;
-  linha[COL_EST.CEP]           = cep;
-  linha[COL_EST.CIDADE]        = cidade;
-  linha[COL_EST.UF]            = uf;
-  linha[COL_EST.MAIOR_IDADE]   = maiorIdade;
-  linha[COL_EST.NEE]           = nee;
-  linha[COL_EST.MODALIDADE]    = modalidade;
-  linha[COL_EST.STATUS]        = 'Aguardando Validação';
-  // COD_ACESSO (19) e COD_EXPIRA (20) não são mais utilizados — colunas preservadas para compatibilidade
-  linha[COL_EST.CURSOS_JSON]   = JSON.stringify(cursos);
+  try {
+    // Verifica duplicidade por CPF (dentro do lock — re-lê após aquisição)
+    if (buscarNaColuna_(sheet, COL_EST.CPF, cpf) !== -1) {
+      return jsonError_('Já existe um estudante cadastrado com este CPF.', 'DUPLICATE');
+    }
 
-  sheet.appendRow(linha);
+    var now   = new Date();
+    var linha = [];
+    linha[COL_EST.TIMESTAMP]     = now;
+    linha[COL_EST.NOME]          = nome;
+    linha[COL_EST.EMAIL_INST]    = emailInst;
+    linha[COL_EST.EMAIL_PESSOAL] = emailPes;
+    linha[COL_EST.MATRICULA]     = matriculaPrincipal;  // primeiro curso (compat.)
+    linha[COL_EST.CURSO]         = cursoPrincipal;       // primeiro curso (compat.)
+    linha[COL_EST.TURNO]         = '';                   // preenchido na solicitação
+    linha[COL_EST.SEMESTRE]      = '';                   // preenchido na solicitação
+    linha[COL_EST.CPF]           = cpf;
+    linha[COL_EST.DATA_NASC]     = dataNasc;
+    linha[COL_EST.TELEFONE]      = telefone;
+    linha[COL_EST.ENDERECO]      = endereco;
+    linha[COL_EST.BAIRRO]        = bairro;
+    linha[COL_EST.CEP]           = cep;
+    linha[COL_EST.CIDADE]        = cidade;
+    linha[COL_EST.UF]            = uf;
+    linha[COL_EST.MAIOR_IDADE]   = maiorIdade;
+    linha[COL_EST.NEE]           = nee;
+    linha[COL_EST.MODALIDADE]    = modalidade;
+    linha[COL_EST.STATUS]        = 'Aguardando Validação';
+    // COD_ACESSO (19) e COD_EXPIRA (20) não são mais utilizados — colunas preservadas para compatibilidade
+    linha[COL_EST.CURSOS_JSON]   = JSON.stringify(cursos);
+
+    sheet.appendRow(linha);
+  } finally {
+    lockEst.releaseLock();
+  }
 
   // Notifica o setor sobre novo cadastro pendente
   try {

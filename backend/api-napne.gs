@@ -218,7 +218,6 @@ function salvarFichaNapne_(body) {
 
   var ss         = SpreadsheetApp.openById(CFG_ADMIN.SS_ID);
   var sh         = _obterOuCriarAbaNapneFichas_(ss);
-  var dados      = sh.getDataRange().getValues();
   var agora      = new Date().toISOString();
   var napneEmail = (AUTH.validarToken(body.authToken) || {}).email || '';
 
@@ -233,21 +232,41 @@ function salvarFichaNapne_(body) {
     napneEmail,
   ];
 
-  for (var i = 1; i < dados.length; i++) {
-    if (String(dados[i][COL_NF.EMAIL_ALUNO] || '').toLowerCase().trim() === emailAluno) {
-      sh.getRange(i + 1, 1, 1, novaLinha.length).setValues([novaLinha]);
-      _registrarLogNapne_(ss, napneEmail, emailAluno, 'atualizar_ficha',
-        'ehNee:' + (ehNee ? 'Sim' : 'Não') + ' tipos:' + tiposNee.join(','));
-      if (idEstagio) { try { avancarEtapaNapne_(idEstagio); } catch (_) {} }
-      return jsonOk_({ mensagem: 'Ficha atualizada com sucesso.' });
-    }
+  // Lock atômico: impede que duas gravações simultâneas do mesmo aluno criem fichas duplicadas
+  var lockNapne = LockService.getScriptLock();
+  try {
+    lockNapne.waitLock(10000);
+  } catch (_ln) {
+    throw new Error('Servidor ocupado. Aguarde alguns instantes e tente novamente.');
   }
 
-  sh.appendRow(novaLinha);
-  _registrarLogNapne_(ss, napneEmail, emailAluno, 'criar_ficha',
+  var _acaoNapne;
+  try {
+    // Re-lê dentro do lock para garantir que nenhuma outra thread escreveu entre a chamada e a aquisição
+    var dados = sh.getDataRange().getValues();
+    var _linhaEncontrada = -1;
+    for (var i = 1; i < dados.length; i++) {
+      if (String(dados[i][COL_NF.EMAIL_ALUNO] || '').toLowerCase().trim() === emailAluno) {
+        _linhaEncontrada = i;
+        break;
+      }
+    }
+    if (_linhaEncontrada !== -1) {
+      sh.getRange(_linhaEncontrada + 1, 1, 1, novaLinha.length).setValues([novaLinha]);
+      _acaoNapne = 'atualizar_ficha';
+    } else {
+      sh.appendRow(novaLinha);
+      _acaoNapne = 'criar_ficha';
+    }
+  } finally {
+    lockNapne.releaseLock();
+  }
+
+  // Log e avanço de etapa fora do lock — operações lentas não devem segurar o lock
+  _registrarLogNapne_(ss, napneEmail, emailAluno, _acaoNapne,
     'ehNee:' + (ehNee ? 'Sim' : 'Não') + ' tipos:' + tiposNee.join(','));
   if (idEstagio) { try { avancarEtapaNapne_(idEstagio); } catch (_) {} }
-  return jsonOk_({ mensagem: 'Ficha criada com sucesso.' });
+  return jsonOk_({ mensagem: _acaoNapne === 'atualizar_ficha' ? 'Ficha atualizada com sucesso.' : 'Ficha criada com sucesso.' });
 }
 
 // ─────────────────────────────────────────────────────────────────

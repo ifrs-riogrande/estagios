@@ -129,48 +129,64 @@ function cadastrarOrientador_(dados) {
     if (fimCont < iniCont) return jsonError_('Término não pode ser anterior ao início.', 'VALIDATION');
   }
 
-  // Verifica duplicidade por CPF
   var sheet = abrirAba_(CFG_SRV.SS_ID, CFG_SRV.ABA);
-  var idx   = buscarNaColuna_(sheet, COL_ORI.CPF, cpf);
-  if (idx !== -1) {
-    // Atualiza cadastro existente em vez de duplicar — volta para Pendente
-    var rowIdx = idx + 1; // base-1 para sheet
-    sheet.getRange(rowIdx, COL_ORI.TIPO_VINCULO + 1).setValue(vinculo);
-    sheet.getRange(rowIdx, COL_ORI.TEL + 1).setValue(tel);
-    sheet.getRange(rowIdx, COL_ORI.TITULACAO + 1).setValue(titulac);
-    sheet.getRange(rowIdx, COL_ORI.AREA + 1).setValue(area);
-    sheet.getRange(rowIdx, COL_ORI.CURSOS + 1).setValue(cursos);
-    sheet.getRange(rowIdx, COL_ORI.STATUS + 1).setValue('Pendente');
-    if (vinculo === 'Substituto') {
-      sheet.getRange(rowIdx, COL_ORI.INI_CONTRATO + 1).setValue(iniCont);
-      sheet.getRange(rowIdx, COL_ORI.FIM_CONTRATO + 1).setValue(fimCont);
+
+  // Lock atômico: impede que duas submissões simultâneas passem pela verificação de CPF e gravem juntas
+  var lockOri = LockService.getScriptLock();
+  try {
+    lockOri.waitLock(10000);
+  } catch (_lo) {
+    throw new Error('Servidor ocupado. Aguarde alguns instantes e tente novamente.');
+  }
+
+  var _resultOri;
+  try {
+    // Verifica duplicidade por CPF (dentro do lock — re-lê após aquisição)
+    var idx = buscarNaColuna_(sheet, COL_ORI.CPF, cpf);
+    if (idx !== -1) {
+      // Atualiza cadastro existente em vez de duplicar — volta para Pendente
+      var rowIdx = idx + 1; // base-1 para sheet
+      sheet.getRange(rowIdx, COL_ORI.TIPO_VINCULO + 1).setValue(vinculo);
+      sheet.getRange(rowIdx, COL_ORI.TEL + 1).setValue(tel);
+      sheet.getRange(rowIdx, COL_ORI.TITULACAO + 1).setValue(titulac);
+      sheet.getRange(rowIdx, COL_ORI.AREA + 1).setValue(area);
+      sheet.getRange(rowIdx, COL_ORI.CURSOS + 1).setValue(cursos);
+      sheet.getRange(rowIdx, COL_ORI.STATUS + 1).setValue('Pendente');
+      if (vinculo === 'Substituto') {
+        sheet.getRange(rowIdx, COL_ORI.INI_CONTRATO + 1).setValue(iniCont);
+        sheet.getRange(rowIdx, COL_ORI.FIM_CONTRATO + 1).setValue(fimCont);
+      }
+      _resultOri = { atualizado: true };
+    } else {
+      // Nova linha — inicia como Pendente, aguarda aprovação do admin
+      var now  = new Date();
+      var linha = [];
+      linha[COL_ORI.TIMESTAMP]    = now;
+      linha[COL_ORI.TIPO_VINCULO] = vinculo;
+      linha[COL_ORI.INI_CONTRATO] = iniCont;
+      linha[COL_ORI.FIM_CONTRATO] = fimCont;
+      linha[COL_ORI.NOME]         = nome;
+      linha[COL_ORI.CPF]          = cpf;
+      linha[COL_ORI.SIAPE]        = siape;
+      linha[COL_ORI.TEL]          = tel;
+      linha[COL_ORI.EMAIL]        = email;
+      linha[COL_ORI.TITULACAO]    = titulac;
+      linha[COL_ORI.AREA]         = area;
+      linha[COL_ORI.CURSOS]       = cursos;
+      linha[COL_ORI.STATUS]       = 'Pendente';
+      sheet.appendRow(linha);
+      _resultOri = { atualizado: false };
     }
+  } finally {
+    lockOri.releaseLock();
+  }
+
+  // Notificações fora do lock — operações lentas não devem segurar o lock
+  if (_resultOri.atualizado) {
     try { enviarEmailAtualizacaoServidor_({ nome: nome, email: email, tipo: 'orientador' }); } catch (e) { logErro_('cadastrarOrientador_.mailAtualiza', e); }
     return jsonOk_({ mensagem: 'Cadastro atualizado. Aguardando aprovação do setor.', pendente: true });
   }
-
-  // Nova linha — inicia como Pendente, aguarda aprovação do admin
-  var now  = new Date();
-  var linha = [];
-  linha[COL_ORI.TIMESTAMP]    = now;
-  linha[COL_ORI.TIPO_VINCULO] = vinculo;
-  linha[COL_ORI.INI_CONTRATO] = iniCont;
-  linha[COL_ORI.FIM_CONTRATO] = fimCont;
-  linha[COL_ORI.NOME]         = nome;
-  linha[COL_ORI.CPF]          = cpf;
-  linha[COL_ORI.SIAPE]        = siape;
-  linha[COL_ORI.TEL]          = tel;
-  linha[COL_ORI.EMAIL]        = email;
-  linha[COL_ORI.TITULACAO]    = titulac;
-  linha[COL_ORI.AREA]         = area;
-  linha[COL_ORI.CURSOS]       = cursos;
-  linha[COL_ORI.STATUS]       = 'Pendente';
-
-  sheet.appendRow(linha);
-
-  // Notificação ao setor
   try { enviarEmailNovoOrientador_(dados); } catch (e) { logErro_('cadastrarOrientador_.mail', e); }
-
   return jsonOk_({ mensagem: 'Cadastro recebido! Aguardando aprovação do setor.', pendente: true });
 }
 
@@ -327,39 +343,63 @@ function cadastrarCoordenador_(dados) {
 
   var ss    = SpreadsheetApp.openById(CFG_SRV.SS_ID);
   var sheet = obterOuCriarAbaCoord_(ss);
-  var dadosPlanilha = sheet.getDataRange().getValues();
 
-  // Verifica se já existe registro para este email → atualiza
-  for (var i = 1; i < dadosPlanilha.length; i++) {
-    if (String(dadosPlanilha[i][COL_COORD.EMAIL] || '').toLowerCase() === email) {
-      var rowIdx = i + 1;
-      sheet.getRange(rowIdx, COL_COORD.CPF      + 1).setValue(cpf);
-      sheet.getRange(rowIdx, COL_COORD.SIAPE    + 1).setValue(siape);
-      sheet.getRange(rowIdx, COL_COORD.NOME     + 1).setValue(nome);
-      sheet.getRange(rowIdx, COL_COORD.TEL      + 1).setValue(tel);
-      sheet.getRange(rowIdx, COL_COORD.CURSO    + 1).setValue(curso);
-      sheet.getRange(rowIdx, COL_COORD.PORTARIA + 1).setValue(portaria);
-      sheet.getRange(rowIdx, COL_COORD.TIMESTAMP+ 1).setValue(new Date());
-      sheet.getRange(rowIdx, COL_COORD.STATUS   + 1).setValue('Pendente');
-      try { enviarEmailAtualizacaoServidor_({ nome: nome, email: email, tipo: 'coordenador', curso: curso }); } catch (e) { logErro_('cadastrarCoordenador_.mailAtualiza', e); }
-      return jsonOk_({ mensagem: 'Cadastro atualizado. Aguardando aprovação do setor.', pendente: true });
-    }
+  // Lock atômico: impede que duas submissões simultâneas passem pela verificação de e-mail e gravem juntas
+  var lockCoord = LockService.getScriptLock();
+  try {
+    lockCoord.waitLock(10000);
+  } catch (_lc) {
+    throw new Error('Servidor ocupado. Aguarde alguns instantes e tente novamente.');
   }
 
-  // Nova linha — status Pendente
-  var novaLinha = new Array(10);
-  novaLinha[COL_COORD.CPF]       = cpf;
-  novaLinha[COL_COORD.SIAPE]     = siape;
-  novaLinha[COL_COORD.NOME]      = nome;
-  novaLinha[COL_COORD.EMAIL]     = email;
-  novaLinha[COL_COORD.TEL]       = tel;
-  novaLinha[COL_COORD.TITULACAO] = '';
-  novaLinha[COL_COORD.CURSO]     = curso;
-  novaLinha[COL_COORD.TIMESTAMP] = new Date();
-  novaLinha[COL_COORD.STATUS]    = 'Pendente';
-  novaLinha[COL_COORD.PORTARIA]  = portaria;
-  sheet.appendRow(novaLinha);
+  var _resultCoord;
+  try {
+    // Re-lê dentro do lock para garantir que nenhuma outra thread escreveu entre a chamada e a aquisição
+    var dadosPlanilha = sheet.getDataRange().getValues();
 
+    // Verifica se já existe registro para este email → atualiza
+    var _encontrado = false;
+    for (var i = 1; i < dadosPlanilha.length; i++) {
+      if (String(dadosPlanilha[i][COL_COORD.EMAIL] || '').toLowerCase() === email) {
+        var rowIdx = i + 1;
+        sheet.getRange(rowIdx, COL_COORD.CPF      + 1).setValue(cpf);
+        sheet.getRange(rowIdx, COL_COORD.SIAPE    + 1).setValue(siape);
+        sheet.getRange(rowIdx, COL_COORD.NOME     + 1).setValue(nome);
+        sheet.getRange(rowIdx, COL_COORD.TEL      + 1).setValue(tel);
+        sheet.getRange(rowIdx, COL_COORD.CURSO    + 1).setValue(curso);
+        sheet.getRange(rowIdx, COL_COORD.PORTARIA + 1).setValue(portaria);
+        sheet.getRange(rowIdx, COL_COORD.TIMESTAMP+ 1).setValue(new Date());
+        sheet.getRange(rowIdx, COL_COORD.STATUS   + 1).setValue('Pendente');
+        _encontrado = true;
+        break;
+      }
+    }
+
+    if (!_encontrado) {
+      // Nova linha — status Pendente
+      var novaLinha = new Array(10);
+      novaLinha[COL_COORD.CPF]       = cpf;
+      novaLinha[COL_COORD.SIAPE]     = siape;
+      novaLinha[COL_COORD.NOME]      = nome;
+      novaLinha[COL_COORD.EMAIL]     = email;
+      novaLinha[COL_COORD.TEL]       = tel;
+      novaLinha[COL_COORD.TITULACAO] = '';
+      novaLinha[COL_COORD.CURSO]     = curso;
+      novaLinha[COL_COORD.TIMESTAMP] = new Date();
+      novaLinha[COL_COORD.STATUS]    = 'Pendente';
+      novaLinha[COL_COORD.PORTARIA]  = portaria;
+      sheet.appendRow(novaLinha);
+    }
+    _resultCoord = { atualizado: _encontrado };
+  } finally {
+    lockCoord.releaseLock();
+  }
+
+  // Notificações fora do lock — operações lentas não devem segurar o lock
+  if (_resultCoord.atualizado) {
+    try { enviarEmailAtualizacaoServidor_({ nome: nome, email: email, tipo: 'coordenador', curso: curso }); } catch (e) { logErro_('cadastrarCoordenador_.mailAtualiza', e); }
+    return jsonOk_({ mensagem: 'Cadastro atualizado. Aguardando aprovação do setor.', pendente: true });
+  }
   try { enviarEmailNovoCoordenador_({ nome: nome, email: email, curso: curso, siape: siape }); } catch (e) { logErro_('cadastrarCoordenador_.mail', e); }
   return jsonOk_({ mensagem: 'Cadastro recebido! Aguardando aprovação do setor.', pendente: true });
 }
@@ -622,18 +662,30 @@ function verificarOrientadorPorEmail_(email) {
 
 function criarOrientadorConvidado_(email, nome) {
   var sheet = abrirAba_(CFG_SRV.SS_ID, CFG_SRV.ABA);
-  // Se já existe qualquer entrada (mesmo 'Convidado'), não duplica
-  var dados = sheet.getDataRange().getValues();
   var emailNorm = String(email || '').toLowerCase().trim();
-  for (var i = 1; i < dados.length; i++) {
-    if (String(dados[i][COL_ORI.EMAIL] || '').toLowerCase().trim() === emailNorm) return;
+
+  // Lock atômico: impede que duas solicitações simultâneas com o mesmo orientador criem entradas duplicadas
+  var lockConv = LockService.getScriptLock();
+  try {
+    lockConv.waitLock(10000);
+  } catch (_lv) {
+    throw new Error('Servidor ocupado. Aguarde alguns instantes e tente novamente.');
   }
-  var linha = new Array(14);
-  linha[COL_ORI.TIMESTAMP] = new Date();
-  linha[COL_ORI.NOME]      = sanitizar_(nome || '', 200);
-  linha[COL_ORI.EMAIL]     = emailNorm;
-  linha[COL_ORI.STATUS]    = 'Convidado';
-  sheet.appendRow(linha);
+  try {
+    // Se já existe qualquer entrada (mesmo 'Convidado'), não duplica
+    var dados = sheet.getDataRange().getValues();
+    for (var i = 1; i < dados.length; i++) {
+      if (String(dados[i][COL_ORI.EMAIL] || '').toLowerCase().trim() === emailNorm) return;
+    }
+    var linha = new Array(14);
+    linha[COL_ORI.TIMESTAMP] = new Date();
+    linha[COL_ORI.NOME]      = sanitizar_(nome || '', 200);
+    linha[COL_ORI.EMAIL]     = emailNorm;
+    linha[COL_ORI.STATUS]    = 'Convidado';
+    sheet.appendRow(linha);
+  } finally {
+    lockConv.releaseLock();
+  }
 }
 
 // ---------------------------------------------------------------------------

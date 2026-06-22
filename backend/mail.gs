@@ -679,7 +679,28 @@ var MAIL = (function () {
     enviarEmailAceiteOrientador:         enviarEmailAceiteOrientador,
     enviarEmailAguardandoAceiteEstudante:enviarEmailAguardandoAceiteEstudante,
     enviarEmailRespostaAceiteEstudante:  enviarEmailRespostaAceiteEstudante,
+    // Devolução ao aluno
+    enviarEmailDevolucaoChecklistAluno:  enviarEmailDevolucaoChecklistAluno,
   };
+
+  // --------------------------------------------------------------------------
+  // Devolução ao aluno
+  // --------------------------------------------------------------------------
+
+  function enviarEmailDevolucaoChecklistAluno(dados) {
+    // dados: { nomeEstudante, emailEstudante, idEstagio, motivo, urlSolicitacao }
+    var corpo = '<p>Olá, <strong>' + escapeHtmlMail_(dados.nomeEstudante) + '</strong>.</p>'
+      + '<p>O Setor de Estágios devolveu sua solicitação de estágio para que você realize as correções necessárias e reenvie.</p>'
+      + campo_('ID da solicitação', dados.idEstagio)
+      + campo_('Motivo / Orientação do setor', dados.motivo)
+      + '<p>Acesse o sistema pelo botão abaixo para corrigir as informações e reenviar sua solicitação:</p>'
+      + botaoEmail_(dados.urlSolicitacao, 'Acessar minha solicitação')
+      + '<p style="font-size:13px;color:#6b7280;margin-top:12px;">Em caso de dúvidas, entre em contato pelo e-mail '
+      + '<a href="mailto:' + SETOR_EMAIL + '" style="color:#6b7280;">' + SETOR_EMAIL + '</a>.</p>';
+    enviar_(dados.emailEstudante,
+      '[SGE] Solicitação devolvida para correção — ' + dados.idEstagio,
+      htmlBase_('Solicitação devolvida para correção', corpo));
+  }
 
   // --------------------------------------------------------------------------
   // Aceite de orientação
@@ -829,3 +850,4 @@ function enviarEmailChecklistOrientador_(d)            { return MAIL.enviarEmail
 function enviarEmailAceiteOrientador_(d)               { return MAIL.enviarEmailAceiteOrientador(d); }
 function enviarEmailAguardandoAceiteEstudante_(d)      { return MAIL.enviarEmailAguardandoAceiteEstudante(d); }
 function enviarEmailRespostaAceiteEstudante_(d)        { return MAIL.enviarEmailRespostaAceiteEstudante(d); }
+function enviarEmailDevolucaoChecklistAluno_(d)        { return MAIL.enviarEmailDevolucaoChecklistAluno(d); }
