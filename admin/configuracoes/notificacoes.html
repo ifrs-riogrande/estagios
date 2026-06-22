@@ -928,7 +928,7 @@
     Object.keys(grupos).forEach(function (g) {
       html += '<div class="tpl-sidebar-group">' + escapeHtml(grupos[g].label) + '</div>';
       grupos[g].items.forEach(function (t) {
-        html += '<div class="tpl-sidebar-item" id="tpl-item-' + t.key + '" onclick="abrirTemplate(' + JSON.stringify(t.key) + ')">'
+        html += '<div class="tpl-sidebar-item" id="tpl-item-' + t.key + '" onclick="abrirTemplate(\'' + t.key + '\')">'
           + '<span>' + escapeHtml(t.label) + '</span>'
           + (t.personalizado ? '<span class="tpl-badge-custom">Editado</span>' : '')
           + '</div>';
