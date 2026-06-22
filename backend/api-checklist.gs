@@ -161,6 +161,18 @@ function obterPrazos_() {
       direcao:        7,
       centralFinal:   3,
     },
+    solicitacao: {
+      minimoInicio:            7,
+      validadeTokenOrientador: 30,
+    },
+    convenios: {
+      prazoEmpresa: 10,
+      prazoSetor:   5,
+    },
+    dashboard: {
+      alertaTermino:            15,
+      alertaContratoSubstituto: 30,
+    },
   };
 }
 

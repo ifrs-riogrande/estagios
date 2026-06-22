@@ -350,7 +350,7 @@ function iniciarFluxoConvenio_(cnpj) {
       email:             emailAtor,
       token:             Utilities.getUuid(),
       status:            idx === 0 ? ASS_STATUS.AGUARDANDO : ASS_STATUS.PENDENTE,
-      prazoVencimento:   idx === 0 ? _calcPrazoConv_(10) : null,
+      prazoVencimento:   idx === 0 ? _calcPrazoConv_(_prazoConvDias_(def.tipo || 'empresa')) : null,
       lembretesEnviados: 0,
       data:              null,
       driveUrl:          null,
@@ -416,7 +416,7 @@ function concluirEtapaConvenio_(idConvenio, numeroEtapa, driveUrl, emailAtor) {
   } else {
     var proxEtapa              = fluxo.etapas[idx + 1];
     proxEtapa.status           = ASS_STATUS.AGUARDANDO;
-    proxEtapa.prazoVencimento  = _calcPrazoConv_(proxEtapa.tipo === 'govbr' ? 10 : 5);
+    proxEtapa.prazoVencimento  = _calcPrazoConv_(_prazoConvDias_(proxEtapa.tipo));
     fluxo.etapaAtual           = numeroEtapa + 1;
     try { _notificarAtorConvenio_(idConvenio, proxEtapa, fluxo); }
     catch (e) { logErro_('concluirEtapaConvenio_.notificar', e); }
@@ -455,7 +455,7 @@ function rejeitarEtapaConvenio_(idConvenio, numeroEtapa, motivo, retornoParaEtap
     et.versao   = null;
     if (i === retornoParaEtapa - 1) {
       et.status          = ASS_STATUS.AGUARDANDO;
-      et.prazoVencimento = _calcPrazoConv_(et.tipo === 'govbr' ? 10 : 5);
+      et.prazoVencimento = _calcPrazoConv_(_prazoConvDias_(et.tipo));
     } else {
       et.status          = ASS_STATUS.PENDENTE;
       et.prazoVencimento = null;
@@ -796,6 +796,15 @@ function _calcPrazoConv_(dias) {
   var d = new Date();
   d.setDate(d.getDate() + (dias || 10));
   return Utilities.formatDate(d, 'America/Sao_Paulo', 'yyyy-MM-dd');
+}
+
+/** Retorna o prazo em dias corridos para o tipo de etapa do convênio (configurável em Prazos). */
+function _prazoConvDias_(tipo) {
+  var p = obterPrazos_();
+  var conv = p.convenios || {};
+  return (tipo === 'govbr' || tipo === 'empresa')
+    ? (conv.prazoEmpresa || 10)
+    : (conv.prazoSetor   || 5);
 }
 
 // ── Handlers HTTP ─────────────────────────────────────────────────────────────

@@ -252,12 +252,14 @@ function solicitarEstagio_(dados) {
   if (String(dados.declaracoes || '').trim() !== 'Todas aceitas') {
     return jsonError_('É necessário aceitar a declaração de veracidade das informações.', 'VALIDATION');
   }
-  // Data início deve ser >= hoje + 7 dias
-  var hoje    = new Date(); hoje.setHours(0, 0, 0, 0);
-  var minInicio = new Date(hoje.getTime() + 7 * 86400000);
-  var dtInicio  = new Date(dataInicio + 'T00:00:00');
+  // Data início deve ser >= hoje + N dias (configurável pelo Admin em Configurações → Prazos)
+  var _prazos      = obterPrazos_();
+  var _minDias     = (_prazos.solicitacao && _prazos.solicitacao.minimoInicio) || 7;
+  var hoje         = new Date(); hoje.setHours(0, 0, 0, 0);
+  var minInicio    = new Date(hoje.getTime() + _minDias * 86400000);
+  var dtInicio     = new Date(dataInicio + 'T00:00:00');
   if (dtInicio < minInicio) {
-    return jsonError_('A data de início deve ser de pelo menos 7 dias a partir de hoje.', 'VALIDATION');
+    return jsonError_('A data de início deve ser de pelo menos ' + _minDias + ' dias a partir de hoje.', 'VALIDATION');
   }
   if (dataTermino <= dataInicio) {
     return jsonError_('A data de término deve ser posterior à data de início.', 'VALIDATION');
@@ -729,12 +731,14 @@ function verificarAceiteOrientador_(e) {
 
     var idEstagio = String(dados[i][COL_SOL.ID_ESTAGIO] || '');
 
-    // Verifica expiração: token válido por no máximo 30 dias a partir da solicitação
+    // Verifica expiração: token válido por N dias configuráveis (Admin → Configurações → Prazos)
     var tsLinha = dados[i][COL_SOL.TIMESTAMP];
     if (tsLinha) {
       var dtSol = tsLinha instanceof Date ? tsLinha : new Date(tsLinha);
-      if (!isNaN(dtSol.getTime()) && (Date.now() - dtSol.getTime()) > 30 * 86400000) {
-        return jsonError_('Este link expirou (mais de 30 dias). Solicite um novo link ao estudante.', 'EXPIRED');
+      var _prazosToken   = obterPrazos_();
+      var _validadeDias  = (_prazosToken.solicitacao && _prazosToken.solicitacao.validadeTokenOrientador) || 30;
+      if (!isNaN(dtSol.getTime()) && (Date.now() - dtSol.getTime()) > _validadeDias * 86400000) {
+        return jsonError_('Este link expirou (mais de ' + _validadeDias + ' dias). Solicite um novo link ao estudante.', 'EXPIRED');
       }
     }
 

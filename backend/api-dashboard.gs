@@ -28,9 +28,8 @@ var CFG_DASH = {
   ABA_FINAL:'Relatórios Finais',
   ABA_ADENDO:'Adendos',
 
-  // Alertas: contratos de substitutos com vencimento <= N dias
+  // Alertas: valores padrão — substituídos em runtime pelos valores de obterPrazos_()
   ALERTA_CONTRATO_DIAS: 30,
-  // Estágios com término próximo (sem relatório final) <= N dias
   ALERTA_TERMINO_DIAS: 15,
   // Número de solicitações mais recentes retornadas
   MAX_SOLICITACOES: 200,
@@ -90,6 +89,11 @@ function doPost(e) {
 
 function gerarDashboard_() {
   var hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+
+  // Lê thresholds de alerta configuráveis (Admin → Configurações → Prazos)
+  var _prazos = obterPrazos_();
+  var _alertaTerminoDias   = (_prazos.dashboard && _prazos.dashboard.alertaTermino)            || CFG_DASH.ALERTA_TERMINO_DIAS;
+  var _alertaContratoDias  = (_prazos.dashboard && _prazos.dashboard.alertaContratoSubstituto) || CFG_DASH.ALERTA_CONTRATO_DIAS;
 
   // Lê planilha de solicitações
   var ss    = SpreadsheetApp.openById(CFG_DASH.SS_SOL);
@@ -157,7 +161,7 @@ function gerarDashboard_() {
         var dt = dtTermino instanceof Date ? dtTermino : new Date(dtTermino);
         dt.setHours(0, 0, 0, 0);
         var diasAoTermino = Math.round((dt - hoje) / 86400000);
-        if (diasAoTermino >= 0 && diasAoTermino <= CFG_DASH.ALERTA_TERMINO_DIAS) {
+        if (diasAoTermino >= 0 && diasAoTermino <= _alertaTerminoDias) {
           var nomeEst = String(linha[_COL_SOL.NOME_ESTUDANTE] || '').trim();
           alertas.push({
             titulo:    'Estágio encerrando em breve: ' + nomeEst,
@@ -235,7 +239,7 @@ function gerarDashboard_() {
       var dtFim = fimContr instanceof Date ? fimContr : new Date(fimContr);
       dtFim.setHours(0, 0, 0, 0);
       var diasFim = Math.round((dtFim - hoje) / 86400000);
-      if (diasFim >= 0 && diasFim <= CFG_DASH.ALERTA_CONTRATO_DIAS) {
+      if (diasFim >= 0 && diasFim <= _alertaContratoDias) {
         var nomeOri = String(linhaOri[_COL_ORI.NOME] || '').trim();
         alertas.push({
           titulo:    'Contrato de substituto vencendo: ' + nomeOri,

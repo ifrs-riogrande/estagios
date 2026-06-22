@@ -22,7 +22,7 @@
     .prazos-card h2 {
       font-size: var(--font-size-base);
       font-weight: var(--font-weight-semibold);
-      margin: 0 0 var(--space-5);
+      margin: 0 0 var(--space-2);
       display: flex;
       align-items: center;
       gap: var(--space-2);
@@ -31,6 +31,11 @@
     .prazos-card h2 svg {
       color: var(--color-primary);
       flex-shrink: 0;
+    }
+    .card-subtitle {
+      font-size: var(--font-size-xs);
+      color: var(--color-text-muted);
+      margin: 0 0 var(--space-5);
     }
     .prazos-grid {
       display: grid;
@@ -51,6 +56,9 @@
       color: var(--color-text-muted);
       text-transform: uppercase;
       letter-spacing: .04em;
+      display: flex;
+      align-items: center;
+      gap: var(--space-1);
     }
     .input-dias {
       display: flex;
@@ -77,11 +85,6 @@
       font-size: var(--font-size-sm);
       color: var(--color-text-muted);
     }
-    .section-divider {
-      border: none;
-      border-top: 1px solid var(--color-border);
-      margin: var(--space-6) 0;
-    }
     .form-actions {
       display: flex;
       align-items: center;
@@ -107,6 +110,48 @@
       padding: var(--space-12);
       color: var(--color-text-muted);
     }
+
+    /* ── Tooltip ── */
+    .tip {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--color-border);
+      color: var(--color-text-muted);
+      font-size: 9px;
+      font-weight: 700;
+      cursor: default;
+      flex-shrink: 0;
+      line-height: 1;
+    }
+    .tip::after {
+      content: attr(data-tip);
+      position: absolute;
+      bottom: calc(100% + 6px);
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--color-text);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 400;
+      text-transform: none;
+      letter-spacing: 0;
+      line-height: 1.4;
+      white-space: normal;
+      width: 220px;
+      padding: 6px 8px;
+      border-radius: 6px;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity .15s;
+      z-index: 100;
+      box-shadow: 0 2px 8px rgba(0,0,0,.18);
+    }
+    .tip:hover::after { opacity: 1; }
   </style>
 </head>
 <body>
@@ -131,7 +176,7 @@
     <section class="page-hero">
       <div class="container">
         <h1>Prazos</h1>
-        <p>Configure os prazos (em dias úteis) para cada etapa do checklist e do fluxo de assinaturas.</p>
+        <p>Configure os prazos para cada etapa do fluxo de estágios e convênios.</p>
       </div>
     </section>
 
@@ -143,7 +188,7 @@
 
         <div class="info-badge">
           <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/></svg>
-          <span>Os prazos são contados em <strong>dias úteis</strong> a partir da data em que a notificação é enviada ao participante. Alterações passam a valer para novos estágios e reenvios de notificação.</span>
+          <span>Prazos do <strong>checklist e assinaturas</strong> são em <strong>dias úteis</strong> a partir do envio da notificação. Prazos de <strong>solicitação, convênios e alertas</strong> são em <strong>dias corridos</strong>. Alterações valem para novos estágios e reenvios de notificação.</span>
         </div>
 
         <form id="form-prazos" onsubmit="salvar(event)">
@@ -156,24 +201,54 @@
               </svg>
               Checklist de Orientação
             </h2>
+            <p class="card-subtitle">Dias úteis que cada ator tem para concluir sua etapa do checklist.</p>
 
             <div class="prazos-grid">
               <div class="form-group">
-                <label for="cl-orientador">Orientador</label>
+                <label for="cl-napne">
+                  NAPNE
+                  <span class="tip" data-tip="Prazo para o NAPNE preencher a ficha de necessidades educacionais especiais do estudante.">?</span>
+                </label>
+                <div class="input-dias">
+                  <input type="number" id="cl-napne" min="1" max="60" value="3">
+                  <span>dias úteis</span>
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="cl-orientador">
+                  Orientador
+                  <span class="tip" data-tip="Prazo para o orientador revisar e aprovar as informações do estágio no checklist.">?</span>
+                </label>
                 <div class="input-dias">
                   <input type="number" id="cl-orientador" min="1" max="60" value="5">
                   <span>dias úteis</span>
                 </div>
               </div>
               <div class="form-group">
-                <label for="cl-supervisor">Supervisor</label>
+                <label for="cl-supervisor">
+                  Supervisor
+                  <span class="tip" data-tip="Prazo para o supervisor da empresa confirmar os dados do estágio no checklist.">?</span>
+                </label>
                 <div class="input-dias">
                   <input type="number" id="cl-supervisor" min="1" max="60" value="5">
                   <span>dias úteis</span>
                 </div>
               </div>
               <div class="form-group">
-                <label for="cl-admin">Admin (revisão)</label>
+                <label for="cl-coordenador">
+                  Coordenador de curso
+                  <span class="tip" data-tip="Prazo para o coordenador do curso verificar e validar os dados acadêmicos do estágio.">?</span>
+                </label>
+                <div class="input-dias">
+                  <input type="number" id="cl-coordenador" min="1" max="60" value="5">
+                  <span>dias úteis</span>
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="cl-admin">
+                  Setor — revisão
+                  <span class="tip" data-tip="Prazo para o setor de estágios revisar o checklist completo antes de iniciar o fluxo de assinaturas.">?</span>
+                </label>
                 <div class="input-dias">
                   <input type="number" id="cl-admin" min="1" max="60" value="3">
                   <span>dias úteis</span>
@@ -188,43 +263,161 @@
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
               </svg>
-              Fluxo de Assinaturas (TCE)
+              Fluxo de Assinaturas — TCE
             </h2>
+            <p class="card-subtitle">Dias úteis que cada parte tem para assinar o Termo de Compromisso de Estágio.</p>
 
             <div class="prazos-grid">
               <div class="form-group">
-                <label for="as-estudante">Estudante (etapa 1)</label>
+                <label for="as-estudante">
+                  Estudante (etapa 1)
+                  <span class="tip" data-tip="Prazo para o estudante assinar o TCE eletronicamente.">?</span>
+                </label>
                 <div class="input-dias">
                   <input type="number" id="as-estudante" min="1" max="60" value="5">
                   <span>dias úteis</span>
                 </div>
               </div>
               <div class="form-group">
-                <label for="as-empresa">Concedente (etapa 2)</label>
+                <label for="as-empresa">
+                  Concedente (etapa 2)
+                  <span class="tip" data-tip="Prazo para o representante da empresa concedente assinar o TCE.">?</span>
+                </label>
                 <div class="input-dias">
                   <input type="number" id="as-empresa" min="1" max="60" value="5">
                   <span>dias úteis</span>
                 </div>
               </div>
               <div class="form-group">
-                <label for="as-centralRevisao">Central — Revisão (etapa 3)</label>
+                <label for="as-centralRevisao">
+                  Central — Revisão (etapa 3)
+                  <span class="tip" data-tip="Prazo para o setor de estágios revisar o TCE antes de encaminhar à Direção-Geral.">?</span>
+                </label>
                 <div class="input-dias">
                   <input type="number" id="as-centralRevisao" min="1" max="60" value="3">
                   <span>dias úteis</span>
                 </div>
               </div>
               <div class="form-group">
-                <label for="as-direcao">Direção-Geral (etapa 4)</label>
+                <label for="as-direcao">
+                  Direção-Geral (etapa 4)
+                  <span class="tip" data-tip="Prazo para a Direção-Geral do campus assinar o TCE via Gov.br.">?</span>
+                </label>
                 <div class="input-dias">
                   <input type="number" id="as-direcao" min="1" max="60" value="7">
                   <span>dias úteis</span>
                 </div>
               </div>
               <div class="form-group">
-                <label for="as-centralFinal">Central — Final (etapa 5)</label>
+                <label for="as-centralFinal">
+                  Central — Final (etapa 5)
+                  <span class="tip" data-tip="Prazo para o setor de estágios arquivar o TCE assinado e ativar o estágio no sistema.">?</span>
+                </label>
                 <div class="input-dias">
                   <input type="number" id="as-centralFinal" min="1" max="60" value="3">
                   <span>dias úteis</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ── Solicitação ─────────────────────────────────────────── -->
+          <div class="prazos-card">
+            <h2>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+              </svg>
+              Solicitação de Estágio
+            </h2>
+            <p class="card-subtitle">Prazos em dias corridos aplicados no momento da solicitação pelo estudante.</p>
+
+            <div class="prazos-grid">
+              <div class="form-group">
+                <label for="sol-minimoInicio">
+                  Antecedência mínima p/ início
+                  <span class="tip" data-tip="Quantos dias corridos de antecedência mínima o estudante deve informar como data de início do estágio. Exibido na seção 8 do formulário de solicitação.">?</span>
+                </label>
+                <div class="input-dias">
+                  <input type="number" id="sol-minimoInicio" min="1" max="90" value="7">
+                  <span>dias corridos</span>
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="sol-validadeToken">
+                  Validade do link do orientador
+                  <span class="tip" data-tip="Por quantos dias o link de acesso ao checklist enviado ao orientador permanece válido. Após esse prazo o link expira e precisa ser reenviado.">?</span>
+                </label>
+                <div class="input-dias">
+                  <input type="number" id="sol-validadeToken" min="7" max="180" value="30">
+                  <span>dias corridos</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ── Convênios ───────────────────────────────────────────── -->
+          <div class="prazos-card">
+            <h2>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/>
+              </svg>
+              Convênios
+            </h2>
+            <p class="card-subtitle">Prazos em dias corridos para assinatura do Termo de Convênio entre o IFRS e a empresa.</p>
+
+            <div class="prazos-grid">
+              <div class="form-group">
+                <label for="conv-empresa">
+                  Empresa / Gov.br
+                  <span class="tip" data-tip="Prazo para a empresa ou a Direção-Geral (via Gov.br) assinar o convênio. Aplicado na etapa da empresa e em etapas do tipo Gov.br.">?</span>
+                </label>
+                <div class="input-dias">
+                  <input type="number" id="conv-empresa" min="1" max="90" value="10">
+                  <span>dias corridos</span>
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="conv-setor">
+                  Setor — interno
+                  <span class="tip" data-tip="Prazo para o setor de estágios concluir etapas internas do fluxo de convênio (revisão, arquivo etc.).">?</span>
+                </label>
+                <div class="input-dias">
+                  <input type="number" id="conv-setor" min="1" max="90" value="5">
+                  <span>dias corridos</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ── Alertas do Dashboard ───────────────────────────────── -->
+          <div class="prazos-card">
+            <h2>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+              </svg>
+              Alertas do Dashboard
+            </h2>
+            <p class="card-subtitle">Janela de dias corridos em que um alerta passa a ser exibido no painel do administrador.</p>
+
+            <div class="prazos-grid">
+              <div class="form-group">
+                <label for="dash-alertaTermino">
+                  Término de estágio sem relatório
+                  <span class="tip" data-tip="Exibe alerta no dashboard quando um estágio ativo está a N dias ou menos do término e o relatório final ainda não foi enviado.">?</span>
+                </label>
+                <div class="input-dias">
+                  <input type="number" id="dash-alertaTermino" min="1" max="120" value="15">
+                  <span>dias corridos</span>
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="dash-alertaContrato">
+                  Contrato de orientador substituto
+                  <span class="tip" data-tip="Exibe alerta no dashboard quando o contrato de um orientador substituto vence em N dias ou menos, para que o setor verifique os estágios orientados.">?</span>
+                </label>
+                <div class="input-dias">
+                  <input type="number" id="dash-alertaContrato" min="1" max="120" value="30">
+                  <span>dias corridos</span>
                 </div>
               </div>
             </div>
@@ -267,18 +460,33 @@
         const token = getAccessToken();
         const data  = await API.get('obterPrazos', { authToken: token });
 
-        const cl = data.checklist    || {};
-        const as = data.assinaturas  || {};
+        const cl   = data.checklist   || {};
+        const as   = data.assinaturas || {};
+        const sol  = data.solicitacao || {};
+        const conv = data.convenios   || {};
+        const dash = data.dashboard   || {};
 
-        setVal('cl-orientador',    cl.orientador    ?? 5);
-        setVal('cl-supervisor',    cl.supervisor    ?? 5);
-        setVal('cl-admin',         cl.admin         ?? 3);
+        setVal('cl-napne',          cl.napne          ?? 3);
+        setVal('cl-orientador',     cl.orientador     ?? 5);
+        setVal('cl-supervisor',     cl.supervisor     ?? 5);
+        setVal('cl-coordenador',    cl.coordenador    ?? 5);
+        setVal('cl-admin',          cl.admin          ?? 3);
 
-        setVal('as-estudante',     as.estudante     ?? 5);
-        setVal('as-empresa',       as.empresa       ?? 5);
-        setVal('as-centralRevisao',as.centralRevisao?? 3);
-        setVal('as-direcao',       as.direcao       ?? 7);
-        setVal('as-centralFinal',  as.centralFinal  ?? 3);
+        setVal('as-estudante',      as.estudante      ?? 5);
+        setVal('as-empresa',        as.empresa        ?? 5);
+        setVal('as-centralRevisao', as.centralRevisao ?? 3);
+        setVal('as-direcao',        as.direcao        ?? 7);
+        setVal('as-centralFinal',   as.centralFinal   ?? 3);
+
+        setVal('sol-minimoInicio',  sol.minimoInicio            ?? 7);
+        setVal('sol-validadeToken', sol.validadeTokenOrientador ?? 30);
+
+        setVal('conv-empresa',      conv.prazoEmpresa ?? 10);
+        setVal('conv-setor',        conv.prazoSetor   ?? 5);
+
+        setVal('dash-alertaTermino',  dash.alertaTermino            ?? 15);
+        setVal('dash-alertaContrato', dash.alertaContratoSubstituto ?? 30);
+
       } catch (err) {
         showToast('Erro ao carregar prazos: ' + err.message, 'error');
       } finally {
@@ -291,25 +499,41 @@
       e.preventDefault();
       const btn  = document.getElementById('btn-salvar');
       const feed = document.getElementById('feedback');
-      btn.disabled    = true;
-      btn.textContent = 'Salvando…';
+      btn.disabled     = true;
+      btn.textContent  = 'Salvando…';
       feed.textContent = '';
 
       try {
         const token = getAccessToken();
         await API.post('salvarPrazos', {
           authToken: token,
-          checklist: {
-            orientador: getVal('cl-orientador'),
-            supervisor: getVal('cl-supervisor'),
-            admin:      getVal('cl-admin'),
-          },
-          assinaturas: {
-            estudante:     getVal('as-estudante'),
-            empresa:       getVal('as-empresa'),
-            centralRevisao:getVal('as-centralRevisao'),
-            direcao:       getVal('as-direcao'),
-            centralFinal:  getVal('as-centralFinal'),
+          prazos: {
+            checklist: {
+              napne:       getVal('cl-napne'),
+              orientador:  getVal('cl-orientador'),
+              supervisor:  getVal('cl-supervisor'),
+              coordenador: getVal('cl-coordenador'),
+              admin:       getVal('cl-admin'),
+            },
+            assinaturas: {
+              estudante:      getVal('as-estudante'),
+              empresa:        getVal('as-empresa'),
+              centralRevisao: getVal('as-centralRevisao'),
+              direcao:        getVal('as-direcao'),
+              centralFinal:   getVal('as-centralFinal'),
+            },
+            solicitacao: {
+              minimoInicio:            getVal('sol-minimoInicio'),
+              validadeTokenOrientador: getVal('sol-validadeToken'),
+            },
+            convenios: {
+              prazoEmpresa: getVal('conv-empresa'),
+              prazoSetor:   getVal('conv-setor'),
+            },
+            dashboard: {
+              alertaTermino:            getVal('dash-alertaTermino'),
+              alertaContratoSubstituto: getVal('dash-alertaContrato'),
+            },
           },
         });
         feed.style.color = 'var(--color-success)';
