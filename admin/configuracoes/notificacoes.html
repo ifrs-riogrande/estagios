@@ -111,17 +111,33 @@
     .reenvio-actions { display:flex; flex-wrap:wrap; gap:var(--space-2); }
     .estado-vazio { text-align:center; padding:var(--space-10) var(--space-4); color:var(--color-text-secondary); font-size:.9rem; }
 
-    /* ── Templates ── */
-    .template-item { display:grid; grid-template-columns:auto 1fr auto; align-items:start; gap:var(--space-4); padding:var(--space-4) 0; border-bottom:1px solid var(--color-border); }
-    .template-item:last-child { border-bottom:none; }
-    .template-icon { width:36px; height:36px; border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-    .template-icon svg { width:18px; height:18px; }
-    .template-name { font-weight:600; font-size:.88rem; margin-bottom:2px; }
-    .template-desc { font-size:.82rem; color:var(--color-text-secondary); line-height:1.5; }
-    .template-vars { display:flex; flex-wrap:wrap; gap:4px; margin-top:var(--space-2); }
-    .var-chip { background:#f3f4f6; color:#374151; border-radius:4px; padding:1px 7px; font-size:.72rem; font-family:monospace; }
-    .template-dest { text-align:right; font-size:.78rem; color:var(--color-text-muted); white-space:nowrap; }
-    .template-group { font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--color-text-muted); padding:var(--space-5) 0 var(--space-2); }
+    /* ── Templates editor ── */
+    .tpl-layout { display:grid; grid-template-columns:260px 1fr; gap:var(--space-5); min-height:500px; }
+    @media(max-width:700px){ .tpl-layout{ grid-template-columns:1fr; } .tpl-sidebar{ display:none; } }
+    .tpl-sidebar { border:1px solid var(--color-border); border-radius:var(--radius-md,8px); overflow:hidden; height:fit-content; position:sticky; top:80px; }
+    .tpl-sidebar-group { font-size:.68rem; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--color-text-muted); padding:var(--space-3) var(--space-4) var(--space-2); background:var(--color-surface); border-bottom:1px solid var(--color-border); margin-top:1px; }
+    .tpl-sidebar-group:first-child { margin-top:0; }
+    .tpl-sidebar-item { display:flex; align-items:center; justify-content:space-between; gap:var(--space-2); padding:var(--space-2) var(--space-4); cursor:pointer; font-size:.82rem; color:var(--color-text); border-left:3px solid transparent; transition:background .1s,border-color .1s; }
+    .tpl-sidebar-item:hover { background:#f3f4f6; }
+    .tpl-sidebar-item.is-active { background:#eff6ff; border-left-color:var(--color-primary); color:var(--color-primary); font-weight:600; }
+    .tpl-badge-custom { font-size:.65rem; font-weight:700; background:#dbeafe; color:#1d4ed8; border-radius:99px; padding:1px 6px; flex-shrink:0; }
+    .tpl-editor { border:1px solid var(--color-border); border-radius:var(--radius-md,8px); padding:var(--space-6); }
+    .tpl-editor-empty { display:flex; align-items:center; justify-content:center; min-height:300px; color:var(--color-text-muted); font-size:.9rem; }
+    .tpl-header { margin-bottom:var(--space-5); padding-bottom:var(--space-4); border-bottom:1px solid var(--color-border); }
+    .tpl-title { font-size:1rem; font-weight:700; margin-bottom:4px; }
+    .tpl-meta { font-size:.78rem; color:var(--color-text-muted); }
+    .tpl-meta span { margin-right:var(--space-4); }
+    .tpl-section-label { font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--color-text-muted); margin-bottom:var(--space-2); margin-top:var(--space-5); }
+    .tpl-fixed-block { background:#f8fafc; border:1px solid var(--color-border); border-radius:6px; padding:var(--space-3) var(--space-4); font-size:.8rem; color:var(--color-text-secondary); margin:var(--space-2) 0; }
+    .tpl-fixed-block .fixed-label { font-size:.68rem; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--color-text-muted); margin-bottom:4px; }
+    .tpl-fixed-row { padding:2px 0; }
+    .tpl-vars { display:flex; flex-wrap:wrap; gap:4px; margin-top:var(--space-2); margin-bottom:var(--space-4); }
+    .var-chip { background:#f0fdf4; color:#15803d; border-radius:4px; padding:2px 8px; font-size:.72rem; font-family:monospace; cursor:pointer; border:1px solid #bbf7d0; transition:background .1s; }
+    .var-chip:hover { background:#dcfce7; }
+    .tpl-actions { display:flex; gap:var(--space-3); margin-top:var(--space-6); padding-top:var(--space-4); border-top:1px solid var(--color-border); flex-wrap:wrap; align-items:center; }
+    .tpl-status { font-size:.78rem; color:var(--color-text-muted); flex:1; }
+    .tpl-status.is-custom { color:#1d4ed8; }
+    .tpl-loading { text-align:center; padding:var(--space-10); color:var(--color-text-muted); }
   </style>
 </head>
 <body>
@@ -582,58 +598,18 @@
 
       <!-- ════ TAB 4 — Emails do Sistema ════ -->
       <div class="tab-panel" id="tab-templates" role="tabpanel" aria-labelledby="btn-tab-tpl">
-        <p style="margin-bottom:var(--space-2);color:var(--color-text-secondary);font-size:.9rem;max-width:700px;">
-          Lista de todos os tipos de e-mail enviados automaticamente pelo sistema. Os templates estão definidos em <code>mail.gs</code> e não são editáveis pela interface.
-        </p>
-        <div style="max-width:800px;">
-          <p class="template-group">Solicitação de Estágio</p>
-          <div class="template-item">
-            <div class="template-icon" style="background:#eff6ff;color:#2563eb;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"/></svg></div>
-            <div><div class="template-name">Solicitação Recebida</div><div class="template-desc">Confirmação enviada ao estudante após submeter a solicitação.</div><div class="template-vars"><span class="var-chip">nomeEstudante</span><span class="var-chip">idEstagio</span><span class="var-chip">nomeEmpresa</span><span class="var-chip">tipoEstagio</span></div></div>
-            <div class="template-dest">→ Estudante</div>
+        <div id="tpl-loading" class="tpl-loading">Carregando templates…</div>
+        <div id="tpl-content" style="display:none;">
+          <div class="info-banner" role="note" style="margin-bottom:var(--space-5);max-width:900px;">
+            Edite o <strong>assunto</strong>, o <strong>parágrafo de abertura</strong> e o <strong>parágrafo de encerramento</strong> de cada e-mail.
+            Os campos de dados (ID, prazo, empresa…), botões e layout HTML permanecem fixos.
+            Use <code>{{nomeDaVariavel}}</code> para inserir dados dinâmicos — clique em um chip verde para copiar.
           </div>
-          <div class="template-item">
-            <div class="template-icon" style="background:#fef3c7;color:#d97706;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0"/></svg></div>
-            <div><div class="template-name">Nova Solicitação — Setor</div><div class="template-desc">Alerta ao setor informando que uma nova solicitação chegou.</div><div class="template-vars"><span class="var-chip">nomeEstudante</span><span class="var-chip">curso</span><span class="var-chip">nomeEmpresa</span><span class="var-chip">idEstagio</span></div></div>
-            <div class="template-dest">→ Setor de Estágios</div>
-          </div>
-          <p class="template-group">Checklist de Análise</p>
-          <div class="template-item">
-            <div class="template-icon" style="background:#f0fdf4;color:#16a34a;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>
-            <div><div class="template-name">Ator Convocado</div><div class="template-desc">Enviado a cada ator quando sua etapa do checklist é ativada. Inclui magic-link e prazo.</div><div class="template-vars"><span class="var-chip">nomeEstudante</span><span class="var-chip">labelAtor</span><span class="var-chip">prazoVencimento</span><span class="var-chip">urlChecklist</span></div></div>
-            <div class="template-dest">→ Orientador / Supervisor / Coordenador</div>
-          </div>
-          <div class="template-item">
-            <div class="template-icon" style="background:#fef3c7;color:#d97706;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>
-            <div><div class="template-name">Lembrete de Prazo</div><div class="template-desc">Disparado automaticamente antes e após vencimento. Copia admin a partir do N-ésimo reenvio.</div><div class="template-vars"><span class="var-chip">nomeEstudante</span><span class="var-chip">labelAtor</span><span class="var-chip">prazoVencimento</span></div></div>
-            <div class="template-dest">→ Ator ativo (+ Admin pós-venc.)</div>
-          </div>
-          <div class="template-item">
-            <div class="template-icon" style="background:#fef2f2;color:#dc2626;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg></div>
-            <div><div class="template-name">Ajuste Necessário — Admin</div><div class="template-desc">Enviado ao admin quando um ator sinaliza pendências na solicitação.</div><div class="template-vars"><span class="var-chip">nomeEstudante</span><span class="var-chip">labelAtor</span><span class="var-chip">observacao</span></div></div>
-            <div class="template-dest">→ Admin</div>
-          </div>
-          <p class="template-group">Assinaturas do TCE</p>
-          <div class="template-item">
-            <div class="template-icon" style="background:#eff6ff;color:#2563eb;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10"/></svg></div>
-            <div><div class="template-name">Assinatura Gov.br + Aprovação Interna</div><div class="template-desc">Notifica signatários externos (Gov.br) e a central nas etapas internas. Lembrete pré e pós-vencimento com escalonamento para admin.</div><div class="template-vars"><span class="var-chip">nomeEstudante</span><span class="var-chip">labelEtapa</span><span class="var-chip">prazoVencimento</span><span class="var-chip">urlDocumento</span></div></div>
-            <div class="template-dest">→ Signatário ativo (+ Admin pós-venc.)</div>
-          </div>
-          <div class="template-item">
-            <div class="template-icon" style="background:#f0fdf4;color:#16a34a;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg></div>
-            <div><div class="template-name">PDF Final — TCE Assinado</div><div class="template-desc">Enviado a todos após conclusão de todas as etapas. Contém o PDF do contrato assinado.</div><div class="template-vars"><span class="var-chip">nomeEstudante</span><span class="var-chip">nomeEmpresa</span><span class="var-chip">linkPdf</span></div></div>
-            <div class="template-dest">→ Todos os envolvidos</div>
-          </div>
-          <p class="template-group">Adendo / Avaliações / Cadastros</p>
-          <div class="template-item">
-            <div class="template-icon" style="background:#eff6ff;color:#2563eb;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg></div>
-            <div><div class="template-name">Fluxo de Adendo</div><div class="template-desc">Mesmo padrão do TCE: Gov.br + aprovação interna + lembrete pós-vencimento com escalonamento.</div><div class="template-vars"><span class="var-chip">nomeEstudante</span><span class="var-chip">tipoAlteracao</span><span class="var-chip">prazoVencimento</span></div></div>
-            <div class="template-dest">→ Signatários do adendo</div>
-          </div>
-          <div class="template-item">
-            <div class="template-icon" style="background:#faf5ff;color:#7c3aed;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M11.35 3.836c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m8.9-4.414c.376.023.75.05 1.124.08 1.131.094 1.976 1.057 1.976 2.192V16.5A2.25 2.25 0 0118 18.75h-2.25m-7.5-10.5H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V18.75m-7.5-10.5h6.375c.621 0 1.125.504 1.125 1.125v9.375m-8.25-3l1.5 1.5 3-3.75"/></svg></div>
-            <div><div class="template-name">Avaliações + Aceite de Orientação + Cadastros</div><div class="template-desc">Preenchimento/revisão de avaliações, aceite de orientação e notificações de novos cadastros aguardando validação.</div><div class="template-vars"><span class="var-chip">nomeEstudante</span><span class="var-chip">tipoAvaliacao</span><span class="var-chip">urlAvaliacao</span></div></div>
-            <div class="template-dest">→ Supervisor / Orientador / Coord / Admin</div>
+          <div class="tpl-layout">
+            <div class="tpl-sidebar" id="tpl-sidebar"></div>
+            <div class="tpl-editor" id="tpl-editor">
+              <div class="tpl-editor-empty">← Selecione um template na lista</div>
+            </div>
           </div>
         </div>
       </div>
@@ -662,12 +638,18 @@
   var FLUXOS = ['checklist','assinaturas','avaliacoes','adendo'];
 
   // ── Tabs ─────────────────────────────────────────────────────────────────────
+  var _tplLoaded = false;
   document.querySelectorAll('.page-tab').forEach(function (btn) {
     btn.addEventListener('click', function () {
       document.querySelectorAll('.page-tab').forEach(function (b) { b.classList.remove('is-active'); b.setAttribute('aria-selected','false'); });
       document.querySelectorAll('.tab-panel').forEach(function (p) { p.classList.remove('is-active'); });
       btn.classList.add('is-active'); btn.setAttribute('aria-selected','true');
       document.getElementById(btn.getAttribute('aria-controls')).classList.add('is-active');
+      // Carrega templates na primeira vez que a aba é aberta
+      if (btn.id === 'btn-tab-tpl' && !_tplLoaded) {
+        _tplLoaded = true;
+        carregarTemplates();
+      }
     });
   });
 
@@ -917,6 +899,160 @@
     if (!tipo) { el.style.display = 'none'; return; }
     el.className = tipo === 'success' ? 'success-banner' : 'error-banner';
     el.textContent = msg; el.style.display = '';
+  }
+
+  // ── TAB 4 — Templates de e-mail ──────────────────────────────────────────────
+  var _templates = [];      // array carregado da API
+  var _tplAtiva  = null;    // objeto do template em edição
+
+  async function carregarTemplates() {
+    try {
+      var res = await API.get('obterTemplates', { authToken: getAccessToken() });
+      _templates = res.templates || [];
+      renderizarSidebar();
+      document.getElementById('tpl-loading').style.display = 'none';
+      document.getElementById('tpl-content').style.display = '';
+    } catch (err) {
+      document.getElementById('tpl-loading').innerHTML =
+        '<div class="error-banner">Erro ao carregar templates: ' + escapeHtml(err.message || '') + '</div>';
+    }
+  }
+
+  function renderizarSidebar() {
+    var grupos = {};
+    _templates.forEach(function (t) {
+      if (!grupos[t.grupo]) grupos[t.grupo] = { label: t.grupoLabel, items: [] };
+      grupos[t.grupo].items.push(t);
+    });
+    var html = '';
+    Object.keys(grupos).forEach(function (g) {
+      html += '<div class="tpl-sidebar-group">' + escapeHtml(grupos[g].label) + '</div>';
+      grupos[g].items.forEach(function (t) {
+        html += '<div class="tpl-sidebar-item" id="tpl-item-' + t.key + '" onclick="abrirTemplate(' + JSON.stringify(t.key) + ')">'
+          + '<span>' + escapeHtml(t.label) + '</span>'
+          + (t.personalizado ? '<span class="tpl-badge-custom">Editado</span>' : '')
+          + '</div>';
+      });
+    });
+    document.getElementById('tpl-sidebar').innerHTML = html;
+  }
+
+  function abrirTemplate(key) {
+    var t = _templates.find(function (x) { return x.key === key; });
+    if (!t) return;
+    _tplAtiva = t;
+
+    document.querySelectorAll('.tpl-sidebar-item').forEach(function (el) { el.classList.remove('is-active'); });
+    var item = document.getElementById('tpl-item-' + key);
+    if (item) item.classList.add('is-active');
+
+    var camposFixosHtml = (t.camposFixos || []).map(function (c) {
+      return '<div class="tpl-fixed-row">· ' + escapeHtml(c) + '</div>';
+    }).join('');
+
+    var varsHtml = (t.vars || []).map(function (v) {
+      return '<span class="var-chip" onclick="inserirVar(\'{{' + v + '}}\')" title="Clique para copiar">{{' + v + '}}</span>';
+    }).join('');
+
+    var statusText = t.personalizado ? 'Template personalizado — difere do padrão do sistema.' : 'Usando o template padrão do sistema.';
+
+    document.getElementById('tpl-editor').innerHTML =
+      '<div class="tpl-header">'
+        + '<div class="tpl-title">' + escapeHtml(t.label) + '</div>'
+        + '<div class="tpl-meta"><span>→ ' + escapeHtml(t.destinatario) + '</span></div>'
+      + '</div>'
+
+      + '<div class="tpl-section-label">Variáveis disponíveis</div>'
+      + '<div class="tpl-vars">' + varsHtml + '</div>'
+
+      + '<div class="form-group">'
+        + '<label class="form-label" for="tpl-assunto">Assunto do e-mail</label>'
+        + '<input type="text" id="tpl-assunto" class="form-input" placeholder="' + escapeHtml(t.assuntoDefault) + '" value="' + escapeHtml(t.assunto) + '">'
+        + '<p class="form-help">Deixe em branco para usar o padrão do sistema.</p>'
+      + '</div>'
+
+      + '<div class="tpl-section-label">Parágrafo de abertura</div>'
+      + '<div class="form-group">'
+        + '<textarea id="tpl-abertura" class="form-input" rows="4" style="resize:vertical;" placeholder="' + escapeHtml(t.aberturaDefault) + '">' + escapeHtml(t.abertura) + '</textarea>'
+        + '<p class="form-help">Texto exibido antes dos campos de dados. Use Enter para separar parágrafos.</p>'
+      + '</div>'
+
+      + '<div class="tpl-section-label">Campos fixos (não editáveis)</div>'
+      + '<div class="tpl-fixed-block"><div class="fixed-label">Gerados automaticamente pelo sistema</div>' + camposFixosHtml + '</div>'
+
+      + '<div class="tpl-section-label">Parágrafo de encerramento</div>'
+      + '<div class="form-group">'
+        + '<textarea id="tpl-encerramento" class="form-input" rows="3" style="resize:vertical;" placeholder="' + escapeHtml(t.encerramentoDefault || '(nenhum)') + '">' + escapeHtml(t.encerramento) + '</textarea>'
+        + '<p class="form-help">Texto exibido após os campos de dados. Deixe em branco para sem encerramento.</p>'
+      + '</div>'
+
+      + '<div class="tpl-actions">'
+        + '<button class="btn btn-primary" id="btn-tpl-salvar" type="button" onclick="salvarTemplate()">Salvar template</button>'
+        + '<button class="btn btn-secondary" type="button" onclick="restaurarTemplate()">Restaurar padrão</button>'
+        + '<span class="tpl-status' + (t.personalizado ? ' is-custom' : '') + '" id="tpl-status">' + escapeHtml(statusText) + '</span>'
+      + '</div>';
+  }
+
+  function inserirVar(varStr) {
+    var el = document.activeElement;
+    if (el && (el.id === 'tpl-assunto' || el.id === 'tpl-abertura' || el.id === 'tpl-encerramento')) {
+      var start = el.selectionStart, end = el.selectionEnd;
+      el.value = el.value.slice(0, start) + varStr + el.value.slice(end);
+      el.selectionStart = el.selectionEnd = start + varStr.length;
+      el.focus();
+    } else {
+      navigator.clipboard && navigator.clipboard.writeText(varStr);
+      mostrarFbGlobal('success', varStr + ' copiado para a área de transferência.');
+    }
+  }
+
+  async function salvarTemplate() {
+    if (!_tplAtiva) return;
+    var btn = document.getElementById('btn-tpl-salvar');
+    btn.classList.add('is-loading'); btn.disabled = true;
+    try {
+      var assunto      = document.getElementById('tpl-assunto').value.trim();
+      var abertura     = document.getElementById('tpl-abertura').value.trim();
+      var encerramento = document.getElementById('tpl-encerramento').value.trim();
+      await API.post('salvarTemplate', { authToken: getAccessToken(), key: _tplAtiva.key, assunto: assunto, abertura: abertura, encerramento: encerramento });
+      var personalizado = !!(assunto || abertura || encerramento);
+      _tplAtiva.assunto      = assunto;
+      _tplAtiva.abertura     = abertura;
+      _tplAtiva.encerramento = encerramento;
+      _tplAtiva.personalizado = personalizado;
+      // Atualizar badge na sidebar
+      var item = document.getElementById('tpl-item-' + _tplAtiva.key);
+      if (item) {
+        item.innerHTML = '<span>' + escapeHtml(_tplAtiva.label) + '</span>'
+          + (personalizado ? '<span class="tpl-badge-custom">Editado</span>' : '');
+      }
+      var status = document.getElementById('tpl-status');
+      if (status) {
+        status.className = 'tpl-status' + (personalizado ? ' is-custom' : '');
+        status.textContent = personalizado ? 'Template personalizado — difere do padrão do sistema.' : 'Usando o template padrão do sistema.';
+      }
+      mostrarFbGlobal('success', 'Template "' + _tplAtiva.label + '" salvo.');
+    } catch (err) {
+      mostrarFbGlobal('error', err.message || 'Erro ao salvar.');
+    } finally {
+      btn.classList.remove('is-loading'); btn.disabled = false;
+    }
+  }
+
+  async function restaurarTemplate() {
+    if (!_tplAtiva) return;
+    if (!confirm('Restaurar o template "' + _tplAtiva.label + '" para o padrão do sistema?\n\nAs personalizações serão perdidas.')) return;
+    try {
+      await API.post('restaurarTemplateDefault', { authToken: getAccessToken(), key: _tplAtiva.key });
+      _tplAtiva.assunto = _tplAtiva.abertura = _tplAtiva.encerramento = '';
+      _tplAtiva.personalizado = false;
+      var item = document.getElementById('tpl-item-' + _tplAtiva.key);
+      if (item) item.innerHTML = '<span>' + escapeHtml(_tplAtiva.label) + '</span>';
+      abrirTemplate(_tplAtiva.key);
+      mostrarFbGlobal('success', 'Template restaurado para o padrão.');
+    } catch (err) {
+      mostrarFbGlobal('error', err.message || 'Erro ao restaurar.');
+    }
   }
 
   function mostrarFbGlobal(tipo, msg) {

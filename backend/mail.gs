@@ -94,6 +94,220 @@ var MAIL = (function () {
     });
   }
 
+  // --------------------------------------------------------------------------
+  // Helpers de template editável
+  // --------------------------------------------------------------------------
+
+  /** Lê override de template do PropertiesService. Retorna {} se não há override. */
+  function _tmpl_(key) {
+    try {
+      var raw = PropertiesService.getScriptProperties().getProperty('tmpl_' + key);
+      return raw ? JSON.parse(raw) : {};
+    } catch (_) { return {}; }
+  }
+
+  /**
+   * Converte texto plano com {{var}} em HTML.
+   * Cada linha vira um <p>. Escapa HTML e interpola variáveis de dados.
+   */
+  function _paraHtml_(texto, dados) {
+    if (!texto) return '';
+    var interpolado = String(texto).replace(/\{\{(\w+)\}\}/g, function (_, k) {
+      return dados && dados[k] !== undefined ? escapeHtmlMail_(String(dados[k])) : '{{' + k + '}}';
+    });
+    return interpolado.split(/\n+/).filter(function (l) { return l.trim(); })
+      .map(function (l) { return '<p>' + l.trim() + '</p>'; }).join('');
+  }
+
+  /** Interpola {{var}} no assunto (sem escapar HTML). */
+  function _assuntoTmpl_(texto, dados) {
+    if (!texto) return '';
+    return String(texto).replace(/\{\{(\w+)\}\}/g, function (_, k) {
+      return dados && dados[k] !== undefined ? String(dados[k]) : '{{' + k + '}}';
+    });
+  }
+
+  // --------------------------------------------------------------------------
+  // Meta-dados de templates (usados pela UI de admin)
+  // --------------------------------------------------------------------------
+
+  function obterMetaTemplates() {
+    return [
+      // ── Solicitação ───────────────────────────────────────────────────────
+      { key:'solicitacaoEstudante',   grupo:'solicitacao', grupoLabel:'Solicitação de Estágio',
+        label:'Solicitação Recebida — Estudante', destinatario:'Estudante',
+        assuntoDefault:'[SGE] Solicitação de estágio recebida — {{idEstagio}}',
+        aberturaDefault:'Olá, {{nomeEstudante}}!\n\nSua solicitação de estágio foi recebida e está em análise. Entraremos em contato assim que for processada.',
+        encerramentoDefault:'Guarde este ID — ele será necessário para relatórios e adendos.',
+        vars:['nomeEstudante','idEstagio','nomeEmpresa','tipoEstagio','dataInicio','dataTermino'],
+        camposFixos:['ID da solicitação','Empresa','Tipo de estágio','Início previsto','Término previsto'] },
+
+      { key:'solicitacaoOrientador', grupo:'solicitacao', grupoLabel:'Solicitação de Estágio',
+        label:'Solicitação Recebida — Orientador', destinatario:'Orientador',
+        assuntoDefault:'[SGE] Novo estagiário sob sua orientação — {{idEstagio}}',
+        aberturaDefault:'Uma nova solicitação de estágio foi registrada com você como orientador.',
+        encerramentoDefault:'Aguarde contato do setor de estágios para os próximos passos.',
+        vars:['idEstagio','nomeEstudante','nomeEmpresa','dataInicio','dataTermino'],
+        camposFixos:['ID','Estudante','Empresa','Período'] },
+
+      { key:'solicitacaoAprovada',   grupo:'solicitacao', grupoLabel:'Solicitação de Estágio',
+        label:'Solicitação Aprovada', destinatario:'Estudante',
+        assuntoDefault:'[SGE] Estágio aprovado — {{idEstagio}}',
+        aberturaDefault:'Olá, {{nomeEstudante}}!\n\nSua solicitação de estágio foi aprovada! O Termo de Compromisso de Estágio (TCE) será encaminhado para assinatura.',
+        encerramentoDefault:'Fique atento ao seu e-mail para as instruções sobre a assinatura do TCE.',
+        vars:['nomeEstudante','idEstagio','nomeEmpresa','dataInicio','dataTermino'],
+        camposFixos:['ID do estágio','Empresa','Início','Término'] },
+
+      { key:'solicitacaoReprovada',  grupo:'solicitacao', grupoLabel:'Solicitação de Estágio',
+        label:'Solicitação Não Aprovada', destinatario:'Estudante',
+        assuntoDefault:'[SGE] Solicitação não aprovada — {{idEstagio}}',
+        aberturaDefault:'Olá, {{nomeEstudante}}.\n\nInfelizmente, sua solicitação de estágio não foi aprovada neste momento.',
+        encerramentoDefault:'Em caso de dúvidas, entre em contato com o setor pelo e-mail estagios@riogrande.ifrs.edu.br.',
+        vars:['nomeEstudante','idEstagio','motivo'],
+        camposFixos:['ID da solicitação','Motivo'] },
+
+      { key:'devolucaoAluno',        grupo:'solicitacao', grupoLabel:'Solicitação de Estágio',
+        label:'Devolução para Correção', destinatario:'Estudante',
+        assuntoDefault:'[SGE] Solicitação devolvida para correção — {{idEstagio}}',
+        aberturaDefault:'Olá, {{nomeEstudante}}.\n\nO Setor de Estágios devolveu sua solicitação de estágio para que você realize as correções necessárias e reenvie.',
+        encerramentoDefault:'Em caso de dúvidas, entre em contato pelo e-mail estagios@riogrande.ifrs.edu.br.',
+        vars:['nomeEstudante','idEstagio','motivo'],
+        camposFixos:['ID da solicitação','Motivo / Orientação do setor','Botão: Acessar minha solicitação'] },
+
+      // ── Checklist ─────────────────────────────────────────────────────────
+      { key:'checklistOrientador',   grupo:'checklist', grupoLabel:'Checklist',
+        label:'Checklist — Orientador (detalhado)', destinatario:'Orientador',
+        assuntoDefault:'[IFRS Estágios] Checklist de orientação aguardando sua resposta — {{nomeEstudante}} ({{idEstagio}})',
+        aberturaDefault:'Olá, {{nomeOrientador}},\n\nO(a) estudante {{nomeEstudante}} selecionou você como orientador(a) de estágio. Por favor, acesse o link abaixo para revisar as informações e responder o checklist de orientação.',
+        encerramentoDefault:'Dúvidas: estagios@riogrande.ifrs.edu.br',
+        vars:['nomeOrientador','nomeEstudante','idEstagio','curso','nomeEmpresa','tipoEstagio','dataInicio','dataTermino','prazoVencimento'],
+        camposFixos:['Tabela: Estudante, Empresa, Tipo, Período, Carga horária, Prazo','Botão: Revisar e responder checklist'] },
+
+      { key:'checklistAtor',         grupo:'checklist', grupoLabel:'Checklist',
+        label:'Checklist — Ator Convocado', destinatario:'Orientador / Supervisor / Coordenador',
+        assuntoDefault:'[SGE] Checklist de estágio aguardando sua resposta — {{idEstagio}}',
+        aberturaDefault:'Olá!\n\nO checklist da solicitação de estágio abaixo foi liberado para sua análise. Por favor, acesse o sistema e responda até a data limite.',
+        encerramentoDefault:'',
+        vars:['idEstagio','nomeEstudante','curso','nomeEmpresa','labelAtor','prazoVencimento'],
+        camposFixos:['ID do estágio','Estudante','Curso','Empresa','Seu papel','Prazo limite','Botão: Responder Checklist'] },
+
+      { key:'lembreteChecklist',     grupo:'checklist', grupoLabel:'Checklist',
+        label:'Lembrete de Prazo — Checklist', destinatario:'Ator ativo',
+        assuntoDefault:'[SGE] Lembrete: prazo se encerrando — checklist {{idEstagio}}',
+        aberturaDefault:'Olá!\n\nEste é um lembrete: o prazo para sua resposta no checklist de estágio vence em {{diasAntes}} dias úteis.',
+        encerramentoDefault:'',
+        vars:['idEstagio','nomeEstudante','labelAtor','prazoVencimento','diasAntes'],
+        camposFixos:['ID do estágio','Estudante','Seu papel','Prazo limite','Botão: Responder Agora'] },
+
+      { key:'aguardandoAceite',      grupo:'checklist', grupoLabel:'Checklist',
+        label:'Aguardando Aceite do Orientador', destinatario:'Estudante',
+        assuntoDefault:'[IFRS Estágios] Solicitação enviada — aguardando orientador ({{idEstagio}})',
+        aberturaDefault:'Olá, {{nomeEstudante}}!\n\nSua solicitação de estágio foi recebida. Agora aguardamos o aceite do(a) orientador(a) escolhido(a).',
+        encerramentoDefault:'Guarde este ID — ele será necessário para relatórios e adendos.',
+        vars:['nomeEstudante','idEstagio','nomeOrientador','nomeEmpresa','tipoEstagio','dataInicio','dataTermino'],
+        camposFixos:['ID da solicitação','Orientador(a)','Empresa','Tipo','Período'] },
+
+      { key:'aceiteOrientadorAceito',   grupo:'checklist', grupoLabel:'Checklist',
+        label:'Resposta do Orientador — Aceito', destinatario:'Estudante',
+        assuntoDefault:'[IFRS Estágios] Orientador aceitou — {{idEstagio}}',
+        aberturaDefault:'Olá, {{nomeEstudante}}!\n\nBoa notícia! O(a) Prof(a). {{nomeOrientador}} aceitou orientar seu estágio. Sua solicitação avançou para o checklist de validação com todos os envolvidos.',
+        encerramentoDefault:'Acompanhe o andamento pelo seu portal de estágios. Em breve você receberá mais informações.',
+        vars:['nomeEstudante','idEstagio','nomeOrientador','nomeEmpresa'],
+        camposFixos:['ID do estágio','Empresa'] },
+
+      { key:'aceiteOrientadorRecusado', grupo:'checklist', grupoLabel:'Checklist',
+        label:'Resposta do Orientador — Recusado', destinatario:'Estudante',
+        assuntoDefault:'[IFRS Estágios] Orientador recusou — {{idEstagio}}',
+        aberturaDefault:'Olá, {{nomeEstudante}},\n\nInfelizmente o(a) Prof(a). {{nomeOrientador}} não pôde aceitar a orientação do seu estágio neste momento.',
+        encerramentoDefault:'Dúvidas? Entre em contato: estagios@riogrande.ifrs.edu.br',
+        vars:['nomeEstudante','idEstagio','nomeOrientador','obs'],
+        camposFixos:['ID do estágio','Motivo informado (opcional)'] },
+
+      // ── Assinaturas TCE ───────────────────────────────────────────────────
+      { key:'assinaturaGovBr',       grupo:'assinaturas', grupoLabel:'Assinaturas TCE',
+        label:'Assinar via Gov.br', destinatario:'Signatário externo',
+        assuntoDefault:'[SGE] Assine o TCE (etapa {{numeroEtapa}}/5) — {{idEstagio}}',
+        aberturaDefault:'Olá!\n\nÉ a sua vez de assinar o Termo de Compromisso de Estágio (TCE). Acesse a página pelo botão abaixo para visualizar, baixar e enviar o documento assinado.',
+        encerramentoDefault:'',
+        vars:['idEstagio','nomeEstudante','labelAtor','numeroEtapa','prazoVencimento'],
+        camposFixos:['ID do estágio','Estudante','Sua etapa','Prazo limite','Botão: Acessar e Assinar TCE'] },
+
+      { key:'assinaturaInterno',     grupo:'assinaturas', grupoLabel:'Assinaturas TCE',
+        label:'Aprovação Interna do TCE', destinatario:'Central / Direção',
+        assuntoDefault:'[SGE] Ação necessária — fluxo TCE etapa {{numeroEtapa}}/5 — {{idEstagio}}',
+        aberturaDefault:'Olá!\n\nO fluxo de assinaturas do TCE chegou à sua etapa. Por favor, revise o documento e registre sua decisão no sistema.',
+        encerramentoDefault:'',
+        vars:['idEstagio','nomeEstudante','labelAtor','numeroEtapa','prazoVencimento'],
+        camposFixos:['ID do estágio','Estudante','Sua etapa','Prazo limite','Botão: Acessar Fluxo de Assinaturas'] },
+
+      { key:'lembreteAssinatura',    grupo:'assinaturas', grupoLabel:'Assinaturas TCE',
+        label:'Lembrete de Prazo — Assinatura', destinatario:'Signatário ativo',
+        assuntoDefault:'[SGE] Lembrete: prazo se encerrando — assinatura TCE etapa {{numeroEtapa}} — {{idEstagio}}',
+        aberturaDefault:'Olá!\n\nO prazo para sua ação no fluxo de assinaturas vence em {{diasAntes}} dias úteis.',
+        encerramentoDefault:'',
+        vars:['idEstagio','nomeEstudante','labelAtor','numeroEtapa','prazoVencimento','diasAntes'],
+        camposFixos:['ID do estágio','Estudante','Sua etapa','Prazo limite','Botão: Agir Agora'] },
+
+      { key:'pdfFinalAssinaturas',   grupo:'assinaturas', grupoLabel:'Assinaturas TCE',
+        label:'TCE Finalizado — PDF Assinado', destinatario:'Todos os envolvidos',
+        assuntoDefault:'[SGE] TCE assinado — Estágio {{idEstagio}} — {{nomeEstudante}}',
+        aberturaDefault:'Olá, {{nome}}!\n\nO processo de assinatura do Termo de Compromisso de Estágio foi concluído com sucesso!',
+        encerramentoDefault:'O documento pode ser baixado diretamente na página acima.',
+        vars:['nome','idEstagio','nomeEstudante'],
+        camposFixos:['ID do estágio','Estudante','Botão: Acessar TCE Assinado'] },
+
+      // ── Adendo ────────────────────────────────────────────────────────────
+      { key:'adendoGovBr',           grupo:'adendo', grupoLabel:'Adendo / Aditamento',
+        label:'Assinar Aditamento via Gov.br', destinatario:'Signatário externo',
+        assuntoDefault:'[SGE] Assine o Aditamento ao TCE (etapa {{numeroEtapa}}/5) — {{idEstagio}}',
+        aberturaDefault:'Olá!\n\nÉ a sua vez de assinar o Aditamento ao Termo de Compromisso de Estágio. Acesse a página pelo botão abaixo, baixe o documento, assine com gov.br e envie a versão assinada.',
+        encerramentoDefault:'',
+        vars:['idEstagio','nomeEstudante','tipoAdendo','labelAtor','numeroEtapa','prazoVencimento'],
+        camposFixos:['ID do estágio','Estudante','Tipo de aditamento','Sua etapa','Prazo limite','Botão: Acessar e Assinar Aditamento'] },
+
+      { key:'adendoInterno',         grupo:'adendo', grupoLabel:'Adendo / Aditamento',
+        label:'Aprovação Interna do Aditamento', destinatario:'Central / Direção',
+        assuntoDefault:'[SGE] Ação necessária — Aditamento TCE etapa {{numeroEtapa}}/5 — {{idEstagio}}',
+        aberturaDefault:'Olá!\n\nO fluxo de assinaturas do Aditamento ao TCE chegou à sua etapa. Por favor, revise o documento e registre sua decisão no sistema.',
+        encerramentoDefault:'',
+        vars:['idEstagio','nomeEstudante','tipoAdendo','labelAtor','numeroEtapa','prazoVencimento'],
+        camposFixos:['ID do estágio','Estudante','Tipo de aditamento','Sua etapa','Prazo limite','Botão: Acessar Fluxo de Assinaturas'] },
+
+      { key:'adendoAprovado',        grupo:'adendo', grupoLabel:'Adendo / Aditamento',
+        label:'Adendo Aprovado', destinatario:'Estudante',
+        assuntoDefault:'[SGE] Adendo ao TCE aprovado',
+        aberturaDefault:'Seu pedido de adendo ao TCE foi aprovado pelo Setor de Estágios.',
+        encerramentoDefault:'',
+        vars:['idEstagio'],
+        camposFixos:['Estágio','Botão: Ver meu estágio no SGE'] },
+
+      { key:'adendoReprovado',       grupo:'adendo', grupoLabel:'Adendo / Aditamento',
+        label:'Adendo Reprovado', destinatario:'Estudante',
+        assuntoDefault:'[SGE] Adendo ao TCE reprovado',
+        aberturaDefault:'Seu pedido de adendo ao TCE foi reprovado pelo Setor de Estágios.',
+        encerramentoDefault:'',
+        vars:['idEstagio','motivoRejeicao'],
+        camposFixos:['Estágio','Motivo (opcional)','Botão: Ver meu estágio no SGE'] },
+
+      { key:'pdfFinalAdendo',        grupo:'adendo', grupoLabel:'Adendo / Aditamento',
+        label:'Aditamento Finalizado — PDF Assinado', destinatario:'Todos os envolvidos',
+        assuntoDefault:'[SGE] Aditamento ao TCE assinado — Estágio {{idEstagio}} — {{nomeEstudante}}',
+        aberturaDefault:'Olá, {{nome}}!\n\nO processo de assinatura do Aditamento ao Termo de Compromisso de Estágio foi concluído com sucesso!',
+        encerramentoDefault:'O documento pode ser baixado diretamente na página acima.',
+        vars:['nome','idEstagio','nomeEstudante','tipoAdendo'],
+        camposFixos:['ID do estágio','Estudante','Tipo de aditamento','Botão: Acessar Aditamento Assinado'] },
+
+      // ── Servidores ────────────────────────────────────────────────────────
+      { key:'rejeicaoServidor',      grupo:'servidores', grupoLabel:'Servidores',
+        label:'Cadastro de Servidor Rejeitado', destinatario:'Orientador / Coordenador',
+        assuntoDefault:'[IFRS Estágios] Cadastro de {{tipoLabel}} não aprovado',
+        aberturaDefault:'Olá, {{nome}},\n\nSeu cadastro como {{tipoLabel}} não foi aprovado pelo setor de estágios do IFRS Campus Rio Grande.',
+        encerramentoDefault:'Dúvidas: estagios@riogrande.ifrs.edu.br',
+        vars:['nome','tipoLabel','obs'],
+        camposFixos:['Motivo / Observações (opcional)','Link para reenvio do cadastro'] },
+    ];
+  }
+
   function enviar_(para, assunto, htmlBody, cc) {
     var corpo = encodeEmoji_(htmlBody);
     var opts  = { htmlBody: corpo, name: SISTEMA_NOME };
@@ -140,18 +354,23 @@ var MAIL = (function () {
 
   function enviarEmailSolicitacaoRecebida(dados) {
     // Para o estudante
-    var corpoEstudante = '<p>Olá, <strong>' + dados.nomeEstudante + '</strong>!</p>'
-      + '<p>Sua solicitação de estágio foi recebida e está em análise. Entraremos em contato assim que for processada.</p>'
+    var tEst = _tmpl_('solicitacaoEstudante');
+    var assuntoEst    = tEst.assunto    ? _assuntoTmpl_(tEst.assunto, dados)    : '[SGE] Solicitação de estágio recebida — ' + dados.idEstagio;
+    var aberturaEst   = tEst.abertura   ? _paraHtml_(tEst.abertura, dados)
+      : '<p>Olá, <strong>' + escapeHtmlMail_(dados.nomeEstudante) + '</strong>!</p>'
+        + '<p>Sua solicitação de estágio foi recebida e está em análise. Entraremos em contato assim que for processada.</p>';
+    var encerrEst = tEst.encerramento ? _paraHtml_(tEst.encerramento, dados)
+      : '<p style="color:#6b7280;font-size:13px;">Guarde este ID — ele será necessário para relatórios e adendos.</p>';
+    var corpoEstudante = aberturaEst
       + campo_('ID da solicitação', dados.idEstagio)
       + campo_('Empresa', dados.nomeEmpresa)
       + campo_('Tipo de estágio', dados.tipoEstagio)
       + campo_('Início previsto', dados.dataInicio)
       + campo_('Término previsto', dados.dataTermino)
-      + '<p style="color:#6b7280;font-size:13px;">Guarde este ID — ele será necessário para relatórios e adendos.</p>';
-    enviar_(dados.emailEstudante, '[SGE] Solicitação de estágio recebida — ' + dados.idEstagio,
-      htmlBase_('Solicitação Recebida', corpoEstudante));
+      + encerrEst;
+    enviar_(dados.emailEstudante, assuntoEst, htmlBase_('Solicitação Recebida', corpoEstudante));
 
-    // Para o setor
+    // Para o setor (sem override — e-mail interno)
     var corpoSetor = '<p>Nova solicitação de estágio recebida.</p>'
       + campo_('ID', dados.idEstagio)
       + campo_('Estudante', dados.nomeEstudante + ' (' + dados.emailEstudante + ')')
@@ -167,38 +386,51 @@ var MAIL = (function () {
 
     // Para o orientador
     if (dados.emailOrientador) {
-      var corpoOrientador = '<p>Uma nova solicitação de estágio foi registrada com você como orientador.</p>'
+      var tOri = _tmpl_('solicitacaoOrientador');
+      var assuntoOri  = tOri.assunto  ? _assuntoTmpl_(tOri.assunto, dados)  : '[SGE] Novo estagiário sob sua orientação — ' + dados.idEstagio;
+      var aberturaOri = tOri.abertura ? _paraHtml_(tOri.abertura, dados)     : '<p>Uma nova solicitação de estágio foi registrada com você como orientador.</p>';
+      var encerrOri   = tOri.encerramento ? _paraHtml_(tOri.encerramento, dados) : '<p>Aguarde contato do setor de estágios para os próximos passos.</p>';
+      var corpoOrientador = aberturaOri
         + campo_('ID', dados.idEstagio)
         + campo_('Estudante', dados.nomeEstudante)
         + campo_('Empresa', dados.nomeEmpresa)
         + campo_('Período', dados.dataInicio + ' a ' + dados.dataTermino)
-        + '<p>Aguarde contato do setor de estágios para os próximos passos.</p>';
-      enviar_(dados.emailOrientador, '[SGE] Novo estagiário sob sua orientação — ' + dados.idEstagio,
-        htmlBase_('Nova Solicitação de Estágio', corpoOrientador));
+        + encerrOri;
+      enviar_(dados.emailOrientador, assuntoOri, htmlBase_('Nova Solicitação de Estágio', corpoOrientador));
     }
   }
 
   function enviarEmailSolicitacaoAprovada(dados) {
-    var corpo = '<p>Olá, <strong>' + dados.nomeEstudante + '</strong>!</p>'
-      + '<p>Sua solicitação de estágio foi <strong style="color:#16a34a;">aprovada</strong>! O Termo de Compromisso de Estágio (TCE) será encaminhado para assinatura.</p>'
+    var t = _tmpl_('solicitacaoAprovada');
+    var assunto = t.assunto ? _assuntoTmpl_(t.assunto, dados) : '[SGE] Estágio aprovado — ' + dados.idEstagio;
+    var abertura = t.abertura ? _paraHtml_(t.abertura, dados)
+      : '<p>Olá, <strong>' + escapeHtmlMail_(dados.nomeEstudante) + '</strong>!</p>'
+        + '<p>Sua solicitação de estágio foi <strong style="color:#16a34a;">aprovada</strong>! O Termo de Compromisso de Estágio (TCE) será encaminhado para assinatura.</p>';
+    var encerramento = t.encerramento ? _paraHtml_(t.encerramento, dados)
+      : '<p>Fique atento ao seu e-mail para as instruções sobre a assinatura do TCE.</p>';
+    var corpo = abertura
       + campo_('ID do estágio', dados.idEstagio)
       + campo_('Empresa', dados.nomeEmpresa)
       + campo_('Início', dados.dataInicio)
       + campo_('Término', dados.dataTermino)
-      + '<p>Fique atento ao seu e-mail para as instruções sobre a assinatura do TCE.</p>';
-    enviar_(dados.emailEstudante, '[SGE] Estágio aprovado — ' + dados.idEstagio,
-      htmlBase_('Estágio Aprovado! ✓', corpo));
+      + encerramento;
+    enviar_(dados.emailEstudante, assunto, htmlBase_('Estágio Aprovado! ✓', corpo));
   }
 
   function enviarEmailSolicitacaoReprovada(dados) {
-    var corpo = '<p>Olá, <strong>' + dados.nomeEstudante + '</strong>.</p>'
-      + '<p>Infelizmente, sua solicitação de estágio não foi aprovada neste momento.</p>'
+    var t = _tmpl_('solicitacaoReprovada');
+    var assunto = t.assunto ? _assuntoTmpl_(t.assunto, dados) : '[SGE] Solicitação não aprovada — ' + dados.idEstagio;
+    var abertura = t.abertura ? _paraHtml_(t.abertura, dados)
+      : '<p>Olá, <strong>' + escapeHtmlMail_(dados.nomeEstudante) + '</strong>.</p>'
+        + '<p>Infelizmente, sua solicitação de estágio não foi aprovada neste momento.</p>';
+    var encerramento = t.encerramento ? _paraHtml_(t.encerramento, dados)
+      : '<p>Em caso de dúvidas, entre em contato com o setor pelo e-mail '
+        + '<a href="mailto:' + SETOR_EMAIL + '">' + SETOR_EMAIL + '</a>.</p>';
+    var corpo = abertura
       + campo_('ID da solicitação', dados.idEstagio)
       + campo_('Motivo', dados.motivo || 'Consulte o setor de estágios para mais informações.')
-      + '<p>Em caso de dúvidas, entre em contato com o setor pelo e-mail '
-      + '<a href="mailto:' + SETOR_EMAIL + '">' + SETOR_EMAIL + '</a>.</p>';
-    enviar_(dados.emailEstudante, '[SGE] Solicitação não aprovada — ' + dados.idEstagio,
-      htmlBase_('Resultado da Solicitação', corpo));
+      + encerramento;
+    enviar_(dados.emailEstudante, assunto, htmlBase_('Resultado da Solicitação', corpo));
   }
 
   // --------------------------------------------------------------------------
@@ -268,16 +500,20 @@ var MAIL = (function () {
     var aprovado  = decisao === 'Aprovado';
     var urlAluno  = BASE_URL + '/estudantes/acompanhamento.html';
     var titulo    = aprovado ? '[SGE] Adendo ao TCE aprovado' : '[SGE] Adendo ao TCE reprovado';
-    var intro     = aprovado
-      ? '<p>Seu pedido de adendo ao TCE foi <strong>aprovado</strong> pelo Setor de Estágios.</p>'
-      : '<p>Seu pedido de adendo ao TCE foi <strong>reprovado</strong> pelo Setor de Estágios.</p>';
+    var tmplKey   = aprovado ? 'adendoAprovado' : 'adendoReprovado';
+    var t = _tmpl_(tmplKey);
+    var assunto = t.assunto ? _assuntoTmpl_(t.assunto, dados) : titulo;
+    var intro = t.abertura ? _paraHtml_(t.abertura, dados)
+      : (aprovado
+          ? '<p>Seu pedido de adendo ao TCE foi <strong>aprovado</strong> pelo Setor de Estágios.</p>'
+          : '<p>Seu pedido de adendo ao TCE foi <strong>reprovado</strong> pelo Setor de Estágios.</p>');
     var corpo = intro
       + campo_('Estágio', dados.idEstagio)
       + (dados.motivoRejeicao ? campo_('Motivo', dados.motivoRejeicao) : '')
       + botaoEmail_(urlAluno, 'Ver meu estágio no SGE')
       + '<p style="font-size:13px;color:#6b7280;margin:4px 0 16px;">'
       + 'Ou acesse: <a href="' + urlAluno + '" style="color:#1d4ed8;">' + urlAluno + '</a></p>';
-    enviar_(dados.emailAluno, titulo, htmlBase_(titulo, corpo));
+    enviar_(dados.emailAluno, assunto, htmlBase_(titulo, corpo));
   }
 
   // --------------------------------------------------------------------------
@@ -319,13 +555,19 @@ var MAIL = (function () {
     var linkPerfil = dados.tipo === 'coordenador'
       ? 'https://ifrs-riogrande.github.io/estagios/servidores/perfil-coordenador.html'
       : 'https://ifrs-riogrande.github.io/estagios/servidores/perfil-orientador.html';
-    var corpo = '<p>Olá' + (dados.nome ? ', <strong>' + dados.nome + '</strong>' : '') + ',</p>'
-      + '<p>Seu cadastro como <strong>' + tipoLabel + '</strong> não foi aprovado pelo setor de estágios do IFRS Campus Rio Grande.</p>'
+    var t = _tmpl_('rejeicaoServidor');
+    var dadosT = Object.assign({}, dados, { tipoLabel: tipoLabel, nome: dados.nome || '' });
+    var assunto = t.assunto ? _assuntoTmpl_(t.assunto, dadosT) : '[IFRS Estágios] Cadastro de ' + tipoLabel + ' não aprovado';
+    var abertura = t.abertura ? _paraHtml_(t.abertura, dadosT)
+      : '<p>Olá' + (dados.nome ? ', <strong>' + dados.nome + '</strong>' : '') + ',</p>'
+        + '<p>Seu cadastro como <strong>' + tipoLabel + '</strong> não foi aprovado pelo setor de estágios do IFRS Campus Rio Grande.</p>';
+    var encerramento = t.encerramento ? _paraHtml_(t.encerramento, dadosT)
+      : '<p>Dúvidas: <a href="mailto:' + SETOR_EMAIL + '">' + SETOR_EMAIL + '</a></p>';
+    var corpo = abertura
       + (dados.obs ? '<p class="label">Motivo / Observações</p><p class="value" style="white-space:pre-wrap">' + dados.obs + '</p>' : '')
       + '<p>Você pode corrigir os dados e reenviar seu cadastro pelo portal:</p>'
       + '<p><a href="' + linkPerfil + '" style="color:#1d4ed8;">' + linkPerfil + '</a></p>'
-      + '<p>Dúvidas: <a href="mailto:' + SETOR_EMAIL + '">' + SETOR_EMAIL + '</a></p>';
-    var assunto = '[IFRS Estágios] Cadastro de ' + tipoLabel + ' não aprovado';
+      + encerramento;
     var html = htmlBase_(assunto, corpo);
     var err1 = null, err2 = null;
     // Tentativa 1: GmailApp
@@ -391,12 +633,15 @@ var MAIL = (function () {
   function enviarEmailChecklistAtor(dados) {
     // dados: { idEstagio, nomeEstudante, curso, nomeEmpresa, labelAtor, prazoVencimento, email,
     //          urlChecklist (opcional — já inclui token para supervisor via magic-link) }
-    // Usa urlChecklist passada pelo caller (inclui token). Fallback sem token (para OAuth).
     var urlChecklist = dados.urlChecklist
                      || (BASE_URL + '/checklist/?id=' + encodeURIComponent(dados.idEstagio));
-    var corpo = '<p>Olá!</p>'
-      + '<p>O checklist da solicitação de estágio abaixo foi liberado para sua análise. '
-      + 'Por favor, acesse o sistema e responda até a data limite.</p>'
+    var t = _tmpl_('checklistAtor');
+    var assunto = t.assunto ? _assuntoTmpl_(t.assunto, dados) : '[SGE] Checklist de estágio aguardando sua resposta — ' + dados.idEstagio;
+    var abertura = t.abertura ? _paraHtml_(t.abertura, dados)
+      : '<p>Olá!</p>'
+        + '<p>O checklist da solicitação de estágio abaixo foi liberado para sua análise. '
+        + 'Por favor, acesse o sistema e responda até a data limite.</p>';
+    var corpo = abertura
       + campo_('ID do estágio', dados.idEstagio)
       + campo_('Estudante', dados.nomeEstudante)
       + campo_('Curso', dados.curso)
@@ -408,9 +653,7 @@ var MAIL = (function () {
       + 'padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:600;">Responder Checklist</a></p>'
       + '<p style="font-size:13px;color:#6b7280;margin-top:12px;">Se o botão não funcionar, acesse:<br>'
       + '<a href="' + urlChecklist + '" style="color:#6b7280;">' + urlChecklist + '</a></p>';
-    enviar_(dados.email,
-      '[SGE] Checklist de estágio aguardando sua resposta — ' + dados.idEstagio,
-      htmlBase_('Checklist — ' + dados.labelAtor, corpo));
+    enviar_(dados.email, assunto, htmlBase_('Checklist — ' + dados.labelAtor, corpo));
   }
 
   function enviarEmailChecklistAjuste(dados) {
@@ -430,12 +673,17 @@ var MAIL = (function () {
 
   function enviarEmailLembreteChecklist(dados) {
     // dados: { idEstagio, nomeEstudante, labelAtor, prazoVencimento, email,
-    //          urlChecklist (opcional — inclui token para supervisor) }
+    //          urlChecklist (opcional — inclui token para supervisor), diasAntes }
     var urlChecklist = dados.urlChecklist
                      || (BASE_URL + '/checklist/?id=' + encodeURIComponent(dados.idEstagio));
-    var corpo = '<p>Olá!</p>'
-      + '<p>Este é um lembrete: o prazo para sua resposta no checklist de estágio vence em '
-      + '<strong>2 dias úteis</strong>.</p>'
+    var diasAntes = dados.diasAntes || 2;
+    var t = _tmpl_('lembreteChecklist');
+    var assunto = t.assunto ? _assuntoTmpl_(t.assunto, dados) : '[SGE] Lembrete: prazo se encerrando — checklist ' + dados.idEstagio;
+    var abertura = t.abertura ? _paraHtml_(t.abertura, Object.assign({}, dados, { diasAntes: diasAntes }))
+      : '<p>Olá!</p>'
+        + '<p>Este é um lembrete: o prazo para sua resposta no checklist de estágio vence em '
+        + '<strong>' + diasAntes + ' dias úteis</strong>.</p>';
+    var corpo = abertura
       + campo_('ID do estágio', dados.idEstagio)
       + campo_('Estudante', dados.nomeEstudante)
       + campo_('Seu papel', dados.labelAtor)
@@ -443,9 +691,7 @@ var MAIL = (function () {
       + '<p style="margin-top:24px;">'
       + '<a href="' + urlChecklist + '" style="display:inline-block;background:#d97706;color:#fff;'
       + 'padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:600;">Responder Agora</a></p>';
-    enviar_(dados.email,
-      '[SGE] Lembrete: prazo se encerrando — checklist ' + dados.idEstagio,
-      htmlBase_('Lembrete de Prazo — Checklist', corpo));
+    enviar_(dados.email, assunto, htmlBase_('Lembrete de Prazo — Checklist', corpo));
   }
 
   // --------------------------------------------------------------------------
@@ -461,13 +707,19 @@ var MAIL = (function () {
         + '<p style="margin:0;font-size:13px;color:#374151;"><strong>Motivo:</strong> ' + escapeHtmlMail_(dados.motivoRejeicao) + '</p>'
         + '</div>'
       : '';
-    var corpo = '<p>Olá!</p>'
-      + (dados.motivoRejeicao
-          ? '<p>Sua etapa no fluxo de assinaturas do TCE foi <strong>devolvida para correção</strong>. '
-            + 'Acesse a página, verifique o motivo e reenvie o documento corrigido.</p>'
-          : '<p>É a sua vez de assinar o Termo de Compromisso de Estágio (TCE). '
-            + 'Acesse a página pelo botão abaixo para visualizar, baixar e enviar o documento assinado.</p>')
-      + blocoRejeicao
+    var t = _tmpl_('assinaturaGovBr');
+    var assunto = t.assunto ? _assuntoTmpl_(t.assunto, dados) : '[SGE] Assine o TCE (etapa ' + dados.numeroEtapa + '/5) — ' + dados.idEstagio;
+    var abertura;
+    if (t.abertura) {
+      abertura = blocoRejeicao + _paraHtml_(t.abertura, dados);
+    } else {
+      abertura = '<p>Olá!</p>'
+        + (dados.motivoRejeicao
+            ? '<p>Sua etapa no fluxo de assinaturas do TCE foi <strong>devolvida para correção</strong>. Acesse a página, verifique o motivo e reenvie o documento corrigido.</p>'
+            : '<p>É a sua vez de assinar o Termo de Compromisso de Estágio (TCE). Acesse a página pelo botão abaixo para visualizar, baixar e enviar o documento assinado.</p>')
+        + blocoRejeicao;
+    }
+    var corpo = abertura
       + campo_('ID do estágio', dados.idEstagio)
       + campo_('Estudante', dados.nomeEstudante)
       + campo_('Sua etapa', 'Etapa ' + dados.numeroEtapa + '/5 — ' + dados.labelAtor)
@@ -478,9 +730,7 @@ var MAIL = (function () {
       + '</p>'
       + '<p style="font-size:13px;color:#6b7280;margin-top:12px;">'
       + 'Se o botão não funcionar, acesse: <a href="' + pageUrl + '" style="color:#6b7280;">' + pageUrl + '</a></p>';
-    enviar_(dados.email,
-      '[SGE] Assine o TCE (etapa ' + dados.numeroEtapa + '/5) — ' + dados.idEstagio,
-      htmlBase_('Assinatura do TCE — ' + dados.labelAtor, corpo));
+    enviar_(dados.email, assunto, htmlBase_('Assinatura do TCE — ' + dados.labelAtor, corpo));
   }
 
   function enviarEmailAssinaturaInterno(dados) {
@@ -492,13 +742,19 @@ var MAIL = (function () {
         + '<p style="margin:0;font-size:13px;color:#374151;"><strong>Motivo:</strong> ' + escapeHtmlMail_(dados.motivoRejeicao) + '</p>'
         + '</div>'
       : '';
-    var corpo = '<p>Olá!</p>'
-      + (dados.motivoRejeicao
-          ? '<p>A etapa do fluxo de assinaturas foi <strong>devolvida para correção</strong>. '
-            + 'Por favor acesse o sistema e tome a devida providência.</p>'
-          : '<p>O fluxo de assinaturas do TCE chegou à sua etapa. '
-            + 'Por favor, revise o documento e registre sua decisão no sistema.</p>')
-      + blocoRejeicao
+    var t = _tmpl_('assinaturaInterno');
+    var assunto = t.assunto ? _assuntoTmpl_(t.assunto, dados) : '[SGE] Ação necessária — fluxo TCE etapa ' + dados.numeroEtapa + '/5 — ' + dados.idEstagio;
+    var abertura;
+    if (t.abertura) {
+      abertura = blocoRejeicao + _paraHtml_(t.abertura, dados);
+    } else {
+      abertura = '<p>Olá!</p>'
+        + (dados.motivoRejeicao
+            ? '<p>A etapa do fluxo de assinaturas foi <strong>devolvida para correção</strong>. Por favor acesse o sistema e tome a devida providência.</p>'
+            : '<p>O fluxo de assinaturas do TCE chegou à sua etapa. Por favor, revise o documento e registre sua decisão no sistema.</p>')
+        + blocoRejeicao;
+    }
+    var corpo = abertura
       + campo_('ID do estágio', dados.idEstagio)
       + campo_('Estudante', dados.nomeEstudante)
       + campo_('Sua etapa', 'Etapa ' + dados.numeroEtapa + '/5 — ' + dados.labelAtor)
@@ -507,20 +763,23 @@ var MAIL = (function () {
       + '<a href="' + pageUrl + '" style="display:inline-block;background:#1d4ed8;color:#fff;'
       + 'padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:600;">'
       + 'Acessar Fluxo de Assinaturas</a></p>';
-    enviar_(dados.email,
-      '[SGE] Ação necessária — fluxo TCE etapa ' + dados.numeroEtapa + '/5 — ' + dados.idEstagio,
-      htmlBase_('Fluxo TCE — ' + dados.labelAtor, corpo));
+    enviar_(dados.email, assunto, htmlBase_('Fluxo TCE — ' + dados.labelAtor, corpo));
   }
 
   function enviarEmailLembreteAssinatura(dados) {
-    // dados: { idEstagio, nomeEstudante, labelAtor, prazoVencimento, email, numeroEtapa, tipo }
+    // dados: { idEstagio, nomeEstudante, labelAtor, prazoVencimento, email, numeroEtapa, tipo, diasAntes }
     var urlSistema = BASE_URL + '/assinaturas/?id=' + encodeURIComponent(dados.idEstagio);
+    var diasAntes  = dados.diasAntes || 2;
     var instrucao  = dados.tipo === 'govbr'
       ? 'Você ainda precisa baixar o TCE, assinar com gov.br e enviar o arquivo assinado.'
       : 'Você ainda precisa acessar o sistema, revisar e registrar sua decisão.';
-    var corpo = '<p>Olá!</p>'
-      + '<p>⚠️ O prazo para sua ação no fluxo de assinaturas vence em <strong>2 dias úteis</strong>. '
-      + instrucao + '</p>'
+    var t = _tmpl_('lembreteAssinatura');
+    var assunto = t.assunto ? _assuntoTmpl_(t.assunto, dados) : '[SGE] Lembrete: prazo se encerrando — assinatura TCE etapa ' + dados.numeroEtapa + ' — ' + dados.idEstagio;
+    var abertura = t.abertura ? _paraHtml_(t.abertura, Object.assign({}, dados, { diasAntes: diasAntes }))
+      : '<p>Olá!</p>'
+        + '<p>⚠️ O prazo para sua ação no fluxo de assinaturas vence em <strong>' + diasAntes + ' dias úteis</strong>. '
+        + instrucao + '</p>';
+    var corpo = abertura
       + campo_('ID do estágio', dados.idEstagio)
       + campo_('Estudante', dados.nomeEstudante)
       + campo_('Sua etapa', 'Etapa ' + dados.numeroEtapa + '/5 — ' + dados.labelAtor)
@@ -528,32 +787,34 @@ var MAIL = (function () {
       + '<p style="margin-top:24px;">'
       + '<a href="' + urlSistema + '" style="display:inline-block;background:#d97706;color:#fff;'
       + 'padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:600;">Agir Agora</a></p>';
-    enviar_(dados.email,
-      '[SGE] Lembrete: prazo se encerrando — assinatura TCE etapa ' + dados.numeroEtapa + ' — ' + dados.idEstagio,
-      htmlBase_('Lembrete — Assinatura TCE', corpo));
+    enviar_(dados.email, assunto, htmlBase_('Lembrete — Assinatura TCE', corpo));
   }
 
   function enviarEmailPdfFinalAssinaturas(dados) {
     // dados: { idEstagio, nomeEstudante, tokenPorAtor, destinatarios: [{email, nome, ator}] }
     var baseUrl = BASE_URL + '/assinaturas/?id=' + encodeURIComponent(dados.idEstagio);
+    var t = _tmpl_('pdfFinalAssinaturas');
     dados.destinatarios.forEach(function(dest) {
       var pageUrl = dest.ator && dados.tokenPorAtor && dados.tokenPorAtor[dest.ator]
         ? baseUrl + '&token=' + encodeURIComponent(dados.tokenPorAtor[dest.ator])
         : baseUrl;
-      var corpo = '<p>Olá, ' + escapeHtmlMail_(dest.nome) + '!</p>'
-        + '<p>O processo de assinatura do Termo de Compromisso de Estágio foi concluído com sucesso! 🎉</p>'
-        + '<p>O TCE está totalmente assinado e o estágio está oficialmente ativo.</p>'
+      var dadosDest = Object.assign({}, dados, { nome: dest.nome });
+      var abertura = t.abertura ? _paraHtml_(t.abertura, dadosDest)
+        : '<p>Olá, ' + escapeHtmlMail_(dest.nome) + '!</p>'
+          + '<p>O processo de assinatura do Termo de Compromisso de Estágio foi concluído com sucesso! 🎉</p>'
+          + '<p>O TCE está totalmente assinado e o estágio está oficialmente ativo.</p>';
+      var encerramento = t.encerramento ? _paraHtml_(t.encerramento, dadosDest)
+        : '<p style="font-size:13px;color:#6b7280;margin-top:16px;">O documento pode ser baixado diretamente na página acima.</p>';
+      var assunto = t.assunto ? _assuntoTmpl_(t.assunto, dadosDest) : '[SGE] TCE assinado — Estágio ' + dados.idEstagio + ' — ' + escapeHtmlMail_(dados.nomeEstudante);
+      var corpo = abertura
         + campo_('ID do estágio', dados.idEstagio)
         + campo_('Estudante', dados.nomeEstudante)
         + '<p style="margin-top:24px;">'
         + '<a href="' + pageUrl + '" style="display:inline-block;background:#16a34a;color:#fff;'
         + 'padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:600;">'
         + '📄 Acessar TCE Assinado</a></p>'
-        + '<p style="font-size:13px;color:#6b7280;margin-top:16px;">'
-        + 'O documento pode ser baixado diretamente na página acima.</p>';
-      enviar_(dest.email,
-        '[SGE] TCE assinado — Estágio ' + dados.idEstagio + ' — ' + escapeHtmlMail_(dados.nomeEstudante),
-        htmlBase_('TCE Concluído — Estágio Ativo', corpo));
+        + encerramento;
+      enviar_(dest.email, assunto, htmlBase_('TCE Concluído — Estágio Ativo', corpo));
     });
   }
 
@@ -570,13 +831,19 @@ var MAIL = (function () {
         + '<p style="margin:0;font-size:13px;color:#374151;"><strong>Motivo:</strong> ' + escapeHtmlMail_(dados.motivoRejeicao) + '</p>'
         + '</div>'
       : '';
-    var corpo = '<p>Olá!</p>'
-      + (dados.motivoRejeicao
-          ? '<p>Sua etapa no fluxo de assinaturas do <strong>Aditamento ao TCE</strong> foi <strong>devolvida para correção</strong>. '
-            + 'Acesse a página pelo link abaixo, verifique o motivo e reenvie o documento corrigido.</p>'
-          : '<p>É a sua vez de assinar o <strong>Aditamento ao Termo de Compromisso de Estágio</strong>. '
-            + 'Acesse a página pelo botão abaixo, baixe o documento, assine com gov.br e envie a versão assinada.</p>')
-      + blocoRejeicao
+    var t = _tmpl_('adendoGovBr');
+    var assunto = t.assunto ? _assuntoTmpl_(t.assunto, dados) : '[SGE] Assine o Aditamento ao TCE (etapa ' + dados.numeroEtapa + '/5) — ' + dados.idEstagio;
+    var abertura;
+    if (t.abertura) {
+      abertura = blocoRejeicao + _paraHtml_(t.abertura, dados);
+    } else {
+      abertura = '<p>Olá!</p>'
+        + (dados.motivoRejeicao
+            ? '<p>Sua etapa no fluxo de assinaturas do <strong>Aditamento ao TCE</strong> foi <strong>devolvida para correção</strong>. Acesse a página pelo link abaixo, verifique o motivo e reenvie o documento corrigido.</p>'
+            : '<p>É a sua vez de assinar o <strong>Aditamento ao Termo de Compromisso de Estágio</strong>. Acesse a página pelo botão abaixo, baixe o documento, assine com gov.br e envie a versão assinada.</p>')
+        + blocoRejeicao;
+    }
+    var corpo = abertura
       + campo_('ID do estágio', dados.idEstagio)
       + campo_('Estudante', dados.nomeEstudante)
       + campo_('Tipo de aditamento', dados.tipoAdendo || '—')
@@ -585,9 +852,7 @@ var MAIL = (function () {
       + botaoEmail_(pageUrl, '🖊 Acessar e Assinar Aditamento')
       + '<p style="font-size:13px;color:#6b7280;margin-top:12px;">'
       + 'Se o botão não funcionar, acesse: <a href="' + pageUrl + '" style="color:#6b7280;">' + pageUrl + '</a></p>';
-    enviar_(dados.email,
-      '[SGE] Assine o Aditamento ao TCE (etapa ' + dados.numeroEtapa + '/5) — ' + dados.idEstagio,
-      htmlBase_('Assinatura do Aditamento — ' + dados.labelAtor, corpo));
+    enviar_(dados.email, assunto, htmlBase_('Assinatura do Aditamento — ' + dados.labelAtor, corpo));
   }
 
   function enviarEmailAssinaturaAdendoInterno(dados) {
@@ -599,13 +864,19 @@ var MAIL = (function () {
         + '<p style="margin:0;font-size:13px;color:#374151;"><strong>Motivo:</strong> ' + escapeHtmlMail_(dados.motivoRejeicao) + '</p>'
         + '</div>'
       : '';
-    var corpo = '<p>Olá!</p>'
-      + (dados.motivoRejeicao
-          ? '<p>Uma etapa do fluxo de assinaturas do Aditamento ao TCE foi <strong>devolvida para correção</strong>. '
-            + 'Por favor acesse o sistema e tome a devida providência.</p>'
-          : '<p>O fluxo de assinaturas do Aditamento ao TCE chegou à sua etapa. '
-            + 'Por favor, revise o documento e registre sua decisão no sistema.</p>')
-      + blocoRejeicao
+    var t = _tmpl_('adendoInterno');
+    var assunto = t.assunto ? _assuntoTmpl_(t.assunto, dados) : '[SGE] Ação necessária — Aditamento TCE etapa ' + dados.numeroEtapa + '/5 — ' + dados.idEstagio;
+    var abertura;
+    if (t.abertura) {
+      abertura = blocoRejeicao + _paraHtml_(t.abertura, dados);
+    } else {
+      abertura = '<p>Olá!</p>'
+        + (dados.motivoRejeicao
+            ? '<p>Uma etapa do fluxo de assinaturas do Aditamento ao TCE foi <strong>devolvida para correção</strong>. Por favor acesse o sistema e tome a devida providência.</p>'
+            : '<p>O fluxo de assinaturas do Aditamento ao TCE chegou à sua etapa. Por favor, revise o documento e registre sua decisão no sistema.</p>')
+        + blocoRejeicao;
+    }
+    var corpo = abertura
       + campo_('ID do estágio', dados.idEstagio)
       + campo_('Estudante', dados.nomeEstudante)
       + campo_('Tipo de aditamento', dados.tipoAdendo || '—')
@@ -614,9 +885,7 @@ var MAIL = (function () {
       + botaoEmail_(pageUrl, 'Acessar Fluxo de Assinaturas')
       + '<p style="font-size:13px;color:#6b7280;margin-top:12px;">'
       + 'Ou acesse: <a href="' + pageUrl + '" style="color:#6b7280;">' + pageUrl + '</a></p>';
-    enviar_(dados.email,
-      '[SGE] Ação necessária — Aditamento TCE etapa ' + dados.numeroEtapa + '/5 — ' + dados.idEstagio,
-      htmlBase_('Aditamento TCE — ' + dados.labelAtor, corpo));
+    enviar_(dados.email, assunto, htmlBase_('Aditamento TCE — ' + dados.labelAtor, corpo));
   }
 
   function enviarEmailPdfFinalAdendo(dados) {
@@ -624,21 +893,25 @@ var MAIL = (function () {
     var baseUrl = BASE_URL + '/assinaturas/adendo.html'
                 + '?id='     + encodeURIComponent(dados.idEstagio)
                 + '&adendo=' + encodeURIComponent(dados.idAdendo || '');
+    var t = _tmpl_('pdfFinalAdendo');
     dados.destinatarios.forEach(function(dest) {
       var pageUrl = dest.ator && dados.tokenPorAtor && dados.tokenPorAtor[dest.ator]
         ? baseUrl + '&token=' + encodeURIComponent(dados.tokenPorAtor[dest.ator])
         : baseUrl;
-      var corpo = '<p>Olá, ' + escapeHtmlMail_(dest.nome) + '!</p>'
-        + '<p>O processo de assinatura do <strong>Aditamento ao Termo de Compromisso de Estágio</strong> foi concluído com sucesso! 🎉</p>'
+      var dadosDest = Object.assign({}, dados, { nome: dest.nome });
+      var abertura = t.abertura ? _paraHtml_(t.abertura, dadosDest)
+        : '<p>Olá, ' + escapeHtmlMail_(dest.nome) + '!</p>'
+          + '<p>O processo de assinatura do <strong>Aditamento ao Termo de Compromisso de Estágio</strong> foi concluído com sucesso! 🎉</p>';
+      var encerramento = t.encerramento ? _paraHtml_(t.encerramento, dadosDest)
+        : '<p style="font-size:13px;color:#6b7280;margin-top:16px;">O documento pode ser baixado diretamente na página acima.</p>';
+      var assunto = t.assunto ? _assuntoTmpl_(t.assunto, dadosDest) : '[SGE] Aditamento ao TCE assinado — Estágio ' + dados.idEstagio + ' — ' + escapeHtmlMail_(dados.nomeEstudante);
+      var corpo = abertura
         + campo_('ID do estágio', dados.idEstagio)
         + campo_('Estudante', dados.nomeEstudante)
         + campo_('Tipo de aditamento', dados.tipoAdendo || '—')
         + botaoEmail_(pageUrl, '📄 Acessar Aditamento Assinado')
-        + '<p style="font-size:13px;color:#6b7280;margin-top:16px;">'
-        + 'O documento pode ser baixado diretamente na página acima.</p>';
-      enviar_(dest.email,
-        '[SGE] Aditamento ao TCE assinado — Estágio ' + dados.idEstagio + ' — ' + escapeHtmlMail_(dados.nomeEstudante),
-        htmlBase_('Aditamento Concluído', corpo));
+        + encerramento;
+      enviar_(dest.email, assunto, htmlBase_('Aditamento Concluído', corpo));
     });
   }
 
@@ -681,6 +954,8 @@ var MAIL = (function () {
     enviarEmailRespostaAceiteEstudante:  enviarEmailRespostaAceiteEstudante,
     // Devolução ao aluno
     enviarEmailDevolucaoChecklistAluno:  enviarEmailDevolucaoChecklistAluno,
+    // Meta-dados para UI de templates
+    obterMetaTemplates:                  obterMetaTemplates,
   };
 
   // --------------------------------------------------------------------------
@@ -689,17 +964,21 @@ var MAIL = (function () {
 
   function enviarEmailDevolucaoChecklistAluno(dados) {
     // dados: { nomeEstudante, emailEstudante, idEstagio, motivo, urlSolicitacao }
-    var corpo = '<p>Olá, <strong>' + escapeHtmlMail_(dados.nomeEstudante) + '</strong>.</p>'
-      + '<p>O Setor de Estágios devolveu sua solicitação de estágio para que você realize as correções necessárias e reenvie.</p>'
+    var t = _tmpl_('devolucaoAluno');
+    var assunto = t.assunto ? _assuntoTmpl_(t.assunto, dados) : '[SGE] Solicitação devolvida para correção — ' + dados.idEstagio;
+    var abertura = t.abertura ? _paraHtml_(t.abertura, dados)
+      : '<p>Olá, <strong>' + escapeHtmlMail_(dados.nomeEstudante) + '</strong>.</p>'
+        + '<p>O Setor de Estágios devolveu sua solicitação de estágio para que você realize as correções necessárias e reenvie.</p>';
+    var encerramento = t.encerramento ? _paraHtml_(t.encerramento, dados)
+      : '<p style="font-size:13px;color:#6b7280;margin-top:12px;">Em caso de dúvidas, entre em contato pelo e-mail '
+        + '<a href="mailto:' + SETOR_EMAIL + '" style="color:#6b7280;">' + SETOR_EMAIL + '</a>.</p>';
+    var corpo = abertura
       + campo_('ID da solicitação', dados.idEstagio)
       + campo_('Motivo / Orientação do setor', dados.motivo)
       + '<p>Acesse o sistema pelo botão abaixo para corrigir as informações e reenviar sua solicitação:</p>'
       + botaoEmail_(dados.urlSolicitacao, 'Acessar minha solicitação')
-      + '<p style="font-size:13px;color:#6b7280;margin-top:12px;">Em caso de dúvidas, entre em contato pelo e-mail '
-      + '<a href="mailto:' + SETOR_EMAIL + '" style="color:#6b7280;">' + SETOR_EMAIL + '</a>.</p>';
-    enviar_(dados.emailEstudante,
-      '[SGE] Solicitação devolvida para correção — ' + dados.idEstagio,
-      htmlBase_('Solicitação devolvida para correção', corpo));
+      + encerramento;
+    enviar_(dados.emailEstudante, assunto, htmlBase_('Solicitação devolvida para correção', corpo));
   }
 
   // --------------------------------------------------------------------------
@@ -718,12 +997,17 @@ var MAIL = (function () {
    */
   function enviarEmailChecklistOrientador(dados) {
     var urlChecklist = dados.urlChecklist || '';
+    var t = _tmpl_('checklistOrientador');
+    var assunto = t.assunto ? _assuntoTmpl_(t.assunto, dados)
+      : '[IFRS Estágios] Checklist de orientação aguardando sua resposta — ' + dados.nomeEstudante + ' (' + dados.idEstagio + ')';
+    var aberturaCustom = t.abertura ? _paraHtml_(t.abertura, dados) : null;
+    var encerramentoCustom = t.encerramento ? _paraHtml_(t.encerramento, dados) : null;
 
-    var corpo =
-      '<p>Olá, <strong>' + dados.nomeOrientador + '</strong>,</p>'
-      + '<p>O(a) estudante <strong>' + dados.nomeEstudante + '</strong> selecionou você como orientador(a) '
+    var corpo = (aberturaCustom ||
+      ('<p>Olá, <strong>' + escapeHtmlMail_(dados.nomeOrientador) + '</strong>,</p>'
+      + '<p>O(a) estudante <strong>' + escapeHtmlMail_(dados.nomeEstudante) + '</strong> selecionou você como orientador(a) '
       + 'de estágio. Por favor, acesse o link abaixo para <strong>revisar as informações</strong> '
-      + 'e responder o checklist de orientação.</p>'
+      + 'e responder o checklist de orientação.</p>'))
 
       + '<table style="border-collapse:collapse;width:100%;margin:16px 0;">'
       + '<tr><td style="padding:8px 0;color:#6b7280;font-size:12px;text-transform:uppercase;letter-spacing:.04em;width:140px;">Estudante</td>'
@@ -749,12 +1033,11 @@ var MAIL = (function () {
       + 'Se o botão não funcionar, copie e acesse o link:<br>'
       + '<a href="' + urlChecklist + '" style="color:#6b7280;">' + urlChecklist + '</a></p>'
 
-      + '<p style="margin-top:16px;font-size:13px;color:#6b7280;">'
-      + 'Dúvidas: <a href="mailto:' + SETOR_EMAIL + '">' + SETOR_EMAIL + '</a></p>';
+      + (encerramentoCustom ||
+          ('<p style="margin-top:16px;font-size:13px;color:#6b7280;">'
+          + 'Dúvidas: <a href="mailto:' + SETOR_EMAIL + '">' + SETOR_EMAIL + '</a></p>'));
 
-    enviar_(dados.emailOrientador,
-      '[IFRS Estágios] Checklist de orientação aguardando sua resposta — ' + dados.nomeEstudante + ' (' + dados.idEstagio + ')',
-      htmlBase_('Checklist de Orientação', corpo));
+    enviar_(dados.emailOrientador, assunto, htmlBase_('Checklist de Orientação', corpo));
   }
 
   // Mantido para compatibilidade com chamadas antigas (não mais usado no novo fluxo)
@@ -767,52 +1050,58 @@ var MAIL = (function () {
 
   /** E-mail para o ESTUDANTE: solicitação enviada, aguardando aceite do orientador. */
   function enviarEmailAguardandoAceiteEstudante(dados) {
-    var corpo =
-      '<p>Olá, <strong>' + dados.nomeEstudante + '</strong>!</p>'
-      + '<p>Sua solicitação de estágio foi recebida. Agora aguardamos o aceite do(a) orientador(a) escolhido(a).</p>'
+    var t = _tmpl_('aguardandoAceite');
+    var assunto = t.assunto ? _assuntoTmpl_(t.assunto, dados) : '[IFRS Estágios] Solicitação enviada — aguardando orientador (' + dados.idEstagio + ')';
+    var abertura = t.abertura ? _paraHtml_(t.abertura, dados)
+      : '<p>Olá, <strong>' + escapeHtmlMail_(dados.nomeEstudante) + '</strong>!</p>'
+        + '<p>Sua solicitação de estágio foi recebida. Agora aguardamos o aceite do(a) orientador(a) escolhido(a).</p>';
+    var encerramento = t.encerramento ? _paraHtml_(t.encerramento, dados)
+      : '<p style="background:#fef3c7;border-left:3px solid #f59e0b;padding:12px;border-radius:4px;margin-top:16px;">'
+        + '⏳ <strong>Próximo passo:</strong> o(a) Prof(a). ' + escapeHtmlMail_(dados.nomeOrientador)
+        + ' receberá um e-mail para confirmar a orientação. Você será notificado(a) assim que ele(a) responder.</p>'
+        + '<p style="font-size:13px;color:#6b7280;">Guarde este ID — ele será necessário para relatórios e adendos.</p>';
+    var corpo = abertura
       + campo_('ID da solicitação', dados.idEstagio)
       + campo_('Orientador(a)', dados.nomeOrientador)
       + campo_('Empresa', dados.nomeEmpresa)
       + campo_('Tipo', dados.tipoEstagio)
       + campo_('Período', dados.dataInicio + ' a ' + dados.dataTermino)
-      + '<p style="background:#fef3c7;border-left:3px solid #f59e0b;padding:12px;border-radius:4px;margin-top:16px;">'
-      + '⏳ <strong>Próximo passo:</strong> o(a) Prof(a). ' + dados.nomeOrientador
-      + ' receberá um e-mail para confirmar a orientação. Você será notificado(a) assim que ele(a) responder.</p>'
-      + '<p style="font-size:13px;color:#6b7280;">Guarde este ID — ele será necessário para relatórios e adendos.</p>';
-
-    enviar_(dados.emailEstudante,
-      '[IFRS Estágios] Solicitação enviada — aguardando orientador (' + dados.idEstagio + ')',
-      htmlBase_('Solicitação Recebida', corpo));
+      + encerramento;
+    enviar_(dados.emailEstudante, assunto, htmlBase_('Solicitação Recebida', corpo));
   }
 
   /** E-mail para o ESTUDANTE após o orientador aceitar OU recusar. */
   function enviarEmailRespostaAceiteEstudante(dados) {
     var aceito = dados.resposta === 'aceito';
+    var tmplKey = aceito ? 'aceiteOrientadorAceito' : 'aceiteOrientadorRecusado';
+    var t = _tmpl_(tmplKey);
+    var assunto = t.assunto ? _assuntoTmpl_(t.assunto, dados)
+      : '[IFRS Estágios] ' + (aceito ? 'Orientador aceitou' : 'Orientador recusou') + ' — ' + dados.idEstagio;
     var corpo;
     if (aceito) {
-      corpo =
-        '<p>Olá, <strong>' + dados.nomeEstudante + '</strong>!</p>'
-        + '<p>Boa notícia! O(a) Prof(a). <strong>' + dados.nomeOrientador + '</strong> '
-        + '<strong style="color:#16a34a;">aceitou</strong> orientar seu estágio. '
-        + 'Sua solicitação avançou para o checklist de validação com todos os envolvidos.</p>'
-        + campo_('ID do estágio', dados.idEstagio)
-        + campo_('Empresa', dados.nomeEmpresa)
-        + '<p>Acompanhe o andamento pelo seu portal de estágios. Em breve você receberá mais informações.</p>';
+      var abertura = t.abertura ? _paraHtml_(t.abertura, dados)
+        : '<p>Olá, <strong>' + escapeHtmlMail_(dados.nomeEstudante) + '</strong>!</p>'
+          + '<p>Boa notícia! O(a) Prof(a). <strong>' + escapeHtmlMail_(dados.nomeOrientador) + '</strong> '
+          + '<strong style="color:#16a34a;">aceitou</strong> orientar seu estágio. '
+          + 'Sua solicitação avançou para o checklist de validação com todos os envolvidos.</p>';
+      var encerramento = t.encerramento ? _paraHtml_(t.encerramento, dados)
+        : '<p>Acompanhe o andamento pelo seu portal de estágios. Em breve você receberá mais informações.</p>';
+      corpo = abertura + campo_('ID do estágio', dados.idEstagio) + campo_('Empresa', dados.nomeEmpresa) + encerramento;
     } else {
-      corpo =
-        '<p>Olá, <strong>' + dados.nomeEstudante + '</strong>,</p>'
-        + '<p>Infelizmente o(a) Prof(a). <strong>' + dados.nomeOrientador + '</strong> '
-        + '<strong style="color:#dc2626;">não pôde aceitar</strong> a orientação do seu estágio neste momento.</p>'
+      var abertura = t.abertura ? _paraHtml_(t.abertura, dados)
+        : '<p>Olá, <strong>' + escapeHtmlMail_(dados.nomeEstudante) + '</strong>,</p>'
+          + '<p>Infelizmente o(a) Prof(a). <strong>' + escapeHtmlMail_(dados.nomeOrientador) + '</strong> '
+          + '<strong style="color:#dc2626;">não pôde aceitar</strong> a orientação do seu estágio neste momento.</p>';
+      var encerramento = t.encerramento ? _paraHtml_(t.encerramento, dados)
+        : '<p style="background:#fef3c7;border-left:3px solid #f59e0b;padding:12px;border-radius:4px;margin-top:16px;">'
+          + '👉 <strong>O que fazer:</strong> acesse seu portal de estágios, localize esta solicitação e escolha outro(a) orientador(a) disponível.</p>'
+          + '<p>Dúvidas? Entre em contato: <a href="mailto:' + SETOR_EMAIL + '">' + SETOR_EMAIL + '</a></p>';
+      corpo = abertura
         + campo_('ID do estágio', dados.idEstagio)
         + (dados.obs ? campo_('Motivo informado', dados.obs) : '')
-        + '<p style="background:#fef3c7;border-left:3px solid #f59e0b;padding:12px;border-radius:4px;margin-top:16px;">'
-        + '👉 <strong>O que fazer:</strong> acesse seu portal de estágios, localize esta solicitação e escolha outro(a) orientador(a) disponível.</p>'
-        + '<p>Dúvidas? Entre em contato: <a href="mailto:' + SETOR_EMAIL + '">' + SETOR_EMAIL + '</a></p>';
+        + encerramento;
     }
-
-    enviar_(dados.emailEstudante,
-      '[IFRS Estágios] ' + (aceito ? 'Orientador aceitou' : 'Orientador recusou') + ' — ' + dados.idEstagio,
-      htmlBase_(aceito ? 'Orientação Aceita ✓' : 'Orientação Recusada', corpo));
+    enviar_(dados.emailEstudante, assunto, htmlBase_(aceito ? 'Orientação Aceita ✓' : 'Orientação Recusada', corpo));
   }
 
 })();

@@ -91,6 +91,7 @@ var GET_ROUTES = {
   'obterDiretoriaRegistro':       doGetAdmin,
   'obterConfigTCE':               doGetAdmin,
   'obterConfigNotificacoes':      doGetAdmin,
+  'obterTemplates':               doGetAdmin,
 
   // NAPNE
   'verificarAcessoNapne':      doGetNapne,
@@ -190,6 +191,8 @@ var POST_ROUTES = {
   'salvarConfigCursos':        doPostAdmin,
   'salvarConfigTCE':           doPostAdmin,
   'salvarConfigNotificacoes':  doPostAdmin,
+  'salvarTemplate':            doPostAdmin,
+  'restaurarTemplateDefault':  doPostAdmin,
   'salvarDiretorGeral':        doPostAdmin,
   'salvarDiretoriaDEN':        doPostAdmin,
   'salvarDiretoriaDEX':        doPostAdmin,

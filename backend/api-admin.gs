@@ -148,6 +148,7 @@ function doGetAdmin(e) {
       case 'listarAlertasAdmin':       return listarAlertasAdmin_();
       case 'obterConfigTCE':           return obterConfigTCE_();
       case 'obterConfigNotificacoes':  return obterConfigNotificacoes_();
+      case 'obterTemplates':           return obterTemplates_();
       case 'obterFichaNapneAdmin':     return jsonOk_(obterFichaNapnePublica_(e.parameter.emailAluno || ''));
       default: return jsonError_('Ação GET não reconhecida: ' + action, 'UNKNOWN_ACTION');
     }
@@ -216,6 +217,8 @@ function doPostAdmin(e) {
       case 'deletarCurso':           return deletarCurso_(body);
       case 'salvarConfigTCE':        return salvarConfigTCE_(body);
       case 'salvarConfigNotificacoes': return salvarConfigNotificacoes_(body);
+      case 'salvarTemplate':           return salvarTemplate_(body);
+      case 'restaurarTemplateDefault': return restaurarTemplateDefault_(body);
       // Diretor Geral
       case 'salvarDiretorGeral':     return salvarDiretorGeral_(body);
       case 'salvarDiretoriaDEN':     return _salvarDiretoria_(body, 'DEN');
@@ -3030,5 +3033,60 @@ function salvarConfigNotificacoes_(body) {
   props.setProperty('ERROR_EMAIL',        errorEmail);
 
   return jsonOk_({ mensagem: 'Configurações de notificações salvas com sucesso.' });
+}
+
+// ─────────────────────────────────────────────────────────────────
+// Templates de e-mail editáveis
+// ─────────────────────────────────────────────────────────────────
+
+/** GET obterTemplates — retorna meta + overrides armazenados */
+function obterTemplates_() {
+  var meta  = MAIL.obterMetaTemplates();
+  var props = PropertiesService.getScriptProperties();
+  var templates = meta.map(function (m) {
+    var raw      = props.getProperty('tmpl_' + m.key);
+    var override = raw ? JSON.parse(raw) : {};
+    return {
+      key:                m.key,
+      label:              m.label,
+      grupo:              m.grupo,
+      grupoLabel:         m.grupoLabel,
+      destinatario:       m.destinatario,
+      vars:               m.vars,
+      camposFixos:        m.camposFixos,
+      assuntoDefault:     m.assuntoDefault,
+      aberturaDefault:    m.aberturaDefault,
+      encerramentoDefault:m.encerramentoDefault,
+      assunto:            override.assunto      || '',
+      abertura:           override.abertura     || '',
+      encerramento:       override.encerramento || '',
+      personalizado:      !!(override.assunto || override.abertura || override.encerramento),
+    };
+  });
+  return jsonOk_({ templates: templates });
+}
+
+/** POST salvarTemplate — salva ou limpa override de um template */
+function salvarTemplate_(body) {
+  var key = String(body.key || '').trim();
+  if (!key || !/^\w+$/.test(key)) return jsonError_('Chave de template inválida.', 'VALIDATION');
+  var assunto      = String(body.assunto      || '').trim();
+  var abertura     = String(body.abertura     || '').trim();
+  var encerramento = String(body.encerramento || '').trim();
+  var props = PropertiesService.getScriptProperties();
+  if (!assunto && !abertura && !encerramento) {
+    props.deleteProperty('tmpl_' + key);
+  } else {
+    props.setProperty('tmpl_' + key, JSON.stringify({ assunto: assunto, abertura: abertura, encerramento: encerramento }));
+  }
+  return jsonOk_({ ok: true });
+}
+
+/** POST restaurarTemplateDefault — remove override, voltando ao padrão do código */
+function restaurarTemplateDefault_(body) {
+  var key = String(body.key || '').trim();
+  if (!key || !/^\w+$/.test(key)) return jsonError_('Chave de template inválida.', 'VALIDATION');
+  PropertiesService.getScriptProperties().deleteProperty('tmpl_' + key);
+  return jsonOk_({ ok: true });
 }
 
