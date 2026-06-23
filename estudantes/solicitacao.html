@@ -1757,8 +1757,13 @@
     form.addEventListener('submit', async function (e) {
       e.preventDefault();
       hideFormFeedback('form-feedback');
-      if (!validateForm()) return;
       if (_submitting) return;   // trava local: ignora clique duplo
+      if (!validateForm()) return;
+
+      // Feedback visual imediato — o aluno sabe que o clique foi registrado
+      _submitting = true;
+      btnEnviar.classList.add('is-loading');
+      btnEnviar.disabled = true;
 
       // Resolve dados do supervisor e orientador a partir dos caches
       const supCodigo = document.getElementById('supervisor').value;
@@ -1841,16 +1846,14 @@
           });
         } catch (authErr) {
           showFormFeedback('form-feedback', 'error', 'Sessão expirada', authErr.message);
+          btnEnviar.classList.remove('is-loading');
+          btnEnviar.disabled = false;
           _submitting = false;
           return;
         }
       }
 
       let _enviado = false;
-      _submitting = true;
-      // Submissão manual para usar a mensagem contextual do backend (oriConvidado)
-      btnEnviar.classList.add('is-loading');
-      btnEnviar.disabled = true;
       hideFormFeedback('form-feedback');
       try {
         const result = await apiSolicitarEstagio(dados);
