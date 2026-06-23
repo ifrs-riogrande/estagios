@@ -978,10 +978,13 @@
       html += dr('Status', badgeStatus(s.status));
       html += dr('Início', escapeHtml(s.dataInicio || '—'));
       html += dr('Término', escapeHtml(s.dataTermino || '—'));
-      var _chSemanal = (s.cargaHorariaSemanal || '—').replace(/\s*semanais\s*$/i, '').replace(/\s*h\/sem\s*$/i, '').trim();
-      html += dr('Carga Horária', escapeHtml(_chSemanal) + '/semanais');
+      var _chRaw = (s.cargaHorariaSemanal || '—').trim();
+      var _chNum = _chRaw.replace(/\s*(semanais|h\/sem)\s*/gi, '').trim() || _chRaw;
+      html += dr('Carga Horária', escapeHtml(_chNum) + '/semanais');
       if (s.horario) {
-        var _horario = s.horario.replace(/\n?Total semanal:.*$/i, '').trim();
+        var _horario = s.horario.split('\n').filter(function(l) {
+          return !/^Total semanal:/i.test(l.trim());
+        }).join('\n').trim();
         html += dr('Horário', escapeHtml(_horario));
       }
       if (s.turno)         html += dr('Turno', escapeHtml(s.turno));
