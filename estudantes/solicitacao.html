@@ -1866,6 +1866,7 @@
       } catch (err) {
         btnEnviar.classList.remove('is-loading');
         const isIncerto = err.code === 'TIMEOUT' || err.code === 'NETWORK';
+        const isAuth    = err.code === 'AUTH_ERROR';
         if (isIncerto) {
           // Não sabemos se o backend processou — mantém botão bloqueado
           showFormFeedback('form-feedback', 'warning',
@@ -1873,8 +1874,17 @@
             'A solicitação pode já ter sido registrada. Aguarde alguns minutos e verifique seu e-mail de confirmação. ' +
             'Se não receber, entre em contato com o setor de estágios.');
           // _submitting permanece true → botão permanece desabilitado
+        } else if (isAuth) {
+          // Sessão expirada ou inválida — orienta o aluno a fazer login novamente
+          showFormFeedback('form-feedback', 'error',
+            'Sessão expirada',
+            'Sua sessão de login expirou durante o preenchimento. Clique em "Enviar Solicitação" novamente — ' +
+            'o sistema abrirá uma janela de login do Google e tentará enviar automaticamente. ' +
+            'Seus dados preenchidos serão mantidos.');
+          btnEnviar.disabled = false;
+          _submitting = false;
         } else {
-          // Erro claro do backend (validação, auth…) — pode tentar de novo
+          // Erro claro do backend (validação…) — pode tentar de novo
           showFormFeedback('form-feedback', 'error',
             'Erro ao enviar solicitação',
             err.message || 'Tente novamente ou entre em contato com o setor.');
