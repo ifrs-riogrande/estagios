@@ -1830,6 +1830,22 @@
       if (arqId)  dados.docIdentidade = arqId;
       if (arqBol) dados.docBoletim    = arqBol;
 
+      // Renova o token se a sessão expirou durante o preenchimento do formulário
+      if (!getAccessToken()) {
+        try {
+          await new Promise((resolve, reject) => {
+            requestLogin(
+              () => resolve(),
+              (msg) => reject(new Error(msg || 'Sessão expirada. Faça login novamente.'))
+            );
+          });
+        } catch (authErr) {
+          showFormFeedback('form-feedback', 'error', 'Sessão expirada', authErr.message);
+          _submitting = false;
+          return;
+        }
+      }
+
       let _enviado = false;
       _submitting = true;
       // Submissão manual para usar a mensagem contextual do backend (oriConvidado)
