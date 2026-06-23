@@ -980,7 +980,8 @@
       html += dr('Término', escapeHtml(s.dataTermino || '—'));
       var _chRaw = (s.cargaHorariaSemanal || '—').trim();
       var _chNum = _chRaw.replace(/\s*(semanais|h\/sem)\s*/gi, '').trim() || _chRaw;
-      html += dr('Carga Horária', escapeHtml(_chNum) + '/semanais');
+      html += dr('Carga Horária Semanal', escapeHtml(_chNum) + '/semanais');
+      if (s.cargaHorariaTotal) html += dr('Carga Horária Total', escapeHtml(s.cargaHorariaTotal));
       if (s.horario) {
         var _horario = s.horario.split('\n').filter(function(l) {
           return !/^Total semanal:/i.test(l.trim());

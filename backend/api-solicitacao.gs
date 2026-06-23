@@ -73,6 +73,7 @@ var COL_SOL = {
   NEE:               43,   // Portador de Necessidades Específicas — copiado do cadastro do estudante
   TOKEN_ACEITE_ORI:  44,   // UUID de uso único para aceite/recusa do orientador via magic link
   IDEMPOTENCY_KEY:   45,   // Chave única gerada no frontend para evitar submissões duplicadas
+  CARGA_HOR_TOTAL:   46,   // Carga horária total do estágio (h semanal × semanas do período)
 };
 
 /** Colunas da aba Relatórios Parciais (base 0). */
@@ -426,6 +427,16 @@ function solicitarEstagio_(dados) {
   var aceiteToken = Utilities.getUuid();
   linha[COL_SOL.TOKEN_ACEITE_ORI]  = aceiteToken;
   linha[COL_SOL.IDEMPOTENCY_KEY]   = idemKey;
+  // Carga horária total: enviada pelo frontend (cálculo preciso por dia da semana)
+  // Fallback: horas semanais × semanas do período, se o frontend não enviou
+  var _chTotalRaw = sanitizar_(dados.cargaHorariaTotal || '', 20).trim();
+  if (!_chTotalRaw && cargaHorNums > 0) {
+    var _dtIni  = new Date(dataInicio  + 'T00:00:00');
+    var _dtFim  = new Date(dataTermino + 'T00:00:00');
+    var _semanas = Math.round((_dtFim - _dtIni) / (7 * 24 * 3600 * 1000));
+    if (_semanas > 0) _chTotalRaw = (cargaHorNums * _semanas) + 'h';
+  }
+  linha[COL_SOL.CARGA_HOR_TOTAL]   = _chTotalRaw;
 
   // Lock atômico: impede que duas submissões simultâneas com a mesma chave de idempotência gravem duas linhas
   var lockSol = LockService.getScriptLock();
@@ -1152,6 +1163,7 @@ function listarMeusEstagios_(e) {
         dataInicio:           formatarData_(r[COL_SOL.DATA_INICIO]),
         dataTermino:          formatarData_(r[COL_SOL.DATA_TERMINO]),
         cargaHorariaSemanal:  String(r[COL_SOL.CARGA_HOR]          || ''),
+        cargaHorariaTotal:    String(r[COL_SOL.CARGA_HOR_TOTAL]    || ''),
         horario:              String(r[COL_SOL.HORARIO]             || ''),
         remuneracao:          String(r[COL_SOL.REMUNERACAO]         || ''),
         valorBolsa:           String(r[COL_SOL.VALOR_BOLSA]         || ''),

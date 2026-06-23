@@ -115,6 +115,9 @@ var COL = {
   CPF_RESP:          41,   // CPF do responsável legal
   TEL_RESP:          42,   // Telefone do responsável legal
   NEE:               43,   // Portador de Necessidades Específicas — copiado do cadastro
+  TOKEN_ACEITE_ORI:  44,
+  IDEMPOTENCY_KEY:   45,
+  CARGA_HOR_TOTAL:   46,   // Carga horária total do estágio (h semanal × semanas)
 };
 
 // ─────────────────────────────────────────────────────────────────
@@ -291,7 +294,8 @@ function listarSolicitacoesAdmin_() {
       emailOrientador:  String(r[COL.EMAIL_ORIENTADOR] || ''),
       dataInicio:       formatarData_(r[COL.DATA_INICIO]),
       dataTermino:      formatarData_(r[COL.DATA_TERMINO]),
-      cargaHorariaSemanal: String(r[COL.CARGA_HORARIA] || ''),
+      cargaHorariaSemanal: String(r[COL.CARGA_HORARIA]    || ''),
+      cargaHorariaTotal:   String(r[COL.CARGA_HOR_TOTAL]  || ''),
       planoAtividades:  String(r[COL.PLANO_ATIVIDADES] || ''),
       status:           String(r[COL.STATUS] || ''),
       observacaoSetor:  String(r[COL.OBSERVACAO_SETOR] || ''),
