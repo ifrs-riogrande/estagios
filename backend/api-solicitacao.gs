@@ -173,6 +173,18 @@ function solicitarEstagio_(dados) {
   var arqMat = (dados.docMatricula  && dados.docMatricula.base64)  ? dados.docMatricula  : null;
   var arqId  = (dados.docIdentidade && dados.docIdentidade.base64) ? dados.docIdentidade : null;
   var arqBol = (dados.docBoletim    && dados.docBoletim.base64)    ? dados.docBoletim    : null;
+
+  // Validação de magic bytes: todos os arquivos devem ser PDF (%PDF = bytes 25 50 44 46)
+  function isPdfBase64_(arq) {
+    if (!arq || !arq.base64) return false;
+    try {
+      var bytes = Utilities.base64Decode(arq.base64.slice(0, 8));
+      return bytes[0] === 0x25 && bytes[1] === 0x50 && bytes[2] === 0x44 && bytes[3] === 0x46;
+    } catch (_) { return false; }
+  }
+  if (arqMat && !isPdfBase64_(arqMat)) return jsonError_('O comprovante de matrícula não é um PDF válido.', 'VALIDATION');
+  if (arqId  && !isPdfBase64_(arqId))  return jsonError_('O documento de identidade não é um PDF válido.', 'VALIDATION');
+  if (arqBol && !isPdfBase64_(arqBol)) return jsonError_('O boletim não é um PDF válido.', 'VALIDATION');
   // Curso e matrícula específicos deste estágio (podem diferir do curso principal do estudante)
   var cursoEstagio     = sanitizar_(dados.cursoEstagio     || dados.curso,     100) || estudante.curso;
   var matriculaEstagio = sanitizar_(dados.matriculaEstagio || dados.matricula, 20).replace(/\D/g, '') || estudante.matricula;

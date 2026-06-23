@@ -692,15 +692,15 @@
             </div>
 
             <div class="form-group">
-              <label class="form-label required" for="doc-identidade">Documento de identidade (RG/CPF) em PDF ou imagem</label>
+              <label class="form-label required" for="doc-identidade">Documento de identidade (RG/CPF) em PDF</label>
               <div class="file-input-wrapper">
                 <label class="file-input-label" for="doc-identidade">
                   <svg class="file-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/></svg>
-                  <span class="file-text">Selecionar documento de identidade</span>
+                  <span class="file-text">Selecionar documento de identidade (PDF)</span>
                   <span class="file-selected" id="identidade-doc-name"></span>
-                  <span class="file-types">PDF, JPG ou PNG — máx. 5 MB</span>
+                  <span class="file-types">PDF — máx. 5 MB</span>
                 </label>
-                <input type="file" class="form-control-file" id="doc-identidade" name="docIdentidade" accept=".pdf,.jpg,.jpeg,.png" required aria-required="true" aria-describedby="doc-identidade-error">
+                <input type="file" class="form-control-file" id="doc-identidade" name="docIdentidade" accept=".pdf" required aria-required="true" aria-describedby="doc-identidade-error">
               </div>
               <span id="doc-identidade-error" class="form-error hidden" role="alert"></span>
             </div>
@@ -1604,20 +1604,58 @@
       }
     }
 
-    // Exibe nomes de arquivos selecionados
-    [['comprovante-matricula','matricula-doc-name'],
-     ['doc-identidade','identidade-doc-name'],
-     ['boletim','boletim-name']].forEach(([inputId, nameId]) => {
-      document.getElementById(inputId)?.addEventListener('change', function () {
-        const nameEl = document.getElementById(nameId);
-        const textEl = this.closest('.file-input-label')?.querySelector('.file-text');
-        if (this.files && this.files[0] && nameEl) {
-          nameEl.textContent = this.files[0].name;
-          nameEl.style.display = 'block';
-          if (textEl) textEl.style.display = 'none';
-        }
+    // Valida magic bytes de PDF (%PDF = 0x25 0x50 0x44 0x46) e exibe nome do arquivo
+    const PDF_MAGIC = [0x25, 0x50, 0x44, 0x46]; // %PDF
+    const MAX_SIZE  = 5 * 1024 * 1024; // 5 MB
+    // Conjunto de inputs que já passaram na validação de conteúdo
+    const _fileOk = {};
+
+    function validarPdf(inputId, nameId, errorId, obrigatorio) {
+      const input   = document.getElementById(inputId);
+      const nameEl  = document.getElementById(nameId);
+      const errorEl = errorId ? document.getElementById(errorId) : null;
+      const textEl  = input?.closest('.file-input-label')?.querySelector('.file-text');
+
+      function setErro(msg) {
+        _fileOk[inputId] = false;
+        input.value = '';
+        if (nameEl)  { nameEl.textContent = ''; nameEl.style.display = 'none'; }
+        if (textEl)  textEl.style.display = '';
+        if (errorEl) { errorEl.textContent = msg; errorEl.classList.remove('hidden'); }
+      }
+      function setOk(nome) {
+        _fileOk[inputId] = true;
+        if (nameEl)  { nameEl.textContent = nome; nameEl.style.display = 'block'; }
+        if (textEl)  textEl.style.display = 'none';
+        if (errorEl) { errorEl.textContent = ''; errorEl.classList.add('hidden'); }
+      }
+
+      input?.addEventListener('change', function () {
+        const file = this.files && this.files[0];
+        if (!file) { _fileOk[inputId] = false; return; }
+
+        if (file.size > MAX_SIZE) { setErro('Arquivo muito grande. Limite: 5 MB.'); return; }
+
+        // Lê apenas os primeiros 4 bytes para verificar o magic number
+        const slice = file.slice(0, 4);
+        const reader = new FileReader();
+        reader.onload = function (ev) {
+          const bytes = new Uint8Array(ev.target.result);
+          const isPdf = PDF_MAGIC.every((b, i) => bytes[i] === b);
+          if (!isPdf) {
+            setErro('O arquivo não é um PDF válido. Selecione um arquivo PDF.');
+          } else {
+            setOk(file.name);
+          }
+        };
+        reader.onerror = function () { setErro('Não foi possível ler o arquivo. Tente novamente.'); };
+        reader.readAsArrayBuffer(slice);
       });
-    });
+    }
+
+    validarPdf('comprovante-matricula', 'matricula-doc-name',  'comprovante-matricula-error', true);
+    validarPdf('doc-identidade',        'identidade-doc-name', 'doc-identidade-error',        true);
+    validarPdf('boletim',               'boletim-name',        null,                          false);
 
     // ── Validação ──
     function validateForm() {
@@ -1690,8 +1728,20 @@
       if (!document.getElementById('atividades-prev').value.trim()) fail('atividades-prev', 'Descreva as atividades previstas.');
       if (!document.getElementById('agente').value)            fail('agente', 'Informe se há agente de integração.');
 
-      if (!document.getElementById('comprovante-matricula').files?.length) fail('comprovante-matricula', 'Anexe o comprovante de matrícula.');
-      if (!document.getElementById('doc-identidade').files?.length)        fail('doc-identidade', 'Anexe o documento de identidade.');
+      if (!document.getElementById('comprovante-matricula').files?.length) {
+        fail('comprovante-matricula', 'Anexe o comprovante de matrícula.');
+      } else if (!_fileOk['comprovante-matricula']) {
+        fail('comprovante-matricula', 'O arquivo não é um PDF válido.');
+      }
+      if (!document.getElementById('doc-identidade').files?.length) {
+        fail('doc-identidade', 'Anexe o documento de identidade.');
+      } else if (!_fileOk['doc-identidade']) {
+        fail('doc-identidade', 'O arquivo não é um PDF válido.');
+      }
+      const boletimFiles = document.getElementById('boletim').files;
+      if (boletimFiles?.length && !_fileOk['boletim']) {
+        fail('boletim', 'O boletim selecionado não é um PDF válido.');
+      }
 
       if (!document.getElementById('decl-unica').checked) fail('decl-unica', 'Aceite esta declaração para continuar.');
       if (!document.getElementById('decl-unica').checked) fail('decl-unica', 'Aceite esta declaração para continuar.');
