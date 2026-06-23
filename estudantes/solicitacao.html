@@ -2174,24 +2174,30 @@
         body.id = 'acc-body-' + id;
         while (sec.firstChild) body.appendChild(sec.firstChild);
 
-        // Botão "Confirmar e avançar" em todas exceto a última visível
-        if (i < sections.length - 1) {
-          var footer = document.createElement('div');
-          footer.className = 'acc-footer';
-          var btnAdv = document.createElement('button');
-          btnAdv.type = 'button';
-          btnAdv.className = 'btn btn-ghost btn-sm acc-btn-adv';
-          btnAdv.innerHTML =
-            'Confirmar e avançar ' +
-            '<svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">' +
-              '<path fill-rule="evenodd" d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z" clip-rule="evenodd"/>' +
-            '</svg>';
-          (function(sid) {
-            btnAdv.addEventListener('click', function() { _accAdvance(sid); });
-          })(id);
-          footer.appendChild(btnAdv);
-          body.appendChild(footer);
-        }
+        // Botão "Confirmar e avançar" em todas as seções; na última rola até o envio
+        var isLast = (i === sections.length - 1);
+        var footer = document.createElement('div');
+        footer.className = 'acc-footer';
+        var btnAdv = document.createElement('button');
+        btnAdv.type = 'button';
+        btnAdv.className = 'btn btn-ghost btn-sm acc-btn-adv';
+        btnAdv.innerHTML = (isLast
+          ? 'Confirmar e ir para o envio '
+          : 'Confirmar e avançar ') +
+          '<svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">' +
+            '<path fill-rule="evenodd" d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z" clip-rule="evenodd"/>' +
+          '</svg>';
+        (function(sid, last) {
+          btnAdv.addEventListener('click', function() {
+            _accAdvance(sid);
+            if (last) {
+              var formActions = document.querySelector('.form-actions');
+              if (formActions) formActions.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+          });
+        })(id, isLast);
+        footer.appendChild(btnAdv);
+        body.appendChild(footer);
 
         sec.classList.add('acc-card');
         sec.appendChild(hdr);
