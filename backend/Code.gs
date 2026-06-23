@@ -193,6 +193,7 @@ var POST_ROUTES = {
   'salvarConfigNotificacoes':  doPostAdmin,
   'salvarTemplate':            doPostAdmin,
   'restaurarTemplateDefault':  doPostAdmin,
+  'testarTemplate':            doPostAdmin,
   'salvarDiretorGeral':        doPostAdmin,
   'salvarDiretoriaDEN':        doPostAdmin,
   'salvarDiretoriaDEX':        doPostAdmin,

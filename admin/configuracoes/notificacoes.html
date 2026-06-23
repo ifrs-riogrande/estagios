@@ -137,6 +137,12 @@
     .tpl-actions { display:flex; gap:var(--space-3); margin-top:var(--space-6); padding-top:var(--space-4); border-top:1px solid var(--color-border); flex-wrap:wrap; align-items:center; }
     .tpl-status { font-size:.78rem; color:var(--color-text-muted); flex:1; }
     .tpl-status.is-custom { color:#1d4ed8; }
+    .tpl-test-area { display:flex; gap:var(--space-2); margin-top:var(--space-4); padding:var(--space-3) var(--space-4); background:#fefce8; border:1px solid #fde68a; border-radius:6px; align-items:center; flex-wrap:wrap; }
+    .tpl-test-area label { font-size:.78rem; font-weight:600; color:#92400e; white-space:nowrap; }
+    .tpl-test-area input { flex:1; min-width:180px; font-size:.82rem; padding:5px 10px; border:1px solid #fcd34d; border-radius:4px; background:#fffbeb; }
+    .tpl-test-area .btn-test { font-size:.8rem; padding:5px 14px; background:#d97706; color:#fff; border:none; border-radius:4px; cursor:pointer; white-space:nowrap; }
+    .tpl-test-area .btn-test:hover { background:#b45309; }
+    .tpl-test-area .btn-test:disabled { opacity:.6; cursor:default; }
     .tpl-loading { text-align:center; padding:var(--space-10); color:var(--color-text-muted); }
   </style>
 </head>
@@ -990,6 +996,11 @@
         + '<button class="btn btn-primary" id="btn-tpl-salvar" type="button" onclick="salvarTemplate()">Salvar template</button>'
         + '<button class="btn btn-secondary" type="button" onclick="restaurarTemplate()">Restaurar padrão</button>'
         + '<span class="tpl-status' + (t.personalizado ? ' is-custom' : '') + '" id="tpl-status">' + escapeHtml(statusText) + '</span>'
+      + '</div>'
+      + '<div class="tpl-test-area">'
+        + '<label for="tpl-test-email">Enviar e-mail de teste:</label>'
+        + '<input type="email" id="tpl-test-email" placeholder="exemplo@dominio.com" value="' + escapeHtml(getAccessToken ? (window._testEmailCache || '') : '') + '">'
+        + '<button class="btn-test" id="btn-tpl-teste" type="button" onclick="enviarTeste()">▶ Enviar teste</button>'
       + '</div>';
   }
 
@@ -1052,6 +1063,38 @@
       mostrarFbGlobal('success', 'Template restaurado para o padrão.');
     } catch (err) {
       mostrarFbGlobal('error', err.message || 'Erro ao restaurar.');
+    }
+  }
+
+  async function enviarTeste() {
+    if (!_tplAtiva) return;
+    var emailEl = document.getElementById('tpl-test-email');
+    var email = emailEl ? emailEl.value.trim() : '';
+    if (!email || !email.includes('@')) {
+      mostrarFbGlobal('error', 'Informe um e-mail válido para o teste.');
+      emailEl && emailEl.focus();
+      return;
+    }
+    window._testEmailCache = email;
+    var btn = document.getElementById('btn-tpl-teste');
+    if (btn) { btn.disabled = true; btn.textContent = 'Enviando…'; }
+    try {
+      var assunto      = document.getElementById('tpl-assunto').value.trim();
+      var abertura     = document.getElementById('tpl-abertura').value.trim();
+      var encerramento = document.getElementById('tpl-encerramento').value.trim();
+      await API.post('testarTemplate', {
+        authToken: getAccessToken(),
+        key: _tplAtiva.key,
+        emailDestino: email,
+        assunto: assunto,
+        abertura: abertura,
+        encerramento: encerramento,
+      });
+      mostrarFbGlobal('success', 'E-mail de teste enviado para ' + email);
+    } catch (err) {
+      mostrarFbGlobal('error', err.message || 'Erro ao enviar teste.');
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = '▶ Enviar teste'; }
     }
   }
 

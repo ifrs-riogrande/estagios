@@ -3090,3 +3090,80 @@ function restaurarTemplateDefault_(body) {
   return jsonOk_({ ok: true });
 }
 
+/** POST testarTemplate — envia e-mail de prévia com dados fictícios */
+function testarTemplate_(body) {
+  var key          = String(body.key          || '').trim();
+  var emailDestino = String(body.emailDestino || '').trim();
+  var assunto      = String(body.assunto      || '').trim();
+  var abertura     = String(body.abertura     || '').trim();
+  var encerramento = String(body.encerramento || '').trim();
+
+  if (!key || !/^\w+$/.test(key))  return jsonError_('Chave de template inválida.', 'VALIDATION');
+  if (!emailDestino || !emailDestino.includes('@')) return jsonError_('E-mail de destino inválido.', 'VALIDATION');
+
+  var meta = (MAIL.obterMetaTemplates() || []).find(function (m) { return m.key === key; });
+  if (!meta) return jsonError_('Template não encontrado.', 'NOT_FOUND');
+
+  // Monta dados fictícios para todas as variáveis do template
+  var dadosFicticios = {};
+  (meta.vars || []).forEach(function (v) {
+    dadosFicticios[v] = '«' + v + '»';
+  });
+
+  // Substitui temporariamente o override armazenado pelos valores do formulário
+  var props = PropertiesService.getScriptProperties();
+  var propKey = 'tmpl_' + key;
+  var anterior = props.getProperty(propKey);
+  if (assunto || abertura || encerramento) {
+    props.setProperty(propKey, JSON.stringify({ assunto: assunto, abertura: abertura, encerramento: encerramento }));
+  } else {
+    props.deleteProperty(propKey);
+  }
+
+  try {
+    var assuntoFinal = assunto
+      ? String(assunto).replace(/\{\{(\w+)\}\}/g, function (_, k) { return dadosFicticios[k] !== undefined ? dadosFicticios[k] : '{{' + k + '}}'; })
+      : meta.assuntoDefault.replace(/\{\{(\w+)\}\}/g, function (_, k) { return dadosFicticios[k] !== undefined ? dadosFicticios[k] : '{{' + k + '}}'; });
+
+    var aberturaHtml = abertura
+      ? abertura.replace(/\{\{(\w+)\}\}/g, function (_, k) { return dadosFicticios[k] !== undefined ? dadosFicticios[k] : '{{' + k + '}}'; })
+               .split(/\n+/).filter(function (l) { return l.trim(); }).map(function (l) { return '<p>' + l.trim() + '</p>'; }).join('')
+      : '<p>' + (meta.aberturaDefault || '').replace(/\{\{(\w+)\}\}/g, function (_, k) { return dadosFicticios[k] !== undefined ? dadosFicticios[k] : '{{' + k + '}}'; }) + '</p>';
+
+    var esc_ = function (s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); };
+    var camposFixosHtml = (meta.camposFixos || []).map(function (c) {
+      return '<div style="margin:6px 0;padding:8px 14px;background:#f8fafc;border-left:3px solid #cbd5e1;font-size:.85rem;color:#475569;">'
+           + '<strong style="font-size:.7rem;text-transform:uppercase;color:#94a3b8;">Campo fixo</strong><br>' + esc_(c) + '</div>';
+    }).join('');
+
+    var encerramentoHtml = encerramento
+      ? encerramento.replace(/\{\{(\w+)\}\}/g, function (_, k) { return dadosFicticios[k] !== undefined ? dadosFicticios[k] : '{{' + k + '}}'; })
+                    .split(/\n+/).filter(function (l) { return l.trim(); }).map(function (l) { return '<p>' + l.trim() + '</p>'; }).join('')
+      : (meta.encerramentoDefault
+          ? '<p>' + meta.encerramentoDefault.replace(/\{\{(\w+)\}\}/g, function (_, k) { return dadosFicticios[k] !== undefined ? dadosFicticios[k] : '{{' + k + '}}'; }) + '</p>'
+          : '');
+
+    var avisoHtml = '<div style="margin:16px 0;padding:10px 14px;background:#fef9c3;border:1px solid #fde047;border-radius:6px;font-size:.8rem;color:#854d0e;">'
+      + '⚠️ <strong>E-mail de teste</strong> — template <em>' + esc_(meta.label) + '</em>. '
+      + 'Os campos de dados estão preenchidos com valores fictícios.</div>';
+
+    var corpo = avisoHtml + aberturaHtml + camposFixosHtml + encerramentoHtml;
+    var assuntoTeste = '[TESTE] ' + assuntoFinal;
+
+    MailApp.sendEmail({
+      to: emailDestino,
+      subject: assuntoTeste,
+      htmlBody: '<div style="font-family:Inter,sans-serif;max-width:600px;margin:0 auto;padding:24px;">' + corpo + '</div>',
+    });
+
+    return jsonOk_({ ok: true });
+  } finally {
+    // Restaura o override original
+    if (anterior !== null && anterior !== undefined) {
+      props.setProperty(propKey, anterior);
+    } else {
+      props.deleteProperty(propKey);
+    }
+  }
+}
+
