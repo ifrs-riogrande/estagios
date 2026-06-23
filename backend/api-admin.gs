@@ -222,6 +222,7 @@ function doPostAdmin(e) {
       case 'salvarConfigNotificacoes': return salvarConfigNotificacoes_(body);
       case 'salvarTemplate':           return salvarTemplate_(body);
       case 'restaurarTemplateDefault': return restaurarTemplateDefault_(body);
+      case 'testarTemplate':           return testarTemplate_(body);
       // Diretor Geral
       case 'salvarDiretorGeral':     return salvarDiretorGeral_(body);
       case 'salvarDiretoriaDEN':     return _salvarDiretoria_(body, 'DEN');
