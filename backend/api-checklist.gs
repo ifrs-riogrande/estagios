@@ -1863,7 +1863,7 @@ function gerarPdfChecklist_(idEstagio, checklist) {
   _linha('Término', _fmtDataCk_(sol.dataTermino));
   _linha('Carga Horária', sol.cargaHoraria ? sol.cargaHoraria + ' h/semana' : '');
   _linha('Horários', sol.horario);
-  _linha('Plano de Atividades', sol.planoAtividades);
+  _linha('Plano de Atividades', _atividadesParaTexto_(sol.planoAtividades));
 
   _secao('ORIENTADOR E COORDENADOR');
   _linha('Orientador(a) de Estágio', sol.nomeOrientador);

@@ -505,7 +505,7 @@
           </div>
           <div class="detail-item detail-full">
             <label>Plano de Atividades</label>
-            <p style="white-space:pre-wrap">${escapeHtml(s.planoAtividades || '—')}</p>
+            <div>${renderAtividades(s.planoAtividades)}</div>
           </div>
           ${s.observacaoSetor ? `
           <div class="detail-item detail-full">

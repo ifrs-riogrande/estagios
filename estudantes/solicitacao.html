@@ -649,8 +649,9 @@
               <input type="hidden" id="carga-horaria-semanal" name="cargaHoraria">
             </div>
             <div class="form-group">
-              <label class="form-label required" for="atividades-prev">Atividades previstas</label>
-              <textarea id="atividades-prev" name="atividadesPrevistas" class="form-control" rows="3" required aria-required="true" placeholder="Liste as atividades que serão desenvolvidas durante o estágio." aria-describedby="atividades-prev-error"></textarea>
+              <label class="form-label required">Atividades previstas</label>
+              <div id="atividades-lista" style="display:flex;flex-direction:column;gap:var(--space-2);margin-bottom:var(--space-2);"></div>
+              <button type="button" id="btn-add-atividade" class="btn btn-secondary btn-sm" style="width:fit-content">+ Adicionar atividade</button>
               <span id="atividades-prev-error" class="form-error hidden" role="alert"></span>
             </div>
           </div>
@@ -1659,6 +1660,56 @@
     validarPdf('doc-identidade',        'identidade-doc-name', 'doc-identidade-error',        true);
     validarPdf('boletim',               'boletim-name',        null,                          false);
 
+    // ── Lista de atividades previstas ─────────────────────────────────────────
+    function _addAtividade(valor) {
+      var lista = document.getElementById('atividades-lista');
+      var idx   = lista.children.length + 1;
+      var row   = document.createElement('div');
+      row.style.cssText = 'display:flex;gap:var(--space-2);align-items:center';
+      var label = document.createElement('span');
+      label.textContent = idx + '.';
+      label.style.cssText = 'min-width:20px;font-size:.85rem;color:var(--color-text-muted);flex-shrink:0';
+      var input = document.createElement('input');
+      input.type = 'text';
+      input.className = 'form-control';
+      input.maxLength = 300;
+      input.value = valor || '';
+      input.placeholder = 'Descreva a atividade…';
+      var btnRem = document.createElement('button');
+      btnRem.type = 'button';
+      btnRem.textContent = '×';
+      btnRem.title = 'Remover';
+      btnRem.style.cssText = 'background:none;border:none;font-size:1.2rem;cursor:pointer;color:var(--color-text-muted);padding:0 4px;flex-shrink:0';
+      btnRem.onclick = function() {
+        lista.removeChild(row);
+        _renumerarAtividades_();
+      };
+      row.appendChild(label);
+      row.appendChild(input);
+      row.appendChild(btnRem);
+      lista.appendChild(row);
+      input.focus();
+    }
+
+    function _renumerarAtividades_() {
+      var rows = document.getElementById('atividades-lista').children;
+      for (var i = 0; i < rows.length; i++) {
+        rows[i].querySelector('span').textContent = (i + 1) + '.';
+      }
+    }
+
+    function _lerAtividades_() {
+      var inputs = document.getElementById('atividades-lista').querySelectorAll('input[type=text]');
+      var lista  = [];
+      inputs.forEach(function(inp) { var v = inp.value.trim(); if (v) lista.push(v); });
+      return JSON.stringify(lista);
+    }
+
+    document.getElementById('btn-add-atividade').addEventListener('click', function() { _addAtividade(''); });
+
+    // Inicializa com 1 item vazio
+    _addAtividade('');
+
     // ── Validação ──
     function validateForm() {
       let valid = true, firstInvalid = null;
@@ -1727,7 +1778,8 @@
       }
       if (!document.getElementById('area-setor').value.trim()) fail('area-setor', 'Informe a área/setor do estágio.');
       if (!document.getElementById('dias-horarios-value').value.trim()) fail('dias-horarios', 'Adicione ao menos um dia de estágio com horários válidos.');
-      if (!document.getElementById('atividades-prev').value.trim()) fail('atividades-prev', 'Descreva as atividades previstas.');
+      var _ativLista = JSON.parse(_lerAtividades_() || '[]');
+      if (!_ativLista.length) fail('atividades-prev-error', 'Adicione ao menos uma atividade prevista.');
       if (!document.getElementById('agente').value)            fail('agente', 'Informe se há agente de integração.');
 
       if (!document.getElementById('comprovante-matricula').files?.length) {
@@ -1813,7 +1865,7 @@
         cargaHorariaTotal:  document.getElementById('carga-horaria').value,
         diasHorarios:       document.getElementById('dias-horarios-value').value.trim(),
         areaSetor:          document.getElementById('area-setor').value.trim(),
-        atividadesPrevistas:document.getElementById('atividades-prev').value.trim(),
+        atividadesPrevistas: _lerAtividades_(),
         nomeAgente:         document.getElementById('agente').options[document.getElementById('agente').selectedIndex]?.text || '',
         agente:             document.getElementById('agente').value,
         declaracoes: 'Todas aceitas',

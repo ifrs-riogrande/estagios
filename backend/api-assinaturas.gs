@@ -643,7 +643,7 @@ function _gerarPdfTCEInicial_(idEstagio, sol, pastaId) {
     kv('Carga Horária Semanal',                sol.cargaHoraria || '', 32);
     kv('Início de Estágio',                    _formatarDataBr_(sol.dataInicio), 32);
     kv('Fim do Estágio',                       _formatarDataBr_(sol.dataTermino), 32);
-    kv('Descrição das Atividades',             sol.planoAtividades || '', 32);
+    kv('Descrição das Atividades',             _atividadesParaTexto_(sol.planoAtividades), 32);
 
     // 4b) Bolsa
     var p4b = body.appendParagraph('b) BOLSA AUXÍLIO E OUTROS BENEFÍCIOS:');

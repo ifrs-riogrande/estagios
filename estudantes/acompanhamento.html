@@ -1018,8 +1018,8 @@
       // Plano de Atividades (fora da grade)
       if (s.planoAtividades) {
         html += `<p class="info-section-title">Plano de Atividades</p>
-          <div style="background:var(--color-bg);border:1px solid var(--color-border);border-radius:var(--radius-md);padding:var(--space-4);font-size:var(--font-size-sm);white-space:pre-wrap;line-height:1.6;margin-bottom:var(--space-4)">
-            ${escapeHtml(s.planoAtividades)}
+          <div style="background:var(--color-bg);border:1px solid var(--color-border);border-radius:var(--radius-md);padding:var(--space-4);font-size:var(--font-size-sm);line-height:1.6;margin-bottom:var(--space-4)">
+            ${renderAtividades(s.planoAtividades)}
           </div>`;
       }
 

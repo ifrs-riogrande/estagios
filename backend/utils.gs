@@ -327,6 +327,47 @@ function buscarNaColuna_(sheet, colIndex, valor) {
 }
 
 /**
+ * Normaliza o campo "atividades previstas" para JSON array.
+ * Aceita string JSON (novo formato) ou texto livre (legado).
+ * Retorna string JSON serializada — máx. 50 itens, 300 chars cada.
+ */
+function _normalizarAtividades_(valor) {
+  if (!valor) return '[]';
+  var s = String(valor).trim();
+  if (s.charAt(0) === '[') {
+    try {
+      var arr = JSON.parse(s);
+      if (Array.isArray(arr)) {
+        var clean = arr.map(function(i) { return sanitizar_(String(i || ''), 300).trim(); })
+                       .filter(function(i) { return i.length > 0; })
+                       .slice(0, 50);
+        return JSON.stringify(clean);
+      }
+    } catch (_) {}
+  }
+  // Texto legado — preserva como item único
+  return JSON.stringify([sanitizar_(s, 2000).trim()]);
+}
+
+/**
+ * Converte atividades (JSON array ou texto legado) para lista numerada em texto.
+ * Usado em documentos, e-mails e exibições.
+ */
+function _atividadesParaTexto_(valor) {
+  if (!valor) return '';
+  var s = String(valor).trim();
+  if (s.charAt(0) === '[') {
+    try {
+      var arr = JSON.parse(s);
+      if (Array.isArray(arr) && arr.length) {
+        return arr.map(function(a, i) { return (i + 1) + '. ' + a; }).join('\n');
+      }
+    } catch (_) {}
+  }
+  return s; // legado: retorna como está
+}
+
+/**
  * Abre uma planilha pelo ID e retorna a aba de nome `nomAba` (ou a primeira se omitido).
  * Lança erro se não encontrar.
  */

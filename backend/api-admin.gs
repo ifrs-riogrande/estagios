@@ -1246,7 +1246,7 @@ function montarVariaveis_(r) {
   vars['{{REMUNERADO}}']            = String(r[COL.REMUNERACAO]       || '');
   vars['{{VALOR_BOLSA}}']           = String(r[COL.VALOR_BOLSA]       || '');
   vars['{{VALOR_TRANSPORTE}}']      = String(r[COL.VALOR_TRANSPORTE]  || '');
-  vars['{{PLANO_ATIVIDADES}}']      = String(r[COL.PLANO_ATIVIDADES]  || '');
+  vars['{{PLANO_ATIVIDADES}}']      = _atividadesParaTexto_(String(r[COL.PLANO_ATIVIDADES] || ''));
   vars['{{FORMANDO}}']              = String(r[COL.FORMANDO]           || '');
   vars['{{NEE}}']                   = String(r[COL.NEE]                || 'Não');
   vars['{{TURNO}}']                 = String(r[COL.TURNO]              || '');  // da solicitação

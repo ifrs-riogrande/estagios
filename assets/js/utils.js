@@ -553,6 +553,26 @@ function buildAvaliacoesPrevistasHtml(dataInicio, dataTermino, avaliacoes) {
 }
 
 // ─────────────────────────────────────────
+//  ATIVIDADES PREVISTAS — helper de exibição
+// ─────────────────────────────────────────
+
+function renderAtividades(valor) {
+  if (!valor) return '<span style="color:var(--color-text-muted)">—</span>';
+  var s = String(valor).trim();
+  if (s.charAt(0) === '[') {
+    try {
+      var arr = JSON.parse(s);
+      if (Array.isArray(arr) && arr.length) {
+        return '<ol style="margin:0;padding-left:1.4em;line-height:1.7">'
+          + arr.map(function(a) { return '<li>' + escapeHtml(String(a)) + '</li>'; }).join('')
+          + '</ol>';
+      }
+    } catch (_) {}
+  }
+  return '<span style="white-space:pre-wrap">' + escapeHtml(s) + '</span>';
+}
+
+// ─────────────────────────────────────────
 //  INICIALIZAÇÃO AUTOMÁTICA
 //  Chamada ao carregar o DOM em qualquer página.
 // ─────────────────────────────────────────

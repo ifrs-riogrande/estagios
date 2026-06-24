@@ -168,7 +168,7 @@ function solicitarEstagio_(dados) {
   var remuneracao    = sanitizar_(dados.remunerado, 5);
   var valorBolsa     = sanitizar_(dados.valorBolsa, 20);
   var valorTransp    = sanitizar_(dados.valorTransporte, 20);
-  var planoAtiv      = sanitizar_(dados.atividadesPrevistas || dados.planoAtividades, 2000);
+  var planoAtiv      = _normalizarAtividades_(dados.atividadesPrevistas || dados.planoAtividades);
   var formando       = sanitizar_(dados.formando, 50).indexOf('Sim') === 0 ? 'Sim' : 'Não';
   // docs de admissão: chegam como { nome, base64 } do frontend
   var arqMat = (dados.docMatricula  && dados.docMatricula.base64)  ? dados.docMatricula  : null;
