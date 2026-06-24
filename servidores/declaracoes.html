@@ -142,6 +142,22 @@
   <script>
     'use strict';
 
+    function showToast(msg, type) {
+      var el = document.getElementById('_toast');
+      if (!el) {
+        el = document.createElement('div');
+        el.id = '_toast';
+        el.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:9999;padding:12px 20px;border-radius:8px;font-size:14px;font-weight:500;box-shadow:0 4px 12px rgba(0,0,0,.15);transition:opacity .3s;max-width:90vw;text-align:center;';
+        document.body.appendChild(el);
+      }
+      el.textContent = msg;
+      el.style.background = type === 'error' ? '#fee2e2' : '#dcfce7';
+      el.style.color       = type === 'error' ? '#991b1b' : '#166534';
+      el.style.opacity = '1';
+      clearTimeout(el._t);
+      el._t = setTimeout(function () { el.style.opacity = '0'; }, 4000);
+    }
+
     document.addEventListener('DOMContentLoaded', function () {
       if (!requireStaffAuth()) return;
       carregarHistorico();
