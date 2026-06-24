@@ -583,7 +583,7 @@
               Seção 8 — Dados do Estágio
             </h2>
             <div class="form-group">
-              <label class="form-label required" for="area-setor">Área / Setor do estágio</label>
+              <label class="form-label required" for="area-setor">Área / Setor do estágio <span class="tooltip-help" aria-label="Pré-preenchido com a área/setor informada pelo supervisor ao se cadastrar. Se for diferente da sua realidade, você pode editar livremente.">?</span></label>
               <input type="text" id="area-setor" name="areaSetor" class="form-control" placeholder="Ex.: Setor de TI, Laboratório de Química" required aria-required="true" aria-describedby="area-setor-error">
               <span id="area-setor-error" class="form-error hidden" role="alert"></span>
             </div>
@@ -626,12 +626,11 @@
             </div>
             <!-- Carga horária total — calculada a partir dos dias/horários + período -->
             <div class="form-group" style="max-width:320px;">
-              <label class="form-label required" for="carga-horaria">Carga horária total do estágio</label>
+              <label class="form-label required" for="carga-horaria">Carga horária total do estágio <span class="tooltip-help" aria-label="Calculada automaticamente com base nas datas e dias informados. Limites: máx. 6h/dia (4h para NEE) e 30h/semana (20h para NEE). Horário noturno (22h–6h) não é permitido.">?</span></label>
               <input type="text" id="carga-horaria" class="form-control" readonly
                 placeholder="Preencha as datas e os dias de estágio"
-                aria-describedby="carga-horaria-hint carga-horaria-error"
+                aria-describedby="carga-horaria-error"
                 style="background:var(--color-surface-secondary,#f8f9fa);cursor:default;">
-              <span id="carga-horaria-hint" class="form-hint">Calculada automaticamente: ocorrências de cada dia entre início e término. Máx. diária: 4h (NEE) · 6h (regular). Máx. semanal: 20h (NEE) · 30h (regular). Vedado período noturno (22h–6h).</span>
               <span id="carga-horaria-error" class="form-error hidden" role="alert"></span>
               <!-- Carga semanal — usado apenas para validação no backend -->
               <input type="hidden" id="carga-horaria-semanal" name="cargaHoraria">
@@ -651,7 +650,7 @@
               Seção 9 — Agente de Integração
             </h2>
             <div class="form-group">
-              <label class="form-label required" for="agente">O estágio será intermediado por Agente de Integração?</label>
+              <label class="form-label required" for="agente">O estágio será intermediado por Agente de Integração? <span class="tooltip-help" aria-label="Agente de integração é uma instituição (pública ou privada) que faz a ponte entre você, o IFRS e a empresa concedente, ajudando a encontrar vagas e facilitando a comunicação. Se o seu estágio foi obtido por meio de um desses agentes, selecione-o; caso contrário, escolha 'Não'.">?</span></label>
               <select id="agente" name="agente" class="form-control" required aria-required="true" aria-describedby="agente-error" disabled>
                 <option value="">Carregando...</option>
               </select>
@@ -667,7 +666,7 @@
             </h2>
 
             <div class="form-group">
-              <label class="form-label required" for="comprovante-matricula">Comprovante de matrícula atualizado (PDF)</label>
+              <label class="form-label required" for="comprovante-matricula">Comprovante de matrícula <span class="tooltip-help" aria-label="Envie o comprovante atual (do semestre vigente) em PDF. O documento precisa estar legível e com seu nome, curso e matrícula visíveis.">?</span></label>
               <div class="file-input-wrapper">
                 <label class="file-input-label" for="comprovante-matricula">
                   <svg class="file-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/></svg>
@@ -681,7 +680,7 @@
             </div>
 
             <div class="form-group">
-              <label class="form-label required" for="doc-identidade">Documento de identidade (RG/CPF) em PDF</label>
+              <label class="form-label required" for="doc-identidade">Documento de identidade (RG ou CNH) <span class="tooltip-help" aria-label="Envie RG ou CNH em PDF. O documento deve estar legível, sem cortes, e dentro da validade (se aplicável).">?</span></label>
               <div class="file-input-wrapper">
                 <label class="file-input-label" for="doc-identidade">
                   <svg class="file-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/></svg>
@@ -695,7 +694,7 @@
             </div>
 
             <div class="form-group">
-              <label class="form-label" for="boletim">Boletim atualizado (PDF — opcional)</label>
+              <label class="form-label" for="boletim">Boletim <span class="tooltip-help" aria-label="Opcional. Envie o boletim mais recente em PDF, legível e com notas visíveis. Pode ser solicitado pelo setor posteriormente se não enviado agora.">?</span></label>
               <div class="file-input-wrapper">
                 <label class="file-input-label" for="boletim">
                   <svg class="file-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/></svg>
