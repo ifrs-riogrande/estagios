@@ -211,13 +211,13 @@
       const labelPeriodo = (d) => (!d.periodoInicio && !d.periodoFim) ? 'Todos os períodos'
         : fmtPeriodo(d.periodoInicio) + ' a ' + fmtPeriodo(d.periodoFim);
 
-      let html = '<div class="table-wrapper"><table class="data-table"><thead><tr>'
+      let html = '<div class="table-wrapper"><table class="data-table" style="font-size:12px"><thead><tr>'
         + '<th>ID</th><th>Data</th><th>Função</th><th>Modalidade</th><th>Período</th><th>Estágios</th><th style="width:160px"></th>'
         + '</tr></thead><tbody>';
 
       lista.forEach(d => {
         html += `<tr>
-          <td style="font-size:12px;font-family:monospace">${escapeHtml(d.id)}</td>
+          <td style="font-family:monospace">${escapeHtml(d.id)}</td>
           <td>${fmtData(d.dataEmissao)}</td>
           <td>${escapeHtml(labelFuncao(d.funcao))}</td>
           <td>${escapeHtml(d.modalidade)}</td>
