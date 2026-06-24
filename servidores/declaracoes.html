@@ -164,8 +164,9 @@
         const lista = await API.get('listarDeclaracoesServidor', { authToken: token || getAccessToken() });
         renderizarHistorico(Array.isArray(lista) ? lista : []);
       } catch (err) {
-        document.getElementById('historico-container').innerHTML =
-          '<div class="alert alert-error">Erro ao carregar histórico: ' + escapeHtml(err.message) + '</div>';
+        const msg = 'Erro ao carregar histórico: ' + escapeHtml(err.message);
+        document.getElementById('historico-container').innerHTML = '<div class="alert alert-error">' + msg + '</div>';
+        if (typeof showToast === 'function') showToast(msg, 'error');
       }
     }
 
