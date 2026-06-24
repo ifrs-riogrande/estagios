@@ -158,6 +158,8 @@
     }
 
     async function carregarHistorico() {
+      document.getElementById('historico-container').innerHTML =
+        '<div style="padding:var(--space-6);text-align:center;color:var(--color-text-muted);">Carregando…</div>';
       try {
         const lista = await API.get('listarDeclaracoesServidor', { authToken: getAccessToken() });
         renderizarHistorico(Array.isArray(lista) ? lista : []);
