@@ -157,11 +157,11 @@
       fim.required = !checked;
     }
 
-    async function carregarHistorico() {
+    async function carregarHistorico(token) {
       document.getElementById('historico-container').innerHTML =
         '<div style="padding:var(--space-6);text-align:center;color:var(--color-text-muted);">Carregando…</div>';
       try {
-        const lista = await API.get('listarDeclaracoesServidor', { authToken: getAccessToken() });
+        const lista = await API.get('listarDeclaracoesServidor', { authToken: token || getAccessToken() });
         renderizarHistorico(Array.isArray(lista) ? lista : []);
       } catch (err) {
         document.getElementById('historico-container').innerHTML =
@@ -235,8 +235,9 @@
       btn.textContent = 'Gerando…';
 
       try {
+        const token = getAccessToken();
         const payload = {
-          authToken:     getAccessToken(),
+          authToken:     token,
           _nomeServidor: typeof getCurrentUserName === 'function' ? (getCurrentUserName() || '') : '',
           funcao,
           modalidade,
@@ -248,7 +249,7 @@
         }
         const res = await API.post('solicitarDeclaracao', payload);
         showToast(`✅ Declaração gerada (${res.totalEstagios} estágio(s)). Verifique seu e-mail.`, 'success');
-        await carregarHistorico();
+        await carregarHistorico(token);
       } catch (err) {
         showToast('Erro: ' + err.message, 'error');
       } finally {
