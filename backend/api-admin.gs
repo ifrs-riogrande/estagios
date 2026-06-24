@@ -1356,18 +1356,35 @@ function montarVariaveis_(r) {
   // Cabeçalho: CPF=0, SIAPE=1, Nome=2, E-mail=3, Telefone=4, Titulação=5, Curso=6, Timestamp=7, Status=8
   try {
     var shCoo  = SpreadsheetApp.openById(CFG_ADMIN.SS_ID).getSheetByName(CFG_ADMIN.ABA_COORDENADORES);
+    var cursoEst = String(r[COL.CURSO]||'').trim();
+    var emailAtivoCoord = '';
     if (shCoo) {
       var dadosCoo = shCoo.getDataRange().getValues();
-      var cursoEst = String(r[COL.CURSO]||'').trim();
       for (var l = 1; l < dadosCoo.length; l++) {
         if (String(dadosCoo[l][6]||'').trim() === cursoEst && String(dadosCoo[l][8]||'') === 'Ativo') {
           vars['{{NOME_COORDENADOR}}']  = String(dadosCoo[l][2] || '');
           vars['{{SIAPE_COORDENADOR}}'] = String(dadosCoo[l][1] || '');
-          vars['{{EMAIL_COORDENADOR}}'] = String(dadosCoo[l][3] || '');
+          emailAtivoCoord = String(dadosCoo[l][3] || '').trim().toLowerCase();
           break;
         }
       }
     }
+    // E-mail fixo do curso (cadastrado em admin/configuracoes/cursos)
+    var emailFixoCoord = '';
+    try {
+      var listaCursos = obterListaCursos_();
+      for (var lc = 0; lc < listaCursos.length; lc++) {
+        if (listaCursos[lc].nome === cursoEst) {
+          emailFixoCoord = String(listaCursos[lc].emailCoordenacao || '').trim().toLowerCase();
+          break;
+        }
+      }
+    } catch(_) {}
+    // Monta lista deduplicada: fixo sempre primeiro, ativo apenas se diferente
+    var emailsCoord = [];
+    if (emailFixoCoord)  emailsCoord.push(emailFixoCoord);
+    if (emailAtivoCoord && emailAtivoCoord !== emailFixoCoord) emailsCoord.push(emailAtivoCoord);
+    vars['{{EMAIL_COORDENADOR}}'] = emailsCoord.join(', ');
   } catch(e) { logErro_('montarVariaveis_.coordenador', e); }
 
   // ── Diretor Geral ────────────────────────────────────────────────────
@@ -2297,11 +2314,13 @@ function salvarCurso_(body) {
     // Verifica duplicata (mesmo nome, case-insensitive)
     var existe = cursos.some(function(c) { return c.nome.toLowerCase() === nome.toLowerCase(); });
     if (existe) return jsonError_('Já existe um curso com esse nome.', 'DUPLICATE');
+    var emailCoord = sanitizar_(body.emailCoordenacao || '', 120).trim().toLowerCase();
     var novo = {
-      id:     'curso_' + Utilities.getUuid().replace(/-/g, '').substring(0, 8),
-      nome:   nome,
-      grupo:  grupo,
-      status: 'Ativo',
+      id:               'curso_' + Utilities.getUuid().replace(/-/g, '').substring(0, 8),
+      nome:             nome,
+      grupo:            grupo,
+      status:           'Ativo',
+      emailCoordenacao: emailCoord,
     };
     cursos.push(novo);
   } else {
@@ -2310,9 +2329,11 @@ function salvarCurso_(body) {
       if (cursos[i].id === body.id) { idx = i; break; }
     }
     if (idx === -1) return jsonError_('Curso não encontrado.', 'NOT_FOUND');
-    cursos[idx].nome   = nome;
-    cursos[idx].grupo  = grupo;
-    cursos[idx].status = (body.status === 'Inativo') ? 'Inativo' : 'Ativo';
+    var emailCoord = sanitizar_(body.emailCoordenacao || '', 120).trim().toLowerCase();
+    cursos[idx].nome             = nome;
+    cursos[idx].grupo            = grupo;
+    cursos[idx].status           = (body.status === 'Inativo') ? 'Inativo' : 'Ativo';
+    cursos[idx].emailCoordenacao = emailCoord;
   }
 
   ordenarCursos_(cursos);

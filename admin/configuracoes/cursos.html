@@ -181,13 +181,14 @@
                 <tr>
                   <th>Nome</th>
                   <th>Grupo</th>
+                  <th>E-mail Coord.</th>
                   <th>Status</th>
                   <th style="text-align:right;">Ações</th>
                 </tr>
               </thead>
               <tbody id="tbody-cursos">
                 <tr>
-                  <td colspan="4">
+                  <td colspan="5">
                     <div class="estado-tabela">
                       <div class="spinner"></div>
                       Carregando cursos…
@@ -306,6 +307,11 @@
             <option value="Especialização">Especialização</option>
           </select>
         </div>
+        <div class="form-group">
+          <label class="form-label" for="campo-email-coord">E-mail fixo da coordenação</label>
+          <input id="campo-email-coord" type="email" class="form-input" maxlength="120" placeholder="Ex: coord.informatica@riogrande.ifrs.edu.br">
+          <p class="form-help">E-mail institucional do setor (não muda quando o coordenador muda). Notificações serão enviadas sempre para este endereço.</p>
+        </div>
         <div class="form-group" id="grupo-status" style="display:none;">
           <label class="form-label" for="campo-status">Status</label>
           <select id="campo-status" class="form-select">
@@ -374,7 +380,7 @@
       preencherFiltroGrupo();
     } catch (err) {
       document.getElementById('tbody-cursos').innerHTML =
-        '<tr><td colspan="4"><div class="estado-tabela">Erro ao carregar cursos. Recarregue a página.</div></td></tr>';
+        '<tr><td colspan="5"><div class="estado-tabela">Erro ao carregar cursos. Recarregue a página.</div></td></tr>';
       console.error(err);
     }
   }
@@ -401,7 +407,7 @@
     });
     var tbody = document.getElementById('tbody-cursos');
     if (filtrados.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="4"><div class="estado-tabela">Nenhum curso encontrado.</div></td></tr>';
+      tbody.innerHTML = '<tr><td colspan="5"><div class="estado-tabela">Nenhum curso encontrado.</div></td></tr>';
       document.getElementById('contagem-cursos').textContent = '';
       return;
     }
@@ -409,6 +415,7 @@
       return '<tr data-id="' + escHtml(c.id) + '">' +
         '<td><strong>' + escHtml(c.nome) + '</strong></td>' +
         '<td>' + escHtml(c.grupo) + '</td>' +
+        '<td style="font-size:12px">' + (c.emailCoordenacao ? escHtml(c.emailCoordenacao) : '<span style="color:var(--color-text-muted)">—</span>') + '</td>' +
         '<td><span class="' + (c.status === 'Ativo' ? 'badge-ativo' : 'badge-inativo') + '">' + escHtml(c.status) + '</span></td>' +
         '<td style="text-align:right;white-space:nowrap;">' +
           '<button class="btn btn-sm btn-secondary" onclick="abrirEdicao(\'' + escHtml(c.id) + '\')">Editar</button>' +
@@ -438,10 +445,11 @@
     cursoEmEdicao = curso || null;
     var ehNovo = !curso;
     document.getElementById('modal-titulo').textContent = ehNovo ? 'Novo curso' : 'Editar curso';
-    document.getElementById('campo-id').value    = ehNovo ? '' : curso.id;
-    document.getElementById('campo-nome').value  = ehNovo ? '' : curso.nome;
-    document.getElementById('campo-grupo').value = ehNovo ? '' : curso.grupo;
-    document.getElementById('campo-status').value = ehNovo ? 'Ativo' : curso.status;
+    document.getElementById('campo-id').value           = ehNovo ? '' : curso.id;
+    document.getElementById('campo-nome').value          = ehNovo ? '' : curso.nome;
+    document.getElementById('campo-grupo').value         = ehNovo ? '' : curso.grupo;
+    document.getElementById('campo-email-coord').value   = ehNovo ? '' : (curso.emailCoordenacao || '');
+    document.getElementById('campo-status').value        = ehNovo ? 'Ativo' : curso.status;
     document.getElementById('grupo-status').style.display = ehNovo ? 'none' : '';
     ocultarFeedbackModal();
     document.getElementById('modal-curso').classList.add('is-active');
@@ -519,16 +527,20 @@
   document.getElementById('form-curso').addEventListener('submit', async function (e) {
     e.preventDefault();
     ocultarFeedbackModal();
-    var id    = document.getElementById('campo-id').value.trim() || null;
-    var nome  = document.getElementById('campo-nome').value.trim();
-    var grupo = document.getElementById('campo-grupo').value;
-    var status = document.getElementById('campo-status').value;
+    var id              = document.getElementById('campo-id').value.trim() || null;
+    var nome            = document.getElementById('campo-nome').value.trim();
+    var grupo           = document.getElementById('campo-grupo').value;
+    var status          = document.getElementById('campo-status').value;
+    var emailCoordenacao = document.getElementById('campo-email-coord').value.trim();
     if (!nome)  { mostrarFeedbackModal('error', 'Informe o nome do curso.'); return; }
     if (!grupo) { mostrarFeedbackModal('error', 'Selecione o grupo/modalidade.'); return; }
+    if (emailCoordenacao && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailCoordenacao)) {
+      mostrarFeedbackModal('error', 'E-mail da coordenação inválido.'); return;
+    }
     var btn = document.getElementById('btn-salvar');
     btn.classList.add('is-loading'); btn.disabled = true;
     try {
-      var payload = id ? { id, nome, grupo, status } : { nome, grupo };
+      var payload = id ? { id, nome, grupo, status, emailCoordenacao } : { nome, grupo, emailCoordenacao };
       var res = await apiSalvarCurso(payload);
       todosCursos = res.cursos || todosCursos;
       renderizarTabela();
