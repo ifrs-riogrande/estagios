@@ -186,7 +186,35 @@
       }
     }
 
+    let _listaDecl  = [];
+    let _sortCol    = 1;   // Data por padrão
+    let _sortAsc    = false;
+
+    const fmtData    = (iso) => { if (!iso) return '—'; try { return new Date(iso).toLocaleDateString('pt-BR'); } catch (_) { return iso; } };
+    const fmtPeriodo = (v)   => { if (!v) return '—'; const m = String(v).match(/^(\d{4})-(\d{2})-(\d{2})/); return m ? `${m[3]}/${m[2]}/${m[1]}` : v; };
+    const labelFuncao  = (f) => f === 'orientador' ? 'Orientação' : f === 'supervisor' ? 'Supervisão' : 'Orientação e Supervisão';
+    const labelPeriodo = (d) => (!d.periodoInicio && !d.periodoFim) ? 'Todos os períodos' : fmtPeriodo(d.periodoInicio) + ' a ' + fmtPeriodo(d.periodoFim);
+
+    function _sortKey(d, col) {
+      switch (col) {
+        case 0: return d.id;
+        case 1: return d.dataEmissao || '';
+        case 2: return labelFuncao(d.funcao);
+        case 3: return d.modalidade || '';
+        case 4: return (d.periodoInicio || '') + (d.periodoFim || '');
+        case 5: return d.totalEstagios;
+        default: return '';
+      }
+    }
+
+    function ordenarPor(col) {
+      if (_sortCol === col) _sortAsc = !_sortAsc;
+      else { _sortCol = col; _sortAsc = true; }
+      renderizarHistorico(_listaDecl);
+    }
+
     function renderizarHistorico(lista) {
+      _listaDecl = lista;
       const c = document.getElementById('historico-container');
       if (!lista.length) {
         c.innerHTML = `
@@ -197,25 +225,27 @@
         return;
       }
 
-      const fmtData = (iso) => {
-        if (!iso) return '—';
-        try { return new Date(iso).toLocaleDateString('pt-BR'); } catch (_) { return iso; }
-      };
-      const fmtPeriodo = (v) => {
-        if (!v) return '—';
-        const m = String(v).match(/^(\d{4})-(\d{2})-(\d{2})/);
-        if (m) return `${m[3]}/${m[2]}/${m[1]}`;
-        return v;
-      };
-      const labelFuncao  = (f) => f === 'orientador' ? 'Orientação' : f === 'supervisor' ? 'Supervisão' : 'Orientação e Supervisão';
-      const labelPeriodo = (d) => (!d.periodoInicio && !d.periodoFim) ? 'Todos os períodos'
-        : fmtPeriodo(d.periodoInicio) + ' a ' + fmtPeriodo(d.periodoFim);
+      const sorted = [...lista].sort((a, b) => {
+        const ka = _sortKey(a, _sortCol), kb = _sortKey(b, _sortCol);
+        const cmp = typeof ka === 'number' ? ka - kb : String(ka).localeCompare(String(kb), 'pt-BR');
+        return _sortAsc ? cmp : -cmp;
+      });
+
+      const arrow = (col) => _sortCol === col ? (_sortAsc ? ' ▲' : ' ▼') : '';
+      const th = (col, label, style) =>
+        `<th style="cursor:pointer;user-select:none;${style||''}" onclick="ordenarPor(${col})">${label}${arrow(col)}</th>`;
 
       let html = '<div class="table-wrapper"><table class="data-table" style="font-size:12px"><thead><tr>'
-        + '<th>ID</th><th>Data</th><th>Função</th><th>Modalidade</th><th>Período</th><th>Estágios</th><th style="width:160px"></th>'
+        + th(0, 'ID')
+        + th(1, 'Data')
+        + th(2, 'Função')
+        + th(3, 'Modalidade')
+        + th(4, 'Período')
+        + th(5, 'Estágios', 'text-align:center')
+        + '<th style="width:160px"></th>'
         + '</tr></thead><tbody>';
 
-      lista.forEach(d => {
+      sorted.forEach(d => {
         html += `<tr>
           <td style="font-family:monospace">${escapeHtml(d.id)}</td>
           <td>${fmtData(d.dataEmissao)}</td>
