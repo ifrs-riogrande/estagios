@@ -694,16 +694,17 @@
             </div>
 
             <div class="form-group">
-              <label class="form-label" for="boletim">Boletim <span class="tooltip-help" aria-label="Opcional. Envie o boletim mais recente em PDF, legível e com notas visíveis. Pode ser solicitado pelo setor posteriormente se não enviado agora.">?</span></label>
+              <label class="form-label required" for="boletim">Boletim <span class="tooltip-help" aria-label="Envie o boletim mais recente em PDF, legível e com as notas visíveis.">?</span></label>
               <div class="file-input-wrapper">
                 <label class="file-input-label" for="boletim">
                   <svg class="file-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/></svg>
-                  <span class="file-text">Selecionar boletim (opcional)</span>
+                  <span class="file-text">Selecionar boletim (PDF)</span>
                   <span class="file-selected" id="boletim-name"></span>
                   <span class="file-types">PDF — máx. 5 MB</span>
                 </label>
-                <input type="file" class="form-control-file" id="boletim" name="boletim" accept=".pdf">
+                <input type="file" class="form-control-file" id="boletim" name="boletim" accept=".pdf" required aria-required="true" aria-describedby="boletim-error">
               </div>
+              <span id="boletim-error" class="form-error hidden" role="alert"></span>
             </div>
           </div>
 
@@ -1645,7 +1646,7 @@
 
     validarPdf('comprovante-matricula', 'matricula-doc-name',  'comprovante-matricula-error', true);
     validarPdf('doc-identidade',        'identidade-doc-name', 'doc-identidade-error',        true);
-    validarPdf('boletim',               'boletim-name',        null,                          false);
+    validarPdf('boletim',               'boletim-name',        'boletim-error',               true);
 
     // ── Lista de atividades previstas ─────────────────────────────────────────
     function _addAtividade(valor) {
@@ -1779,9 +1780,8 @@
       } else if (!_fileOk['doc-identidade']) {
         fail('doc-identidade', 'O arquivo não é um PDF válido.');
       }
-      const boletimFiles = document.getElementById('boletim').files;
-      if (boletimFiles?.length && !_fileOk['boletim']) {
-        fail('boletim', 'O boletim selecionado não é um PDF válido.');
+      if (!_fileOk['boletim']) {
+        fail('boletim', 'Selecione o boletim atualizado em PDF.');
       }
 
       if (!document.getElementById('decl-unica').checked) fail('decl-unica', 'Aceite esta declaração para continuar.');
