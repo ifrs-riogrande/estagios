@@ -1108,6 +1108,8 @@
         precheckBanner(supSt, 'success', '✅ <strong>' + nome + '</strong> — cadastro aprovado.');
         btnPro.style.display = 'inline-flex';
         btnPro.onclick = async function() {
+          btnPro.disabled = true;
+          btnPro.classList.add('is-loading');
           const precheckEmpSel = document.getElementById('precheck-empresa-select');
           const precheckSupSel = document.getElementById('precheck-supervisor-select');
           const empCnpj = precheckEmpSel.value;
