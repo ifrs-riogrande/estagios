@@ -50,6 +50,7 @@ function doPostDeclaracoes(e) {
   var action = body.action || '';
   if (action === 'solicitarDeclaracao')   return solicitarDeclaracao_(body);
   if (action === 'gerarDeclaracaoAdmin')  return gerarDeclaracaoAdmin_(body);
+  if (action === 'reenviarDeclaracao')    return reenviarDeclaracao_(body);
   return jsonError_('Ação POST não reconhecida em declaracoes: ' + action, 'NOT_IMPLEMENTED');
 }
 
@@ -134,13 +135,17 @@ function gerarDeclaracaoAdmin_(body) {
 // ── Core: gera PDF e salva registro ──────────────────────────────────────────
 
 function _processarDeclaracao_(body, emailServidor, emitidoPor, nomeEmitente) {
-  var funcao     = sanitizar_(body.funcao     || '', 20).trim();
-  var modalidade = sanitizar_(body.modalidade || '', 30).trim();
-  var periodoIni = sanitizar_(body.periodoInicio || '', 20).trim();
-  var periodoFim = sanitizar_(body.periodoFim    || '', 20).trim();
+  var funcao      = sanitizar_(body.funcao      || '', 20).trim();
+  var modalidade  = sanitizar_(body.modalidade  || '', 30).trim();
+  var todoPeriodo = body.todoPeriodo === true || body.todoPeriodo === 'true';
+  var periodoIni  = todoPeriodo ? '' : sanitizar_(body.periodoInicio || '', 20).trim();
+  var periodoFim  = todoPeriodo ? '' : sanitizar_(body.periodoFim    || '', 20).trim();
 
-  if (!funcao || !modalidade || !periodoIni || !periodoFim) {
-    return jsonError_('Parâmetros obrigatórios: funcao, modalidade, periodoInicio, periodoFim.', 'VALIDATION');
+  if (!funcao || !modalidade) {
+    return jsonError_('Parâmetros obrigatórios: funcao, modalidade.', 'VALIDATION');
+  }
+  if (!todoPeriodo && (!periodoIni || !periodoFim)) {
+    return jsonError_('Informe o período ou marque "Todos os períodos".', 'VALIDATION');
   }
   if (!['orientador', 'supervisor', 'ambos'].includes(funcao)) {
     return jsonError_('Função inválida. Use: orientador, supervisor ou ambos.', 'VALIDATION');
@@ -179,6 +184,7 @@ function _processarDeclaracao_(body, emailServidor, emitidoPor, nomeEmitente) {
     modalidade:    modalidade,
     periodoInicio: periodoIni,
     periodoFim:    periodoFim,
+    todoPeriodo:   todoPeriodo,
     estagios:      estagios,
     token:         token,
     dataEmissao:   new Date().toISOString(),
@@ -188,6 +194,7 @@ function _processarDeclaracao_(body, emailServidor, emitidoPor, nomeEmitente) {
   _enviarEmailDeclaracao_(emailServidor, nomeServidor, id, pdfBlob, {
     funcao: funcao, modalidade: modalidade,
     periodoInicio: periodoIni, periodoFim: periodoFim,
+    todoPeriodo: todoPeriodo,
     totalEstagios: estagios.length,
   });
 
@@ -431,7 +438,7 @@ function _enviarEmailDeclaracao_(emailServidor, nomeServidor, id, pdfBlob, info)
     + '<tr><td style="padding:6px 0;color:#6b7280;font-size:12px;text-transform:uppercase;width:130px;">ID</td>'
     +    '<td style="padding:6px 0;font-weight:600;">' + id + '</td></tr>'
     + '<tr><td style="padding:6px 0;color:#6b7280;font-size:12px;text-transform:uppercase;">Período</td>'
-    +    '<td style="padding:6px 0;">' + fmtP(info.periodoInicio) + ' a ' + fmtP(info.periodoFim) + '</td></tr>'
+    +    '<td style="padding:6px 0;">' + (info.todoPeriodo ? 'Todos os períodos' : fmtP(info.periodoInicio) + ' a ' + fmtP(info.periodoFim)) + '</td></tr>'
     + '<tr><td style="padding:6px 0;color:#6b7280;font-size:12px;text-transform:uppercase;">Modalidade</td>'
     +    '<td style="padding:6px 0;">' + info.modalidade + '</td></tr>'
     + '<tr><td style="padding:6px 0;color:#6b7280;font-size:12px;text-transform:uppercase;">Estágios</td>'
@@ -536,8 +543,9 @@ function _filtrarEstagiosDeclaracao_(emailServidor, funcao, modalidade, periodoI
     var dtIni = _normData(linha[COL_SOL.DATA_INICIO]);
     var dtFim = _normData(linha[COL_SOL.DATA_TERMINO]);
 
-    if (dtFiltroIni && dtFiltroFim && dtIni && dtFim) {
-      // Sobreposição: início do estágio <= fim do filtro E fim do estágio >= início do filtro
+    // Filtro de período: sem filtro (todoPeriodo) aceita qualquer data
+    if (dtFiltroIni && dtFiltroFim) {
+      if (!dtIni || !dtFim) continue;
       if (dtIni > dtFiltroFim || dtFim < dtFiltroIni) continue;
     }
 
@@ -558,6 +566,49 @@ function _filtrarEstagiosDeclaracao_(emailServidor, funcao, modalidade, periodoI
   });
 
   return resultado;
+}
+
+// ── POST: reenviar declaração já emitida ──────────────────────────────────────
+
+function reenviarDeclaracao_(body) {
+  var tokenInfo = validarTokenServidor_(body.authToken);
+  var emailServidor = tokenInfo.email.toLowerCase().trim();
+  var id = sanitizar_(body.id || '', 40).trim();
+  if (!id) return jsonError_('ID da declaração é obrigatório.', 'VALIDATION');
+
+  var decl = _obterDeclaracaoPorId_(id);
+  if (!decl) return jsonError_('Declaração não encontrada.', 'NOT_FOUND');
+  if (decl.emailServidor.toLowerCase() !== emailServidor) {
+    return jsonError_('Não autorizado.', 'AUTH_ERROR');
+  }
+
+  var nomeServidor = _obterNomeServidor_(emailServidor) || decl.nomeServidor;
+
+  // Regenera o PDF com os dados originais
+  var pdfBlob = _gerarPdfDeclaracao_({
+    id:            decl.id,
+    nomeServidor:  nomeServidor,
+    emailServidor: emailServidor,
+    funcao:        decl.funcao,
+    modalidade:    decl.modalidade,
+    periodoInicio: decl.periodoInicio,
+    periodoFim:    decl.periodoFim,
+    todoPeriodo:   !decl.periodoInicio && !decl.periodoFim,
+    estagios:      decl.estagios || [],
+    token:         decl.token,
+    dataEmissao:   decl.dataEmissao,
+  });
+
+  _enviarEmailDeclaracao_(emailServidor, nomeServidor, decl.id, pdfBlob, {
+    funcao:        decl.funcao,
+    modalidade:    decl.modalidade,
+    periodoInicio: decl.periodoInicio,
+    periodoFim:    decl.periodoFim,
+    todoPeriodo:   !decl.periodoInicio && !decl.periodoFim,
+    totalEstagios: (decl.estagios || []).length,
+  });
+
+  return jsonOk_({ ok: true, mensagem: 'Declaração reenviada para ' + emailServidor });
 }
 
 // ── Planilha: salvar e listar ──────────────────────────────────────────────────

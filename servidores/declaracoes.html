@@ -46,7 +46,17 @@
             <h2 class="card-title">Nova Declaração</h2>
           </div>
           <div class="card-body">
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-5);margin-bottom:var(--space-5);">
+
+            <!-- Checkbox todos os períodos -->
+            <div style="margin-bottom:var(--space-4);">
+              <label style="display:inline-flex;align-items:center;gap:var(--space-2);cursor:pointer;font-size:.9rem;">
+                <input type="checkbox" id="todo-periodo" onchange="toggleTodoPeriodo(this.checked)"
+                  style="width:16px;height:16px;cursor:pointer;">
+                <span>Todos os períodos — incluir todos os estágios concluídos, independentemente da data</span>
+              </label>
+            </div>
+
+            <div id="bloco-periodo" style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-5);margin-bottom:var(--space-5);">
               <div class="form-group">
                 <label class="form-label" for="periodo-inicio">Período — início <span style="color:var(--color-error)">*</span></label>
                 <input type="date" id="periodo-inicio" class="form-control">
@@ -137,6 +147,16 @@
       carregarHistorico();
     });
 
+    function toggleTodoPeriodo(checked) {
+      const bloco = document.getElementById('bloco-periodo');
+      const ini   = document.getElementById('periodo-inicio');
+      const fim   = document.getElementById('periodo-fim');
+      bloco.style.opacity  = checked ? '0.4' : '1';
+      bloco.style.pointerEvents = checked ? 'none' : '';
+      ini.required = !checked;
+      fim.required = !checked;
+    }
+
     async function carregarHistorico() {
       try {
         const lista = await API.get('listarDeclaracoesServidor', { authToken: getAccessToken() });
@@ -168,10 +188,12 @@
         if (m) return `${m[3]}/${m[2]}/${m[1]}`;
         return v;
       };
-      const labelFuncao = (f) => f === 'orientador' ? 'Orientação' : f === 'supervisor' ? 'Supervisão' : 'Orientação e Supervisão';
+      const labelFuncao  = (f) => f === 'orientador' ? 'Orientação' : f === 'supervisor' ? 'Supervisão' : 'Orientação e Supervisão';
+      const labelPeriodo = (d) => (!d.periodoInicio && !d.periodoFim) ? 'Todos os períodos'
+        : fmtPeriodo(d.periodoInicio) + ' a ' + fmtPeriodo(d.periodoFim);
 
       let html = '<div class="table-wrapper"><table class="data-table"><thead><tr>'
-        + '<th>ID</th><th>Data</th><th>Função</th><th>Modalidade</th><th>Período</th><th>Estágios</th>'
+        + '<th>ID</th><th>Data</th><th>Função</th><th>Modalidade</th><th>Período</th><th>Estágios</th><th></th>'
         + '</tr></thead><tbody>';
 
       lista.forEach(d => {
@@ -180,8 +202,12 @@
           <td>${fmtData(d.dataEmissao)}</td>
           <td>${escapeHtml(labelFuncao(d.funcao))}</td>
           <td>${escapeHtml(d.modalidade)}</td>
-          <td style="white-space:nowrap">${fmtPeriodo(d.periodoInicio)} a ${fmtPeriodo(d.periodoFim)}</td>
+          <td style="white-space:nowrap">${escapeHtml(labelPeriodo(d))}</td>
           <td style="text-align:center">${d.totalEstagios}</td>
+          <td>
+            <button class="btn btn-sm btn-secondary" onclick="reenviarDeclaracao('${escapeHtml(d.id)}', this)"
+              title="Reenviar declaração por e-mail">↻ Reenviar</button>
+          </td>
         </tr>`;
       });
 
@@ -190,31 +216,52 @@
     }
 
     async function solicitarDeclaracao(btn) {
+      const todoPeriodo   = document.getElementById('todo-periodo').checked;
       const periodoInicio = document.getElementById('periodo-inicio').value;
       const periodoFim    = document.getElementById('periodo-fim').value;
       const funcao        = document.querySelector('input[name="funcao"]:checked')?.value;
       const modalidade    = document.querySelector('input[name="modalidade"]:checked')?.value;
 
-      if (!periodoInicio || !periodoFim) { showToast('Informe o período completo.', 'error'); return; }
+      if (!todoPeriodo && !periodoInicio) { showToast('Informe a data de início do período.', 'error'); return; }
+      if (!todoPeriodo && !periodoFim)    { showToast('Informe a data de fim do período.', 'error'); return; }
+      if (!todoPeriodo && periodoInicio > periodoFim) { showToast('A data de início deve ser anterior à data de fim.', 'error'); return; }
       if (!funcao)     { showToast('Selecione a função.', 'error'); return; }
       if (!modalidade) { showToast('Selecione a modalidade.', 'error'); return; }
-      if (periodoInicio > periodoFim) { showToast('A data de início deve ser anterior à data de fim.', 'error'); return; }
 
       const orig = btn.textContent;
       btn.disabled = true;
       btn.textContent = 'Gerando…';
 
       try {
-        const res = await API.post('solicitarDeclaracao', {
-          authToken:      getAccessToken(),
-          _nomeServidor:  typeof getCurrentUserName === 'function' ? (getCurrentUserName() || '') : '',
+        const payload = {
+          authToken:     getAccessToken(),
+          _nomeServidor: typeof getCurrentUserName === 'function' ? (getCurrentUserName() || '') : '',
           funcao,
           modalidade,
-          periodoInicio,
-          periodoFim,
-        });
+          todoPeriodo,
+        };
+        if (!todoPeriodo) {
+          payload.periodoInicio = periodoInicio;
+          payload.periodoFim    = periodoFim;
+        }
+        const res = await API.post('solicitarDeclaracao', payload);
         showToast(`✅ Declaração gerada (${res.totalEstagios} estágio(s)). Verifique seu e-mail.`, 'success');
         await carregarHistorico();
+      } catch (err) {
+        showToast('Erro: ' + err.message, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = orig;
+      }
+    }
+
+    async function reenviarDeclaracao(id, btn) {
+      const orig = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = 'Enviando…';
+      try {
+        await API.post('reenviarDeclaracao', { authToken: getAccessToken(), id });
+        showToast('✅ Declaração reenviada para o seu e-mail.', 'success');
       } catch (err) {
         showToast('Erro: ' + err.message, 'error');
       } finally {

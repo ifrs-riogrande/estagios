@@ -300,6 +300,7 @@ var POST_ROUTES = {
   // Declarações
   'solicitarDeclaracao':              doPostDeclaracoes,
   'gerarDeclaracaoAdmin':             doPostDeclaracoes,
+  'reenviarDeclaracao':               doPostDeclaracoes,
 };
 
 // â”€â”€ Ponto de entrada GET â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
