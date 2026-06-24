@@ -175,13 +175,13 @@
             <table>
               <thead>
                 <tr id="thead-orientandos">
-                  <th style="cursor:pointer" onclick="sortOrientandos(0)">ID</th>
-                  <th style="cursor:pointer" onclick="sortOrientandos(1)">Estudante</th>
-                  <th style="cursor:pointer" onclick="sortOrientandos(2)">Curso</th>
-                  <th style="cursor:pointer" onclick="sortOrientandos(3)">Empresa</th>
-                  <th style="cursor:pointer" onclick="sortOrientandos(4)">Tipo</th>
-                  <th style="cursor:pointer" onclick="sortOrientandos(5)">Período</th>
-                  <th style="cursor:pointer" onclick="sortOrientandos(6)">Status</th>
+                  <th style="cursor:pointer;user-select:none" onclick="sortOrientandos(0)">ID <span style="opacity:.4;font-size:.8em">↕</span></th>
+                  <th style="cursor:pointer;user-select:none" onclick="sortOrientandos(1)">Estudante <span style="opacity:.4;font-size:.8em">↕</span></th>
+                  <th style="cursor:pointer;user-select:none" onclick="sortOrientandos(2)">Curso <span style="opacity:.4;font-size:.8em">↕</span></th>
+                  <th style="cursor:pointer;user-select:none" onclick="sortOrientandos(3)">Empresa <span style="opacity:.4;font-size:.8em">↕</span></th>
+                  <th style="cursor:pointer;user-select:none" onclick="sortOrientandos(4)">Tipo <span style="opacity:.4;font-size:.8em">↕</span></th>
+                  <th style="cursor:pointer;user-select:none" onclick="sortOrientandos(5)">Período <span style="opacity:.4;font-size:.8em">↕</span></th>
+                  <th style="cursor:pointer;user-select:none" onclick="sortOrientandos(6)">Status <span style="opacity:.4;font-size:.8em">↕</span></th>
                   <th>Ações</th>
                 </tr>
               </thead>
@@ -358,8 +358,10 @@
       var ths = document.querySelectorAll('#thead-orientandos th');
       ths.forEach(function(th, i) {
         if (i >= 7) return;
-        var base = th.textContent.replace(/ [▲▼]$/, '');
-        th.textContent = base + (i === col ? (_sortAscOri ? ' ▲' : ' ▼') : '');
+        var span = th.querySelector('span');
+        if (!span) return;
+        if (i === col) { span.style.opacity = '1'; span.style.fontSize = ''; span.textContent = _sortAscOri ? '▲' : '▼'; }
+        else           { span.style.opacity = '.4'; span.style.fontSize = '.8em'; span.textContent = '↕'; }
       });
       filtrar();
     }

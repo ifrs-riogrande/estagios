@@ -231,7 +231,7 @@
         return _sortAsc ? cmp : -cmp;
       });
 
-      const arrow = (col) => _sortCol === col ? (_sortAsc ? ' ▲' : ' ▼') : '';
+      const arrow = (col) => _sortCol === col ? (_sortAsc ? ' ▲' : ' ▼') : ' <span style="opacity:.4;font-size:.8em">↕</span>';
       const th = (col, label, style) =>
         `<th style="cursor:pointer;user-select:none;${style||''}" onclick="ordenarPor(${col})">${label}${arrow(col)}</th>`;
 
