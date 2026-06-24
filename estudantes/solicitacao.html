@@ -282,12 +282,11 @@
             <!-- Código de acesso removido — autenticação via OAuth -->
 
             <div class="form-group" id="grupo-vinculo" style="display:none;">
-              <label class="form-label required" for="vinculo-estagio">Vínculo acadêmico para este estágio</label>
+              <label class="form-label required" for="vinculo-estagio">Vínculo acadêmico para este estágio <span class="tooltip-help" aria-label="Selecione o curso, matrícula e e-mail institucional que serão usados neste estágio.">?</span></label>
               <select id="vinculo-estagio" class="form-control" disabled
-                aria-describedby="vinculo-estagio-hint vinculo-estagio-error">
+                aria-describedby="vinculo-estagio-error">
                 <option value="">Selecione o vínculo...</option>
               </select>
-              <span id="vinculo-estagio-hint" class="form-hint">Selecione o curso, matrícula e e-mail institucional que serão usados neste estágio.</span>
               <span id="vinculo-estagio-error" class="form-error hidden" role="alert"></span>
             </div>
 
@@ -331,18 +330,16 @@
 
             <div class="form-row">
               <div class="form-group">
-                <label class="form-label">Curso para este estágio</label>
+                <label class="form-label">Curso para este estágio <span class="tooltip-help" aria-label="Preenchido automaticamente conforme o vínculo selecionado.">?</span></label>
                 <input type="text" id="curso-estagio" name="cursoEstagio" class="form-control" readonly
                   placeholder="Definido pelo vínculo selecionado na Seção 1"
                   style="background:var(--color-surface-secondary,#f8f9fa);cursor:not-allowed;">
-                <span class="form-hint">Preenchido automaticamente conforme o vínculo selecionado.</span>
               </div>
               <div class="form-group">
-                <label class="form-label">Matrícula</label>
+                <label class="form-label">Matrícula <span class="tooltip-help" aria-label="Preenchida automaticamente conforme o vínculo selecionado.">?</span></label>
                 <input type="text" id="matricula-estagio" name="matriculaEstagio" class="form-control"
                   readonly placeholder="Preenchida automaticamente"
                   style="background:var(--color-surface-secondary,#f8f9fa);cursor:not-allowed;">
-                <span class="form-hint">Preenchida automaticamente conforme o vínculo selecionado.</span>
               </div>
             </div>
 
@@ -359,19 +356,18 @@
                 <span id="turno-error" class="form-error hidden" role="alert"></span>
               </div>
               <div class="form-group">
-                <label class="form-label required" for="semestre-atual">Período/Semestre atual que está cursando</label>
+                <label class="form-label required" for="semestre-atual">Período/Semestre atual que está cursando <span class="tooltip-help" aria-label="As opções dependem do curso selecionado.">?</span></label>
                 <select id="semestre-atual" name="semestreAtual" class="form-control" required aria-required="true"
-                  aria-describedby="semestre-atual-hint semestre-atual-error" disabled>
+                  aria-describedby="semestre-atual-error" disabled>
                   <option value="">Selecione o curso primeiro...</option>
                 </select>
-                <span id="semestre-atual-hint" class="form-hint">As opções dependem do curso selecionado.</span>
                 <span id="semestre-atual-error" class="form-error hidden" role="alert"></span>
               </div>
             </div>
 
             <div class="form-group">
-              <label class="form-label required">É formando(a) neste semestre/ano letivo?</label>
-              <div class="radio-group" id="formando" role="radiogroup" aria-required="true" aria-describedby="formando-hint formando-error">
+              <label class="form-label required">É formando(a) neste semestre/ano letivo? <span class="tooltip-help" aria-label="Formando: último semestre ou ano do curso. O término do estágio deve ocorrer até 15 dias antes do encerramento do período letivo.">?</span></label>
+              <div class="radio-group" id="formando" role="radiogroup" aria-required="true" aria-describedby="formando-error">
                 <div class="radio-option">
                   <input type="radio" id="formando-nao" name="formando" value="Não" required>
                   <label for="formando-nao">Não</label>
@@ -381,7 +377,6 @@
                   <label for="formando-sim">Sim</label>
                 </div>
               </div>
-              <span id="formando-hint" class="form-hint">Formando: último semestre ou ano do curso. O término do estágio deve ocorrer até 15 dias antes do encerramento do período letivo.</span>
               <span id="formando-error" class="form-error hidden" role="alert"></span>
             </div>
           </div>
@@ -497,11 +492,10 @@
               Seção 5 — Empresa / Entidade Concedente
             </h2>
             <div class="form-group">
-              <label class="form-label required" for="empresa">Selecione a concedente de estágio</label>
-              <select id="empresa" name="empresa" class="form-control" required aria-required="true" aria-describedby="empresa-hint empresa-error" disabled>
+              <label class="form-label required" for="empresa">Selecione a concedente de estágio <span class="tooltip-help" aria-label="Concedente verificada e aprovada na etapa anterior.">?</span></label>
+              <select id="empresa" name="empresa" class="form-control" required aria-required="true" aria-describedby="empresa-error" disabled>
                 <option value="">Carregando concedentes...</option>
               </select>
-              <span id="empresa-hint" class="form-hint">Concedente verificada e aprovada na etapa anterior.</span>
               <span id="empresa-error" class="form-error hidden" role="alert"></span>
             </div>
           </div>
@@ -513,11 +507,10 @@
               Seção 6 — Supervisor do Estágio
             </h2>
             <div class="form-group">
-              <label class="form-label required" for="supervisor">Selecione o supervisor</label>
-              <select id="supervisor" name="supervisor" class="form-control" required aria-required="true" aria-describedby="supervisor-hint supervisor-error" disabled>
+              <label class="form-label required" for="supervisor">Selecione o supervisor <span class="tooltip-help" aria-label="Supervisor verificado e aprovado na etapa anterior.">?</span></label>
+              <select id="supervisor" name="supervisor" class="form-control" required aria-required="true" aria-describedby="supervisor-error" disabled>
                 <option value="">Selecione primeiro a concedente...</option>
               </select>
-              <span id="supervisor-hint" class="form-hint">Supervisor verificado e aprovado na etapa anterior.</span>
               <span id="supervisor-error" class="form-error hidden" role="alert"></span>
             </div>
           </div>
@@ -531,7 +524,7 @@
             <div class="form-group">
               <label class="form-label required">
                 Professor orientador
-                <span class="tooltip-help" aria-label="Orientador(a) de estágio: é o(a) professor(a) da instituição de ensino designado(a) para orientar, acompanhar e avaliar estudantes de cursos de sua área de atuação, durante a prática de estágio obrigatório e não obrigatório.">?</span>
+                <span class="tooltip-help" aria-label="Orientador(a) de estágio: é o(a) professor(a) da instituição de ensino designado(a) para orientar, acompanhar e avaliar estudantes de cursos de sua área de atuação, durante a prática de estágio obrigatório e não obrigatório. A lista é filtrada pelo curso do seu cadastro.">?</span>
               </label>
 
               <!-- Combobox de busca -->
@@ -544,15 +537,13 @@
                     placeholder="Selecione primeiro o curso (cadastro)..."
                     autocomplete="off" disabled
                     aria-haspopup="listbox" aria-controls="orientador-lista" aria-expanded="false"
-                    aria-describedby="orientador-hint orientador-error">
+                    aria-describedby="orientador-error">
                 </div>
                 <ul id="orientador-lista" class="search-select-lista" role="listbox" hidden></ul>
               </div>
 
               <!-- Hidden: armazena o SIAPE selecionado -->
               <input type="hidden" id="orientador" name="orientador">
-
-              <span id="orientador-hint" class="form-hint">Lista filtrada pelo curso do seu cadastro.</span>
               <span id="orientador-error" class="form-error hidden" role="alert"></span>
             </div>
 
@@ -566,12 +557,11 @@
               </p>
               <div class="form-row">
                 <div class="form-group">
-                  <label class="form-label required" for="orientador-email-convite">E-mail institucional do(a) orientador(a)</label>
+                  <label class="form-label required" for="orientador-email-convite">E-mail institucional do(a) orientador(a) <span class="tooltip-help" aria-label="Deve ser um e-mail @riogrande.ifrs.edu.br.">?</span></label>
                   <input type="email" id="orientador-email-convite" class="form-control"
                     placeholder="professor@riogrande.ifrs.edu.br"
-                    aria-describedby="orientador-email-convite-hint orientador-email-convite-error"
+                    aria-describedby="orientador-email-convite-error"
                     oninput="validarEmailOrientadorConvite()">
-                  <span id="orientador-email-convite-hint" class="form-hint">Deve ser @riogrande.ifrs.edu.br</span>
                   <span id="orientador-email-convite-error" class="form-error hidden" role="alert"></span>
                 </div>
                 <div class="form-group">
@@ -599,15 +589,13 @@
             </div>
             <div class="form-row">
               <div class="form-group">
-                <label class="form-label required" for="data-inicio">Data de início</label>
-                <input type="date" id="data-inicio" name="dataInicio" class="form-control" required aria-required="true" aria-describedby="data-inicio-hint data-inicio-error">
-                <span id="data-inicio-hint" class="form-hint">Mínimo 7 dias corridos a partir de hoje. O estágio só inicia após liberação do setor.</span>
+                <label class="form-label required" for="data-inicio">Data de início <span class="tooltip-help" aria-label="Mínimo 7 dias corridos a partir de hoje. O estágio só inicia após liberação do setor.">?</span></label>
+                <input type="date" id="data-inicio" name="dataInicio" class="form-control" required aria-required="true" aria-describedby="data-inicio-error">
                 <span id="data-inicio-error" class="form-error hidden" role="alert"></span>
               </div>
               <div class="form-group">
-                <label class="form-label required" for="data-termino">Data de término</label>
-                <input type="date" id="data-termino" name="dataTermino" class="form-control" required aria-required="true" aria-describedby="data-termino-hint data-termino-error">
-                <span id="data-termino-hint" class="form-hint">Duração máxima: 2 anos na mesma concedente.</span>
+                <label class="form-label required" for="data-termino">Data de término <span class="tooltip-help" aria-label="Duração máxima: 2 anos na mesma concedente.">?</span></label>
+                <input type="date" id="data-termino" name="dataTermino" class="form-control" required aria-required="true" aria-describedby="data-termino-error">
                 <span id="data-termino-error" class="form-error hidden" role="alert"></span>
               </div>
             </div>
@@ -649,7 +637,7 @@
               <input type="hidden" id="carga-horaria-semanal" name="cargaHoraria">
             </div>
             <div class="form-group">
-              <label class="form-label required">Atividades previstas</label>
+              <label class="form-label required">Atividades previstas <span class="tooltip-help" aria-label="Adicione uma atividade por campo. Use o botão '+ Adicionar atividade' para incluir mais itens. Cada campo deve descrever uma atividade específica que será realizada no estágio.">?</span></label>
               <div id="atividades-lista" style="display:flex;flex-direction:column;gap:var(--space-2);margin-bottom:var(--space-2);"></div>
               <button type="button" id="btn-add-atividade" class="btn btn-secondary btn-sm" style="width:fit-content">+ Adicionar atividade</button>
               <span id="atividades-prev-error" class="form-error hidden" role="alert"></span>
