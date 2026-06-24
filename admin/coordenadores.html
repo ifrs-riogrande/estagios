@@ -102,13 +102,13 @@
       <div class="table-wrap">
         <table class="data-table" aria-label="Coordenadores">
           <thead>
-            <tr>
-              <th>Nome</th>
-              <th>SIAPE</th>
-              <th>E-mail</th>
-              <th>Curso</th>
-              <th>Titulação</th>
-              <th>Status</th>
+            <tr id="thead-coord">
+              <th style="cursor:pointer;user-select:none" onclick="sortCoord(0)">Nome <span style="opacity:.4;font-size:.8em">↕</span></th>
+              <th style="cursor:pointer;user-select:none" onclick="sortCoord(1)">SIAPE <span style="opacity:.4;font-size:.8em">↕</span></th>
+              <th style="cursor:pointer;user-select:none" onclick="sortCoord(2)">E-mail <span style="opacity:.4;font-size:.8em">↕</span></th>
+              <th style="cursor:pointer;user-select:none" onclick="sortCoord(3)">Curso <span style="opacity:.4;font-size:.8em">↕</span></th>
+              <th style="cursor:pointer;user-select:none" onclick="sortCoord(4)">Titulação <span style="opacity:.4;font-size:.8em">↕</span></th>
+              <th style="cursor:pointer;user-select:none" onclick="sortCoord(5)">Status <span style="opacity:.4;font-size:.8em">↕</span></th>
               <th>Ações</th>
             </tr>
           </thead>
@@ -151,6 +151,29 @@
   <script>
     'use strict';
     let _dados = [], _filtrados = [], _atual = null;
+    let _sortColCoord = -1, _sortAscCoord = true;
+
+    function sortCoord(col) {
+      if (_sortColCoord === col) _sortAscCoord = !_sortAscCoord;
+      else { _sortColCoord = col; _sortAscCoord = true; }
+      document.querySelectorAll('#thead-coord th span').forEach(function(sp, i) {
+        if (i === col) { sp.style.opacity = '1'; sp.style.fontSize = ''; sp.textContent = _sortAscCoord ? '▲' : '▼'; }
+        else           { sp.style.opacity = '.4'; sp.style.fontSize = '.8em'; sp.textContent = '↕'; }
+      });
+      render();
+    }
+
+    function _sortKeyCoord(c, col) {
+      switch (col) {
+        case 0: return c.nome      || '';
+        case 1: return c.siape     || '';
+        case 2: return c.email     || '';
+        case 3: return c.curso     || '';
+        case 4: return c.titulacao || '';
+        case 5: return c.status    || '';
+        default: return '';
+      }
+    }
 
     document.addEventListener('DOMContentLoaded', () => {
       if (!requireAdminAuth()) return;
@@ -199,11 +222,16 @@
 
     function render() {
       const tb = document.getElementById('tbody-coord');
-      if (_filtrados.length === 0) {
+      const lista = _sortColCoord >= 0 ? [..._filtrados].sort((a, b) => {
+        const ka = _sortKeyCoord(a, _sortColCoord), kb = _sortKeyCoord(b, _sortColCoord);
+        const cmp = String(ka).localeCompare(String(kb), 'pt-BR');
+        return _sortAscCoord ? cmp : -cmp;
+      }) : _filtrados;
+      if (lista.length === 0) {
         tb.innerHTML = `<tr><td colspan="7"><div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.438 60.438 0 00-.491 6.347A48.627 48.627 0 0112 20.904a48.627 48.627 0 018.232-4.41"/></svg><p>Nenhum coordenador encontrado.</p></div></td></tr>`;
         return;
       }
-      tb.innerHTML = _filtrados.map(c => `
+      tb.innerHTML = lista.map(c => `
         <tr>
           <td><span style="font-weight:500">${escapeHtml(c.nome||'—')}</span></td>
           <td>${escapeHtml(c.siape||'—')}</td>
