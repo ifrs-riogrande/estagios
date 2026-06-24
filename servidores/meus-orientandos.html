@@ -174,14 +174,14 @@
           <div class="table-wrapper">
             <table>
               <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Estudante</th>
-                  <th>Curso</th>
-                  <th>Empresa</th>
-                  <th>Tipo</th>
-                  <th>Período</th>
-                  <th>Status</th>
+                <tr id="thead-orientandos">
+                  <th style="cursor:pointer" onclick="sortOrientandos(0)">ID</th>
+                  <th style="cursor:pointer" onclick="sortOrientandos(1)">Estudante</th>
+                  <th style="cursor:pointer" onclick="sortOrientandos(2)">Curso</th>
+                  <th style="cursor:pointer" onclick="sortOrientandos(3)">Empresa</th>
+                  <th style="cursor:pointer" onclick="sortOrientandos(4)">Tipo</th>
+                  <th style="cursor:pointer" onclick="sortOrientandos(5)">Período</th>
+                  <th style="cursor:pointer" onclick="sortOrientandos(6)">Status</th>
                   <th>Ações</th>
                 </tr>
               </thead>
@@ -334,9 +334,46 @@
       renderTabela(filtrados);
     }
 
+    // ── Ordenação ─────────────────────────────────────────────────────────
+
+    var _sortColOri = -1, _sortAscOri = true;
+
+    function _sortKeyOri(s, col) {
+      switch (col) {
+        case 0: return s.id || '';
+        case 1: return s.nomeEstudante || '';
+        case 2: return s.curso || '';
+        case 3: return s.empresa || '';
+        case 4: return s.tipoEstagio || '';
+        case 5: return s.dataInicio || '';
+        case 6: return s.status || '';
+        default: return '';
+      }
+    }
+
+    function sortOrientandos(col) {
+      if (_sortColOri === col) _sortAscOri = !_sortAscOri;
+      else { _sortColOri = col; _sortAscOri = true; }
+      // Atualiza setas nos cabeçalhos
+      var ths = document.querySelectorAll('#thead-orientandos th');
+      ths.forEach(function(th, i) {
+        if (i >= 7) return;
+        var base = th.textContent.replace(/ [▲▼]$/, '');
+        th.textContent = base + (i === col ? (_sortAscOri ? ' ▲' : ' ▼') : '');
+      });
+      aplicarFiltros();
+    }
+
     // ── Renderização ───────────────────────────────────────────────────────
 
     function renderTabela(lista) {
+      if (_sortColOri >= 0) {
+        lista = lista.slice().sort(function(a, b) {
+          var ka = _sortKeyOri(a, _sortColOri), kb = _sortKeyOri(b, _sortColOri);
+          var cmp = String(ka).localeCompare(String(kb), 'pt-BR');
+          return _sortAscOri ? cmp : -cmp;
+        });
+      }
       var tbody    = document.getElementById('corpo-tabela');
       var vazioEl  = document.getElementById('lista-vazia');
       var contEl   = document.getElementById('contador-resultados');
