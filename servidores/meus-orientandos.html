@@ -361,7 +361,7 @@
         var base = th.textContent.replace(/ [▲▼]$/, '');
         th.textContent = base + (i === col ? (_sortAscOri ? ' ▲' : ' ▼') : '');
       });
-      aplicarFiltros();
+      filtrar();
     }
 
     // ── Renderização ───────────────────────────────────────────────────────
