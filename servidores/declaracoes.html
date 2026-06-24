@@ -212,7 +212,7 @@
         : fmtPeriodo(d.periodoInicio) + ' a ' + fmtPeriodo(d.periodoFim);
 
       let html = '<div class="table-wrapper"><table class="data-table"><thead><tr>'
-        + '<th>ID</th><th>Data</th><th>Função</th><th>Modalidade</th><th>Período</th><th>Estágios</th><th></th>'
+        + '<th>ID</th><th>Data</th><th>Função</th><th>Modalidade</th><th>Período</th><th>Estágios</th><th style="width:160px"></th>'
         + '</tr></thead><tbody>';
 
       lista.forEach(d => {
@@ -223,9 +223,11 @@
           <td>${escapeHtml(d.modalidade)}</td>
           <td style="white-space:nowrap">${escapeHtml(labelPeriodo(d))}</td>
           <td style="text-align:center">${d.totalEstagios}</td>
-          <td>
+          <td style="white-space:nowrap;display:flex;gap:6px;">
             <button class="btn btn-sm btn-secondary" onclick="reenviarDeclaracao('${escapeHtml(d.id)}', this)"
               title="Reenviar declaração por e-mail">↻ Reenviar</button>
+            <button class="btn btn-sm btn-danger" onclick="deletarDeclaracao('${escapeHtml(d.id)}', this)"
+              title="Excluir declaração">🗑</button>
           </td>
         </tr>`;
       });
@@ -270,6 +272,22 @@
       } catch (err) {
         showToast('Erro: ' + err.message, 'error');
       } finally {
+        btn.disabled = false;
+        btn.textContent = orig;
+      }
+    }
+
+    async function deletarDeclaracao(id, btn) {
+      if (!confirm('Excluir esta declaração do histórico? Esta ação não pode ser desfeita.')) return;
+      const orig = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = '…';
+      try {
+        await API.post('deletarDeclaracao', { authToken: getAccessToken(), id });
+        showToast('Declaração excluída.', 'success');
+        await carregarHistorico();
+      } catch (err) {
+        showToast('Erro: ' + err.message, 'error');
         btn.disabled = false;
         btn.textContent = orig;
       }

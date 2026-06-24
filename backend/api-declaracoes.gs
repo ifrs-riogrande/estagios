@@ -51,6 +51,7 @@ function doPostDeclaracoes(e) {
   if (action === 'solicitarDeclaracao')   return solicitarDeclaracao_(body);
   if (action === 'gerarDeclaracaoAdmin')  return gerarDeclaracaoAdmin_(body);
   if (action === 'reenviarDeclaracao')    return reenviarDeclaracao_(body);
+  if (action === 'deletarDeclaracao')     return deletarDeclaracao_(body);
   return jsonError_('Ação POST não reconhecida em declaracoes: ' + action, 'NOT_IMPLEMENTED');
 }
 
@@ -609,6 +610,29 @@ function reenviarDeclaracao_(body) {
   });
 
   return jsonOk_({ ok: true, mensagem: 'Declaração reenviada para ' + emailServidor });
+}
+
+// ── POST: deletar declaração ──────────────────────────────────────────────────
+
+function deletarDeclaracao_(body) {
+  var tokenInfo     = validarTokenServidor_(body.authToken);
+  var emailServidor = tokenInfo.email.toLowerCase().trim();
+  var id            = sanitizar_(body.id || '', 40).trim();
+  if (!id) return jsonError_('ID da declaração é obrigatório.', 'VALIDATION');
+
+  var sheet = _obterAbaDeclaracoes_();
+  var dados = sheet.getDataRange().getValues();
+  for (var i = 1; i < dados.length; i++) {
+    if (String(dados[i][COL_DECL.ID] || '') !== id) continue;
+    if (String(dados[i][COL_DECL.EMAIL_SERVIDOR] || '').toLowerCase().trim() !== emailServidor) {
+      return jsonError_('Não autorizado.', 'AUTH_ERROR');
+    }
+    var token = String(dados[i][COL_DECL.TOKEN] || '');
+    if (token) PropertiesService.getScriptProperties().deleteProperty('decl_' + token);
+    sheet.deleteRow(i + 1);
+    return jsonOk_({ ok: true });
+  }
+  return jsonError_('Declaração não encontrada.', 'NOT_FOUND');
 }
 
 // ── Planilha: salvar e listar ──────────────────────────────────────────────────

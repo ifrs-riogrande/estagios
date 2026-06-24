@@ -301,6 +301,7 @@ var POST_ROUTES = {
   'solicitarDeclaracao':              doPostDeclaracoes,
   'gerarDeclaracaoAdmin':             doPostDeclaracoes,
   'reenviarDeclaracao':               doPostDeclaracoes,
+  'deletarDeclaracao':                doPostDeclaracoes,
 };
 
 // â”€â”€ Ponto de entrada GET â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
