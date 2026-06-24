@@ -6,6 +6,39 @@
 'use strict';
 
 // ─────────────────────────────────────────
+//  VALIDAÇÃO DE PDF (magic bytes)
+// ─────────────────────────────────────────
+
+const _PDF_MAGIC   = [0x25, 0x50, 0x44, 0x46]; // %PDF
+const _MAX_PDF_SIZE = 10 * 1024 * 1024;          // 10 MB padrão
+
+/**
+ * Valida se o arquivo selecionado é um PDF real (magic bytes) e respeita o limite de tamanho.
+ * @param {File} file - objeto File a validar
+ * @param {function(string)} onErro - chamado com mensagem de erro se inválido
+ * @param {function(File)} onOk - chamado com o File se válido
+ * @param {number} [maxBytes] - limite de tamanho em bytes (padrão 10 MB)
+ */
+function validarPdfArquivo(file, onErro, onOk, maxBytes) {
+  var limite = maxBytes !== undefined ? maxBytes : _MAX_PDF_SIZE;
+  if (!file) { onErro('Nenhum arquivo selecionado.'); return; }
+  if (file.size > limite) {
+    onErro('Arquivo muito grande. Limite: ' + (limite / 1024 / 1024).toFixed(0) + ' MB.');
+    return;
+  }
+  var slice  = file.slice(0, 4);
+  var reader = new FileReader();
+  reader.onload = function(ev) {
+    var bytes = new Uint8Array(ev.target.result);
+    var ok    = _PDF_MAGIC.every(function(b, i) { return bytes[i] === b; });
+    if (!ok) { onErro('O arquivo não é um PDF válido. Selecione um arquivo PDF.'); return; }
+    onOk(file);
+  };
+  reader.onerror = function() { onErro('Não foi possível ler o arquivo. Tente novamente.'); };
+  reader.readAsArrayBuffer(slice);
+}
+
+// ─────────────────────────────────────────
 //  FORMATAÇÃO DE CAMPOS
 // ─────────────────────────────────────────
 

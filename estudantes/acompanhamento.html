@@ -1148,10 +1148,13 @@
       input.addEventListener('change', () => {
         const file = input.files[0];
         if (!file) return;
-        if (file.type !== 'application/pdf') { alert('Apenas arquivos PDF são aceitos.'); input.value = ''; return; }
-        if (file.size > 10 * 1024 * 1024) { alert('Arquivo muito grande. Máximo: 10 MB.'); input.value = ''; return; }
-        const info = document.getElementById('file-avulso-info');
-        if (info) { info.innerHTML = `✓ ${escapeHtml(file.name)} (${(file.size / 1024).toFixed(1)} KB)`; info.classList.add('show'); }
+        validarPdfArquivo(file,
+          (msg) => { showToast(msg, 'error'); input.value = ''; },
+          (f)   => {
+            const info = document.getElementById('file-avulso-info');
+            if (info) { info.innerHTML = `✓ ${escapeHtml(f.name)} (${(f.size / 1024).toFixed(1)} KB)`; info.classList.add('show'); }
+          }
+        );
       });
       const drop = document.getElementById('drop-avulso');
       if (!drop) return;
@@ -1445,15 +1448,15 @@
       input.addEventListener('change', () => {
         const file = input.files[0];
         if (!file) return;
-        if (file.type !== 'application/pdf') { alert('Apenas arquivos PDF são aceitos.'); input.value = ''; return; }
-        if (file.size > 10 * 1024 * 1024) { alert('Arquivo muito grande. Máximo: 10 MB.'); input.value = ''; return; }
-        _arquivos[key] = file;
-        const infoId = { solicitacao: 'file-sol-info', tce: 'file-tce-info', tce_nao_obrig: 'file-tce-nao-info' }[key];
-        const info = document.getElementById(infoId);
-        if (info) {
-          info.innerHTML = `✓ ${escapeHtml(file.name)} (${(file.size / 1024).toFixed(1)} KB)`;
-          info.classList.add('show');
-        }
+        validarPdfArquivo(file,
+          (msg) => { showToast(msg, 'error'); input.value = ''; delete _arquivos[key]; },
+          (f)   => {
+            _arquivos[key] = f;
+            const infoId = { solicitacao: 'file-sol-info', tce: 'file-tce-info', tce_nao_obrig: 'file-tce-nao-info' }[key];
+            const info = document.getElementById(infoId);
+            if (info) { info.innerHTML = `✓ ${escapeHtml(f.name)} (${(f.size / 1024).toFixed(1)} KB)`; info.classList.add('show'); }
+          }
+        );
       });
       const dropId = { solicitacao: 'drop-solicitacao', tce: 'drop-tce', tce_nao_obrig: 'drop-tce-nao' }[key];
       const drop = document.getElementById(dropId);
@@ -1541,10 +1544,13 @@
       input.addEventListener('change', () => {
         const file = input.files[0];
         if (!file) return;
-        if (file.type !== 'application/pdf') { alert('Apenas arquivos PDF são aceitos.'); input.value = ''; return; }
-        if (file.size > 10 * 1024 * 1024)   { alert('Arquivo muito grande. Máximo: 10 MB.'); input.value = ''; return; }
-        const info = document.getElementById('file-adendo-info');
-        if (info) { info.innerHTML = `✓ ${escapeHtml(file.name)} (${(file.size / 1024).toFixed(1)} KB)`; info.classList.add('show'); }
+        validarPdfArquivo(file,
+          (msg) => { showToast(msg, 'error'); input.value = ''; },
+          (f)   => {
+            const info = document.getElementById('file-adendo-info');
+            if (info) { info.innerHTML = `✓ ${escapeHtml(f.name)} (${(f.size / 1024).toFixed(1)} KB)`; info.classList.add('show'); }
+          }
+        );
       });
       const drop = document.getElementById('drop-adendo');
       if (!drop) return;

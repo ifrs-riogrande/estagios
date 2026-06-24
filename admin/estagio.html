@@ -858,11 +858,14 @@
       input.addEventListener('change', () => {
         const file = input.files[0];
         if (!file) return;
-        if (file.type !== 'application/pdf') { showToast('Apenas arquivos PDF são aceitos.', 'error'); input.value = ''; return; }
-        if (file.size > 10 * 1024 * 1024) { showToast('Arquivo muito grande. Máximo: 10 MB.', 'error'); input.value = ''; return; }
-        _arquivoAvulso = file;
-        const info = document.getElementById('file-avulso-admin-info');
-        if (info) { info.innerHTML = `✓ ${escapeHtml(file.name)} (${(file.size/1024).toFixed(1)} KB)`; info.classList.add('show'); }
+        validarPdfArquivo(file,
+          (msg) => { showToast(msg, 'error'); input.value = ''; _arquivoAvulso = null; },
+          (f)   => {
+            _arquivoAvulso = f;
+            const info = document.getElementById('file-avulso-admin-info');
+            if (info) { info.innerHTML = `✓ ${escapeHtml(f.name)} (${(f.size/1024).toFixed(1)} KB)`; info.classList.add('show'); }
+          }
+        );
       });
       const drop = document.getElementById('drop-avulso-admin');
       if (!drop) return;

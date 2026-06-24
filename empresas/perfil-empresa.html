@@ -491,7 +491,7 @@
               <p style="font-size:var(--font-size-sm);color:var(--color-text-muted);margin-bottom:var(--space-4);">
                 Envie cópias de documentos como habilitação jurídica, contrato social ou documentos do responsável.
                 Os arquivos serão salvos em uma pasta privada no Drive do setor.
-                Formatos aceitos: PDF, imagem (JPG/PNG), Word. Máximo 10 arquivos · 10 MB cada.
+                Formato aceito: PDF. Máximo 10 arquivos · 10 MB cada.
               </p>
 
               <div id="lista-docs-novo"></div>
@@ -511,7 +511,7 @@
                 <label class="add-doc-file-label" for="add-doc-file-novo" aria-label="Selecionar arquivo">
                   <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clip-rule="evenodd"/></svg>
                   <span id="add-doc-nome-novo">Selecionar arquivo...</span>
-                  <input type="file" id="add-doc-file-novo" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                  <input type="file" id="add-doc-file-novo" accept=".pdf"
                     style="position:absolute;opacity:0;width:0;height:0;" tabindex="-1" aria-hidden="true">
                 </label>
                 <button type="button" class="btn btn-primary btn-sm" id="btn-confirm-doc-novo"
@@ -785,7 +785,7 @@
                 <label class="add-doc-file-label" for="add-doc-file-edit" aria-label="Selecionar arquivo">
                   <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clip-rule="evenodd"/></svg>
                   <span id="add-doc-nome-edit">Selecionar arquivo...</span>
-                  <input type="file" id="add-doc-file-edit" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                  <input type="file" id="add-doc-file-edit" accept=".pdf"
                     style="position:absolute;opacity:0;width:0;height:0;" tabindex="-1" aria-hidden="true">
                 </label>
                 <button type="button" class="btn btn-primary btn-sm" id="btn-confirm-doc-edit"
@@ -940,24 +940,29 @@
       document.getElementById('form-novo').addEventListener('submit', enviarNovoCadastro);
       document.getElementById('form-edicao').addEventListener('submit', salvarEdicao);
 
-      // File inputs — documentos
+      // File inputs — documentos (somente PDF, magic bytes)
       ['novo', 'edit'].forEach(function(prefix) {
         var inp = document.getElementById('add-doc-file-' + prefix);
         if (!inp) return;
         inp.addEventListener('change', function() {
-          var file = this.files && this.files[0];
+          var self    = this;
+          var file    = this.files && this.files[0];
           var nomeEl  = document.getElementById('add-doc-nome-' + prefix);
           var btnConf = document.getElementById('btn-confirm-doc-' + prefix);
           if (!file) { nomeEl.textContent = 'Selecionar arquivo...'; btnConf.disabled = true; return; }
-          if (file.size > 10 * 1024 * 1024) {
-            alert('O arquivo "' + file.name + '" excede o limite de 10 MB. Escolha um arquivo menor.');
-            this.value = '';
-            nomeEl.textContent = 'Selecionar arquivo...';
-            btnConf.disabled = true;
-            return;
-          }
-          nomeEl.textContent = file.name;
-          btnConf.disabled = false;
+          validarPdfArquivo(file,
+            function(msg) {
+              alert(msg);
+              self.value = '';
+              nomeEl.textContent = 'Selecionar arquivo...';
+              btnConf.disabled = true;
+            },
+            function(f) {
+              nomeEl.textContent = f.name;
+              btnConf.disabled = false;
+            },
+            10 * 1024 * 1024
+          );
         });
       });
     });

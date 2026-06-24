@@ -605,8 +605,10 @@
           const el = document.getElementById(inputId);
           if (!el || !el.files || !el.files[0]) return;
           const f = el.files[0];
-          if (f.type !== 'application/pdf') throw new Error('Arquivo "' + f.name + '" deve ser PDF.');
           if (f.size > MAX) throw new Error('Arquivo "' + f.name + '" excede 5 MB.');
+          await new Promise((resolve, reject) => {
+            validarPdfArquivo(f, (msg) => reject(new Error(msg)), () => resolve());
+          });
           docs.push({ tipo, nome: f.name, conteudo: await _lerBase64Admin(f), mimeType: 'application/pdf' });
         }
         await _addDoc('fe-convenio-file', 'convenio');

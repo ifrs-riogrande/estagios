@@ -292,10 +292,16 @@
 
             <!-- Upload do convênio — exibido apenas se "Sim" -->
             <div id="campo-arquivo-convenio" class="form-group" style="display:none;">
-              <label class="form-label" for="arquivo-convenio">Arquivo do Convênio (PDF)</label>
-              <input type="file" id="arquivo-convenio" name="arquivoConvenio" class="form-control"
-                accept="application/pdf" aria-describedby="arquivo-convenio-hint arquivo-convenio-error">
-              <span id="arquivo-convenio-hint" class="form-hint">Opcional. Somente PDF, até 5 MB.</span>
+              <label class="form-label" for="arquivo-convenio">Arquivo do Convênio <span class="tooltip-help" aria-label="Opcional. Somente PDF, até 5 MB.">?</span></label>
+              <div class="file-input-wrapper">
+                <label class="file-input-label" for="arquivo-convenio">
+                  <svg class="file-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/></svg>
+                  <span class="file-text">Selecionar convênio (opcional)</span>
+                  <span class="file-selected" id="convenio-doc-name"></span>
+                  <span class="file-types">PDF — máx. 5 MB</span>
+                </label>
+                <input type="file" id="arquivo-convenio" name="arquivoConvenio" class="form-control-file" accept=".pdf" aria-describedby="arquivo-convenio-error">
+              </div>
               <span id="arquivo-convenio-error" class="form-error hidden" role="alert"></span>
             </div>
 
@@ -307,17 +313,29 @@
 
             <div class="form-row">
               <div class="form-group">
-                <label class="form-label" for="arquivo-cdn-empresa">CDN da Concedente (PDF)</label>
-                <input type="file" id="arquivo-cdn-empresa" name="arquivoCdnEmpresa" class="form-control"
-                  accept="application/pdf" aria-describedby="arquivo-cdn-empresa-hint arquivo-cdn-empresa-error">
-                <span id="arquivo-cdn-empresa-hint" class="form-hint">Capacidade de Nomeação e Delegação da concedente. PDF, até 5 MB.</span>
+                <label class="form-label" for="arquivo-cdn-empresa">CDN da Concedente <span class="tooltip-help" aria-label="Capacidade de Nomeação e Delegação da concedente. PDF, até 5 MB.">?</span></label>
+                <div class="file-input-wrapper">
+                  <label class="file-input-label" for="arquivo-cdn-empresa">
+                    <svg class="file-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/></svg>
+                    <span class="file-text">Selecionar CDN da concedente (opcional)</span>
+                    <span class="file-selected" id="cdn-empresa-doc-name"></span>
+                    <span class="file-types">PDF — máx. 5 MB</span>
+                  </label>
+                  <input type="file" id="arquivo-cdn-empresa" name="arquivoCdnEmpresa" class="form-control-file" accept=".pdf" aria-describedby="arquivo-cdn-empresa-error">
+                </div>
                 <span id="arquivo-cdn-empresa-error" class="form-error hidden" role="alert"></span>
               </div>
               <div class="form-group">
-                <label class="form-label" for="arquivo-cdn-signatario">CDN de Quem Assina (PDF)</label>
-                <input type="file" id="arquivo-cdn-signatario" name="arquivoCdnSignatario" class="form-control"
-                  accept="application/pdf" aria-describedby="arquivo-cdn-signatario-hint arquivo-cdn-signatario-error">
-                <span id="arquivo-cdn-signatario-hint" class="form-hint">Capacidade de Nomeação e Delegação do signatário. PDF, até 5 MB.</span>
+                <label class="form-label" for="arquivo-cdn-signatario">CDN de Quem Assina <span class="tooltip-help" aria-label="Capacidade de Nomeação e Delegação do signatário. PDF, até 5 MB.">?</span></label>
+                <div class="file-input-wrapper">
+                  <label class="file-input-label" for="arquivo-cdn-signatario">
+                    <svg class="file-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/></svg>
+                    <span class="file-text">Selecionar CDN do signatário (opcional)</span>
+                    <span class="file-selected" id="cdn-signatario-doc-name"></span>
+                    <span class="file-types">PDF — máx. 5 MB</span>
+                  </label>
+                  <input type="file" id="arquivo-cdn-signatario" name="arquivoCdnSignatario" class="form-control-file" accept=".pdf" aria-describedby="arquivo-cdn-signatario-error">
+                </div>
                 <span id="arquivo-cdn-signatario-error" class="form-error hidden" role="alert"></span>
               </div>
             </div>
@@ -398,6 +416,45 @@
     const form = document.getElementById('form-empresa');
     const btnEnviar = document.getElementById('btn-enviar');
     const btnLimpar = document.getElementById('btn-limpar');
+
+    // Validação magic bytes nos uploads de documentos
+    const _pdfOk = {};
+    (function() {
+      var MAX5 = 5 * 1024 * 1024;
+      [
+        { id: 'arquivo-convenio',     nameId: 'convenio-doc-name',      errId: 'arquivo-convenio-error' },
+        { id: 'arquivo-cdn-empresa',  nameId: 'cdn-empresa-doc-name',   errId: 'arquivo-cdn-empresa-error' },
+        { id: 'arquivo-cdn-signatario', nameId: 'cdn-signatario-doc-name', errId: 'arquivo-cdn-signatario-error' },
+      ].forEach(function(cfg) {
+        var inp   = document.getElementById(cfg.id);
+        var nameEl = document.getElementById(cfg.nameId);
+        var errEl  = document.getElementById(cfg.errId);
+        var textEl = inp && inp.closest('.file-input-label') && inp.closest('.file-input-label').querySelector('.file-text');
+        // textEl is a sibling inside the label, not inside inp — find it properly
+        var label  = inp && inp.closest('.file-input-wrapper') && inp.closest('.file-input-wrapper').querySelector('.file-text');
+        if (!inp) return;
+        inp.addEventListener('change', function() {
+          var file = this.files && this.files[0];
+          if (!file) { _pdfOk[cfg.id] = false; return; }
+          validarPdfArquivo(file,
+            function(msg) {
+              _pdfOk[cfg.id] = false;
+              inp.value = '';
+              if (nameEl) { nameEl.textContent = ''; nameEl.style.display = 'none'; }
+              if (label)  label.style.display = '';
+              if (errEl)  { errEl.textContent = msg; errEl.classList.remove('hidden'); }
+            },
+            function(f) {
+              _pdfOk[cfg.id] = true;
+              if (nameEl) { nameEl.textContent = f.name; nameEl.style.display = 'block'; }
+              if (label)  label.style.display = 'none';
+              if (errEl)  { errEl.textContent = ''; errEl.classList.add('hidden'); }
+            },
+            MAX5
+          );
+        });
+      });
+    })();
 
     // Referência do estudante que originou este cadastro (via sessionStorage — sem expor na URL)
     const _emailEstudanteRef = (() => { try { return sessionStorage.getItem('sge_ref_email') || ''; } catch(_e) { return ''; } })();
@@ -578,23 +635,17 @@
         fail('possui-convenio', 'Informe se sua empresa possui convênio com o IFRS.');
       }
 
-      // Valida arquivos se fornecidos (PDF, 5 MB)
-      const _MAX_FILE = 5 * 1024 * 1024;
+      // Valida arquivos: confirma que passaram na validação magic bytes ao serem selecionados
       function validarArquivo(inputId, errorId) {
         const el = document.getElementById(inputId);
         if (!el || !el.files || !el.files[0]) return; // opcional — ignora se vazio
-        const f = el.files[0];
-        if (f.type !== 'application/pdf') {
-          fail(errorId, 'O arquivo deve estar no formato PDF.');
-        } else if (f.size > _MAX_FILE) {
-          fail(errorId, 'O arquivo excede o limite de 5 MB.');
-        }
+        if (!_pdfOk[inputId]) fail(errorId, 'Selecione um arquivo PDF válido (até 5 MB).');
       }
       if (document.getElementById('possui-convenio').value === 'Sim') {
-        validarArquivo('arquivo-convenio', 'arquivo-convenio');
+        validarArquivo('arquivo-convenio', 'arquivo-convenio-error');
       }
-      validarArquivo('arquivo-cdn-empresa', 'arquivo-cdn-empresa');
-      validarArquivo('arquivo-cdn-signatario', 'arquivo-cdn-signatario');
+      validarArquivo('arquivo-cdn-empresa', 'arquivo-cdn-empresa-error');
+      validarArquivo('arquivo-cdn-signatario', 'arquivo-cdn-signatario-error');
 
       // Declaração
       if (!document.getElementById('declaracao').checked) {

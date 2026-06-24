@@ -294,18 +294,21 @@
       if (f) processarArquivoPdf(f);
     }
     function processarArquivoPdf(file) {
-      if (file.type !== 'application/pdf') { mostrarFeedbackUpload('O arquivo deve ser PDF.', 'erro'); return; }
-      if (file.size > 10 * 1024 * 1024)   { mostrarFeedbackUpload('O arquivo não pode superar 10 MB.', 'erro'); return; }
-      const reader = new FileReader();
-      reader.onload = () => {
-        _pdfBase64 = reader.result.split(',')[1];
-        document.getElementById('upload-nome').textContent = file.name;
-        document.getElementById('upload-nome').style.display = '';
-        document.getElementById('btn-enviar-pdf').removeAttribute('disabled');
-        mostrarFeedbackUpload('', '');
-      };
-      reader.onerror = () => mostrarFeedbackUpload('Falha ao ler o arquivo.', 'erro');
-      reader.readAsDataURL(file);
+      validarPdfArquivo(file,
+        (msg) => { mostrarFeedbackUpload(msg, 'erro'); },
+        (f)   => {
+          const reader = new FileReader();
+          reader.onload = () => {
+            _pdfBase64 = reader.result.split(',')[1];
+            document.getElementById('upload-nome').textContent = f.name;
+            document.getElementById('upload-nome').style.display = '';
+            document.getElementById('btn-enviar-pdf').removeAttribute('disabled');
+            mostrarFeedbackUpload('', '');
+          };
+          reader.onerror = () => mostrarFeedbackUpload('Falha ao ler o arquivo.', 'erro');
+          reader.readAsDataURL(f);
+        }
+      );
     }
     function mostrarFeedbackUpload(msg, tipo) {
       const el = document.getElementById('upload-feedback');

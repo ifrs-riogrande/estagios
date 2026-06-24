@@ -769,19 +769,17 @@
     btn.addEventListener('click', () => enviarPdfGovBr(etapa));
 
     function tratarArquivo(file) {
-      if (!file || file.type !== 'application/pdf') {
-        mostrarToast('Selecione um arquivo PDF válido.', 'warning');
-        return;
-      }
-      if (file.size > 10 * 1024 * 1024) {
-        mostrarToast('O arquivo não pode ter mais de 10 MB.', 'warning');
-        return;
-      }
-      pdfFile = file;
-      zone.classList.add('has-file');
-      document.getElementById('upload-zone-text').innerHTML =
-        `<span class="upload-zone-filename">✓ ${escapeHtml(file.name)}</span>`;
-      btn.disabled = false;
+      if (!file) return;
+      validarPdfArquivo(file,
+        (msg) => { mostrarToast(msg, 'warning'); },
+        (f)   => {
+          pdfFile = f;
+          zone.classList.add('has-file');
+          document.getElementById('upload-zone-text').innerHTML =
+            `<span class="upload-zone-filename">✓ ${escapeHtml(f.name)}</span>`;
+          btn.disabled = false;
+        }
+      );
     }
   }
 
@@ -890,12 +888,17 @@
     btnConfRej.addEventListener('click', () => confirmarRejeicao(etapa));
 
     function tratarArquivoFinal(file) {
-      if (!file || file.type !== 'application/pdf') return;
-      pdfFile = file;
-      const zone = document.getElementById('upload-zone');
-      zone.classList.add('has-file');
-      document.getElementById('upload-zone-text').innerHTML =
-        `<span class="upload-zone-filename">✓ ${escapeHtml(file.name)}</span>`;
+      if (!file) return;
+      validarPdfArquivo(file,
+        (msg) => { mostrarToast(msg, 'warning'); },
+        (f)   => {
+          pdfFile = f;
+          const zone = document.getElementById('upload-zone');
+          zone.classList.add('has-file');
+          document.getElementById('upload-zone-text').innerHTML =
+            `<span class="upload-zone-filename">✓ ${escapeHtml(f.name)}</span>`;
+        }
+      );
     }
   }
 
