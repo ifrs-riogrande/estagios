@@ -573,13 +573,21 @@ textarea.form-control {
   flex-shrink: 0;
 }
 
-.tooltip-help::after {
-  content: attr(aria-label);
-  display: none;
-  position: absolute;
-  bottom: calc(100% + 8px);
-  left: 50%;
-  transform: translateX(-50%);
+.tooltip-help::after,
+.tooltip-help::before {
+  display: none !important;
+}
+
+.tooltip-help:hover::after,
+.tooltip-help:hover::before,
+.tooltip-help:focus::after,
+.tooltip-help:focus::before {
+  display: none !important;
+}
+
+/* tooltip bubble rendered by JS (avoids overflow:hidden clipping) */
+#tooltip-bubble {
+  position: fixed;
   background: #1f2937;
   color: #f9fafb;
   font-size: 12px;
@@ -589,29 +597,10 @@ textarea.form-control {
   border-radius: 6px;
   width: 260px;
   white-space: normal;
-  z-index: 100;
+  z-index: 9999;
   pointer-events: none;
   box-shadow: 0 4px 12px rgba(0,0,0,.2);
-}
-
-.tooltip-help::before {
-  content: '';
   display: none;
-  position: absolute;
-  bottom: calc(100% + 2px);
-  left: 50%;
-  transform: translateX(-50%);
-  border: 6px solid transparent;
-  border-top-color: #1f2937;
-  z-index: 100;
-  pointer-events: none;
-}
-
-.tooltip-help:hover::after,
-.tooltip-help:hover::before,
-.tooltip-help:focus::after,
-.tooltip-help:focus::before {
-  display: block;
 }
 
 .hub-card { position: relative; }

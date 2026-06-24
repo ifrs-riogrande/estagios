@@ -578,4 +578,50 @@ function renderAtividades(valor) {
 // ─────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
   applyMasks();
+  _initTooltips();
 });
+
+// ─────────────────────────────────────────
+//  TOOLTIPS (position:fixed para evitar clipping por overflow:hidden)
+// ─────────────────────────────────────────
+function _initTooltips() {
+  var bubble = document.createElement('div');
+  bubble.id = 'tooltip-bubble';
+  document.body.appendChild(bubble);
+
+  document.addEventListener('mouseover', function(e) {
+    var el = e.target.closest('.tooltip-help');
+    if (!el) return;
+    var text = el.getAttribute('aria-label');
+    if (!text) return;
+    bubble.textContent = text;
+    bubble.style.display = 'block';
+    _posTooltip(el, bubble);
+  });
+
+  document.addEventListener('mouseout', function(e) {
+    if (!e.target.closest('.tooltip-help')) return;
+    bubble.style.display = 'none';
+  });
+
+  document.addEventListener('scroll', function() {
+    bubble.style.display = 'none';
+  }, true);
+}
+
+function _posTooltip(el, bubble) {
+  var r = el.getBoundingClientRect();
+  var bw = 260;
+  var gap = 8;
+  var top = r.top - bubble.offsetHeight - gap;
+  var left = r.left + r.width / 2 - bw / 2;
+
+  // se não cabe acima, mostra abaixo
+  if (top < 4) top = r.bottom + gap;
+  // limita às bordas da janela
+  if (left < 4) left = 4;
+  if (left + bw > window.innerWidth - 4) left = window.innerWidth - bw - 4;
+
+  bubble.style.top = top + 'px';
+  bubble.style.left = left + 'px';
+}
