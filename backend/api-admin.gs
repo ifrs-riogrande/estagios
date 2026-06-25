@@ -274,6 +274,92 @@ function listarSolicitacoesAdmin_() {
   var sheet = ss.getSheetByName(CFG_ADMIN.ABA_SOL);
   if (!sheet) return jsonOk_([]);
   var dados = sheet.getDataRange().getValues();
+
+  // ── Carrega abas auxiliares uma única vez ──────────────────────────
+  var _rowsCoord = (function() {
+    try { var s = ss.getSheetByName(CFG_ADMIN.ABA_COORDENADORES); return s ? s.getDataRange().getValues() : []; } catch(e) { return []; }
+  })();
+  var _rowsOri = (function() {
+    try { var s = ss.getSheetByName(CFG_ADMIN.ABA_ORIENTADORES);  return s ? s.getDataRange().getValues() : []; } catch(e) { return []; }
+  })();
+  var _rowsEmp = (function() {
+    try { var s = ss.getSheetByName(CFG_ADMIN.ABA_EMPRESAS);      return s ? s.getDataRange().getValues() : []; } catch(e) { return []; }
+  })();
+  var _rowsSup = (function() {
+    try {
+      var shSup = SpreadsheetApp.openById(CFG.ID_SUPERVISORES).getSheetByName(CFG.ABA_SUP_RESPOSTAS);
+      return shSup ? shSup.getDataRange().getValues() : [];
+    } catch(e) { return []; }
+  })();
+
+  // ── Lookups em memória ─────────────────────────────────────────────
+  function _coordPorCurso(curso) {
+    if (!curso) return { nome: '', email: '' };
+    var alvo = curso.trim().toLowerCase();
+    for (var i = 1; i < _rowsCoord.length; i++) {
+      if (String(_rowsCoord[i][8] || '').trim() !== 'Ativo') continue;
+      var campo = String(_rowsCoord[i][6] || '');
+      var partes = campo.split(',');
+      for (var k = 0; k < partes.length; k++) {
+        if (partes[k].trim().toLowerCase() === alvo) {
+          return { nome: String(_rowsCoord[i][2] || ''), email: String(_rowsCoord[i][3] || '') };
+        }
+      }
+    }
+    return { nome: '', email: '' };
+  }
+  function _oriPorEmail(email) {
+    if (!email) return { tipoVinculo: '', titulacao: '', area: '' };
+    var em = email.toLowerCase().trim();
+    for (var i = 1; i < _rowsOri.length; i++) {
+      if (String(_rowsOri[i][COL_ORI.EMAIL] || '').toLowerCase().trim() === em) {
+        return {
+          tipoVinculo: String(_rowsOri[i][COL_ORI.TIPO_VINCULO] || '').trim(),
+          titulacao:   String(_rowsOri[i][COL_ORI.TITULACAO]    || '').trim(),
+          area:        String(_rowsOri[i][COL_ORI.AREA]         || '').trim(),
+        };
+      }
+    }
+    return { tipoVinculo: '', titulacao: '', area: '' };
+  }
+  function _empPorCnpj(cnpj) {
+    var vazio = { endereco: '', bairro: '', municipio: '', uf: '', cep: '', telefone: '', email: '', nomeRep: '', cargoRep: '', cpfRep: '' };
+    if (!cnpj) return vazio;
+    for (var i = 1; i < _rowsEmp.length; i++) {
+      if (String(_rowsEmp[i][COL_EMP.CNPJ] || '').replace(/\D/g,'').trim() !== cnpj) continue;
+      return {
+        endereco:  String(_rowsEmp[i][COL_EMP.ENDERECO]      || '').trim(),
+        bairro:    String(_rowsEmp[i][COL_EMP.BAIRRO]        || '').trim(),
+        municipio: String(_rowsEmp[i][COL_EMP.MUNICIPIO]     || '').trim(),
+        uf:        String(_rowsEmp[i][COL_EMP.UF]            || '').trim(),
+        cep:       String(_rowsEmp[i][COL_EMP.CEP]           || '').trim(),
+        telefone:  String(_rowsEmp[i][COL_EMP.TEL_EMPRESA]   || '').trim(),
+        email:     String(_rowsEmp[i][COL_EMP.EMAIL_EMPRESA] || '').trim(),
+        nomeRep:   String(_rowsEmp[i][COL_EMP.NOME_REP]      || '').trim(),
+        cargoRep:  String(_rowsEmp[i][COL_EMP.CARGO_REP]     || '').trim(),
+        cpfRep:    String(_rowsEmp[i][COL_EMP.CPF_REP]       || '').trim(),
+      };
+    }
+    return vazio;
+  }
+  function _supPorEmail(email) {
+    var vazio = { cargo: '', telefone: '', formacao: '' };
+    if (!email) return vazio;
+    var em = email.toLowerCase().trim();
+    for (var i = 1; i < _rowsSup.length; i++) {
+      if (String(_rowsSup[i][COL_SUP.EMAIL_SUP] || '').toLowerCase().trim() !== em) continue;
+      var nf = String(_rowsSup[i][COL_SUP.NIVEL_FORMACAO] || '').trim();
+      var af = String(_rowsSup[i][COL_SUP.AREA_FORMACAO]  || '').trim();
+      return {
+        cargo:    String(_rowsSup[i][COL_SUP.CARGO]   || '').trim(),
+        telefone: String(_rowsSup[i][COL_SUP.TEL_SUP] || '').trim(),
+        formacao: nf && af ? nf + ' em ' + af : (nf || af),
+      };
+    }
+    return vazio;
+  }
+  // ──────────────────────────────────────────────────────────────────
+
   var lista = [];
   for (var i = 1; i < dados.length; i++) {
     var r = dados[i];
@@ -282,9 +368,10 @@ function listarSolicitacoesAdmin_() {
     var _emailSupAdm = String(r[COL.EMAIL_SUPERVISOR] || '').toLowerCase().trim();
     var _emailOriAdm = String(r[COL.EMAIL_ORIENTADOR] || '').toLowerCase().trim();
     var _cursoAdm    = String(r[COL.CURSO]             || '').trim();
-    var _empDados    = _ckObterDadosCompletosEmpresa_(_cnpjAdmin);
-    var _supDados    = _ckObterDadosCompletosSupervisor_(_emailSupAdm);
-    var _oriDados    = _ckObterDadosOrientador_(_emailOriAdm);
+    var _empDados    = _empPorCnpj(_cnpjAdmin);
+    var _supDados    = _supPorEmail(_emailSupAdm);
+    var _oriDados    = _oriPorEmail(_emailOriAdm);
+    var _coordDados  = _coordPorCurso(_cursoAdm);
     var _endEmp = [_empDados.endereco, _empDados.bairro, _empDados.municipio, _empDados.uf, _empDados.cep]
                     .filter(Boolean).join(', ');
     lista.push({
@@ -307,12 +394,12 @@ function listarSolicitacoesAdmin_() {
       // ── Orientador ──
       nomeOrientador:   String(r[COL.NOME_ORIENTADOR]   || ''),
       emailOrientador:  _emailOriAdm,
-      vinculoOrientador:_oriDados.tipoVinculo,
-      titulacaoOrientador: _oriDados.titulacao,
-      areaOrientador:   _oriDados.area,
+      vinculoOrientador:    _oriDados.tipoVinculo,
+      titulacaoOrientador:  _oriDados.titulacao,
+      areaOrientador:       _oriDados.area,
       // ── Coordenador ──
-      nomeCoordenador:  _ckObterNomeCoordenador_(_cursoAdm),
-      emailCoordenador: _ckObterEmailCoordenador_(_cursoAdm),
+      nomeCoordenador:  _coordDados.nome,
+      emailCoordenador: _coordDados.email,
       // ── Concedente ──
       empresa:          String(r[COL.NOME_EMPRESA]      || ''),
       cnpjEmpresa:      _cnpjAdmin,
@@ -326,9 +413,8 @@ function listarSolicitacoesAdmin_() {
       nomeSupervisor:   String(r[COL.NOME_SUPERVISOR]   || ''),
       emailSupervisor:  _emailSupAdm,
       cargoSupervisor:  _supDados.cargo,
-      formacaoSupervisor: _ckObterFormacaoSupervisor_(_emailSupAdm),
+      formacaoSupervisor: _supDados.formacao,
       telefoneSupervisor: _supDados.telefone,
-      setorSupervisor:  _supDados.setor,
       // ── Estágio ──
       tipoEstagio:      String(r[COL.TIPO_ESTAGIO]      || ''),
       status:           String(r[COL.STATUS]            || ''),
