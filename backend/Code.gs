@@ -489,7 +489,7 @@ function doGetPublicConfig(e) {
   if (action === 'listarCursos')         return listarCursos_();
   if (action === 'contarEstagiosAtivos')     return contarEstagiosAtivos_();
   if (action === 'validarTokenOportunidade') return validarTokenOportunidade_((e.parameter && e.parameter.token) || '');
-  return jsonError_('AÃ§Ã£o nÃ£o implementada.', 'NOT_IMPLEMENTED');
+return jsonError_('AÃ§Ã£o nÃ£o implementada.', 'NOT_IMPLEMENTED');
 }
 
 // corrigirCabecalhoSolicitacoes_() permanece disponível para execução manual via editor GAS
