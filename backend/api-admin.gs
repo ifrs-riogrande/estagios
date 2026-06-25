@@ -278,35 +278,79 @@ function listarSolicitacoesAdmin_() {
   for (var i = 1; i < dados.length; i++) {
     var r = dados[i];
     if (!r[COL.ID_ESTAGIO]) continue;
+    var _cnpjAdmin   = String(r[COL.CNPJ_EMPRESA]    || '').replace(/\D/g, '').trim();
+    var _emailSupAdm = String(r[COL.EMAIL_SUPERVISOR] || '').toLowerCase().trim();
+    var _emailOriAdm = String(r[COL.EMAIL_ORIENTADOR] || '').toLowerCase().trim();
+    var _cursoAdm    = String(r[COL.CURSO]             || '').trim();
+    var _empDados    = _ckObterDadosCompletosEmpresa_(_cnpjAdmin);
+    var _supDados    = _ckObterDadosCompletosSupervisor_(_emailSupAdm);
+    var _oriDados    = _ckObterDadosOrientador_(_emailOriAdm);
+    var _endEmp = [_empDados.endereco, _empDados.bairro, _empDados.municipio, _empDados.uf, _empDados.cep]
+                    .filter(Boolean).join(', ');
     lista.push({
       id:               String(r[COL.ID_ESTAGIO]).trim(),
-      emailEstudante:   String(r[COL.EMAIL_ESTUDANTE] || ''),
-      nomeEstudante:    String(r[COL.NOME_ESTUDANTE] || ''),
-      matricula:        String(r[COL.MATRICULA] || ''),
-      cpfEstudante:     String(r[COL.CPF_ESTUDANTE] || ''),
-      curso:            String(r[COL.CURSO] || ''),
-      semestre:         '',  // campo no cadastro do estudante, não na solicitação
-      tipoEstagio:      String(r[COL.TIPO_ESTAGIO] || ''),
-      empresa:          String(r[COL.NOME_EMPRESA] || ''),
-      cnpjEmpresa:      String(r[COL.CNPJ_EMPRESA] || ''),
-      nomeSupervisor:   String(r[COL.NOME_SUPERVISOR] || ''),
-      emailSupervisor:  String(r[COL.EMAIL_SUPERVISOR] || ''),
-      nomeOrientador:   String(r[COL.NOME_ORIENTADOR] || ''),
-      emailOrientador:  String(r[COL.EMAIL_ORIENTADOR] || ''),
+      // ── Estudante ──
+      nomeEstudante:    String(r[COL.NOME_ESTUDANTE]    || ''),
+      dataNasc:         formatarData_(r[COL.DATA_NASC]),
+      cpfEstudante:     String(r[COL.CPF_ESTUDANTE]     || ''),
+      emailEstudante:   String(r[COL.EMAIL_ESTUDANTE]   || ''),
+      telefoneEstudante:String(r[COL.TELEFONE]          || ''),
+      nomeResp:         String(r[COL.NOME_RESP]         || ''),
+      cpfResp:          String(r[COL.CPF_RESP]          || ''),
+      telResp:          String(r[COL.TEL_RESP]          || ''),
+      // ── Curso ──
+      matricula:        String(r[COL.MATRICULA]         || ''),
+      curso:            _cursoAdm,
+      semestre:         String(r[COL.SEMESTRE_SOL]      || ''),
+      formando:         String(r[COL.FORMANDO]          || ''),
+      turno:            String(r[COL.TURNO]             || ''),
+      // ── Orientador ──
+      nomeOrientador:   String(r[COL.NOME_ORIENTADOR]   || ''),
+      emailOrientador:  _emailOriAdm,
+      vinculoOrientador:_oriDados.tipoVinculo,
+      titulacaoOrientador: _oriDados.titulacao,
+      areaOrientador:   _oriDados.area,
+      // ── Coordenador ──
+      nomeCoordenador:  _ckObterNomeCoordenador_(_cursoAdm),
+      emailCoordenador: _ckObterEmailCoordenador_(_cursoAdm),
+      // ── Concedente ──
+      empresa:          String(r[COL.NOME_EMPRESA]      || ''),
+      cnpjEmpresa:      _cnpjAdmin,
+      enderecoEmpresa:  _endEmp,
+      telefoneEmpresa:  _empDados.telefone,
+      emailEmpresa:     _empDados.email,
+      nomeRepEmpresa:   _empDados.nomeRep,
+      cargoRepEmpresa:  _empDados.cargoRep,
+      cpfRepEmpresa:    _empDados.cpfRep,
+      // ── Supervisor ──
+      nomeSupervisor:   String(r[COL.NOME_SUPERVISOR]   || ''),
+      emailSupervisor:  _emailSupAdm,
+      cargoSupervisor:  _supDados.cargo,
+      formacaoSupervisor: _ckObterFormacaoSupervisor_(_emailSupAdm),
+      telefoneSupervisor: _supDados.telefone,
+      setorSupervisor:  _supDados.setor,
+      // ── Estágio ──
+      tipoEstagio:      String(r[COL.TIPO_ESTAGIO]      || ''),
+      status:           String(r[COL.STATUS]            || ''),
       dataInicio:       formatarData_(r[COL.DATA_INICIO]),
       dataTermino:      formatarData_(r[COL.DATA_TERMINO]),
-      cargaHorariaSemanal: String(r[COL.CARGA_HORARIA]    || ''),
-      cargaHorariaTotal:   String(r[COL.CARGA_HOR_TOTAL]  || ''),
-      planoAtividades:  String(r[COL.PLANO_ATIVIDADES] || ''),
-      status:           String(r[COL.STATUS] || ''),
-      observacaoSetor:  String(r[COL.OBSERVACAO_SETOR] || ''),
+      cargaHorariaSemanal: String(r[COL.CARGA_HORARIA]  || ''),
+      cargaHorariaTotal:   String(r[COL.CARGA_HOR_TOTAL]|| ''),
+      horario:          String(r[COL.HORARIO]           || ''),
+      nomeAgente:       String(r[COL.NOME_AGENTE]       || ''),
+      remuneracao:      String(r[COL.REMUNERACAO]       || ''),
+      valorBolsa:       String(r[COL.VALOR_BOLSA]       || ''),
+      valorTransporte:  String(r[COL.VALOR_TRANSPORTE]  || ''),
+      planoAtividades:  String(r[COL.PLANO_ATIVIDADES]  || ''),
+      // ── Meta ──
+      observacaoSetor:  String(r[COL.OBSERVACAO_SETOR]  || ''),
       motivoReprovacao: String(r[COL.MOTIVO_REPROVACAO] || ''),
-      driveUrl:         String(r[COL.DRIVE_URL] || ''),
-      linkDocMatricula: String(r[COL.LINK_DOC_MAT] || ''),
-      linkDocIdentidade:String(r[COL.LINK_DOC_ID]  || ''),
-      linkDocBoletim:   String(r[COL.LINK_DOC_BOL]  || ''),
+      driveUrl:         String(r[COL.DRIVE_URL]         || ''),
+      linkDocMatricula: String(r[COL.LINK_DOC_MAT]      || ''),
+      linkDocIdentidade:String(r[COL.LINK_DOC_ID]       || ''),
+      linkDocBoletim:   String(r[COL.LINK_DOC_BOL]      || ''),
       dataSolicitacao:  formatarData_(r[COL.TIMESTAMP]),
-      nee:              String(r[COL.NEE] || '').trim(),
+      nee:              String(r[COL.NEE]               || '').trim(),
     });
   }
   lista.reverse(); // mais recentes primeiro

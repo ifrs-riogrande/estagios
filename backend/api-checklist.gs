@@ -1566,7 +1566,7 @@ function _ckObterFormacaoSupervisor_(email) {
  * cadastrado na aba Supervisores, buscando pelo e-mail.
  */
 function _ckObterDadosCompletosSupervisor_(email) {
-  var vazio = { nivelFormacao: '', areaFormacao: '', instituicao: '', tempoExp: '', descExp: '' };
+  var vazio = { cargo: '', telefone: '', setor: '', nivelFormacao: '', areaFormacao: '', instituicao: '', tempoExp: '', descExp: '' };
   try {
     if (!email) return vazio;
     var emailN = email.toLowerCase().trim();
@@ -1576,6 +1576,9 @@ function _ckObterDadosCompletosSupervisor_(email) {
     for (var i = 1; i < dados.length; i++) {
       if (String(dados[i][COL_SUP.EMAIL_SUP] || '').toLowerCase().trim() === emailN) {
         return {
+          cargo:         String(dados[i][COL_SUP.CARGO]          || '').trim(),
+          telefone:      String(dados[i][COL_SUP.TEL_SUP]        || '').trim(),
+          setor:         String(dados[i][COL_SUP.SETOR]          || '').trim(),
           nivelFormacao: String(dados[i][COL_SUP.NIVEL_FORMACAO] || '').trim(),
           areaFormacao:  String(dados[i][COL_SUP.AREA_FORMACAO]  || '').trim(),
           instituicao:   String(dados[i][COL_SUP.INSTITUICAO]    || '').trim(),
@@ -1686,6 +1689,58 @@ function _ckObterCpfCoordenador_(curso) {
     }
     return '';
   } catch (e) { return ''; }
+}
+
+/** Retorna vínculo, titulação e área do orientador pelo e-mail. */
+function _ckObterDadosOrientador_(email) {
+  var vazio = { tipoVinculo: '', titulacao: '', area: '' };
+  try {
+    if (!email) return vazio;
+    var emailN = email.toLowerCase().trim();
+    var sheet  = SpreadsheetApp.openById(SS_ID).getSheetByName('Orientadores');
+    if (!sheet) return vazio;
+    var dados = sheet.getDataRange().getValues();
+    for (var i = 1; i < dados.length; i++) {
+      if (String(dados[i][COL_ORI.EMAIL] || '').toLowerCase().trim() === emailN) {
+        return {
+          tipoVinculo: String(dados[i][COL_ORI.TIPO_VINCULO] || '').trim(),
+          titulacao:   String(dados[i][COL_ORI.TITULACAO]    || '').trim(),
+          area:        String(dados[i][COL_ORI.AREA]         || '').trim(),
+        };
+      }
+    }
+    return vazio;
+  } catch (e) { return vazio; }
+}
+
+/** Retorna dados completos da empresa pelo CNPJ (aba Empresas). */
+function _ckObterDadosCompletosEmpresa_(cnpj) {
+  var vazio = { endereco: '', bairro: '', municipio: '', uf: '', cep: '',
+                telefone: '', email: '', nomeRep: '', cargoRep: '', cpfRep: '' };
+  try {
+    if (!cnpj) return vazio;
+    var cnpjN = cnpj.replace(/\D/g, '').trim();
+    if (!cnpjN) return vazio;
+    var sheet = SpreadsheetApp.openById(SS_ID).getSheetByName('Empresas');
+    if (!sheet) return vazio;
+    var dados = sheet.getDataRange().getValues();
+    for (var i = 1; i < dados.length; i++) {
+      if (String(dados[i][COL_EMP.CNPJ] || '').replace(/\D/g, '').trim() !== cnpjN) continue;
+      return {
+        endereco:  String(dados[i][COL_EMP.ENDERECO]      || '').trim(),
+        bairro:    String(dados[i][COL_EMP.BAIRRO]        || '').trim(),
+        municipio: String(dados[i][COL_EMP.MUNICIPIO]     || '').trim(),
+        uf:        String(dados[i][COL_EMP.UF]            || '').trim(),
+        cep:       String(dados[i][COL_EMP.CEP]           || '').trim(),
+        telefone:  String(dados[i][COL_EMP.TEL_EMPRESA]   || '').trim(),
+        email:     String(dados[i][COL_EMP.EMAIL_EMPRESA] || '').trim(),
+        nomeRep:   String(dados[i][COL_EMP.NOME_REP]      || '').trim(),
+        cargoRep:  String(dados[i][COL_EMP.CARGO_REP]     || '').trim(),
+        cpfRep:    String(dados[i][COL_EMP.CPF_REP]       || '').trim(),
+      };
+    }
+    return vazio;
+  } catch (e) { return vazio; }
 }
 
 /**

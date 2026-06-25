@@ -1006,48 +1006,76 @@ function listarMeusEstagios_(e) {
       var r = dados[i];
       if (String(r[COL_SOL.EMAIL_ESTUDANTE] || '').trim().toLowerCase() !== email) continue;
 
+      var _cnpjAluno   = String(r[COL_SOL.CNPJ_EMPRESA]    || '').replace(/\D/g, '').trim();
+      var _emailSupAln = String(r[COL_SOL.EMAIL_SUPERVISOR] || '').toLowerCase().trim();
+      var _emailOriAln = String(r[COL_SOL.EMAIL_ORIENTADOR] || '').toLowerCase().trim();
+      var _cursoAln    = String(r[COL_SOL.CURSO]             || '').trim();
+      var _empDadosAln = _ckObterDadosCompletosEmpresa_(_cnpjAluno);
+      var _supDadosAln = _ckObterDadosCompletosSupervisor_(_emailSupAln);
+      var _oriDadosAln = _ckObterDadosOrientador_(_emailOriAln);
+      var _endEmpAln   = [_empDadosAln.endereco, _empDadosAln.bairro, _empDadosAln.municipio, _empDadosAln.uf, _empDadosAln.cep]
+                           .filter(Boolean).join(', ');
       lista.push({
         // ── Identificação ──
         id:                   String(r[COL_SOL.ID_ESTAGIO]        || ''),
         status:               String(r[COL_SOL.STATUS]             || 'Pendente'),
+        // ── Estudante ──
+        nomeEstudante:        String(r[COL_SOL.NOME_ESTUDANTE]      || ''),
+        dataNasc:             formatarData_(r[COL_SOL.DATA_NASC]),
+        cpf:                  mascararCPF_(r[COL_SOL.CPF]),
+        emailEstudante:       String(r[COL_SOL.EMAIL_ESTUDANTE]     || ''),
+        nomeResponsavel:      String(r[COL_SOL.NOME_RESP]           || ''),
+        cpfResponsavel:       mascararCPF_(r[COL_SOL.CPF_RESP]),
+        telResponsavel:       String(r[COL_SOL.TEL_RESP]            || ''),
+        // ── Curso ──
+        matricula:            String(r[COL_SOL.MATRICULA]           || ''),
+        curso:                _cursoAln,
+        semestreAtual:        String(r[COL_SOL.SEMESTRE_SOL]        || ''),
+        formando:             String(r[COL_SOL.FORMANDO]            || ''),
+        turno:                String(r[COL_SOL.TURNO]               || ''),
+        // ── Orientador ──
+        nomeOrientador:       String(r[COL_SOL.NOME_ORIENTADOR]    || ''),
+        emailOrientador:      _emailOriAln,
+        vinculoOrientador:    _oriDadosAln.tipoVinculo,
+        titulacaoOrientador:  _oriDadosAln.titulacao,
+        areaOrientador:       _oriDadosAln.area,
+        // ── Coordenador ──
+        nomeCoordenador:      _ckObterNomeCoordenador_(_cursoAln),
+        emailCoordenador:     _ckObterEmailCoordenador_(_cursoAln),
+        // ── Concedente ──
+        empresa:              String(r[COL_SOL.NOME_EMPRESA]       || ''),
+        cnpjEmpresa:          _cnpjAluno,
+        enderecoEmpresa:      _endEmpAln,
+        telefoneEmpresa:      _empDadosAln.telefone,
+        emailEmpresa:         _empDadosAln.email,
+        nomeRepEmpresa:       _empDadosAln.nomeRep,
+        cargoRepEmpresa:      _empDadosAln.cargoRep,
+        cpfRepEmpresa:        mascararCPF_(_empDadosAln.cpfRep),
+        // ── Supervisor ──
+        nomeSupervisor:       String(r[COL_SOL.NOME_SUPERVISOR]    || ''),
+        emailSupervisor:      _emailSupAln,
+        cargoSupervisor:      _supDadosAln.cargo,
+        formacaoSupervisor:   _ckObterFormacaoSupervisor_(_emailSupAln),
+        telefoneSupervisor:   _supDadosAln.telefone,
         // ── Estágio ──
         tipoEstagio:          String(r[COL_SOL.TIPO_ESTAGIO]       || ''),
-        empresa:              String(r[COL_SOL.NOME_EMPRESA]       || ''),
-        cnpjEmpresa:          String(r[COL_SOL.CNPJ_EMPRESA]       || ''),
-        nomeSupervisor:       String(r[COL_SOL.NOME_SUPERVISOR]    || ''),
-        emailSupervisor:      String(r[COL_SOL.EMAIL_SUPERVISOR]   || ''),
-        nomeAgente:           String(r[COL_SOL.NOME_AGENTE]        || ''),
-        nomeOrientador:       String(r[COL_SOL.NOME_ORIENTADOR]    || ''),
         dataInicio:           formatarData_(r[COL_SOL.DATA_INICIO]),
         dataTermino:          formatarData_(r[COL_SOL.DATA_TERMINO]),
         cargaHorariaSemanal:  String(r[COL_SOL.CARGA_HOR]          || ''),
         cargaHorariaTotal:    String(r[COL_SOL.CARGA_HOR_TOTAL]    || ''),
         horario:              String(r[COL_SOL.HORARIO]             || ''),
+        nomeAgente:           String(r[COL_SOL.NOME_AGENTE]        || ''),
         remuneracao:          String(r[COL_SOL.REMUNERACAO]         || ''),
         valorBolsa:           String(r[COL_SOL.VALOR_BOLSA]         || ''),
         valorTransporte:      String(r[COL_SOL.VALOR_TRANSPORTE]    || ''),
         planoAtividades:      String(r[COL_SOL.PLANO_ATIVIDADES]    || ''),
-        // ── Documentos de admissão ──
+        // ── Meta ──
+        motivoReprovacao:     String(r[COL_SOL.MOTIVO_REPROVACAO]   || ''),
+        observacaoSetor:      String(r[COL_SOL.OBS_SETOR]           || ''),
+        driveUrl:             String(r[COL_SOL.DRIVE_URL]           || ''),
         linkDocMatricula:     String(r[COL_SOL.LINK_DOC_MAT]        || ''),
         linkDocIdentidade:    String(r[COL_SOL.LINK_DOC_ID]         || ''),
         linkDocBoletim:       String(r[COL_SOL.LINK_DOC_BOL]        || ''),
-        driveUrl:             String(r[COL_SOL.DRIVE_URL]           || ''),
-        // ── Dados do estudante ──
-        nomeEstudante:        String(r[COL_SOL.NOME_ESTUDANTE]      || ''),
-        matricula:            String(r[COL_SOL.MATRICULA]           || ''),
-        cpf:                  String(r[COL_SOL.CPF]                 || ''),
-        dataNasc:             formatarData_(r[COL_SOL.DATA_NASC]),
-        telefone:             String(r[COL_SOL.TELEFONE]            || ''),
-        curso:                String(r[COL_SOL.CURSO]               || ''),
-        turno:                String(r[COL_SOL.TURNO]               || ''),
-        semestreAtual:        String(r[COL_SOL.SEMESTRE_SOL]        || ''),
-        formando:             String(r[COL_SOL.FORMANDO]            || ''),
-        nomeResponsavel:      String(r[COL_SOL.NOME_RESP]           || ''),
-        cpfResponsavel:       mascararCPF_(r[COL_SOL.CPF_RESP]),
-        telResponsavel:       String(r[COL_SOL.TEL_RESP]            || ''),
-        // ── Status / Observações ──
-        motivoReprovacao:     String(r[COL_SOL.MOTIVO_REPROVACAO]   || ''),
-        observacaoSetor:      String(r[COL_SOL.OBS_SETOR]           || ''),
         // ── PDF Checklist ──
         checklistPdfUrl:      (function() {
           try {

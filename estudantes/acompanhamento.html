@@ -780,74 +780,109 @@
       function dr(label, val) {
         return `<div class="detail-item"><label>${label}</label><p>${val || '—'}</p></div>`;
       }
+      function drSensivel(label, val) {
+        if (!val) return `<div class="detail-item"><label>${label}</label><p>—</p></div>`;
+        return `<div class="detail-item"><label>${label}</label><p>${escapeHtml(mascararCPF(val))}</p></div>`;
+      }
       const secTitle = (titulo) =>
-        `<div class="detail-full" style="margin-top:var(--space-3);margin-bottom:0;font-size:var(--font-size-xs);font-weight:600;color:var(--color-text-muted);text-transform:uppercase;letter-spacing:.05em;border-top:1px solid var(--color-border);padding-top:var(--space-4)">${titulo}</div>`;
+        `<div class="detail-full" style="margin-top:var(--space-4);margin-bottom:0;font-size:var(--font-size-xs);font-weight:700;color:var(--color-primary);text-transform:uppercase;letter-spacing:.06em;border-bottom:2px solid var(--color-primary);padding-bottom:var(--space-1)">${titulo}</div>`;
 
       let html = `<div class="action-card"><h2>Dados do Estágio</h2><div class="detail-grid">`;
 
-      // Identificação & Período
-      html += secTitle('Identificação &amp; Período');
+      // 1. Estudante
+      html += secTitle('1. Estudante');
+      html += dr('Nome', escapeHtml(s.nomeEstudante || '—'));
+      if (s.dataNasc) html += dr('Data de Nascimento', escapeHtml(s.dataNasc));
+      html += drSensivel('CPF', s.cpf);
+      html += dr('E-mail', escapeHtml(s.emailEstudante || '—'));
+      if (s.nomeResponsavel) {
+        html += dr('Responsável Legal', escapeHtml(s.nomeResponsavel));
+        if (s.cpfResponsavel) html += drSensivel('CPF do Responsável', s.cpfResponsavel);
+        if (s.telResponsavel) html += dr('Telefone do Responsável', escapeHtml(s.telResponsavel));
+      }
+
+      // 2. Curso
+      html += secTitle('2. Curso');
+      html += dr('Matrícula', escapeHtml(s.matricula || '—'));
+      html += dr('Curso', escapeHtml(s.curso || '—'));
+      if (s.semestreAtual) html += dr('Semestre', escapeHtml(s.semestreAtual));
+      if (s.formando)      html += dr('Formando', escapeHtml(s.formando));
+
+      // 3. Orientador
+      html += secTitle('3. Orientador');
+      html += dr('Nome', escapeHtml(s.nomeOrientador || '—'));
+      if (s.emailOrientador)     html += dr('E-mail', escapeHtml(s.emailOrientador));
+      if (s.vinculoOrientador)   html += dr('Vínculo', escapeHtml(s.vinculoOrientador));
+      if (s.titulacaoOrientador || s.areaOrientador) {
+        var _formOri = [s.titulacaoOrientador, s.areaOrientador].filter(Boolean).join(' — ');
+        html += dr('Formação', escapeHtml(_formOri));
+      }
+
+      // 4. Coordenador de Curso
+      if (s.nomeCoordenador || s.emailCoordenador) {
+        html += secTitle('4. Coordenador de Curso');
+        if (s.nomeCoordenador)  html += dr('Nome', escapeHtml(s.nomeCoordenador));
+        if (s.emailCoordenador) html += dr('E-mail', escapeHtml(s.emailCoordenador));
+      }
+
+      // 5. Concedente
+      html += secTitle('5. Concedente');
+      html += dr('Razão Social', escapeHtml(s.empresa || '—'));
+      if (s.cnpjEmpresa)      html += dr('CNPJ', escapeHtml(s.cnpjEmpresa));
+      if (s.enderecoEmpresa)  html += dr('Endereço', escapeHtml(s.enderecoEmpresa));
+      if (s.telefoneEmpresa)  html += dr('Telefone', escapeHtml(s.telefoneEmpresa));
+      if (s.emailEmpresa)     html += dr('E-mail', escapeHtml(s.emailEmpresa));
+      if (s.nomeRepEmpresa || s.cargoRepEmpresa) {
+        html += `<div class="detail-item detail-full"><label>Representante Legal</label><p>${
+          [s.nomeRepEmpresa && escapeHtml(s.nomeRepEmpresa),
+           s.cargoRepEmpresa && escapeHtml(s.cargoRepEmpresa),
+           s.cpfRepEmpresa && escapeHtml(mascararCPF(s.cpfRepEmpresa))
+          ].filter(Boolean).join(' · ') || '—'
+        }</p></div>`;
+      }
+
+      // 6. Supervisor
+      html += secTitle('6. Supervisor');
+      html += dr('Nome', escapeHtml(s.nomeSupervisor || '—'));
+      if (s.cargoSupervisor)    html += dr('Cargo', escapeHtml(s.cargoSupervisor));
+      if (s.formacaoSupervisor) html += dr('Formação', escapeHtml(s.formacaoSupervisor));
+      if (s.telefoneSupervisor) html += dr('Telefone', escapeHtml(s.telefoneSupervisor));
+      if (s.emailSupervisor)    html += dr('E-mail', escapeHtml(s.emailSupervisor));
+
+      // 7. Dados do Estágio
+      html += secTitle('7. Dados do Estágio');
       html += dr('ID', `<code style="font-size:12px">${escapeHtml(s.id || '—')}</code>`);
       html += dr('Tipo', escapeHtml(s.tipoEstagio || '—'));
       html += dr('Status', badgeStatus(s.status));
       html += dr('Início', escapeHtml(s.dataInicio || '—'));
       html += dr('Término', escapeHtml(s.dataTermino || '—'));
-      var _chRaw = (s.cargaHorariaSemanal || '—').trim();
+      var _chRaw = (s.cargaHorariaSemanal || '').trim();
       var _chNum = _chRaw.replace(/\s*(semanais|h\/sem)\s*/gi, '').trim() || _chRaw;
-      html += dr('Carga Horária Semanal', escapeHtml(_chNum) + '/semanais');
-      if (s.cargaHorariaTotal) html += dr('Carga Horária Total', escapeHtml(s.cargaHorariaTotal));
+      if (_chNum) html += dr('CH Semanal', escapeHtml(_chNum) + 'h/semana');
+      if (s.cargaHorariaTotal) html += dr('CH Total', escapeHtml(s.cargaHorariaTotal));
       if (s.horario) {
         var _horario = s.horario.split('\n').filter(function(l) {
           return !/^Total semanal:/i.test(l.trim());
         }).join('\n').trim();
-        html += dr('Horário', escapeHtml(_horario));
+        html += `<div class="detail-item detail-full"><label>Dias e Horários</label><p style="white-space:pre-line">${escapeHtml(_horario)}</p></div>`;
       }
-      if (s.turno)         html += dr('Turno', escapeHtml(s.turno));
-      if (s.semestreAtual) html += dr('Semestre', escapeHtml(s.semestreAtual));
-      if (s.formando)      html += dr('Formando', escapeHtml(s.formando));
-
-      // Empresa & Supervisor
-      html += secTitle('Empresa &amp; Supervisor');
-      html += dr('Empresa', escapeHtml(s.empresa || '—'));
-      if (s.cnpjEmpresa)    html += dr('CNPJ', escapeHtml(s.cnpjEmpresa));
-      html += dr('Supervisor', escapeHtml(s.nomeSupervisor || '—'));
-      if (s.emailSupervisor) html += dr('E-mail do Supervisor', escapeHtml(s.emailSupervisor));
-      if (s.nomeAgente)      html += dr('Agente de Integração', escapeHtml(s.nomeAgente));
-
-      // Orientação & Curso
-      html += secTitle('Orientação &amp; Curso');
-      html += dr('Orientador', escapeHtml(s.nomeOrientador || '—'));
-      html += dr('Curso', escapeHtml(s.curso || '—'));
-
-      // Dados Financeiros
-      if (s.remuneracao || s.valorBolsa || s.valorTransporte) {
-        html += secTitle('Dados Financeiros');
-        if (s.remuneracao)     html += dr('Remunerado', escapeHtml(s.remuneracao));
-        if (s.valorBolsa)      html += dr('Valor da Bolsa', 'R$ ' + escapeHtml(s.valorBolsa));
-        if (s.valorTransporte) html += dr('Auxílio-Transporte', 'R$ ' + escapeHtml(s.valorTransporte));
-      }
+      if (s.turno)    html += dr('Turno', escapeHtml(s.turno));
+      if (s.nomeAgente) html += dr('Agente de Integração', escapeHtml(s.nomeAgente));
+      if (s.remuneracao)     html += dr('Remuneração', escapeHtml(s.remuneracao));
+      if (s.valorBolsa)      html += dr('Bolsa', 'R$ ' + escapeHtml(s.valorBolsa));
+      if (s.valorTransporte) html += dr('Auxílio-Transporte', 'R$ ' + escapeHtml(s.valorTransporte));
 
       html += `</div>`;
 
-      // Plano de Atividades (fora da grade)
+      // 8. Plano de Atividades
       if (s.planoAtividades) {
-        html += `<p class="info-section-title">Plano de Atividades</p>
-          <div style="background:var(--color-bg);border:1px solid var(--color-border);border-radius:var(--radius-md);padding:var(--space-4);font-size:var(--font-size-sm);line-height:1.6;margin-bottom:var(--space-4)">
+        html += `<div style="margin-top:var(--space-4);font-size:var(--font-size-xs);font-weight:700;color:var(--color-primary);text-transform:uppercase;letter-spacing:.06em;border-bottom:2px solid var(--color-primary);padding-bottom:var(--space-1);margin-bottom:var(--space-3)">8. Plano de Atividades</div>`;
+        html += `<div style="background:var(--color-bg);border:1px solid var(--color-border);border-radius:var(--radius-md);padding:var(--space-4);font-size:var(--font-size-sm);line-height:1.6;margin-bottom:var(--space-4)">
             ${renderAtividades(s.planoAtividades)}
           </div>`;
       }
 
-      // Responsável Legal
-      if (s.nomeResponsavel) {
-        html += `<p class="info-section-title">Responsável Legal</p>
-          <div class="detail-grid" style="margin-bottom:var(--space-4)">`;
-        html += dr('Nome', escapeHtml(s.nomeResponsavel));
-        if (s.cpfResponsavel) html += dr('CPF', escapeHtml(mascararCPF(s.cpfResponsavel)));
-        if (s.telResponsavel) html += dr('Telefone', escapeHtml(s.telResponsavel));
-        html += `</div>`;
-      }
-
-      // Observações / alertas
+      // Alertas
       if (s.observacaoSetor) {
         html += `<div style="background:var(--color-warning-light);border:1px solid var(--color-warning-border);border-radius:var(--radius-md);padding:var(--space-3) var(--space-4);font-size:var(--font-size-sm);margin-top:var(--space-2)">
           <strong>Observação do setor:</strong> ${escapeHtml(s.observacaoSetor)}
