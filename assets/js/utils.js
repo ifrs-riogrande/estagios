@@ -596,9 +596,11 @@ function renderAtividades(valor) {
     try {
       var arr = JSON.parse(s);
       if (Array.isArray(arr) && arr.length) {
-        return '<ol style="margin:0;padding-left:1.4em;line-height:1.7">'
-          + arr.map(function(a) { return '<li>' + escapeHtml(String(a)) + '</li>'; }).join('')
-          + '</ol>';
+        return '<div style="line-height:1.8">'
+          + arr.map(function(a, i) {
+              return '<div><strong>Atividade ' + (i + 1) + '</strong> — ' + escapeHtml(String(a)) + '</div>';
+            }).join('')
+          + '</div>';
       }
     } catch (_) {}
   }
