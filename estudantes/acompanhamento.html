@@ -1230,8 +1230,8 @@
     /* ── FLUXO NOVO ── */
     const PASSOS_NOVO = [
       { label: 'Solicitação enviada',  desc: 'Dados do estágio submetidos ao sistema.' },
-      { label: 'Aceite do orientador', desc: 'Orientador confirma disponibilidade para a orientação.' },
-      { label: 'Checklist',            desc: 'Validação interna pelos atores do processo (setor, orientador, coordenador, empresa e supervisor).' },
+      { label: 'Aceite e validação do orientador', desc: 'Se o orientador ainda não está cadastrado, o aceite ocorre antes do checklist. Se já está cadastrado, o aceite e a validação acontecem dentro do checklist.' },
+      { label: 'Checklist',            desc: 'Validação pelos demais atores do processo: supervisor, coordenador e setor de estágios.' },
       { label: 'Você assina o TCE',    desc: 'Você é o 1º a assinar o Termo de Compromisso pelo gov.br.' },
       { label: 'Empresa assina',       desc: 'Empresa concedente assina o TCE.' },
       { label: 'Supervisor assina',    desc: 'Supervisor do estágio assina o TCE.' },

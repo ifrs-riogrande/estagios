@@ -799,7 +799,7 @@
     steps += `<div class="proc-step">
       <div class="proc-dot ${oriFez ? dotCls(aOri.status) : (hist.etapaAtiva === 'orientador' ? 'proc-dot--active' : 'proc-dot--pending')}">${dotIcon(aOri.status,'2')}</div>
       <div class="proc-step-body">
-        <div class="proc-step-label">Orientador(a) de Estágio</div>
+        <div class="proc-step-label">Aceite e validação — Orientador(a)</div>
         <div class="proc-step-meta">${escapeHtml(info.nomeOrientador||'')}${oriFez && aOri.data ? ' · '+fmtDH(aOri.data) : (hist.criacao ? ' · '+fmtDH(hist.criacao) : '')}</div>
         ${oriFez ? `<div class="proc-atores"><span class="proc-ator-chip ${chipCls(aOri.status)}">${chipIcon(aOri.status)}${statusLabel(aOri.status)}</span></div>` : ''}
       </div></div>`;
