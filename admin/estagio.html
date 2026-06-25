@@ -541,99 +541,95 @@
             return `<div class="detail-item"><label>${label} <span class="sensivel-badge">sensível</span></label><p><span class="dado-sensivel dado-oculto" data-valor="${escapeHtml(val)}">••••••••••</span></p></div>`;
           }
           function drSCpf(label, val) {
-            const fmt = formatarCPF(val || '');
-            return drS(label, fmt || val || '');
+            return drS(label, formatarCPF(val || '') || val || '');
           }
-          const secTitle = (n, titulo) =>
-            `<div class="detail-full" style="margin-top:var(--space-4);margin-bottom:0;font-size:var(--font-size-xs);font-weight:700;color:var(--color-primary);text-transform:uppercase;letter-spacing:.06em;border-bottom:2px solid var(--color-primary);padding-bottom:var(--space-1)">${n}. ${titulo}</div>`;
+          function sec(n, titulo) {
+            return `<div class="detail-full" style="margin-top:var(--space-5);padding-top:var(--space-3);border-top:1px solid var(--color-border);font-size:var(--font-size-xs);font-weight:700;color:var(--color-primary);text-transform:uppercase;letter-spacing:.07em">${n}. ${titulo}</div>`;
+          }
           let h = '';
 
           // 1. Estudante
-          h += secTitle(1, 'Estudante');
+          h += sec(1, 'Estudante');
           h += dr('Nome', escapeHtml(s.nomeEstudante || '—'));
-          if (s.dataNasc)   h += drS('Data de Nascimento', s.dataNasc);
+          h += drS('Data de Nascimento', s.dataNasc);
           h += drSCpf('CPF', s.cpfEstudante);
           h += dr('E-mail', escapeHtml(s.emailEstudante || '—'));
           if (s.nomeResp) {
-            h += dr('Responsável Legal', escapeHtml(s.nomeResp));
-            if (s.cpfResp) h += drSCpf('CPF do Responsável', s.cpfResp);
-            if (s.telResp) h += dr('Telefone do Responsável', escapeHtml(s.telResp));
+            h += `<div class="detail-item detail-full" style="border-top:1px dashed var(--color-border);padding-top:var(--space-3);margin-top:var(--space-2)">
+              <label>Responsável Legal</label>
+              <p>${[s.nomeResp && escapeHtml(s.nomeResp),
+                    s.cpfResp  && `<span class="dado-sensivel dado-oculto" data-valor="${escapeHtml(formatarCPF(s.cpfResp) || s.cpfResp)}">••••••••••</span>`,
+                    s.telResp  && escapeHtml(s.telResp)
+                   ].filter(Boolean).join(' · ') || '—'}</p></div>`;
           }
 
           // 2. Curso
-          h += secTitle(2, 'Curso');
+          h += sec(2, 'Curso');
           h += drS('Matrícula', s.matricula);
-          h += dr('Curso', escapeHtml(s.curso || '—'));
-          if (s.semestre) h += dr('Semestre', escapeHtml(s.semestre));
-          if (s.formando) h += dr('Formando', escapeHtml(s.formando));
+          h += dr('Nome do Curso', escapeHtml(s.curso || '—'));
+          h += dr('Semestre', escapeHtml(s.semestre || '—'));
+          h += dr('Formando', escapeHtml(s.formando || '—'));
 
           // 3. Orientador
-          h += secTitle(3, 'Orientador');
+          h += sec(3, 'Orientador');
           h += dr('Nome', escapeHtml(s.nomeOrientador || '—'));
-          if (s.emailOrientador)    h += dr('E-mail', escapeHtml(s.emailOrientador));
-          if (s.vinculoOrientador)  h += dr('Vínculo', escapeHtml(s.vinculoOrientador));
-          if (s.titulacaoOrientador || s.areaOrientador) {
-            const formOri = [s.titulacaoOrientador, s.areaOrientador].filter(Boolean).join(' — ');
-            h += dr('Formação', escapeHtml(formOri));
-          }
+          h += dr('E-mail', escapeHtml(s.emailOrientador || '—'));
+          h += dr('Vínculo', escapeHtml(s.vinculoOrientador || '—'));
+          const _formOri = [s.titulacaoOrientador, s.areaOrientador].filter(Boolean).join(' — ');
+          h += dr('Formação', escapeHtml(_formOri || '—'));
 
           // 4. Coordenador de Curso
-          if (s.nomeCoordenador || s.emailCoordenador) {
-            h += secTitle(4, 'Coordenador de Curso');
-            if (s.nomeCoordenador)  h += dr('Nome', escapeHtml(s.nomeCoordenador));
-            if (s.emailCoordenador) h += dr('E-mail', escapeHtml(s.emailCoordenador));
-          }
-
-          const _secNum = (s.nomeCoordenador || s.emailCoordenador) ? 5 : 4;
+          h += sec(4, 'Coordenador de Curso');
+          h += dr('Nome', escapeHtml(s.nomeCoordenador || '—'));
+          h += dr('E-mail', escapeHtml(s.emailCoordenador || '—'));
 
           // 5. Concedente
-          h += secTitle(_secNum, 'Concedente');
+          h += sec(5, 'Concedente');
           h += dr('Razão Social', escapeHtml(s.empresa || '—'));
           h += drS('CNPJ', formatarCNPJ(s.cnpjEmpresa || '') || s.cnpjEmpresa || '');
-          if (s.enderecoEmpresa)  h += dr('Endereço', escapeHtml(s.enderecoEmpresa));
-          if (s.telefoneEmpresa)  h += dr('Telefone', escapeHtml(s.telefoneEmpresa));
-          if (s.emailEmpresa)     h += dr('E-mail', escapeHtml(s.emailEmpresa));
-          if (s.nomeRepEmpresa || s.cargoRepEmpresa) {
-            h += `<div class="detail-item detail-full"><label>Representante Legal</label><p>${
-              [s.nomeRepEmpresa && escapeHtml(s.nomeRepEmpresa),
-               s.cargoRepEmpresa && escapeHtml(s.cargoRepEmpresa)].filter(Boolean).join(' · ') || '—'
-            }</p></div>`;
-            if (s.cpfRepEmpresa) h += drSCpf('CPF do Representante', s.cpfRepEmpresa);
-          }
+          h += dr('Endereço', escapeHtml(s.enderecoEmpresa || '—'));
+          h += dr('Telefone', escapeHtml(s.telefoneEmpresa || '—'));
+          h += dr('E-mail', escapeHtml(s.emailEmpresa || '—'));
+          h += `<div class="detail-item detail-full"><label>Representante Legal</label><p>${
+            [s.nomeRepEmpresa  && escapeHtml(s.nomeRepEmpresa),
+             s.cargoRepEmpresa && escapeHtml(s.cargoRepEmpresa)].filter(Boolean).join(' · ') || '—'
+          }</p></div>`;
+          h += drSCpf('CPF do Representante', s.cpfRepEmpresa);
 
           // 6. Supervisor
-          h += secTitle(_secNum + 1, 'Supervisor');
+          h += sec(6, 'Supervisor');
           h += dr('Nome', escapeHtml(s.nomeSupervisor || '—'));
-          if (s.cargoSupervisor)    h += dr('Cargo', escapeHtml(s.cargoSupervisor));
-          if (s.formacaoSupervisor) h += dr('Formação', escapeHtml(s.formacaoSupervisor));
-          if (s.telefoneSupervisor) h += dr('Telefone', escapeHtml(s.telefoneSupervisor));
-          if (s.emailSupervisor)    h += dr('E-mail', escapeHtml(s.emailSupervisor));
+          h += dr('Cargo', escapeHtml(s.cargoSupervisor || '—'));
+          h += dr('Formação', escapeHtml(s.formacaoSupervisor || '—'));
+          h += dr('Telefone', escapeHtml(s.telefoneSupervisor || '—'));
+          h += dr('E-mail', escapeHtml(s.emailSupervisor || '—'));
 
           // 7. Dados do Estágio
-          h += secTitle(_secNum + 2, 'Dados do Estágio');
+          h += sec(7, 'Dados do Estágio');
           h += dr('ID', `<code style="font-size:12px">${escapeHtml(s.id || '—')}</code>`);
           h += dr('Tipo', escapeHtml(s.tipoEstagio || '—'));
           h += dr('Status', badgeStatus(s.status));
           h += dr('Início', escapeHtml(s.dataInicio || '—'));
           h += dr('Término', escapeHtml(s.dataTermino || '—'));
-          const _chRaw = (s.cargaHorariaSemanal || '').trim();
-          const _chNum = _chRaw.replace(/\s*(semanais|h\/sem)\s*/gi, '').trim() || _chRaw;
-          if (_chNum) h += dr('CH Semanal', escapeHtml(_chNum) + 'h/semana');
-          if (s.cargaHorariaTotal) h += dr('CH Total', escapeHtml(s.cargaHorariaTotal));
+          const _chRaw = (s.cargaHorariaSemanal || '').replace(/\s*(semanais|h\/sem)\s*/gi, '').trim();
+          h += dr('CH Semanal', _chRaw ? escapeHtml(_chRaw) + 'h/semana' : '—');
+          h += dr('CH Total', escapeHtml(s.cargaHorariaTotal || '—'));
           if (s.horario) {
             const _hor = s.horario.split('\n').filter(l => !/^Total semanal:/i.test(l.trim())).join('\n').trim();
             h += `<div class="detail-item detail-full"><label>Dias e Horários</label><p style="white-space:pre-line">${escapeHtml(_hor)}</p></div>`;
+          } else {
+            h += dr('Dias e Horários', '—');
           }
-          if (s.turno)    h += dr('Turno', escapeHtml(s.turno));
-          if (s.nomeAgente) h += dr('Agente de Integração', escapeHtml(s.nomeAgente));
-          if (s.remuneracao)     h += dr('Remuneração', escapeHtml(s.remuneracao));
-          if (s.valorBolsa)      h += dr('Bolsa', 'R$ ' + escapeHtml(s.valorBolsa));
-          if (s.valorTransporte) h += dr('Auxílio-Transporte', 'R$ ' + escapeHtml(s.valorTransporte));
+          h += dr('Turno', escapeHtml(s.turno || '—'));
+          h += dr('Agente de Integração', escapeHtml(s.nomeAgente || '—'));
+          h += dr('Remuneração', escapeHtml(s.remuneracao || '—'));
+          h += dr('Bolsa', s.valorBolsa ? 'R$ ' + escapeHtml(s.valorBolsa) : '—');
+          h += dr('Auxílio-Transporte', s.valorTransporte ? 'R$ ' + escapeHtml(s.valorTransporte) : '—');
           h += dr('Data da Solicitação', escapeHtml(s.dataSolicitacao || '—'));
 
           // 8. Plano de Atividades
-          h += `<div class="detail-full" style="margin-top:var(--space-4);margin-bottom:0;font-size:var(--font-size-xs);font-weight:700;color:var(--color-primary);text-transform:uppercase;letter-spacing:.06em;border-bottom:2px solid var(--color-primary);padding-bottom:var(--space-1)">${_secNum + 3}. Plano de Atividades</div>`;
-          h += `<div class="detail-item detail-full"><div>${renderAtividades(s.planoAtividades)}</div></div>`;
+          h += sec(8, 'Plano de Atividades');
+          h += `<div class="detail-item detail-full"><div style="line-height:1.7">${s.planoAtividades ? renderAtividades(s.planoAtividades) : '<span style="color:var(--color-text-muted)">—</span>'}</div></div>`;
 
           if (s.observacaoSetor) {
             h += `<div class="detail-item detail-full"><label>Observação do Setor</label><p style="white-space:pre-wrap">${escapeHtml(s.observacaoSetor)}</p></div>`;
