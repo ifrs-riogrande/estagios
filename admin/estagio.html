@@ -611,8 +611,8 @@
           h += dr('Status', badgeStatus(s.status));
           h += dr('Início', escapeHtml(s.dataInicio || '—'));
           h += dr('Término', escapeHtml(s.dataTermino || '—'));
-          const _chRaw = (s.cargaHorariaSemanal || '').replace(/\s*(semanais|h\/sem)\s*/gi, '').trim();
-          h += dr('CH Semanal', _chRaw ? escapeHtml(_chRaw) + 'h/semana' : '—');
+          const _chNum = (s.cargaHorariaSemanal || '').replace(/[^\d.,]/g, '').trim();
+          h += dr('CH Semanal', _chNum ? _chNum + 'h/semana' : (s.cargaHorariaSemanal ? escapeHtml(s.cargaHorariaSemanal) : '—'));
           h += dr('CH Total', escapeHtml(s.cargaHorariaTotal || '—'));
           if (s.horario) {
             const _hor = s.horario.split('\n').filter(l => !/^Total semanal:/i.test(l.trim())).join('\n').trim();

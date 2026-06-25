@@ -853,8 +853,8 @@
       h += dr('Status', badgeStatus(s.status));
       h += dr('Início', escapeHtml(s.dataInicio || '—'));
       h += dr('Término', escapeHtml(s.dataTermino || '—'));
-      var _chRaw = (s.cargaHorariaSemanal || '').replace(/\s*(semanais|h\/sem)\s*/gi, '').trim();
-      h += dr('CH Semanal', _chRaw ? escapeHtml(_chRaw) + 'h/semana' : '—');
+      var _chNum = (s.cargaHorariaSemanal || '').replace(/[^\d.,]/g, '').trim();
+      h += dr('CH Semanal', _chNum ? _chNum + 'h/semana' : (s.cargaHorariaSemanal ? escapeHtml(s.cargaHorariaSemanal) : '—'));
       h += dr('CH Total', escapeHtml(s.cargaHorariaTotal || '—'));
       if (s.horario) {
         var _hor = s.horario.split('\n').filter(function(l){ return !/^Total semanal:/i.test(l.trim()); }).join('\n').trim();
