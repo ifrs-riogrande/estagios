@@ -170,8 +170,6 @@ var POST_ROUTES = {
 
   // SolicitaÃ§Ãµes (estudante + DG)
   'solicitarEstagio':          doPostSolicitacao,
-  'enviarRelatorioParcial':    doPostSolicitacao,
-  'enviarRelatorioFinal':      doPostSolicitacao,
   'enviarAdendo':              doPostSolicitacao,
   'enviarDocumentosAssinados': doPostSolicitacao,
   'enviarDocumentoDG':         doPostSolicitacao,
@@ -409,8 +407,6 @@ function doPostSolicitacao(e) {
   var action = body.action || '';
   switch (action) {
     case 'solicitarEstagio':          return solicitarEstagio_(body);
-    case 'enviarRelatorioParcial':    return enviarRelatorioParcial_(body);
-    case 'enviarRelatorioFinal':      return enviarRelatorioFinal_(body);
     case 'enviarAdendo':              return enviarAdendo_(body);
     case 'enviarDocumentosAssinados': return enviarDocumentosAssinados_(body);
     case 'enviarDocumentoDG':          return enviarDocumentoDG_(body);

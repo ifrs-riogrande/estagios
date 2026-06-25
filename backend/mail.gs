@@ -434,46 +434,6 @@ var MAIL = (function () {
   }
 
   // --------------------------------------------------------------------------
-  // Relatórios
-  // --------------------------------------------------------------------------
-
-  function enviarEmailRelatorioParcialRecebido(dados) {
-    var corpo = '<p>O relatório parcial do estágio <strong>' + dados.idEstagio + '</strong> foi recebido.</p>'
-      + campo_('Estudante', dados.nomeEstudante || dados.emailEstudante)
-      + campo_('Período de referência', dados.periodoRef)
-      + campo_('Avaliação geral', dados.avaliacaoEstagio)
-      + '<p>O orientador receberá uma cópia para análise.</p>';
-    enviar_(SETOR_EMAIL, '[SGE] Relatório parcial recebido — ' + dados.idEstagio,
-      htmlBase_('[SGE] Relatório Parcial', corpo));
-    if (dados.emailOrientador) {
-      var corpoOri = '<p>O estudante sob sua orientação enviou o relatório parcial do semestre.</p>'
-        + campo_('ID do estágio', dados.idEstagio)
-        + campo_('Período', dados.periodoRef)
-        + campo_('Avaliação do estágio', dados.avaliacaoEstagio);
-      enviar_(dados.emailOrientador, '[SGE] Relatório parcial do seu estagiário — ' + dados.idEstagio,
-        htmlBase_('Relatório Parcial', corpoOri));
-    }
-  }
-
-  function enviarEmailRelatorioFinalRecebido(dados) {
-    var corpo = '<p>O relatório final do estágio <strong>' + dados.idEstagio + '</strong> foi recebido.</p>'
-      + campo_('Estudante', dados.nomeEstudante || dados.emailEstudante)
-      + campo_('Data de encerramento', dados.dataEncerramento)
-      + campo_('Avaliação da concedente', dados.avaliacaoConcedente)
-      + campo_('Avaliação do orientador', dados.avaliacaoOrientador)
-      + campo_('Recomendaria a empresa', dados.recomendaria)
-      + '<p>O processo de encerramento do estágio será finalizado pelo setor.</p>';
-    enviar_(SETOR_EMAIL, '[SGE] Relatório final recebido — ' + dados.idEstagio,
-      htmlBase_('[SGE] Relatório Final', corpo));
-    if (dados.emailOrientador) {
-      var corpoOri = '<p>O estudante sob sua orientação concluiu o estágio e enviou o relatório final.</p>'
-        + campo_('ID do estágio', dados.idEstagio)
-        + campo_('Encerramento', dados.dataEncerramento);
-      enviar_(dados.emailOrientador, '[SGE] Relatório final do seu estagiário — ' + dados.idEstagio,
-        htmlBase_('Relatório Final', corpoOri));
-    }
-  }
-
   // --------------------------------------------------------------------------
   // Adendo
   // --------------------------------------------------------------------------
@@ -924,8 +884,6 @@ var MAIL = (function () {
     enviarEmailSolicitacaoRecebida:      enviarEmailSolicitacaoRecebida,
     enviarEmailSolicitacaoAprovada:      enviarEmailSolicitacaoAprovada,
     enviarEmailSolicitacaoReprovada:     enviarEmailSolicitacaoReprovada,
-    enviarEmailRelatorioParcialRecebido: enviarEmailRelatorioParcialRecebido,
-    enviarEmailRelatorioFinalRecebido:   enviarEmailRelatorioFinalRecebido,
     enviarEmailAdendoRecebido:           enviarEmailAdendoRecebido,
     enviarEmailAdendoProcessado:         enviarEmailAdendoProcessado,
     enviarEmailNovoOrientador:           enviarEmailNovoOrientador,
@@ -1112,8 +1070,6 @@ function enviarEmailNovoSupervisor_(d)           { return MAIL.enviarEmailNovoSu
 function enviarEmailSolicitacaoRecebida_(d)      { return MAIL.enviarEmailSolicitacaoRecebida(d); }
 function enviarEmailSolicitacaoAprovada_(d)      { return MAIL.enviarEmailSolicitacaoAprovada(d); }
 function enviarEmailSolicitacaoReprovada_(d)     { return MAIL.enviarEmailSolicitacaoReprovada(d); }
-function enviarEmailRelatorioParcialRecebido_(d) { return MAIL.enviarEmailRelatorioParcialRecebido(d); }
-function enviarEmailRelatorioFinalRecebido_(d)   { return MAIL.enviarEmailRelatorioFinalRecebido(d); }
 function enviarEmailAdendoRecebido_(d)           { return MAIL.enviarEmailAdendoRecebido(d); }
 function enviarEmailAdendoProcessado_(d)         { return MAIL.enviarEmailAdendoProcessado(d); }
 function enviarEmailNovoOrientador_(d)           { return MAIL.enviarEmailNovoOrientador(d); }

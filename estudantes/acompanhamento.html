@@ -250,11 +250,6 @@
               <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path d="M9 2a2 2 0 00-2 2v8a2 2 0 002 2h6a2 2 0 002-2V6.414A2 2 0 0016.414 5L14 2.586A2 2 0 0012.586 2H9z"/><path d="M3 8a2 2 0 012-2v10h8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z"/></svg>
               Documentos
             </button>
-            <button class="ficha-tab" data-tab="relatorios" onclick="mudarAba('relatorios')" role="tab">
-              <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"/></svg>
-              Relatórios
-              <span class="tab-count" id="cnt-relatorios"></span>
-            </button>
             <button class="ficha-tab" data-tab="adendos" onclick="mudarAba('adendos')" role="tab">
               <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M17.707 9.293a1 1 0 010 1.414l-7 7a1 1 0 01-1.414 0l-7-7A.997.997 0 012 10V5a3 3 0 013-3h5c.256 0 .512.098.707.293l7 7zM5 6a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd"/></svg>
               Adendos
@@ -269,7 +264,6 @@
           <div id="tab-andamento"></div>
           <div id="tab-dados" hidden></div>
           <div id="tab-documentos" hidden></div>
-          <div id="tab-relatorios" hidden></div>
           <div id="tab-adendos" hidden></div>
           <div id="tab-avaliacoes" hidden></div>
         </div>`;
@@ -304,17 +298,15 @@
         ]);
         if (!Array.isArray(_avaliacoes)) _avaliacoes = [];
       } catch (e) {
-        _historico = { error: e.message, relatoriosParciais: [], relatorioFinal: null, adendos: [], documentos: [] };
+        _historico = { error: e.message, adendos: [], documentos: [] };
         _avaliacoes = [];
       }
 
-      const wrapRel        = document.getElementById('wrap-hist-relatorios');
       const wrapDocsAval   = document.getElementById('wrap-docs-aval');
       const wrapDocsParecer= document.getElementById('wrap-docs-parecer');
       const wrapAvulsos    = document.getElementById('wrap-hist-avulsos');
       const wrapAdendos    = document.getElementById('wrap-hist-adendos');
       const wrapAval       = document.getElementById('wrap-hist-aval');
-      if (wrapRel)         wrapRel.innerHTML         = buildHistoricoRelatorios(_historico);
       if (wrapDocsAval)    wrapDocsAval.innerHTML    = buildDocsAvaliacoes();
       if (wrapDocsParecer) wrapDocsParecer.innerHTML = buildDocsParecer(_historico);
       if (wrapAvulsos)     wrapAvulsos.innerHTML     = buildHistoricoAvulsos(_historico);
@@ -332,7 +324,6 @@
       document.getElementById('tab-andamento').innerHTML  = buildTabAndamento(s);
       document.getElementById('tab-dados').innerHTML      = buildTabDados(s);
       document.getElementById('tab-documentos').innerHTML = buildTabDocumentos(s);
-      document.getElementById('tab-relatorios').innerHTML = buildTabRelatorios(s);
       document.getElementById('tab-adendos').innerHTML    = buildTabAdendos(s);
       document.getElementById('tab-avaliacoes').innerHTML = buildTabAvaliacoes(s);
 
@@ -349,7 +340,7 @@
       document.querySelectorAll('.ficha-tab').forEach(t =>
         t.classList.toggle('active', t.dataset.tab === aba)
       );
-      ['andamento', 'dados', 'documentos', 'relatorios', 'adendos', 'avaliacoes'].forEach(id => {
+      ['andamento', 'dados', 'documentos', 'adendos', 'avaliacoes'].forEach(id => {
         const el = document.getElementById('tab-' + id);
         if (el) el.hidden = (id !== aba);
       });
@@ -357,14 +348,11 @@
 
     function _atualizarContadores() {
       if (!_historico) return;
-      const { relatoriosParciais = [], relatorioFinal = null, adendos = [], documentos = [] } = _historico;
-      const cntRel    = relatoriosParciais.length + (relatorioFinal ? 1 : 0);
+      const { adendos = [], documentos = [] } = _historico;
       const cntAdendo = adendos.length;
       const cntAval   = _avaliacoes.length;
-      const elRel     = document.getElementById('cnt-relatorios');
       const elAdendo  = document.getElementById('cnt-adendos');
       const elAval    = document.getElementById('cnt-avaliacoes');
-      if (elRel)    elRel.textContent    = cntRel    > 0 ? String(cntRel)    : '';
       if (elAdendo) elAdendo.textContent = cntAdendo > 0 ? String(cntAdendo) : '';
       if (elAval)   elAval.textContent   = cntAval   > 0 ? String(cntAval)   : '';
     }
@@ -622,180 +610,6 @@
         ).join('') + `</div>`;
     }
 
-    /* ════════════════════════════════════════
-       ABA: RELATÓRIOS
-    ════════════════════════════════════════ */
-    function buildTabRelatorios(s) {
-      const isAtivo = s.status === 'Ativo' || s.status === 'Em execução';
-      const chevron = `<svg class="ds-chevron" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>`;
-      const avOpts  = `
-        <option value="">Selecione...</option>
-        <option value="Ótimo">Ótimo</option>
-        <option value="Bom">Bom</option>
-        <option value="Regular">Regular</option>
-        <option value="Ruim">Ruim</option>`;
-
-      let html = '';
-
-      if (isAtivo) {
-        html += `
-        <div class="doc-sections-wrap">
-          <p class="doc-sections-title">Nova Solicitação de Relatório</p>
-
-          <!-- ── Relatório Parcial ── -->
-          <div class="doc-section">
-            <div class="doc-section-hdr" id="rp-hdr" onclick="toggleDocSection('rp')">
-              <h3>📄 Relatório Parcial</h3>${chevron}
-            </div>
-            <div class="doc-section-body" id="rp-body">
-              <p style="font-size:var(--font-size-sm);color:var(--color-text-muted);margin-bottom:var(--space-4)">
-                Descreva as atividades realizadas no período de referência. Após o envio, o documento passará pelo fluxo de assinaturas digitais (gov.br): <strong>você → concedente → supervisor</strong>.
-              </p>
-              <div id="fb-rp"></div>
-              <div class="form-group">
-                <label class="form-label">Período de Referência <span style="color:var(--color-error)">*</span></label>
-                <input type="text" id="rp-periodoRef" class="form-control" placeholder="Ex: Jan/2025 – Mar/2025">
-              </div>
-              <div class="form-group">
-                <label class="form-label">Atividades Realizadas <span style="color:var(--color-error)">*</span></label>
-                <textarea id="rp-atividadesRealizadas" class="form-control" rows="4" placeholder="Descreva as principais atividades desenvolvidas no período..."></textarea>
-              </div>
-              <div class="form-group">
-                <label class="form-label">Aprendizagens Obtidas</label>
-                <textarea id="rp-aprendizagens" class="form-control" rows="3" placeholder="Conhecimentos e habilidades adquiridos..."></textarea>
-              </div>
-              <div class="form-group">
-                <label class="form-label">Relação com o Curso</label>
-                <textarea id="rp-relacaoCurso" class="form-control" rows="3" placeholder="Como as atividades se relacionam com o seu curso..."></textarea>
-              </div>
-              <div class="form-group">
-                <label class="form-label">Avaliação do Estágio <span style="color:var(--color-error)">*</span></label>
-                <select id="rp-avaliacaoEstagio" class="form-control">${avOpts}</select>
-              </div>
-              <div class="form-group">
-                <label class="form-label">Dificuldades Encontradas</label>
-                <textarea id="rp-dificuldades" class="form-control" rows="3" placeholder="Dificuldades ou desafios encontrados..."></textarea>
-              </div>
-              <div class="form-group">
-                <label class="form-label">Sugestões</label>
-                <textarea id="rp-sugestoes" class="form-control" rows="2" placeholder="Sugestões para melhoria do estágio..."></textarea>
-              </div>
-              <button class="btn btn-primary btn-sm" onclick="submitRelatorioParcial(this)">Enviar Relatório Parcial</button>
-            </div>
-          </div>
-
-          <!-- ── Relatório Final ── -->
-          <div class="doc-section">
-            <div class="doc-section-hdr" id="rf-hdr" onclick="toggleDocSection('rf')">
-              <h3>📋 Relatório Final</h3>${chevron}
-            </div>
-            <div class="doc-section-body" id="rf-body">
-              <p style="font-size:var(--font-size-sm);color:var(--color-text-muted);margin-bottom:var(--space-4)">
-                Relatório a ser preenchido ao término do estágio. Após o envio, o documento passará pelo fluxo de assinaturas digitais (gov.br): <strong>você → concedente → supervisor</strong>.
-              </p>
-              <div id="fb-rf"></div>
-              <div class="form-group">
-                <label class="form-label">Data de Encerramento <span style="color:var(--color-error)">*</span></label>
-                <input type="date" id="rf-dataEncerramento" class="form-control">
-              </div>
-              <div class="form-group">
-                <label class="form-label">Resumo das Atividades <span style="color:var(--color-error)">*</span></label>
-                <textarea id="rf-resumoAtividades" class="form-control" rows="4" placeholder="Resumo geral das atividades realizadas durante todo o estágio..."></textarea>
-              </div>
-              <div class="form-group">
-                <label class="form-label">Competências Desenvolvidas</label>
-                <textarea id="rf-competenciasDesenvolvidas" class="form-control" rows="3" placeholder="Competências técnicas e comportamentais desenvolvidas..."></textarea>
-              </div>
-              <div class="form-group">
-                <label class="form-label">Contribuição para a Formação</label>
-                <textarea id="rf-contribuicaoFormacao" class="form-control" rows="3" placeholder="Como o estágio contribuiu para sua formação acadêmica e profissional..."></textarea>
-              </div>
-              <div class="form-group">
-                <label class="form-label">Avaliação da Empresa Concedente <span style="color:var(--color-error)">*</span></label>
-                <select id="rf-avaliacaoConcedente" class="form-control">${avOpts}</select>
-              </div>
-              <div class="form-group">
-                <label class="form-label">Avaliação do Orientador Acadêmico <span style="color:var(--color-error)">*</span></label>
-                <select id="rf-avaliacaoOrientador" class="form-control">${avOpts}</select>
-              </div>
-              <div class="form-group">
-                <label class="form-label">Recomendaria este estágio? <span style="color:var(--color-error)">*</span></label>
-                <div style="display:flex;gap:var(--space-5);margin-top:var(--space-2)">
-                  <label style="display:flex;align-items:center;gap:var(--space-2);font-size:var(--font-size-sm);font-weight:400;cursor:pointer">
-                    <input type="radio" name="recomendaria" value="Sim"> Sim
-                  </label>
-                  <label style="display:flex;align-items:center;gap:var(--space-2);font-size:var(--font-size-sm);font-weight:400;cursor:pointer">
-                    <input type="radio" name="recomendaria" value="Não"> Não
-                  </label>
-                </div>
-              </div>
-              <div class="form-group">
-                <label class="form-label">Considerações Finais</label>
-                <textarea id="rf-consideracoesFinais" class="form-control" rows="3" placeholder="Comentários finais sobre a experiência..."></textarea>
-              </div>
-              <button class="btn btn-primary btn-sm" onclick="submitRelatorioFinal(this)">Enviar Relatório Final</button>
-            </div>
-          </div>
-        </div>`;
-      }
-
-      html += `<div id="wrap-hist-relatorios">${buildHistoricoRelatorios(null)}</div>`;
-      return html;
-    }
-
-    /* Histórico de relatórios (para a aba Relatórios) */
-    function buildHistoricoRelatorios(h) {
-      if (!h) return `
-        <div class="action-card" style="margin-top:var(--space-4)">
-          <h2>Histórico de Relatórios</h2>
-          <p style="color:var(--color-text-muted);font-size:var(--font-size-sm)">Carregando histórico…</p>
-        </div>`;
-      if (h.error) return `
-        <div class="action-card" style="margin-top:var(--space-4)">
-          <h2>Histórico de Relatórios</h2>
-          <p style="color:var(--color-error);font-size:var(--font-size-sm)">${escapeHtml(h.error)}</p>
-        </div>`;
-
-      const { relatoriosParciais = [], relatorioFinal = null } = h;
-      if (!relatoriosParciais.length && !relatorioFinal) return `
-        <div class="action-card" style="margin-top:var(--space-4)">
-          <h2>Histórico de Relatórios</h2>
-          <p style="color:var(--color-text-muted);font-size:var(--font-size-sm)">Nenhum relatório enviado ainda.</p>
-        </div>`;
-
-      let html = `<div class="action-card" style="margin-top:var(--space-4)"><h2>Histórico de Relatórios</h2>`;
-
-      if (relatoriosParciais.length) {
-        html += `<p class="info-section-title">Relatórios Parciais (${relatoriosParciais.length})</p><div class="hist-list">`;
-        relatoriosParciais.forEach(r => {
-          html += `<div class="hist-item">
-            <div class="hist-item-row">
-              <span class="hist-item-title">Período: ${escapeHtml(r.periodoRef || '—')}</span>
-              <span class="hist-item-date">${escapeHtml(r.data || '—')}</span>
-            </div>
-            ${r.avaliacao ? `<div class="hist-item-meta">Avaliação: <strong>${escapeHtml(r.avaliacao)}</strong></div>` : ''}
-            ${r.atividades ? `<div class="hist-item-desc">${escapeHtml(r.atividades.substring(0, 250))}${r.atividades.length > 250 ? '…' : ''}</div>` : ''}
-          </div>`;
-        });
-        html += `</div>`;
-      }
-
-      if (relatorioFinal) {
-        const r = relatorioFinal;
-        html += `<p class="info-section-title">Relatório Final</p>
-          <div class="hist-item">
-            <div class="hist-item-row">
-              <span class="hist-item-title">Enviado em ${escapeHtml(r.data || '—')}</span>
-              ${r.dataEncerramento ? `<span class="hist-item-date">Encerramento: ${escapeHtml(r.dataEncerramento)}</span>` : ''}
-            </div>
-            ${r.avalConcedente ? `<div class="hist-item-meta">Empresa: <strong>${escapeHtml(r.avalConcedente)}</strong> · Orientador: <strong>${escapeHtml(r.avalOrientador || '—')}</strong> · Recomendaria: <strong>${escapeHtml(r.recomendaria || '—')}</strong></div>` : ''}
-            ${r.resumo ? `<div class="hist-item-desc">${escapeHtml(r.resumo.substring(0, 250))}${r.resumo.length > 250 ? '…' : ''}</div>` : ''}
-          </div>`;
-      }
-
-      html += `</div>`;
-      return html;
-    }
 
     /* ════════════════════════════════════════
        ABA: ADENDOS
@@ -1561,81 +1375,6 @@
         const file = e.dataTransfer.files[0];
         if (file) { input.files = e.dataTransfer.files; input.dispatchEvent(new Event('change')); }
       });
-    }
-
-    /* ════════════════════════════════════════
-       ENVIO — RELATÓRIO PARCIAL
-    ════════════════════════════════════════ */
-    async function submitRelatorioParcial(btn) {
-      const fbId                 = 'fb-rp';
-      const periodoRef           = document.getElementById('rp-periodoRef')?.value.trim();
-      const atividadesRealizadas = document.getElementById('rp-atividadesRealizadas')?.value.trim();
-      const avaliacaoEstagio     = document.getElementById('rp-avaliacaoEstagio')?.value;
-
-      if (!periodoRef || !atividadesRealizadas || !avaliacaoEstagio) {
-        showFormFeedback(fbId, 'error', 'Campos obrigatórios', 'Preencha o Período de Referência, Atividades Realizadas e Avaliação do Estágio.');
-        return;
-      }
-      btn.disabled = true; btn.classList.add('is-loading');
-      hideFormFeedback(fbId);
-      try {
-        await API.post('enviarRelatorioParcial', {
-          authToken:          getAccessToken(),
-          idEstagio:          _atual.id,
-          periodoRef,
-          atividadesRealizadas,
-          aprendizagens:      document.getElementById('rp-aprendizagens')?.value.trim(),
-          relacaoCurso:       document.getElementById('rp-relacaoCurso')?.value.trim(),
-          avaliacaoEstagio,
-          dificuldades:       document.getElementById('rp-dificuldades')?.value.trim(),
-          sugestoes:          document.getElementById('rp-sugestoes')?.value.trim(),
-        });
-        showFormFeedback(fbId, 'success', 'Relatório enviado!',
-          'Seu relatório parcial foi registrado. O documento passará pelo fluxo de assinaturas digitais (gov.br): você → concedente → supervisor.');
-        btn.textContent = 'Enviado ✓';
-      } catch (err) {
-        showFormFeedback(fbId, 'error', 'Erro ao enviar', err.message);
-        btn.disabled = false; btn.classList.remove('is-loading');
-      }
-    }
-
-    /* ════════════════════════════════════════
-       ENVIO — RELATÓRIO FINAL
-    ════════════════════════════════════════ */
-    async function submitRelatorioFinal(btn) {
-      const fbId                = 'fb-rf';
-      const dataEncerramento    = document.getElementById('rf-dataEncerramento')?.value;
-      const resumoAtividades    = document.getElementById('rf-resumoAtividades')?.value.trim();
-      const avaliacaoConcedente = document.getElementById('rf-avaliacaoConcedente')?.value;
-      const avaliacaoOrientador = document.getElementById('rf-avaliacaoOrientador')?.value;
-      const recomendariaEl      = document.querySelector('input[name="recomendaria"]:checked');
-
-      if (!dataEncerramento || !resumoAtividades || !avaliacaoConcedente || !avaliacaoOrientador || !recomendariaEl) {
-        showFormFeedback(fbId, 'error', 'Campos obrigatórios', 'Preencha todos os campos obrigatórios, incluindo a avaliação e a opção de recomendação.');
-        return;
-      }
-      btn.disabled = true; btn.classList.add('is-loading');
-      hideFormFeedback(fbId);
-      try {
-        await API.post('enviarRelatorioFinal', {
-          authToken:               getAccessToken(),
-          idEstagio:               _atual.id,
-          dataEncerramento,
-          resumoAtividades,
-          competenciasDesenvolvidas: document.getElementById('rf-competenciasDesenvolvidas')?.value.trim(),
-          contribuicaoFormacao:      document.getElementById('rf-contribuicaoFormacao')?.value.trim(),
-          avaliacaoConcedente,
-          avaliacaoOrientador,
-          recomendaria:              recomendariaEl.value,
-          consideracoesFinais:       document.getElementById('rf-consideracoesFinais')?.value.trim(),
-        });
-        showFormFeedback(fbId, 'success', 'Relatório enviado!',
-          'Seu relatório final foi registrado. O documento passará pelo fluxo de assinaturas digitais (gov.br): você → concedente → supervisor.');
-        btn.textContent = 'Enviado ✓';
-      } catch (err) {
-        showFormFeedback(fbId, 'error', 'Erro ao enviar', err.message);
-        btn.disabled = false; btn.classList.remove('is-loading');
-      }
     }
 
     /* ════════════════════════════════════════

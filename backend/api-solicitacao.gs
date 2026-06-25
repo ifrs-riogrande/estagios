@@ -518,148 +518,6 @@ function solicitarEstagio_(dados) {
 }
 
 // ---------------------------------------------------------------------------
-// POST — Enviar relatório parcial
-// ---------------------------------------------------------------------------
-
-function enviarRelatorioParcial_(dados) {
-  var tokenInfo = validarTokenEstudante_(dados.authToken);
-
-  if (!checkRateLimit_('enviarRelatorioParcial')) {
-    return jsonError_('Muitas requisições. Aguarde um momento.', 'RATE_LIMIT');
-  }
-
-  var idEstagio = sanitizar_(dados.idEstagio, 20).toUpperCase().trim();
-  if (!idEstagio.match(/^RG\d{2}-[A-Z0-9]{4}-[A-Z0-9]{4}$/)) {
-    return jsonError_('ID do estágio inválido.', 'VALIDATION');
-  }
-
-  var periodoRef    = sanitizar_(dados.periodoRef, 10);
-  var atividades    = sanitizar_(dados.atividadesRealizadas, 2000);
-  var aprendizagens = sanitizar_(dados.aprendizagens, 2000);
-  var relacaoCurso  = sanitizar_(dados.relacaoCurso, 1000);
-  var avaliacao     = sanitizar_(dados.avaliacaoEstagio, 50);
-  var dificuldades  = sanitizar_(dados.dificuldades, 1000);
-  var sugestoes     = sanitizar_(dados.sugestoes, 500);
-
-  if (!periodoRef)  return jsonError_('Período de referência é obrigatório.', 'VALIDATION');
-  if (!atividades || atividades.length < 80)  return jsonError_('Descrição das atividades muito curta.', 'VALIDATION');
-  if (!aprendizagens) return jsonError_('Aprendizagens são obrigatórias.', 'VALIDATION');
-  if (!relacaoCurso)  return jsonError_('Relação com o curso é obrigatória.', 'VALIDATION');
-  if (!avaliacao)     return jsonError_('Avaliação geral é obrigatória.', 'VALIDATION');
-
-  // Verifica se o ID existe e pertence ao estudante
-  verificarIdEstagio_(idEstagio, tokenInfo.email);
-
-  var ss    = SpreadsheetApp.openById(CFG_SOL.SS_ID);
-  var sheet = obterOuCriarAba_(ss, CFG_SOL.ABA_PARC,
-    ['Timestamp','ID Estágio','E-mail Estudante','Período Ref.','Atividades Realizadas',
-     'Aprendizagens','Relação com o Curso','Avaliação Geral','Dificuldades','Sugestões']);
-
-  var linha = [];
-  linha[COL_PARC.TIMESTAMP]       = new Date();
-  linha[COL_PARC.ID_ESTAGIO]      = idEstagio;
-  linha[COL_PARC.EMAIL_ESTUDANTE] = tokenInfo.email;
-  linha[COL_PARC.PERIODO_REF]     = periodoRef;
-  linha[COL_PARC.ATIVIDADES]      = atividades;
-  linha[COL_PARC.APRENDIZAGENS]   = aprendizagens;
-  linha[COL_PARC.RELACAO_CURSO]   = relacaoCurso;
-  linha[COL_PARC.AVALIACAO]       = avaliacao;
-  linha[COL_PARC.DIFICULDADES]    = dificuldades;
-  linha[COL_PARC.SUGESTOES]       = sugestoes;
-
-  sheet.appendRow(linha);
-
-  // Notificação
-  try {
-    var emailOrientador = buscarEmailOrientador_(idEstagio);
-    enviarEmailRelatorioParcialRecebido_({
-      idEstagio:       idEstagio,
-      emailEstudante:  tokenInfo.email,
-      periodoRef:      periodoRef,
-      avaliacaoEstagio:avaliacao,
-      emailOrientador: emailOrientador,
-    });
-  } catch (e) { logErro_('enviarRelatorioParcial_.mail', e); }
-
-  return jsonOk_({ mensagem: 'Relatório parcial enviado com sucesso!' });
-}
-
-// ---------------------------------------------------------------------------
-// POST — Enviar relatório final
-// ---------------------------------------------------------------------------
-
-function enviarRelatorioFinal_(dados) {
-  var tokenInfo = validarTokenEstudante_(dados.authToken);
-
-  if (!checkRateLimit_('enviarRelatorioFinal')) {
-    return jsonError_('Muitas requisições. Aguarde um momento.', 'RATE_LIMIT');
-  }
-
-  var idEstagio = sanitizar_(dados.idEstagio, 20).toUpperCase().trim();
-  if (!idEstagio.match(/^RG\d{2}-[A-Z0-9]{4}-[A-Z0-9]{4}$/)) {
-    return jsonError_('ID do estágio inválido.', 'VALIDATION');
-  }
-
-  var dataEnc    = sanitizar_(dados.dataEncerramento, 10);
-  var resumo     = sanitizar_(dados.resumoAtividades, 3000);
-  var competenc  = sanitizar_(dados.competenciasDesenvolvidas, 2000);
-  var contribuic = sanitizar_(dados.contribuicaoFormacao, 2000);
-  var avalConced = sanitizar_(dados.avaliacaoConcedente, 50);
-  var avalOri    = sanitizar_(dados.avaliacaoOrientador, 50);
-  var recomend   = sanitizar_(dados.recomendaria, 30);
-  var consider   = sanitizar_(dados.consideracoesFinais, 1000);
-
-  if (!dataEnc)    return jsonError_('Data de encerramento é obrigatória.', 'VALIDATION');
-  if (!resumo || resumo.length < 120) return jsonError_('Resumo das atividades muito curto.', 'VALIDATION');
-  if (!competenc)  return jsonError_('Competências desenvolvidas são obrigatórias.', 'VALIDATION');
-  if (!contribuic) return jsonError_('Contribuição para formação é obrigatória.', 'VALIDATION');
-  if (!avalConced) return jsonError_('Avaliação da concedente é obrigatória.', 'VALIDATION');
-  if (!avalOri)    return jsonError_('Avaliação do orientador é obrigatória.', 'VALIDATION');
-  if (!recomend)   return jsonError_('Recomendação da empresa é obrigatória.', 'VALIDATION');
-
-  verificarIdEstagio_(idEstagio, tokenInfo.email);
-
-  var ss    = SpreadsheetApp.openById(CFG_SOL.SS_ID);
-  var sheet = obterOuCriarAba_(ss, CFG_SOL.ABA_FINAL,
-    ['Timestamp','ID Estágio','E-mail Estudante','Data Encerramento','Resumo Atividades',
-     'Competências','Contribuição Formação','Aval. Concedente','Aval. Orientador','Recomendaria','Considerações']);
-
-  var linha = [];
-  linha[COL_FINAL.TIMESTAMP]         = new Date();
-  linha[COL_FINAL.ID_ESTAGIO]        = idEstagio;
-  linha[COL_FINAL.EMAIL_ESTUDANTE]   = tokenInfo.email;
-  linha[COL_FINAL.DATA_ENCERRAMENTO] = dataEnc;
-  linha[COL_FINAL.RESUMO]            = resumo;
-  linha[COL_FINAL.COMPETENCIAS]      = competenc;
-  linha[COL_FINAL.CONTRIBUICAO]      = contribuic;
-  linha[COL_FINAL.AVAL_CONCEDENTE]   = avalConced;
-  linha[COL_FINAL.AVAL_ORIENTADOR]   = avalOri;
-  linha[COL_FINAL.RECOMENDARIA]      = recomend;
-  linha[COL_FINAL.CONSIDERACOES]     = consider;
-
-  sheet.appendRow(linha);
-
-  // Atualiza status na aba principal
-  try { atualizarStatusSolicitacao_(idEstagio, 'Encerrado'); } catch (e) { /* não crítico */ }
-
-  // Notificação
-  try {
-    var emailOrientador = buscarEmailOrientador_(idEstagio);
-    enviarEmailRelatorioFinalRecebido_({
-      idEstagio:        idEstagio,
-      emailEstudante:   tokenInfo.email,
-      dataEncerramento: formatarData_(dataEnc),
-      avaliacaoConcedente: avalConced,
-      avaliacaoOrientador: avalOri,
-      recomendaria:     recomend,
-      emailOrientador:  emailOrientador,
-    });
-  } catch (e) { logErro_('enviarRelatorioFinal_.mail', e); }
-
-  return jsonOk_({ mensagem: 'Relatório final enviado com sucesso!' });
-}
-
-// ---------------------------------------------------------------------------
 // POST — Enviar adendo
 // ---------------------------------------------------------------------------
 
@@ -1601,47 +1459,6 @@ function listarHistoricoEstagio_(e) {
     if (!temAcesso) return jsonError_('Estágio não encontrado ou acesso negado.', 'FORBIDDEN');
   }
 
-  // ── Relatórios Parciais ──
-  var relatoriosParciais = [];
-  var sheetParc = ss.getSheetByName(CFG_SOL.ABA_PARC);
-  if (sheetParc) {
-    var dParc = sheetParc.getDataRange().getValues();
-    for (var j = 1; j < dParc.length; j++) {
-      if (String(dParc[j][COL_PARC.ID_ESTAGIO] || '') !== idEstagio) continue;
-      relatoriosParciais.push({
-        data:       dParc[j][COL_PARC.TIMESTAMP]
-                      ? Utilities.formatDate(new Date(dParc[j][COL_PARC.TIMESTAMP]),
-                          Session.getScriptTimeZone(), 'dd/MM/yyyy HH:mm')
-                      : '',
-        periodoRef: String(dParc[j][COL_PARC.PERIODO_REF] || ''),
-        avaliacao:  String(dParc[j][COL_PARC.AVALIACAO]   || ''),
-        atividades: String(dParc[j][COL_PARC.ATIVIDADES]  || ''),
-      });
-    }
-  }
-
-  // ── Relatório Final ──
-  var relatorioFinal = null;
-  var sheetFinal = ss.getSheetByName(CFG_SOL.ABA_FINAL);
-  if (sheetFinal) {
-    var dFinal = sheetFinal.getDataRange().getValues();
-    for (var k = 1; k < dFinal.length; k++) {
-      if (String(dFinal[k][COL_FINAL.ID_ESTAGIO] || '') !== idEstagio) continue;
-      relatorioFinal = {
-        data:             dFinal[k][COL_FINAL.TIMESTAMP]
-                            ? Utilities.formatDate(new Date(dFinal[k][COL_FINAL.TIMESTAMP]),
-                                Session.getScriptTimeZone(), 'dd/MM/yyyy HH:mm')
-                            : '',
-        dataEncerramento: formatarData_(dFinal[k][COL_FINAL.DATA_ENCERRAMENTO]),
-        avalConcedente:   String(dFinal[k][COL_FINAL.AVAL_CONCEDENTE] || ''),
-        avalOrientador:   String(dFinal[k][COL_FINAL.AVAL_ORIENTADOR] || ''),
-        recomendaria:     String(dFinal[k][COL_FINAL.RECOMENDARIA]    || ''),
-        resumo:           String(dFinal[k][COL_FINAL.RESUMO]          || ''),
-      };
-      break;
-    }
-  }
-
   // ── Adendos ──
   var adendos = [];
   var sheetAdendo = ss.getSheetByName(CFG_SOL.ABA_ADENDO);
@@ -1706,8 +1523,6 @@ function listarHistoricoEstagio_(e) {
   } catch (_) {}
 
   return jsonOk_({
-    relatoriosParciais: relatoriosParciais,
-    relatorioFinal:     relatorioFinal,
     adendos:            adendos,
     documentos:         documentos,
     parecerFinal:       parecerFinalInfo,

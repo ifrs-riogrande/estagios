@@ -116,17 +116,6 @@ function gerarDashboard_() {
   // ── Alertas ──────────────────────────────────────────────────────────────
   var alertas = [];
 
-  // ── IDs com relatório final (para detectar pendentes) ────────────────────
-  var comRelatorioFinal = {};
-  var sheetFinal = ss.getSheetByName(CFG_DASH.ABA_FINAL);
-  if (sheetFinal) {
-    var dadosFinal = sheetFinal.getDataRange().getValues();
-    for (var f = 1; f < dadosFinal.length; f++) {
-      var idF = String(dadosFinal[f][1] || '').trim();
-      if (idF) comRelatorioFinal[idF] = true;
-    }
-  }
-
   // ── Processamento das solicitações ───────────────────────────────────────
   var solicitacoesRetorno = [];
 
@@ -154,8 +143,8 @@ function gerarDashboard_() {
       empresasMap[empresa] = (empresasMap[empresa] || 0) + 1;
     }
 
-    // Alerta: estágio ativo com término iminente sem relatório final
-    if (status === 'Ativo' && !comRelatorioFinal[id]) {
+    // Alerta: estágio ativo com término iminente
+    if (status === 'Ativo') {
       var dtTermino = linha[_COL_SOL.DATA_TERMINO];
       if (dtTermino) {
         var dt = dtTermino instanceof Date ? dtTermino : new Date(dtTermino);
@@ -165,7 +154,7 @@ function gerarDashboard_() {
           var nomeEst = String(linha[_COL_SOL.NOME_ESTUDANTE] || '').trim();
           alertas.push({
             titulo:    'Estágio encerrando em breve: ' + nomeEst,
-            descricao: id + ' · Término em ' + formatarData_(dt) + ' (' + diasAoTermino + ' dias) · Relatório final pendente.',
+            descricao: id + ' · Término em ' + formatarData_(dt) + ' (' + diasAoTermino + ' dias).',
             nivel:     diasAoTermino <= 5 ? 'error' : 'warning',
           });
         }
