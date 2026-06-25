@@ -38,15 +38,15 @@
     /* ── Detail grid ── */
     .detail-grid {
       display: grid; grid-template-columns: 1fr 1fr;
-      gap: var(--space-4) var(--space-6); margin-bottom: var(--space-6);
+      gap: var(--space-2) var(--space-6); margin-bottom: var(--space-6);
     }
     @media (max-width: 560px) { .detail-grid { grid-template-columns: 1fr; } }
     .detail-item label {
-      font-size: var(--font-size-xs); color: var(--color-text-muted);
-      display: block; margin-bottom: 2px; font-weight: 500;
+      font-size: var(--font-size-xs); color: var(--color-primary);
+      display: block; margin-bottom: 1px; font-weight: 600;
       text-transform: uppercase; letter-spacing: 0.04em;
     }
-    .detail-item p { font-size: var(--font-size-sm); word-break: break-word; }
+    .detail-item p { font-size: var(--font-size-sm); word-break: break-word; margin-bottom: var(--space-2); }
     .detail-full { grid-column: 1 / -1; }
 
     /* ── Dados sensíveis ── */
@@ -568,6 +568,7 @@
           h += drS('Matrícula', s.matricula);
           h += dr('Nome do Curso', escapeHtml(s.curso || '—'));
           h += dr('Semestre', escapeHtml(s.semestre || '—'));
+          h += dr('Turno de Aula', escapeHtml(s.turno || '—'));
           h += dr('Formando', escapeHtml(s.formando || '—'));
 
           // 3. Orientador
@@ -620,7 +621,6 @@
           } else {
             h += dr('Dias e Horários', '—');
           }
-          h += dr('Turno', escapeHtml(s.turno || '—'));
           h += dr('Agente de Integração', escapeHtml(s.nomeAgente || '—'));
           h += dr('Remuneração', escapeHtml(s.remuneracao || '—'));
           h += dr('Bolsa', s.valorBolsa ? 'R$ ' + escapeHtml(s.valorBolsa) : '—');
