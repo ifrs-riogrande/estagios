@@ -605,7 +605,7 @@
               </div>
             </div>
             <div class="form-group">
-              <label class="form-label required">Dias e horários de estágio</label>
+              <label class="form-label required">Dias e horários de estágio <span class="tooltip-help" aria-label="Limites: máx. 6h/dia (4h para NEE) e 30h/semana (20h para NEE). Horário noturno (22h–6h) não é permitido.">?</span></label>
               <!-- Widget dinâmico -->
               <div id="dias-horarios" class="dias-widget" tabindex="-1" role="group" aria-describedby="dias-horarios-error">
                 <div class="dias-widget-head" aria-hidden="true">
@@ -631,7 +631,7 @@
             </div>
             <!-- Carga horária total — calculada a partir dos dias/horários + período -->
             <div class="form-group" style="max-width:320px;">
-              <label class="form-label required" for="carga-horaria">Carga horária total do estágio <span class="tooltip-help" aria-label="Calculada automaticamente com base nas datas e dias informados. Limites: máx. 6h/dia (4h para NEE) e 30h/semana (20h para NEE). Horário noturno (22h–6h) não é permitido.">?</span></label>
+              <label class="form-label required" for="carga-horaria">Carga horária total do estágio <span class="tooltip-help" aria-label="Calculada automaticamente com base nos dias e horários escolhidos para o período informado. Ausências, feriados e dias não trabalhados devem ser registrados nas avaliações/relatórios periódicos.">?</span></label>
               <input type="text" id="carga-horaria" class="form-control" readonly
                 placeholder="Preencha as datas e os dias de estágio"
                 aria-describedby="carga-horaria-error"
