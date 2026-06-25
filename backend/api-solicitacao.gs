@@ -1018,7 +1018,7 @@ function listarMeusEstagios_(e) {
       } catch(e) { return []; }
     })();
 
-    function _coordAln(curso) {
+    var _coordAln = function(curso) {
       if (!curso) return { nome: '', email: '' };
       var alvo = curso.trim().toLowerCase();
       for (var k = 1; k < _rowsCoordAln.length; k++) {
@@ -1030,8 +1030,8 @@ function listarMeusEstagios_(e) {
         }
       }
       return { nome: '', email: '' };
-    }
-    function _oriAln(email) {
+    };
+    var _oriAln = function(email) {
       if (!email) return { tipoVinculo: '', titulacao: '', area: '' };
       var em = email.toLowerCase().trim();
       for (var k = 1; k < _rowsOriAln.length; k++) {
@@ -1043,8 +1043,8 @@ function listarMeusEstagios_(e) {
         };
       }
       return { tipoVinculo: '', titulacao: '', area: '' };
-    }
-    function _empAln(cnpj) {
+    };
+    var _empAln = function(cnpj) {
       var vazio = { endereco: '', bairro: '', municipio: '', uf: '', cep: '', telefone: '', email: '', nomeRep: '', cargoRep: '', cpfRep: '' };
       if (!cnpj) return vazio;
       for (var k = 1; k < _rowsEmpAln.length; k++) {
@@ -1063,8 +1063,8 @@ function listarMeusEstagios_(e) {
         };
       }
       return vazio;
-    }
-    function _supAln(email) {
+    };
+    var _supAln = function(email) {
       var vazio = { cargo: '', telefone: '', formacao: '' };
       if (!email) return vazio;
       var em = email.toLowerCase().trim();
@@ -1079,7 +1079,7 @@ function listarMeusEstagios_(e) {
         };
       }
       return vazio;
-    }
+    };
     // ──────────────────────────────────────────────────────────────
 
     var lista = [];
