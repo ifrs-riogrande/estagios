@@ -632,7 +632,7 @@
             const tbl   = [[' ',' ',' ',' ',' ',' ',' '],[' ',' ',' ',' ',' ',' ',' '],[' ',' ',' ',' ',' ',' ',' ']];
             const linhas = (s.horario||'').split('\n').filter(l=>l.trim()&&!/^Total semanal:/i.test(l.trim()));
             linhas.forEach(ln => {
-              const m = ln.match(/^([^:]+):\s*(\d{1,2}:\d{2})-(\d{1,2}:\d{2})(?:\s*\(([^)]+)\))?/);
+              const m = ln.match(/^([^:]+):\s*(\d{1,2}:\d{2})\s*[-–—]\s*(\d{1,2}:\d{2})(?:\s*\(([^)]+)\))?/);
               if (!m) return;
               const dN = m[1].trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
               let dI = -1;

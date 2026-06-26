@@ -874,7 +874,7 @@
         var tbl   = [[' ',' ',' ',' ',' ',' ',' '],[' ',' ',' ',' ',' ',' ',' '],[' ',' ',' ',' ',' ',' ',' ']];
         var linhas = (s.horario||'').split('\n').filter(function(l){return l.trim()&&!/^Total semanal:/i.test(l.trim());});
         linhas.forEach(function(ln) {
-          var m = ln.match(/^([^:]+):\s*(\d{1,2}:\d{2})-(\d{1,2}:\d{2})(?:\s*\(([^)]+)\))?/);
+          var m = ln.match(/^([^:]+):\s*(\d{1,2}:\d{2})\s*[-–—]\s*(\d{1,2}:\d{2})(?:\s*\(([^)]+)\))?/);
           if (!m) return;
           var dN = m[1].trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
           var dI = -1;
