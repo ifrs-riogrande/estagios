@@ -82,6 +82,19 @@
     .dados-actions-bar-label { flex: 1; font-size: var(--font-size-sm); color: var(--color-text-muted); }
     .reject-area { display: none; margin-top: var(--space-4); }
     .reject-area.show { display: block; }
+    .main-cols { display: grid; grid-template-columns: 1fr 320px; gap: var(--space-6); }
+    @media (max-width: 900px) { .main-cols { grid-template-columns: 1fr; } }
+    .timeline { position: relative; padding-left: var(--space-10); margin-bottom: var(--space-2); }
+    .timeline::before { content: ''; position: absolute; left: 20px; top: 12px; bottom: 12px; width: 2px; background: var(--color-border); }
+    .timeline-item { position: relative; margin-bottom: var(--space-6); }
+    .timeline-item:last-child { margin-bottom: 0; }
+    .timeline-dot { position: absolute; left: -32px; top: 4px; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; border: 2px solid; }
+    .timeline-dot--done    { background: var(--color-success); border-color: var(--color-success); color: #fff; }
+    .timeline-dot--active  { background: var(--color-primary); border-color: var(--color-primary); color: #fff; box-shadow: 0 0 0 4px rgba(26,58,107,.15); }
+    .timeline-dot--pending { background: var(--color-surface); border-color: var(--color-border); color: var(--color-text-light); }
+    .timeline-dot--error   { background: var(--color-error); border-color: var(--color-error); color: #fff; }
+    .timeline-label { font-size: var(--font-size-sm); font-weight: 600; margin-bottom: 2px; }
+    .timeline-desc  { font-size: var(--font-size-xs); color: var(--color-text-muted); line-height: 1.5; }
 
     /* ── Links de fluxo ── */
     .fluxo-links {
@@ -221,7 +234,11 @@
 
         <!-- ── Abas ── -->
         <div class="ficha-tabs" role="tablist">
-          <button class="ficha-tab active" data-tab="dados" onclick="mudarAba('dados')" role="tab">
+          <button class="ficha-tab active" data-tab="andamento" onclick="mudarAba('andamento')" role="tab">
+            <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/></svg>
+            Andamento
+          </button>
+          <button class="ficha-tab" data-tab="dados" onclick="mudarAba('dados')" role="tab">
             <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"/></svg>
             Dados
           </button>
@@ -247,8 +264,13 @@
           </button>
         </div>
 
+        <!-- ── Aba: Andamento ── -->
+        <div id="tab-andamento">
+          <div id="content-andamento"></div>
+        </div>
+
         <!-- ── Aba: Dados ── -->
-        <div id="tab-dados">
+        <div id="tab-dados" hidden>
           <div id="content-dados"></div>
         </div>
 
@@ -413,6 +435,7 @@
         }
 
         renderHero();
+        renderAndamento();
         renderDados();
         renderDocumentos();
         renderAdendos();
@@ -714,26 +737,101 @@
         })()}
 
         ${_renderNapneAdmin()}
-
-        <div class="fluxo-links">
-          ${s.driveUrl ? `
-          <a href="${escapeHtml(s.driveUrl)}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">
-            📁 Abrir pasta ↗
-          </a>` : ''}
-          <a href="../checklist/?id=${escapeHtml(s.id)}" class="btn btn-secondary btn-sm">
-            <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-            Checklist
-          </a>
-          <a href="../assinaturas/?id=${escapeHtml(s.id)}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">
-            <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"/></svg>
-            Assinaturas ↗
-          </a>
-          <button class="btn btn-secondary btn-sm" onclick="reenviarNotificacaoAssinatura('${escapeHtml(s.id)}', this)">
-            <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"/><path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"/></svg>
-            Reenviar notificação
-          </button>
-        </div>
       `;
+    }
+
+    /* ─── Aba: Andamento ─── */
+    function renderAndamento() {
+      const s = _estagio;
+      if (!s) return;
+
+      // ── Card de ação contextual por status ──────────────────────────────────
+      function _cardAcao() {
+        const st = s.status;
+        const id = escapeHtml(s.id);
+
+        const btnReenviar = `<button class="btn btn-secondary btn-sm" onclick="reenviarNotificacaoAssinatura('${id}', this)">
+          <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"/><path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"/></svg>
+          Reenviar notificação
+        </button>`;
+
+        const btnChecklist = `<a href="../checklist/?id=${id}" class="btn btn-secondary btn-sm">
+          <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+          Abrir Checklist ↗
+        </a>`;
+
+        const btnAssinaturas = `<a href="../assinaturas/?id=${id}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">
+          <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"/></svg>
+          Assinaturas ↗
+        </a>`;
+
+        const btnPasta = s.driveUrl
+          ? `<a href="${escapeHtml(s.driveUrl)}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">📁 Abrir pasta ↗</a>`
+          : '';
+
+        function card(cor, corBorda, titulo, corpo, acoes) {
+          return `<div style="background:${cor};border:1px solid ${corBorda};border-radius:var(--radius-lg);padding:var(--space-5) var(--space-6);">
+            <h2 style="font-size:var(--font-size-md);font-weight:600;margin-bottom:var(--space-2)">${titulo}</h2>
+            <p style="font-size:var(--font-size-sm);color:var(--color-text-muted);margin-bottom:var(--space-4)">${corpo}</p>
+            <div style="display:flex;flex-wrap:wrap;gap:var(--space-3)">${acoes}</div>
+          </div>`;
+        }
+
+        if (st === 'Aguardando aceite orientador') {
+          return card('#fffbeb','#fde68a',
+            '⏳ Aguardando aceite do orientador',
+            `<strong>${escapeHtml(s.nomeOrientador || 'O orientador selecionado')}</strong> ainda não confirmou a orientação. Reenvie a notificação se necessário.`,
+            btnReenviar);
+        }
+        if (st === 'Aceite recusado') {
+          return card('#fef2f2','#fecaca',
+            '❌ Aceite recusado pelo orientador',
+            `${escapeHtml(s.nomeOrientador || 'O orientador')} recusou a orientação. O estudante precisa escolher outro orientador.`,
+            '');
+        }
+        if (st === 'Em Checklist') {
+          return card('#eff6ff','#bfdbfe',
+            '📋 Em Checklist',
+            'O processo está em validação pelos atores do checklist (supervisor, coordenador e setor de estágios).',
+            btnChecklist + btnReenviar);
+        }
+        if (st === 'Em Assinaturas') {
+          const etapaLabel = _fluxoTCE ? (_fluxoTCE.etapaAtualLabel || 'Aguardando assinatura') : 'Aguardando assinatura';
+          return card('#f0fdf4','#bbf7d0',
+            '🔏 Em Assinaturas',
+            `Etapa atual: <strong>${escapeHtml(etapaLabel)}</strong>. Acompanhe o fluxo ou reenvie a notificação para o ator pendente.`,
+            btnAssinaturas + btnReenviar);
+        }
+        if (st === 'Ativo' || st === 'Em execução') {
+          return card('var(--color-surface)','var(--color-border)',
+            '✅ Estágio ativo',
+            'O TCE foi assinado e o estágio está em andamento.',
+            btnPasta);
+        }
+        if (st === 'Encerrado' || st === 'Concluído') {
+          return card('var(--color-surface)','var(--color-border)',
+            '🏁 Estágio encerrado',
+            'O estágio foi encerrado. Acesse a pasta para consultar os documentos.',
+            btnPasta);
+        }
+        // Demais status (Reprovado, Docs Enviados, Aguardando DG, etc.)
+        return card('var(--color-surface)','var(--color-border)',
+          'Status: ' + escapeHtml(st),
+          'Acompanhe o andamento do processo pelas etapas ao lado.',
+          btnPasta + btnReenviar);
+      }
+
+      const timeline = `
+        <div style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:var(--space-5) var(--space-6);">
+          <h2 style="font-size:var(--font-size-md);font-weight:600;margin-bottom:var(--space-5)">Etapas do Processo</h2>
+          <div class="timeline">${buildTimeline(s.status)}</div>
+        </div>`;
+
+      document.getElementById('content-andamento').innerHTML = `
+        <div class="main-cols" style="align-items:start">
+          <div>${_cardAcao()}</div>
+          <div>${timeline}</div>
+        </div>`;
     }
 
     /* ─── Aba: Documentos ─── */
@@ -1497,7 +1595,7 @@
       document.querySelectorAll('.ficha-tab').forEach(t => {
         t.classList.toggle('active', t.dataset.tab === aba);
       });
-      ['dados', 'documentos', 'adendos', 'avaliacoes', 'parecer'].forEach(t => {
+      ['andamento', 'dados', 'documentos', 'adendos', 'avaliacoes', 'parecer'].forEach(t => {
         document.getElementById('tab-' + t).hidden = (t !== aba);
       });
     }
