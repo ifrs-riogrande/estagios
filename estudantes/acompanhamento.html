@@ -844,18 +844,19 @@
       c4 += dr('E-mail', escapeHtml(s.emailCoordenador || '—'));
 
       // 5. Concedente
+      function formatarCNPJ(v) {
+        var d = String(v || '').replace(/\D/g, '');
+        return d.length === 14 ? d.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5') : v || '—';
+      }
       var c5 = '';
-      c5 += dr('Razão Social', escapeHtml(s.empresa || '—'));
-      c5 += dr('CNPJ', escapeHtml(s.cnpjEmpresa || '—'));
+      c5 += `<div class="d-field d-full"><label>Razão Social</label><p>${escapeHtml(s.empresa || '—')}</p></div>`;
+      c5 += dr('CNPJ', formatarCNPJ(s.cnpjEmpresa));
       c5 += dr('Endereço', escapeHtml(s.enderecoEmpresa || '—'));
       c5 += dr('Telefone', escapeHtml(s.telefoneEmpresa || '—'));
       c5 += dr('E-mail', escapeHtml(s.emailEmpresa || '—'));
-      c5 += `<div class="d-field"><label>Representante Legal</label><p>${
-        [s.nomeRepEmpresa  && escapeHtml(s.nomeRepEmpresa),
-         s.cargoRepEmpresa && escapeHtml(s.cargoRepEmpresa),
-         s.cpfRepEmpresa   && escapeHtml(mascararCPF(s.cpfRepEmpresa))
-        ].filter(Boolean).join(' · ') || '—'
-      }</p></div>`;
+      c5 += dr('Nome do Representante', escapeHtml(s.nomeRepEmpresa || '—'));
+      c5 += dr('Cargo do Representante', escapeHtml(s.cargoRepEmpresa || '—'));
+      c5 += dr('CPF do Representante', escapeHtml(mascararCPF(s.cpfRepEmpresa) || s.cpfRepEmpresa || '—'));
 
       // 6. Supervisor
       var c6 = '';
