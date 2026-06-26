@@ -863,9 +863,35 @@
         ? `<strong>${nomeOrient}</strong> recusou a orientação. O estudante precisa indicar outro orientador para prosseguir.`
         : `<strong>${nomeOrient}</strong> aceitou a orientação deste estágio.`;
 
-      const b3body = st3 === 'active'
-        ? 'Orientador, coordenador de curso, supervisor e setor de estágios estão validando os dados do estágio.'
-          + btns(btnChecklist, btnReenviar)
+      // Checklist: mapa de ordem dos atores e status por etapaAtiva
+      const CK_ORDER = ['orientador','supervisor','coordenador','admin'];
+      const CK_LABEL = {orientador:'Orientador acadêmico',supervisor:'Supervisor',coordenador:'Coordenador de curso',admin:'Setor de Estágios'};
+      const ckAtiva  = _checklistInfo ? _checklistInfo.etapaAtiva : null;
+      const ckOk     = _checklistInfo && _checklistInfo.statusGeral === 'aprovado';
+      const ckIdx    = ckAtiva ? CK_ORDER.indexOf(ckAtiva) : -1;
+
+      function ckRow(key, i) {
+        const done   = ckOk || (ckIdx > -1 && i < ckIdx);
+        const active = !ckOk && i === ckIdx;
+        const dSt    = done   ? 'background:var(--color-success);border:1.5px solid var(--color-success);color:#fff'
+                     : active ? 'background:var(--color-primary);border:1.5px solid var(--color-primary);color:#fff'
+                     :          'border:1.5px solid var(--color-border);color:var(--color-text-muted)';
+        const ico    = done ? '✓' : active ? '!' : '·';
+        const lbl    = done   ? `<span style="color:var(--color-success);font-size:9px">Aprovado</span>`
+                     : active ? `<span style="color:var(--color-primary);font-size:9px">Em andamento</span>`
+                     :          `<span style="color:var(--color-text-muted);font-size:9px">Aguardando</span>`;
+        return `<div style="display:flex;align-items:center;gap:var(--space-2);padding:4px 0;font-size:var(--font-size-xs)">
+          <div style="width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0;${dSt}">${ico}</div>
+          <span style="flex:1">${escapeHtml(CK_LABEL[key])}</span>
+          ${lbl}
+        </div>`;
+      }
+      const ckRows = CK_ORDER.map((k, i) => ckRow(k, i)).join('');
+
+      const b3body = (st3 === 'active' || st3 === 'done')
+        ? (st3 === 'done' ? 'Todos os atores validaram os dados do estágio.' : 'Validação em andamento — acompanhe quem ainda não aprovou.')
+          + `<div style="margin-top:var(--space-2)">${ckRows}</div>`
+          + (st3 === 'active' ? btns(btnChecklist, btnReenviar) : btns(btnChecklist))
         : null;
 
       const b4subs = st4 === 'active'

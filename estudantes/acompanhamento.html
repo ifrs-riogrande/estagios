@@ -497,9 +497,34 @@
         ? '<strong>' + nomeOrient + '</strong> recusou a orientação. Você precisa indicar outro orientador para prosseguir.'
         : '<strong>' + nomeOrient + '</strong> aceitou a orientação deste estágio.';
 
+      var CK_ATORES = ['Orientador acadêmico','Supervisor','Coordenador de curso','Setor de Estágios'];
+      function ckRow(nome, st) {
+        var dSt = st === 'done'   ? 'background:var(--color-success);border:1.5px solid var(--color-success);color:#fff'
+                : st === 'active' ? 'background:var(--color-primary);border:1.5px solid var(--color-primary);color:#fff'
+                : 'border:1.5px solid var(--color-border);color:var(--color-text-muted)';
+        var ico = st === 'done' ? '✓' : st === 'active' ? '!' : '·';
+        var lbl = st === 'done'   ? '<span style="color:var(--color-success);font-size:9px">Aprovado</span>'
+                : st === 'active' ? '<span style="color:var(--color-primary);font-size:9px">Em andamento</span>'
+                : '<span style="color:var(--color-text-muted);font-size:9px">Aguardando</span>';
+        return '<div style="display:flex;align-items:center;gap:var(--space-2);padding:4px 0;font-size:var(--font-size-xs)">'
+          + '<div style="width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0;' + dSt + '">' + ico + '</div>'
+          + '<span style="flex:1">' + escapeHtml(nome) + '</span>'
+          + lbl + '</div>';
+      }
+      // Estudante não tem etapaAtiva — mostra atores sem status individual
+      var ckListAtivo = '<div style="margin-top:var(--space-2)">'
+        + CK_ATORES.map(function(n) { return ckRow(n, 'pending'); }).join('')
+        + '</div>';
+      var ckListConcluido = '<div style="margin-top:var(--space-2)">'
+        + CK_ATORES.map(function(n) { return ckRow(n, 'done'); }).join('')
+        + '</div>';
+
       var b3body = st3 === 'active'
-        ? 'Orientador, coordenador de curso, supervisor e setor de estágios estão validando os dados do estágio. Você receberá um e-mail quando concluído.'
+        ? 'Cada ator abaixo precisa validar os dados do estágio antes de prosseguir. Você será notificado por e-mail quando concluído.'
+          + ckListAtivo
           + btns('<a href="../checklist/?id=' + encodeURIComponent(s.id) + '" target="_blank" class="btn btn-secondary btn-sm">Ver Checklist ↗</a>')
+        : st3 === 'done'
+        ? 'Todos os atores validaram os dados do estágio.' + ckListConcluido
         : null;
 
       var b4subs = st4 === 'active'
