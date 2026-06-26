@@ -608,6 +608,86 @@ function renderAtividades(valor) {
 }
 
 // ─────────────────────────────────────────
+//  TIMELINE — fluxo de andamento do estágio
+// ─────────────────────────────────────────
+
+var _PASSOS_ANTIGO = [
+  { label: 'Solicitação enviada',           desc: 'Documentos e dados do estágio submetidos.' },
+  { label: 'Em análise pelo setor',         desc: 'O setor de estágios está revisando a solicitação.' },
+  { label: 'Aprovado — documentos gerados', desc: 'TCE e Solicitação de Ingresso foram gerados.' },
+  { label: 'Documentos assinados enviados', desc: 'Os documentos foram enviados com todas as assinaturas (exceto Diretor Geral).' },
+  { label: 'Aguardando Diretor Geral',      desc: 'O Diretor Geral está assinando os documentos.' },
+  { label: 'Estágio em execução',           desc: 'Todas as assinaturas foram confirmadas.' },
+];
+var _STATUS_PASSO_ANTIGO = {
+  'Pendente':                  1,
+  'Em análise':                2,
+  'Aguardando Documentos':     3,
+  'Docs Enviados':             4,
+  'Aguardando DG':             5,
+  'Aguardando Validação Final':5,
+  'Em execução':               6,
+  'Encerrado':                 6,
+  'Reprovado':                 -1,
+};
+
+var _PASSOS_NOVO = [
+  { label: 'Solicitação enviada',              desc: 'Dados do estágio submetidos ao sistema.' },
+  { label: 'Aceite e validação do orientador', desc: 'Se o orientador ainda não está cadastrado, o aceite ocorre antes do checklist. Se já está cadastrado, o aceite e a validação acontecem dentro do checklist.' },
+  { label: 'Checklist',                        desc: 'Validação pelos demais atores do processo: supervisor, coordenador e setor de estágios.' },
+  { label: 'Estudante assina o TCE',           desc: 'O estudante é o 1º a assinar o Termo de Compromisso pelo gov.br.' },
+  { label: 'Empresa assina',                   desc: 'Empresa concedente assina o TCE.' },
+  { label: 'Supervisor assina',                desc: 'Supervisor do estágio assina o TCE.' },
+  { label: 'Orientador assina',                desc: 'Orientador acadêmico assina o TCE.' },
+  { label: 'Coordenador assina',               desc: 'Coordenador de curso assina o TCE.' },
+  { label: 'Central revisa',                   desc: 'Setor de estágios confere o documento.' },
+  { label: 'Direção assina',                   desc: 'Diretor(a) Geral assina pelo gov.br.' },
+  { label: 'Estágio ativo',                    desc: 'Processo concluído. Estágio em andamento.' },
+];
+var _STATUS_PASSO_NOVO = {
+  'Aguardando aceite orientador': 2,
+  'Aceite recusado':              2,
+  'Em Checklist':                 3,
+  'Em Assinaturas':               4,
+  'Ativo':                        11,
+  'Encerrado':                    11,
+};
+var _STATUSES_NOVO = { 'Aguardando aceite orientador':1, 'Aceite recusado':1, 'Em Checklist':1, 'Em Assinaturas':1, 'Ativo':1 };
+
+function buildTimeline(status) {
+  if (_STATUSES_NOVO[status]) {
+    var etapa    = _STATUS_PASSO_NOVO[status] || 1;
+    var recusado = status === 'Aceite recusado';
+    return _PASSOS_NOVO.map(function(p, i) {
+      var num = i + 1;
+      var cls = 'timeline-dot--pending';
+      var label = p.label;
+      if (recusado && num === 2) { cls = 'timeline-dot--error'; label = 'Aceite recusado — escolha outro orientador'; }
+      else if (num < etapa) cls = 'timeline-dot--done';
+      else if (num === etapa) cls = 'timeline-dot--active';
+      var ico = ((num < etapa && !recusado) || (recusado && num < 2)) ? '✓' : num;
+      return '<div class="timeline-item"><div class="timeline-dot ' + cls + '">' + ico + '</div>'
+        + '<div class="timeline-label">' + escapeHtml(label) + '</div>'
+        + '<div class="timeline-desc">' + escapeHtml(p.desc) + '</div></div>';
+    }).join('');
+  }
+  var etapaAtual = _STATUS_PASSO_ANTIGO[status] || 1;
+  var reprovado  = status === 'Reprovado';
+  return _PASSOS_ANTIGO.map(function(p, i) {
+    var num = i + 1;
+    var cls = 'timeline-dot--pending';
+    var label = p.label;
+    if (reprovado && num === 2) { cls = 'timeline-dot--error'; label = 'Reprovado'; }
+    else if (num < etapaAtual) cls = 'timeline-dot--done';
+    else if (num === etapaAtual) cls = 'timeline-dot--active';
+    var ico = num < etapaAtual ? '✓' : num;
+    return '<div class="timeline-item"><div class="timeline-dot ' + cls + '">' + ico + '</div>'
+      + '<div class="timeline-label">' + escapeHtml(label) + '</div>'
+      + '<div class="timeline-desc">' + escapeHtml(p.desc) + '</div></div>';
+  }).join('');
+}
+
+// ─────────────────────────────────────────
 //  INICIALIZAÇÃO AUTOMÁTICA
 //  Chamada ao carregar o DOM em qualquer página.
 // ─────────────────────────────────────────
