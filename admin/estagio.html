@@ -772,13 +772,14 @@
       const id    = escapeHtml(s.id);
 
       function stOf(n) {
-        if (n < step)  return 'done';
+        if (n < step)              return 'done';
+        if (n === step && n === 8) return 'done';
         if (n === step) return (isErr && n === 2) ? 'error' : 'active';
         return 'pending';
       }
 
       // ── Stepper ──────────────────────────────────────────────────────────────
-      const MACROS  = ['Solicitação','Orientador indicado','Checklist','Assinaturas','Estágio Ativo','Avaliações','Parecer Final'];
+      const MACROS  = ['Solicitação','Orientador indicado','Checklist','Assinaturas','Estágio Ativo','Avaliações','Parecer Final','Estágio Concluído'];
       const DOT_CLR = {
         done:    'background:var(--color-success);border-color:var(--color-success);color:#fff',
         active:  'background:var(--color-primary);border-color:var(--color-primary);color:#fff',
@@ -960,7 +961,9 @@
                    assCount + ' etapas de assinatura sequenciais',                    st4, b4subs)
         + block(5, 'Estágio ativo',       'TCE assinado, estágio em execução',         st5, b5body)
         + block(6, 'Avaliações',          'Parciais e final pelo orientador',          st6, b6body)
-        + block(7, 'Parecer Final',       'Aprovação pelo coordenador e diretoria',    st7, b7body);
+        + block(7, 'Parecer Final',       'Aprovação pelo coordenador e diretoria',    st7, b7body)
+        + block(8, 'Estágio Concluído',  'Registro final do estágio no sistema',      stOf(8),
+                   stOf(8) === 'done' ? 'Estágio registrado como concluído.' : null);
 
       document.getElementById('content-andamento').innerHTML =
         `<div style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:var(--space-5);margin-bottom:var(--space-4)">
