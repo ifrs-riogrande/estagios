@@ -194,8 +194,9 @@
 
     let _estagios = [];
     let _atual = null;
-    let _historico = null;
-    let _avaliacoes = [];
+    let _historico    = null;
+    let _avaliacoes   = [];
+    let _ckInfoAluno  = null;
     let _meuperfil = null;  // cache de obterMeuCadastro
 
     const _arquivos = { solicitacao: null, tce: null, tce_nao_obrig: null };
@@ -313,9 +314,10 @@
 
       // Carrega histórico e avaliações em segundo plano
       try {
-        [_historico, _avaliacoes] = await Promise.all([
+        [_historico, _avaliacoes, _ckInfoAluno] = await Promise.all([
           apiListarHistoricoEstagio(_atual.id),
           API.get('listarAvaliacoesEstagio', { id: _atual.id, authToken: getAccessToken() }).catch(() => []),
+          API.get('obterChecklist', { id: _atual.id }).catch(() => null),
         ]);
         if (!Array.isArray(_avaliacoes)) _avaliacoes = [];
       } catch (e) {
@@ -333,7 +335,7 @@
       if (wrapAvulsos)     wrapAvulsos.innerHTML     = buildHistoricoAvulsos(_historico);
       if (wrapAdendos)     wrapAdendos.innerHTML     = buildHistoricoAdendos(_historico);
       if (wrapAval)        wrapAval.innerHTML        = buildAvaliacoesContent(_atual);
-      document.getElementById('tab-andamento').innerHTML = buildTabAndamento(_atual, _historico, _avaliacoes);
+      document.getElementById('tab-andamento').innerHTML = buildTabAndamento(_atual, _historico, _avaliacoes, _ckInfoAluno);
       document.getElementById('tab-parecer').innerHTML   = buildTabParecer(_historico);
       _atualizarContadores();
     }
@@ -386,7 +388,7 @@
     /* ════════════════════════════════════════
        ABA: ANDAMENTO
     ════════════════════════════════════════ */
-    function buildTabAndamento(s, hist, avals) {
+    function buildTabAndamento(s, hist, avals, ckInfo) {
       // Old-flow statuses keep the two-column layout
       var NEW_SET = {'Aguardando aceite orientador':1,'Aceite recusado':1,'Em Checklist':1,
                      'Em Assinaturas':1,'Ativo':1,'Em execução':1,'Encerrado':1,'Concluído':1};
@@ -497,7 +499,17 @@
         ? '<strong>' + nomeOrient + '</strong> recusou a orientação. Você precisa indicar outro orientador para prosseguir.'
         : '<strong>' + nomeOrient + '</strong> aceitou a orientação deste estágio.';
 
+      var CK_ORDER  = ['orientador','supervisor','coordenador','admin'];
       var CK_ATORES = ['Orientador acadêmico','Supervisor','Coordenador de curso','Setor de Estágios'];
+      var ckAtiva   = ckInfo ? ckInfo.etapaAtiva : null;
+      var ckOk      = ckInfo && ckInfo.statusGeral === 'aprovado';
+      var ckIdx     = ckAtiva ? CK_ORDER.indexOf(ckAtiva) : -1;
+
+      function ckStOf(i) {
+        if (ckOk || (ckIdx > -1 && i < ckIdx)) return 'done';
+        if (!ckOk && i === ckIdx)               return 'active';
+        return 'pending';
+      }
       function ckRow(nome, st) {
         var dSt = st === 'done'   ? 'background:var(--color-success);border:1.5px solid var(--color-success);color:#fff'
                 : st === 'active' ? 'background:var(--color-primary);border:1.5px solid var(--color-primary);color:#fff'
@@ -511,9 +523,8 @@
           + '<span style="flex:1">' + escapeHtml(nome) + '</span>'
           + lbl + '</div>';
       }
-      // Estudante não tem etapaAtiva — mostra atores sem status individual
       var ckListAtivo = '<div style="margin-top:var(--space-2)">'
-        + CK_ATORES.map(function(n) { return ckRow(n, 'pending'); }).join('')
+        + CK_ATORES.map(function(n, i) { return ckRow(n, ckStOf(i)); }).join('')
         + '</div>';
       var ckListConcluido = '<div style="margin-top:var(--space-2)">'
         + CK_ATORES.map(function(n) { return ckRow(n, 'done'); }).join('')
