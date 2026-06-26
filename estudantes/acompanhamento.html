@@ -272,12 +272,18 @@
               Avaliações
               <span class="tab-count" id="cnt-avaliacoes"></span>
             </button>
+            <button class="ficha-tab" data-tab="parecer" onclick="mudarAba('parecer')" role="tab">
+              <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+              Parecer Final
+              <span class="tab-count" id="cnt-parecer"></span>
+            </button>
           </div>
           <div id="tab-andamento"></div>
           <div id="tab-dados" hidden></div>
           <div id="tab-documentos" hidden></div>
           <div id="tab-adendos" hidden></div>
           <div id="tab-avaliacoes" hidden></div>
+          <div id="tab-parecer" hidden></div>
         </div>`;
 
       selecionarEstagio(0);
@@ -327,6 +333,7 @@
       if (wrapAvulsos)     wrapAvulsos.innerHTML     = buildHistoricoAvulsos(_historico);
       if (wrapAdendos)     wrapAdendos.innerHTML     = buildHistoricoAdendos(_historico);
       if (wrapAval)        wrapAval.innerHTML        = buildAvaliacoesContent(_atual);
+      document.getElementById('tab-parecer').innerHTML = buildTabParecer(_historico);
       _atualizarContadores();
     }
 
@@ -355,7 +362,7 @@
       document.querySelectorAll('.ficha-tab').forEach(t =>
         t.classList.toggle('active', t.dataset.tab === aba)
       );
-      ['andamento', 'dados', 'documentos', 'adendos', 'avaliacoes'].forEach(id => {
+      ['andamento', 'dados', 'documentos', 'adendos', 'avaliacoes', 'parecer'].forEach(id => {
         const el = document.getElementById('tab-' + id);
         if (el) el.hidden = (id !== aba);
       });
@@ -363,13 +370,16 @@
 
     function _atualizarContadores() {
       if (!_historico) return;
-      const { adendos = [], documentos = [] } = _historico;
-      const cntAdendo = adendos.length;
-      const cntAval   = _avaliacoes.length;
-      const elAdendo  = document.getElementById('cnt-adendos');
-      const elAval    = document.getElementById('cnt-avaliacoes');
-      if (elAdendo) elAdendo.textContent = cntAdendo > 0 ? String(cntAdendo) : '';
-      if (elAval)   elAval.textContent   = cntAval   > 0 ? String(cntAval)   : '';
+      const { adendos = [] } = _historico;
+      const cntAdendo  = adendos.length;
+      const cntAval    = _avaliacoes.length;
+      const temParecer = !!(_historico.parecerFinal && _historico.parecerFinal.pdfUrl);
+      const elAdendo   = document.getElementById('cnt-adendos');
+      const elAval     = document.getElementById('cnt-avaliacoes');
+      const elParecer  = document.getElementById('cnt-parecer');
+      if (elAdendo)  elAdendo.textContent  = cntAdendo  > 0 ? String(cntAdendo) : '';
+      if (elAval)    elAval.textContent    = cntAval    > 0 ? String(cntAval)   : '';
+      if (elParecer) elParecer.textContent = temParecer ? '✓' : '';
     }
 
     /* ════════════════════════════════════════
@@ -718,6 +728,47 @@
     ════════════════════════════════════════ */
     function buildTabAvaliacoes(s) {
       return `<div id="wrap-hist-aval">${buildAvaliacoesContent(s)}</div>`;
+    }
+
+    /* ════════════════════════════════════════
+       ABA: PARECER FINAL
+    ════════════════════════════════════════ */
+    function buildTabParecer(h) {
+      const p = h && h.parecerFinal;
+
+      if (!p) {
+        return `<div style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:var(--space-6);">
+          <h3 style="font-size:var(--font-size-md);font-weight:600;margin-bottom:var(--space-2)">Parecer Final de Estágio</h3>
+          <p style="font-size:var(--font-size-sm);color:var(--color-text-muted)">
+            O parecer final estará disponível ao término do estágio, após todas as avaliações serem concluídas e aprovadas pelo coordenador de curso e pela diretoria.
+          </p>
+        </div>`;
+      }
+
+      const STATUS_LABEL = {
+        aguardando_coordenador: 'Aguardando Coordenador',
+        aguardando_diretoria:   'Aguardando Diretoria',
+        aguardando_admin:       'Aguardando Aprovação',
+        aprovado:               'Aprovado ✓',
+      };
+      const stLabel  = STATUS_LABEL[p.statusGeral] || escapeHtml(p.statusGeral || '—');
+      const aprovado = p.statusGeral === 'aprovado';
+      const badgeCls = aprovado ? 'badge-approved' : 'badge-analysis';
+
+      return `<div style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:var(--space-5);">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:var(--space-3);margin-bottom:${aprovado && p.pdfUrl ? 'var(--space-4)' : '0'}">
+          <div>
+            <div style="font-size:var(--font-size-xs);color:var(--color-text-muted);margin-bottom:4px">PARECER FINAL</div>
+            <span class="badge ${badgeCls}">${stLabel}</span>
+            ${p.dataAprov ? `<span style="font-size:var(--font-size-xs);color:var(--color-text-muted);margin-left:var(--space-3)">${escapeHtml(p.dataAprov)}</span>` : ''}
+          </div>
+          ${aprovado && p.pdfUrl ? `
+          <button type="button" class="btn btn-secondary btn-sm"
+            data-estagio="${escapeHtml(_atual.id)}" data-tipo="parecer" data-ref=""
+            onclick="enviarDocBtn(this)">✉ Enviar para mim</button>` : ''}
+        </div>
+        ${!aprovado ? `<p style="font-size:var(--font-size-sm);color:var(--color-text-muted);margin-top:var(--space-3)">O documento ainda está em processo de assinatura. Você receberá uma notificação quando for concluído.</p>` : ''}
+      </div>`;
     }
 
     function buildAvaliacoesContent(s) {
