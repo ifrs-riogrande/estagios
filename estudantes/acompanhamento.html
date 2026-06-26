@@ -16,7 +16,7 @@
     .estagio-selector label{font-size:var(--font-size-sm);font-weight:500;display:block;margin-bottom:var(--space-2);}
 
     /* ── Abas ── */
-    .ficha-tabs{display:flex;gap:0;border-bottom:2px solid var(--color-border);margin-bottom:var(--space-6);overflow-x:auto;}
+    .ficha-tabs{display:flex;gap:0;border-bottom:2px solid var(--color-border);margin-bottom:var(--space-6);}
     .ficha-tab{padding:var(--space-3) var(--space-5);font-size:var(--font-size-sm);font-weight:500;cursor:pointer;border:none;background:none;color:var(--color-text-muted);border-bottom:2px solid transparent;margin-bottom:-2px;transition:all 0.15s;display:flex;align-items:center;gap:var(--space-2);white-space:nowrap;}
     .ficha-tab.active{color:var(--color-primary);border-bottom-color:var(--color-primary);}
     .ficha-tab:hover:not(.active){color:var(--color-text);}
@@ -165,7 +165,7 @@
   <main id="main-content">
     <section class="page-hero">
       <div class="container">
-        <h1>Acompanhamento de Estágio</h1>
+        <h1 id="hero-titulo">Acompanhamento de Estágio</h1>
         <div id="hero-sub"></div>
       </div>
     </section>
@@ -290,10 +290,13 @@
       if (!_atual) return;
 
       // Atualiza hero
+      const _heroTitulo = document.getElementById('hero-titulo');
+      if (_heroTitulo) _heroTitulo.textContent = 'Estágio ' + _atual.id;
+      document.title = 'Estágio ' + _atual.id + ' — Central de Estágios IFRS';
       const sub = document.getElementById('hero-sub');
       if (sub) {
         sub.innerHTML =
-          `<code style="font-size:13px;background:rgba(255,255,255,.2);padding:2px 6px;border-radius:4px">${escapeHtml(_atual.id)}</code>` +
+          escapeHtml(_atual.nomeEstudante || '—') +
           '<span class="hero-sep">·</span>' +
           escapeHtml(_atual.empresa || '—') +
           '<span class="hero-sep">·</span>' +
@@ -935,7 +938,7 @@
         </div>
       </div>`;
 
-      var h = `<div class="action-card"><h2>Dados do Estágio</h2><div class="d-wrap">`;
+      var h = `<div class="d-wrap">`;
       h += _heroCard;
       h += `<div class="d-row">${card(icoP,'var(--color-primary)',1,'Estudante',c1)}${card(icoG,'#10b981',2,'Curso',c2)}</div>`;
       h += `<div class="d-row">${card(icoP,'#8b5cf6',3,'Orientador',c3)}${card(icoP,'#f59e0b',4,'Coordenador de Curso',c4)}</div>`;
@@ -952,7 +955,6 @@
         h += `<div style="background:var(--color-error-light);border:1px solid var(--color-error-border);border-radius:var(--radius-md);padding:var(--space-3) var(--space-4);font-size:var(--font-size-sm);margin-top:var(--space-3)"><strong>Motivo da reprovação:</strong> ${escapeHtml(s.motivoReprovacao)}</div>`;
       }
 
-      h += `</div>`;
       return h;
     }
 
