@@ -763,6 +763,7 @@
       const STATUS_STEP = {'Aguardando aceite orientador':2,'Aceite recusado':2,'Em Checklist':3,
                            'Em Assinaturas':4,'Ativo':5,'Em execução':5,'Encerrado':7,'Concluído':8};
       let step = STATUS_STEP[s.status] || 1;
+      if (step === 3 && _checklistInfo && _checklistInfo.statusGeral === 'aprovado') step = 4;
       if (step === 5 && _avaliacoes.length) step = 6;
       if (_parecer)                                               step = Math.max(step, 7);
       if (_parecer && _parecer.statusGeral === 'aprovado')        step = 8;

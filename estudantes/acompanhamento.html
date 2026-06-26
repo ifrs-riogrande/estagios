@@ -407,6 +407,7 @@
       var BASE = {'Aguardando aceite orientador':2,'Aceite recusado':2,'Em Checklist':3,
                   'Em Assinaturas':4,'Ativo':5,'Em execução':5,'Encerrado':7,'Concluído':8};
       var step = BASE[s.status] || 1;
+      if (step === 3 && ckInfo && ckInfo.statusGeral === 'aprovado') step = 4;
       if (step === 5 && avals && avals.length) step = 6;
       if (hist && hist.parecerFinal)                                          step = Math.max(step, 7);
       if (hist && hist.parecerFinal && hist.parecerFinal.statusGeral === 'aprovado') step = 8;
