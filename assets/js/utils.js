@@ -596,9 +596,9 @@ function renderAtividades(valor) {
     try {
       var arr = JSON.parse(s);
       if (Array.isArray(arr) && arr.length) {
-        return '<div style="line-height:1.8">'
+        return '<div style="font-size:var(--font-size-sm);line-height:1.8">'
           + arr.map(function(a, i) {
-              return '<div><strong>Atividade ' + (i + 1) + '</strong> — ' + escapeHtml(String(a)) + '</div>';
+              return '<div><span style="font-weight:600">Atividade ' + (i + 1) + '</span> — ' + escapeHtml(String(a)) + '</div>';
             }).join('')
           + '</div>';
       }
