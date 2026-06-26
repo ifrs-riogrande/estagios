@@ -1040,9 +1040,10 @@ function listarMeusEstagios_(e) {
           tipoVinculo: String(_rowsOriAln[k][COL_ORI.TIPO_VINCULO] || '').trim(),
           titulacao:   String(_rowsOriAln[k][COL_ORI.TITULACAO]    || '').trim(),
           area:        String(_rowsOriAln[k][COL_ORI.AREA]         || '').trim(),
+          tel:         String(_rowsOriAln[k][COL_ORI.TEL]          || '').trim(),
         };
       }
-      return { tipoVinculo: '', titulacao: '', area: '' };
+      return { tipoVinculo: '', titulacao: '', area: '', tel: '' };
     };
     var _empAln = function(cnpj) {
       var vazio = { endereco: '', bairro: '', municipio: '', uf: '', cep: '', telefone: '', email: '', nomeRep: '', cargoRep: '', cpfRep: '' };
@@ -1123,6 +1124,7 @@ function listarMeusEstagios_(e) {
         vinculoOrientador:    _oriDadosAln.tipoVinculo,
         titulacaoOrientador:  _oriDadosAln.titulacao,
         areaOrientador:       _oriDadosAln.area,
+        telefoneOrientador:   _oriDadosAln.tel,
         // ── Coordenador ──
         nomeCoordenador:      _coordDadosAln.nome,
         emailCoordenador:     _coordDadosAln.email,

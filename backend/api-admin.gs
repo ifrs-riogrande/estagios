@@ -309,7 +309,7 @@ function listarSolicitacoesAdmin_() {
     return { nome: '', email: '' };
   };
   var _oriPorEmail = function(email) {
-    if (!email) return { tipoVinculo: '', titulacao: '', area: '' };
+    if (!email) return { tipoVinculo: '', titulacao: '', area: '', tel: '' };
     var em = email.toLowerCase().trim();
     for (var i = 1; i < _rowsOri.length; i++) {
       if (String(_rowsOri[i][COL_ORI.EMAIL] || '').toLowerCase().trim() === em) {
@@ -317,10 +317,11 @@ function listarSolicitacoesAdmin_() {
           tipoVinculo: String(_rowsOri[i][COL_ORI.TIPO_VINCULO] || '').trim(),
           titulacao:   String(_rowsOri[i][COL_ORI.TITULACAO]    || '').trim(),
           area:        String(_rowsOri[i][COL_ORI.AREA]         || '').trim(),
+          tel:         String(_rowsOri[i][COL_ORI.TEL]          || '').trim(),
         };
       }
     }
-    return { tipoVinculo: '', titulacao: '', area: '' };
+    return { tipoVinculo: '', titulacao: '', area: '', tel: '' };
   };
   var _empPorCnpj = function(cnpj) {
     var vazio = { endereco: '', bairro: '', municipio: '', uf: '', cep: '', telefone: '', email: '', nomeRep: '', cargoRep: '', cpfRep: '' };
@@ -397,6 +398,7 @@ function listarSolicitacoesAdmin_() {
       vinculoOrientador:    _oriDados.tipoVinculo,
       titulacaoOrientador:  _oriDados.titulacao,
       areaOrientador:       _oriDados.area,
+      telefoneOrientador:   _oriDados.tel,
       // ── Coordenador ──
       nomeCoordenador:  _coordDados.nome,
       emailCoordenador: _coordDados.email,

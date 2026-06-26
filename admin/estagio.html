@@ -592,6 +592,7 @@
           let c3 = '';
           c3 += dr('Nome', escapeHtml(s.nomeOrientador || '—'));
           c3 += dr('E-mail', escapeHtml(s.emailOrientador || '—'));
+          c3 += dr('Telefone', escapeHtml(s.telefoneOrientador || '—'));
           c3 += dr('Vínculo', escapeHtml(s.vinculoOrientador || '—'));
           const _formOri = [s.titulacaoOrientador, s.areaOrientador].filter(Boolean).join(' — ');
           c3 += dr('Formação', escapeHtml(_formOri || '—'));
