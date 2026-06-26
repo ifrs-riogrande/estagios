@@ -562,6 +562,9 @@
           function card(ico, bg, n, titulo, content) {
             return `<div class="d-card"><div class="d-card-hdr"><span class="d-icon" style="background:${bg}">${ico}</span><span class="d-card-ttl">${n}. ${titulo}</span></div><div class="d-grid">${content}</div></div>`;
           }
+          function cardRaw(ico, bg, n, titulo, content) {
+            return `<div class="d-card"><div class="d-card-hdr"><span class="d-icon" style="background:${bg}">${ico}</span><span class="d-card-ttl">${n}. ${titulo}</span></div>${content}</div>`;
+          }
 
           // 1. Estudante
           let c1 = '';
@@ -603,15 +606,13 @@
           c4 += dr('E-mail', escapeHtml(s.emailCoordenador || '—'));
 
           // 5. Concedente
-          let c5 = '';
-          c5 += `<div class="d-field d-full"><label>Razão Social</label><p>${escapeHtml(s.empresa || '—')}</p></div>`;
-          c5 += drS('CNPJ', formatarCNPJ(s.cnpjEmpresa || '') || s.cnpjEmpresa || '');
-          c5 += dr('Endereço', escapeHtml(s.enderecoEmpresa || '—'));
-          c5 += dr('Telefone', escapeHtml(s.telefoneEmpresa || '—'));
-          c5 += dr('E-mail', escapeHtml(s.emailEmpresa || '—'));
-          c5 += dr('Nome do Representante', escapeHtml(s.nomeRepEmpresa || '—'));
-          c5 += dr('Cargo do Representante', escapeHtml(s.cargoRepEmpresa || '—'));
-          c5 += drSCpf('CPF do Representante', s.cpfRepEmpresa);
+          const _emp = s.empresa ? s.empresa.split(/\s*[—–]\s*/)[0].trim() || s.empresa : '—';
+          const _Gr = 'display:grid;gap:var(--space-4)';
+          const _sec5 = cardRaw(icoB,'#0ea5e9',5,'Concedente',
+            `<div style="${_Gr};grid-template-columns:2fr 1fr;margin-bottom:var(--space-3)">${dr('Razão Social',escapeHtml(_emp))}${drS('CNPJ',formatarCNPJ(s.cnpjEmpresa||'')||s.cnpjEmpresa||'')}</div>`+
+            `<div style="${_Gr};grid-template-columns:2fr 1fr 1fr;margin-bottom:var(--space-3)">${dr('Endereço',escapeHtml(s.enderecoEmpresa||'—'))}${dr('Telefone',escapeHtml(s.telefoneEmpresa||'—'))}${dr('E-mail',escapeHtml(s.emailEmpresa||'—'))}</div>`+
+            `<div style="${_Gr};grid-template-columns:1fr 1fr 1fr;padding-top:var(--space-3);border-top:1px solid var(--color-border)">${dr('Nome do Representante',escapeHtml(s.nomeRepEmpresa||'—'))}${dr('Cargo',escapeHtml(s.cargoRepEmpresa||'—'))}${drSCpf('CPF do Representante',s.cpfRepEmpresa)}</div>`
+          );
 
           // 6. Supervisor
           let c6 = '';
@@ -623,25 +624,50 @@
 
           // 7. Dados do Estágio
           const _chNum = (s.cargaHorariaSemanal || '').replace(/[^\d.,]/g, '').trim();
-          let c7 = '';
-          c7 += dr('ID', `<code style="font-size:12px">${escapeHtml(s.id || '—')}</code>`);
-          c7 += dr('Tipo', escapeHtml(s.tipoEstagio || '—'));
-          c7 += dr('Status', badgeStatus(s.status));
-          c7 += dr('Data da Solicitação', escapeHtml(s.dataSolicitacao || '—'));
-          c7 += dr('Início', escapeHtml(s.dataInicio || '—'));
-          c7 += dr('Término', escapeHtml(s.dataTermino || '—'));
-          c7 += dr('CH Semanal', _chNum ? _chNum + 'h/semana' : (s.cargaHorariaSemanal ? escapeHtml(s.cargaHorariaSemanal) : '—'));
-          c7 += dr('CH Total', escapeHtml(s.cargaHorariaTotal || '—'));
-          if (s.horario) {
-            const _hor = s.horario.split('\n').filter(l => !/^Total semanal:/i.test(l.trim())).join('\n').trim();
-            c7 += `<div class="d-field d-full"><label>Dias e Horários</label><p style="white-space:pre-line">${escapeHtml(_hor)}</p></div>`;
-          } else {
-            c7 += dr('Dias e Horários', '—');
-          }
-          c7 += dr('Agente de Integração', escapeHtml(s.nomeAgente || '—'));
-          c7 += dr('Remuneração', escapeHtml(s.remuneracao || '—'));
-          c7 += dr('Bolsa', s.valorBolsa ? 'R$ ' + escapeHtml(s.valorBolsa) : '—');
-          c7 += dr('Auxílio-Transporte', s.valorTransporte ? 'R$ ' + escapeHtml(s.valorTransporte) : '—');
+          const _chS   = _chNum ? _chNum+'h/semana' : (s.cargaHorariaSemanal ? escapeHtml(s.cargaHorariaSemanal) : '—');
+          const _tabHor = (function() {
+            const DIAS  = ['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'];
+            const FRAGS = ['segunda','terca','quarta','quinta','sexta','sabado','domingo'];
+            const PERS  = ['Manhã','Tarde','Noite'];
+            const tbl   = [[' ',' ',' ',' ',' ',' ',' '],[' ',' ',' ',' ',' ',' ',' '],[' ',' ',' ',' ',' ',' ',' ']];
+            const linhas = (s.horario||'').split('\n').filter(l=>l.trim()&&!/^Total semanal:/i.test(l.trim()));
+            linhas.forEach(ln => {
+              const m = ln.match(/^([^:]+):\s*(\d{1,2}:\d{2})-(\d{1,2}:\d{2})(?:\s*\(([^)]+)\))?/);
+              if (!m) return;
+              const dN = m[1].trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+              let dI = -1;
+              for (let i=0;i<FRAGS.length;i++){if(dN.indexOf(FRAGS[i])!==-1){dI=i;break;}}
+              if (dI<0) return;
+              const h0 = parseInt(m[2].split(':')[0],10);
+              const pI = h0<12?0:h0<18?1:2;
+              const cel = m[2]+'–'+m[3]+(m[4]?'\n('+m[4]+')':'');
+              tbl[pI][dI] = tbl[pI][dI].trim() ? tbl[pI][dI]+'\n'+cel : cel;
+            });
+            const sTH ='padding:5px 8px;font-size:11px;font-weight:600;background:var(--color-primary);color:#fff;text-align:center;';
+            const sTH0='padding:5px 8px;font-size:11px;font-weight:600;background:var(--color-primary);color:#fff;text-align:left;';
+            const sTD0='padding:5px 8px;font-size:11px;font-weight:600;color:var(--color-text-muted);background:#f9fafb;border:1px solid var(--color-border);white-space:nowrap;';
+            const sTDe='padding:5px 8px;font-size:11px;border:1px solid var(--color-border);text-align:center;color:#ccc;';
+            const sTDf='padding:5px 8px;font-size:11px;border:1px solid var(--color-border);text-align:center;white-space:pre-line;vertical-align:top;';
+            let ht='<div class="d-field d-full" style="margin-top:var(--space-2)"><label>Dias e Horários</label><div style="overflow-x:auto;margin-top:var(--space-2)"><table style="width:100%;border-collapse:collapse"><thead><tr><th style="'+sTH0+'"></th>';
+            DIAS.forEach(d=>{ht+='<th style="'+sTH+'">'+d+'</th>';});
+            ht+='</tr></thead><tbody>';
+            PERS.forEach((p,pi)=>{
+              ht+='<tr><td style="'+sTD0+'">'+p+'</td>';
+              for(let di=0;di<7;di++){
+                if(tbl[pi][di].trim()){ht+='<td style="'+sTDf+'">'+escapeHtml(tbl[pi][di].trim())+'</td>';}
+                else{ht+='<td style="'+sTDe+'">—</td>';}
+              }
+              ht+='</tr>';
+            });
+            ht+='</tbody></table></div></div>';
+            return ht;
+          })();
+          const _sec7 = cardRaw(icoD,'#6366f1',7,'Dados do Estágio',
+            `<div style="${_Gr};grid-template-columns:repeat(4,1fr);margin-bottom:var(--space-3)">${dr('ID','<code style="font-size:12px">'+escapeHtml(s.id||'—')+'</code>')}${dr('Tipo',escapeHtml(s.tipoEstagio||'—'))}${dr('Status',badgeStatus(s.status))}${dr('Data da Solicitação',escapeHtml(s.dataSolicitacao||'—'))}</div>`+
+            `<div style="${_Gr};grid-template-columns:repeat(4,1fr);margin-bottom:var(--space-3)">${dr('Início',escapeHtml(s.dataInicio||'—'))}${dr('Término',escapeHtml(s.dataTermino||'—'))}${dr('CH Semanal',_chS)}${dr('CH Total',escapeHtml(s.cargaHorariaTotal||'—'))}</div>`+
+            _tabHor+
+            `<div style="${_Gr};grid-template-columns:repeat(4,1fr);padding-top:var(--space-3);border-top:1px solid var(--color-border);margin-top:var(--space-3)">${dr('Agente de Integração',escapeHtml(s.nomeAgente||'—'))}${dr('Remuneração',escapeHtml(s.remuneracao||'—'))}${dr('Bolsa',s.valorBolsa?'R$ '+escapeHtml(s.valorBolsa):'—')}${dr('Auxílio-Transporte',s.valorTransporte?'R$ '+escapeHtml(s.valorTransporte):'—')}</div>`
+          );
 
           // 8. Plano de Atividades
           const c8 = `<div class="d-field d-full"><div style="line-height:1.7">${s.planoAtividades ? renderAtividades(s.planoAtividades) : '<span style="color:var(--color-text-muted)">—</span>'}</div></div>`;
@@ -671,9 +697,9 @@
           h += _heroCard;
           h += `<div class="d-row">${card(icoP,'var(--color-primary)',1,'Estudante',c1)}${card(icoG,'#10b981',2,'Curso',c2)}</div>`;
           h += `<div class="d-row">${card(icoP,'#8b5cf6',3,'Orientador',c3)}${card(icoP,'#f59e0b',4,'Coordenador de Curso',c4)}</div>`;
-          h += card(icoB,'#0ea5e9',5,'Concedente',c5);
+          h += _sec5;
           h += card(icoP,'#ef4444',6,'Supervisor',c6);
-          h += card(icoD,'#6366f1',7,'Dados do Estágio',c7);
+          h += _sec7;
           h += card(icoL,'#14b8a6',8,'Plano de Atividades',c8);
           h += '</div>';
 
