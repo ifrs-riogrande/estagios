@@ -197,6 +197,7 @@
     let _historico    = null;
     let _avaliacoes   = [];
     let _ckInfoAluno  = null;
+    let _fluxoAluno   = null;
     let _meuperfil = null;  // cache de obterMeuCadastro
 
     const _arquivos = { solicitacao: null, tce: null, tce_nao_obrig: null };
@@ -314,10 +315,11 @@
 
       // Carrega histórico e avaliações em segundo plano
       try {
-        [_historico, _avaliacoes, _ckInfoAluno] = await Promise.all([
+        [_historico, _avaliacoes, _ckInfoAluno, _fluxoAluno] = await Promise.all([
           apiListarHistoricoEstagio(_atual.id),
           API.get('listarAvaliacoesEstagio', { id: _atual.id, authToken: getAccessToken() }).catch(() => []),
-          API.get('obterChecklist', { id: _atual.id }).catch(() => null),
+          API.get('obterChecklist',          { id: _atual.id }).catch(() => null),
+          API.get('obterFluxoAssinaturas',   { id: _atual.id }).catch(() => null),
         ]);
         if (!Array.isArray(_avaliacoes)) _avaliacoes = [];
       } catch (e) {
@@ -335,7 +337,7 @@
       if (wrapAvulsos)     wrapAvulsos.innerHTML     = buildHistoricoAvulsos(_historico);
       if (wrapAdendos)     wrapAdendos.innerHTML     = buildHistoricoAdendos(_historico);
       if (wrapAval)        wrapAval.innerHTML        = buildAvaliacoesContent(_atual);
-      document.getElementById('tab-andamento').innerHTML = buildTabAndamento(_atual, _historico, _avaliacoes, _ckInfoAluno);
+      document.getElementById('tab-andamento').innerHTML = buildTabAndamento(_atual, _historico, _avaliacoes, _ckInfoAluno, _fluxoAluno);
       document.getElementById('tab-parecer').innerHTML   = buildTabParecer(_historico);
       _atualizarContadores();
     }
@@ -388,7 +390,7 @@
     /* ════════════════════════════════════════
        ABA: ANDAMENTO
     ════════════════════════════════════════ */
-    function buildTabAndamento(s, hist, avals, ckInfo) {
+    function buildTabAndamento(s, hist, avals, ckInfo, fluxoInfo) {
       // Old-flow statuses keep the two-column layout
       var NEW_SET = {'Aguardando aceite orientador':1,'Aceite recusado':1,'Em Checklist':1,
                      'Em Assinaturas':1,'Ativo':1,'Em execução':1,'Encerrado':1,'Concluído':1};
@@ -486,7 +488,35 @@
 
       // ── Per-step content ──────────────────────────────────────────────────────
       var st1=stOf(1), st2=stOf(2), st3=stOf(3), st4=stOf(4), st5=stOf(5), st6=stOf(6), st7=stOf(7);
-      var SIGS = ['Você (estudante)','Empresa concedente','Supervisor','Orientador acadêmico','Coordenador de curso','Setor de estágios','Direção Geral'];
+      // Etapas padrão quando fluxo ainda não carregou
+      var ASS_DEF = ['Estudante / Responsável Legal','Empresa concedente','Central de Estágios (revisão)','Direção-Geral','Central de Estágios (finalização)'];
+      var assEtapas = (fluxoInfo && fluxoInfo.etapas) ? fluxoInfo.etapas : null;
+      var assCount  = assEtapas ? assEtapas.length : ASS_DEF.length;
+
+      function assRow(label, status) {
+        var done   = status === 'concluido';
+        var active = status === 'aguardando';
+        var error  = status === 'rejeitado';
+        var dSt = done   ? 'background:var(--color-success);border:1.5px solid var(--color-success);color:#fff'
+                : active ? 'background:var(--color-primary);border:1.5px solid var(--color-primary);color:#fff'
+                : error  ? 'background:var(--color-error);border:1.5px solid var(--color-error);color:#fff'
+                :          'border:1.5px solid var(--color-border);color:var(--color-text-muted)';
+        var ico = done ? '✓' : active ? '!' : error ? '✗' : '·';
+        var lbl = done   ? '<span style="color:var(--color-success);font-size:9px">Concluído</span>'
+                : active ? '<span style="color:var(--color-primary);font-size:9px">Em andamento</span>'
+                : error  ? '<span style="color:var(--color-error);font-size:9px">Rejeitado</span>'
+                :          '<span style="color:var(--color-text-muted);font-size:9px">Aguardando</span>';
+        return '<div style="display:flex;align-items:center;gap:var(--space-2);padding:4px 0;font-size:var(--font-size-xs)">'
+          + '<div style="width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0;' + dSt + '">' + ico + '</div>'
+          + '<span style="flex:1">' + escapeHtml(label) + '</span>'
+          + lbl + '</div>';
+      }
+      function assRows(forceStatus) {
+        if (assEtapas) {
+          return assEtapas.map(function(et) { return assRow(et.label, forceStatus || et.status); }).join('');
+        }
+        return ASS_DEF.map(function(l) { return assRow(l, forceStatus || 'pendente'); }).join('');
+      }
       var avalD = avals ? avals.filter(function(a){return a.status==='concluido';}).length : 0;
       var avalT = avals ? avals.length : 0;
       var pf    = hist && hist.parecerFinal;
@@ -537,11 +567,10 @@
         ? 'Todos os atores validaram os dados do estágio.' + ckListConcluido
         : null;
 
-      var b4subs = st4 === 'active'
-        ? '<div style="margin-top:var(--space-2)">'
-          + SIGS.map(function(sg,i){return '<div style="display:flex;align-items:center;gap:var(--space-2);padding:3px 0;font-size:var(--font-size-xs)">' + sdot(i+1) + '<span>' + escapeHtml(sg) + '</span></div>';}).join('')
-          + '</div>'
-          + btns('<a href="../assinaturas/?id=' + encodeURIComponent(s.id) + '" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">Acompanhar Assinaturas ↗</a>')
+      var assLink = btns('<a href="../assinaturas/?id=' + encodeURIComponent(s.id) + '" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">Acompanhar Assinaturas ↗</a>');
+      var b4subs = (st4 === 'active' || st4 === 'done')
+        ? '<div style="margin-top:var(--space-2)">' + assRows(st4 === 'done' ? 'concluido' : null) + '</div>'
+          + (st4 === 'active' ? assLink : '')
         : null;
 
       var b5body = st5 === 'active'
@@ -567,7 +596,7 @@
                    st2==='done' ? 'Aceitou a orientação deste estágio' : 'O orientador deve aceitar a indicação por e-mail', st2, b2body)
         + block(3, 'Checklist',            'Orientador, coordenador, supervisor e setor validam os dados',        st3, b3body)
         + block(4, st4==='done' ? 'Assinaturas concluídas' : 'Assinaturas do TCE',
-                   '7 assinaturas eletrônicas via gov.br',                              st4, b4subs)
+                   assCount + ' etapas de assinatura sequenciais',                     st4, b4subs)
         + block(5, 'Estágio ativo',        'TCE assinado, estágio em execução',         st5, b5body)
         + block(6, 'Avaliações',           'Parciais e final pelo orientador',          st6, b6body)
         + block(7, 'Parecer Final',        'Aprovação pelo coordenador e diretoria',    st7, b7body);

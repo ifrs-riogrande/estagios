@@ -850,8 +850,34 @@
 
       // ── Per-step content ──────────────────────────────────────────────────────
       const st1=stOf(1), st2=stOf(2), st3=stOf(3), st4=stOf(4), st5=stOf(5), st6=stOf(6), st7=stOf(7);
-      const SIGS = ['Estudante','Empresa concedente','Supervisor','Orientador acadêmico','Coordenador de curso','Setor de estágios','Direção Geral'];
-      const etapaLabel = _fluxoTCE ? (_fluxoTCE.etapaAtualLabel || '') : '';
+      // Etapas de assinatura: usa _fluxoTCE.etapas quando disponível
+      const ASS_DEF = ['Estudante / Responsável Legal','Empresa concedente','Central de Estágios (revisão)','Direção-Geral','Central de Estágios (finalização)'];
+      const assEtapas = (_fluxoTCE && _fluxoTCE.etapas) ? _fluxoTCE.etapas : null;
+      const assCount  = assEtapas ? assEtapas.length : ASS_DEF.length;
+
+      function assRow(label, status) {
+        const done   = status === 'concluido';
+        const active = status === 'aguardando';
+        const error  = status === 'rejeitado';
+        const dSt = done   ? 'background:var(--color-success);border:1.5px solid var(--color-success);color:#fff'
+                  : active ? 'background:var(--color-primary);border:1.5px solid var(--color-primary);color:#fff'
+                  : error  ? 'background:var(--color-error);border:1.5px solid var(--color-error);color:#fff'
+                  :          'border:1.5px solid var(--color-border);color:var(--color-text-muted)';
+        const ico = done ? '✓' : active ? '!' : error ? '✗' : '·';
+        const lbl = done   ? `<span style="color:var(--color-success);font-size:9px">Concluído</span>`
+                  : active ? `<span style="color:var(--color-primary);font-size:9px">Em andamento</span>`
+                  : error  ? `<span style="color:var(--color-error);font-size:9px">Rejeitado</span>`
+                  :          `<span style="color:var(--color-text-muted);font-size:9px">Aguardando</span>`;
+        return `<div style="display:flex;align-items:center;gap:var(--space-2);padding:4px 0;font-size:var(--font-size-xs)">
+          <div style="width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0;${dSt}">${ico}</div>
+          <span style="flex:1">${escapeHtml(label)}</span>
+          ${lbl}
+        </div>`;
+      }
+      function buildAssRows(forceStatus) {
+        if (assEtapas) return assEtapas.map(et => assRow(et.label, forceStatus || et.status)).join('');
+        return ASS_DEF.map(l => assRow(l, forceStatus || 'pendente')).join('');
+      }
       const avalD = _avaliacoes.filter(a => a.status === 'concluido').length;
       const avalT = _avaliacoes.length;
 
@@ -894,12 +920,9 @@
           + (st3 === 'active' ? btns(btnChecklist, btnReenviar) : btns(btnChecklist))
         : null;
 
-      const b4subs = st4 === 'active'
-        ? `<div style="margin-top:var(--space-2)">`
-          + SIGS.map((sg, i) => `<div style="display:flex;align-items:center;gap:var(--space-2);padding:3px 0;font-size:var(--font-size-xs)">${sdot(i+1)}<span>${escapeHtml(sg)}</span></div>`).join('')
-          + `</div>`
-          + (etapaLabel ? `<div style="margin-top:var(--space-2);font-size:var(--font-size-xs)">Aguardando: <strong>${escapeHtml(etapaLabel)}</strong></div>` : '')
-          + btns(btnAssinaturas, btnReenviar)
+      const b4subs = (st4 === 'active' || st4 === 'done')
+        ? `<div style="margin-top:var(--space-2)">${buildAssRows(st4 === 'done' ? 'concluido' : null)}</div>`
+          + (st4 === 'active' ? btns(btnAssinaturas, btnReenviar) : btns(btnAssinaturas))
         : null;
 
       const b5body = st5 === 'active'
@@ -924,7 +947,7 @@
                    st2==='done' ? 'Aceitou a orientação deste estágio' : 'O orientador deve aceitar a indicação por e-mail', st2, b2body)
         + block(3, 'Checklist',           'Validação pelos atores do processo',        st3, b3body)
         + block(4, st4==='done' ? 'Assinaturas concluídas' : 'Assinaturas do TCE',
-                   '7 assinaturas eletrônicas via gov.br',                             st4, b4subs)
+                   assCount + ' etapas de assinatura sequenciais',                    st4, b4subs)
         + block(5, 'Estágio ativo',       'TCE assinado, estágio em execução',         st5, b5body)
         + block(6, 'Avaliações',          'Parciais e final pelo orientador',          st6, b6body)
         + block(7, 'Parecer Final',       'Aprovação pelo coordenador e diretoria',    st7, b7body);
