@@ -777,7 +777,7 @@
       }
 
       // ── Stepper ──────────────────────────────────────────────────────────────
-      const MACROS  = ['Solicitação','Orientador','Checklist','Assinaturas','Estágio Ativo','Avaliações','Parecer Final'];
+      const MACROS  = ['Solicitação','Orientador indicado','Checklist','Assinaturas','Estágio Ativo','Avaliações','Parecer Final'];
       const DOT_CLR = {
         done:    'background:var(--color-success);border-color:var(--color-success);color:#fff',
         active:  'background:var(--color-primary);border-color:var(--color-primary);color:#fff',
@@ -855,15 +855,16 @@
       const avalD = _avaliacoes.filter(a => a.status === 'concluido').length;
       const avalT = _avaliacoes.length;
 
+      const nomeOrient = escapeHtml(s.nomeOrientador || 'O orientador indicado');
       const b2body = st2 === 'active'
-        ? `<strong>${escapeHtml(s.nomeOrientador || 'O orientador selecionado')}</strong> ainda não confirmou a orientação.`
+        ? `<strong>${nomeOrient}</strong> foi indicado pelo estudante e receberá um e-mail para aceitar a orientação. O processo só avança após o aceite.`
           + btns(btnReenviar)
         : st2 === 'error'
-        ? `<strong>${escapeHtml(s.nomeOrientador || 'O orientador')}</strong> recusou a orientação. O estudante precisa selecionar outro orientador.`
-        : null;
+        ? `<strong>${nomeOrient}</strong> recusou a orientação. O estudante precisa indicar outro orientador para prosseguir.`
+        : `<strong>${nomeOrient}</strong> aceitou a orientação deste estágio.`;
 
       const b3body = st3 === 'active'
-        ? 'O processo está em validação pelos atores do checklist (supervisor, coordenador e setor de estágios).'
+        ? 'Orientador, coordenador de curso, supervisor e setor de estágios estão validando os dados do estágio.'
           + btns(btnChecklist, btnReenviar)
         : null;
 
@@ -893,8 +894,8 @@
 
       const blocks =
           block(1, 'Solicitação enviada', 'Dados e documentos submetidos ao sistema', st1, null)
-        + block(2, st2==='error' ? 'Aceite recusado' : st2==='active' ? 'Aguardando orientador' : 'Orientador confirmado',
-                   'Aceite e validação dos dados do estágio', st2, b2body)
+        + block(2, st2==='error' ? 'Aceite recusado' : st2==='active' ? 'Orientador indicado — aguardando aceite' : 'Orientador indicado',
+                   st2==='done' ? 'Aceitou a orientação deste estágio' : 'O orientador deve aceitar a indicação por e-mail', st2, b2body)
         + block(3, 'Checklist',           'Validação pelos atores do processo',        st3, b3body)
         + block(4, st4==='done' ? 'Assinaturas concluídas' : 'Assinaturas do TCE',
                    '7 assinaturas eletrônicas via gov.br',                             st4, b4subs)

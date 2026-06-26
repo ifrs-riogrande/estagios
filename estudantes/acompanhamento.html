@@ -416,7 +416,7 @@
       }
 
       // ── Stepper ──────────────────────────────────────────────────────────────
-      var MACROS = ['Solicitação','Orientador','Checklist','Assinaturas','Estágio Ativo','Avaliações','Parecer Final'];
+      var MACROS = ['Solicitação','Orientador indicado','Checklist','Assinaturas','Estágio Ativo','Avaliações','Parecer Final'];
       var DOT_CLR = {
         done:    'background:var(--color-success);border-color:var(--color-success);color:#fff',
         active:  'background:var(--color-primary);border-color:var(--color-primary);color:#fff',
@@ -489,15 +489,16 @@
       var avalT = avals ? avals.length : 0;
       var pf    = hist && hist.parecerFinal;
 
+      var nomeOrient = escapeHtml(s.nomeOrientador || 'O orientador indicado');
       var b2body = st2 === 'active'
-        ? '<strong>' + escapeHtml(s.nomeOrientador || 'O orientador selecionado') + '</strong> receberá um e-mail para confirmar a orientação. Você será notificado quando houver resposta.<br>'
-          + '<span style="font-size:var(--font-size-xs);display:inline-block;margin-top:4px">Caso não haja resposta em até 5 dias úteis, entre em contato com o setor de estágios.</span>'
+        ? '<strong>' + nomeOrient + '</strong> foi indicado e receberá um e-mail para aceitar a orientação. O processo só avança após o aceite.<br>'
+          + '<span style="font-size:var(--font-size-xs);display:inline-block;margin-top:4px">Sem resposta em 5 dias úteis? Entre em contato com o setor de estágios.</span>'
         : st2 === 'error'
-        ? '<strong>' + escapeHtml(s.nomeOrientador || 'O orientador selecionado') + '</strong> recusou a orientação. Você precisa selecionar outro orientador para prosseguir.'
-        : null;
+        ? '<strong>' + nomeOrient + '</strong> recusou a orientação. Você precisa indicar outro orientador para prosseguir.'
+        : '<strong>' + nomeOrient + '</strong> aceitou a orientação deste estágio.';
 
       var b3body = st3 === 'active'
-        ? 'Orientador, coordenador, supervisor e setor de estágios estão validando os dados. Você receberá um e-mail quando concluído.'
+        ? 'Orientador, coordenador de curso, supervisor e setor de estágios estão validando os dados do estágio. Você receberá um e-mail quando concluído.'
           + btns('<a href="../checklist/?id=' + encodeURIComponent(s.id) + '" target="_blank" class="btn btn-secondary btn-sm">Ver Checklist ↗</a>')
         : null;
 
@@ -527,9 +528,9 @@
 
       var blocks =
           block(1, 'Solicitação enviada',  'Dados e documentos submetidos ao sistema', st1, null)
-        + block(2, st2==='error' ? 'Aceite recusado' : st2==='active' ? 'Aguardando orientador' : 'Orientador confirmado',
-                   'Aceite e validação dos dados do estágio', st2, b2body)
-        + block(3, 'Checklist',            'Validação pelos atores do processo',        st3, b3body)
+        + block(2, st2==='error' ? 'Aceite recusado' : st2==='active' ? 'Orientador indicado — aguardando aceite' : 'Orientador indicado',
+                   st2==='done' ? 'Aceitou a orientação deste estágio' : 'O orientador deve aceitar a indicação por e-mail', st2, b2body)
+        + block(3, 'Checklist',            'Orientador, coordenador, supervisor e setor validam os dados',        st3, b3body)
         + block(4, st4==='done' ? 'Assinaturas concluídas' : 'Assinaturas do TCE',
                    '7 assinaturas eletrônicas via gov.br',                              st4, b4subs)
         + block(5, 'Estágio ativo',        'TCE assinado, estágio em execução',         st5, b5body)
