@@ -185,6 +185,10 @@ main {
   flex-shrink: 0;
 }
 
+/* ── Sino de notificações ── */
+.sge-bell-wrap { height: 38px; }
+.sge-bell-btn  { height: 38px; box-sizing: border-box; }
+
 /* ── Badge do usuário logado (pill-botão com dropdown) ── */
 .header-user-wrap {
   position: relative;
