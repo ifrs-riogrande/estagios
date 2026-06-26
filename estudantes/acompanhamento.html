@@ -541,12 +541,19 @@
         if (!ckOk && i === ckIdx)               return 'active';
         return 'pending';
       }
-      function ckRow(nome, st) {
+      function fmtIso(iso) {
+        if (!iso) return '';
+        var p = iso.slice(0,10).split('-');
+        return p[2] + '/' + p[1] + '/' + p[0];
+      }
+      function ckRow(nome, st, isoData) {
         var dSt = st === 'done'   ? 'background:var(--color-success);border:1.5px solid var(--color-success);color:#fff'
                 : st === 'active' ? 'background:var(--color-primary);border:1.5px solid var(--color-primary);color:#fff'
                 : 'border:1.5px solid var(--color-border);color:var(--color-text-muted)';
         var ico = st === 'done' ? '✓' : st === 'active' ? '!' : '·';
-        var lbl = st === 'done'   ? '<span style="color:var(--color-success);font-size:9px">Aprovado</span>'
+        var dateStr = (st === 'done' && isoData)
+          ? ' <span style="color:var(--color-text-muted);font-size:9px;margin-left:4px">· ' + fmtIso(isoData) + '</span>' : '';
+        var lbl = st === 'done'   ? '<span style="color:var(--color-success);font-size:9px">Aprovado</span>' + dateStr
                 : st === 'active' ? '<span style="color:var(--color-primary);font-size:9px">Em andamento</span>'
                 : '<span style="color:var(--color-text-muted);font-size:9px">Aguardando</span>';
         return '<div style="display:flex;align-items:center;gap:var(--space-2);padding:4px 0;font-size:var(--font-size-xs)">'
@@ -555,10 +562,16 @@
           + lbl + '</div>';
       }
       var ckListAtivo = '<div style="margin-top:var(--space-2)">'
-        + CK_ATORES.map(function(n, i) { return ckRow(n, ckStOf(i)); }).join('')
+        + CK_ATORES.map(function(n, i) {
+            var d = (ckInfo && ckInfo[CK_ORDER[i]]) ? ckInfo[CK_ORDER[i]].data : null;
+            return ckRow(n, ckStOf(i), d);
+          }).join('')
         + '</div>';
       var ckListConcluido = '<div style="margin-top:var(--space-2)">'
-        + CK_ATORES.map(function(n) { return ckRow(n, 'done'); }).join('')
+        + CK_ATORES.map(function(n, i) {
+            var d = (ckInfo && ckInfo[CK_ORDER[i]]) ? ckInfo[CK_ORDER[i]].data : null;
+            return ckRow(n, 'done', d);
+          }).join('')
         + '</div>';
 
       var b3body = st3 === 'active'
