@@ -644,11 +644,11 @@
               tbl[pI][dI] = tbl[pI][dI].trim() ? tbl[pI][dI]+'\n'+cel : cel;
             });
             const sTH ='padding:5px 8px;font-size:11px;font-weight:600;background:var(--color-primary);color:#fff;text-align:center;';
-            const sTH0='padding:5px 8px;font-size:11px;font-weight:600;background:var(--color-primary);color:#fff;text-align:left;';
+            const sTH0='padding:5px 8px;font-size:11px;font-weight:600;background:var(--color-primary);color:#fff;text-align:left;width:60px;';
             const sTD0='padding:5px 8px;font-size:11px;font-weight:600;color:var(--color-text-muted);background:#f9fafb;border:1px solid var(--color-border);white-space:nowrap;';
             const sTDe='padding:5px 8px;font-size:11px;border:1px solid var(--color-border);text-align:center;color:#ccc;';
             const sTDf='padding:5px 8px;font-size:11px;border:1px solid var(--color-border);text-align:center;white-space:pre-line;vertical-align:top;';
-            let ht='<div class="d-field d-full" style="margin-top:var(--space-2)"><label>Dias e Horários</label><div style="overflow-x:auto;margin-top:var(--space-2)"><table style="width:100%;border-collapse:collapse"><thead><tr><th style="'+sTH0+'"></th>';
+            let ht='<div class="d-field d-full" style="margin-top:var(--space-2)"><label>Dias e Horários</label><div style="overflow-x:auto;margin-top:var(--space-2)"><table style="width:100%;border-collapse:collapse"><thead><tr><th style="'+sTH0+'">Turno</th>';
             DIAS.forEach(d=>{ht+='<th style="'+sTH+'">'+d+'</th>';});
             ht+='</tr></thead><tbody>';
             PERS.forEach((p,pi)=>{
