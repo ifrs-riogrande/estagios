@@ -619,8 +619,11 @@
           c6 += dr('Nome', escapeHtml(s.nomeSupervisor || '—'));
           c6 += dr('Cargo', escapeHtml(s.cargoSupervisor || '—'));
           c6 += dr('Formação', escapeHtml(s.formacaoSupervisor || '—'));
+          c6 += dr('Instituição', escapeHtml(s.instituicaoSupervisor || '—'));
+          c6 += dr('Tempo de Experiência', escapeHtml(s.tempoExpSupervisor || '—'));
           c6 += dr('Telefone', escapeHtml(s.telefoneSupervisor || '—'));
           c6 += dr('E-mail', escapeHtml(s.emailSupervisor || '—'));
+          if (s.descExpSupervisor) c6 += `<div class="d-field d-full"><label>Descrição da Experiência</label><p>${escapeHtml(s.descExpSupervisor)}</p></div>`;
 
           // 7. Dados do Estágio
           const _chNum = (s.cargaHorariaSemanal || '').replace(/[^\d.,]/g, '').trim();

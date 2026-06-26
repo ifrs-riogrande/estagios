@@ -344,7 +344,7 @@ function listarSolicitacoesAdmin_() {
     return vazio;
   };
   var _supPorEmail = function(email) {
-    var vazio = { cargo: '', telefone: '', formacao: '' };
+    var vazio = { cargo: '', telefone: '', formacao: '', instituicao: '', tempoExp: '', descExp: '' };
     if (!email) return vazio;
     var em = email.toLowerCase().trim();
     for (var i = 1; i < _rowsSup.length; i++) {
@@ -352,9 +352,12 @@ function listarSolicitacoesAdmin_() {
       var nf = String(_rowsSup[i][COL_SUP.NIVEL_FORMACAO] || '').trim();
       var af = String(_rowsSup[i][COL_SUP.AREA_FORMACAO]  || '').trim();
       return {
-        cargo:    String(_rowsSup[i][COL_SUP.CARGO]   || '').trim(),
-        telefone: String(_rowsSup[i][COL_SUP.TEL_SUP] || '').trim(),
-        formacao: nf && af ? nf + ' em ' + af : (nf || af),
+        cargo:       String(_rowsSup[i][COL_SUP.CARGO]        || '').trim(),
+        telefone:    String(_rowsSup[i][COL_SUP.TEL_SUP]      || '').trim(),
+        formacao:    nf && af ? nf + ' em ' + af : (nf || af),
+        instituicao: String(_rowsSup[i][COL_SUP.INSTITUICAO]  || '').trim(),
+        tempoExp:    String(_rowsSup[i][COL_SUP.TEMPO_EXP]    || '').trim(),
+        descExp:     String(_rowsSup[i][COL_SUP.DESC_EXP]     || '').trim(),
       };
     }
     return vazio;
@@ -414,9 +417,12 @@ function listarSolicitacoesAdmin_() {
       // ── Supervisor ──
       nomeSupervisor:   String(r[COL.NOME_SUPERVISOR]   || ''),
       emailSupervisor:  _emailSupAdm,
-      cargoSupervisor:  _supDados.cargo,
-      formacaoSupervisor: _supDados.formacao,
-      telefoneSupervisor: _supDados.telefone,
+      cargoSupervisor:       _supDados.cargo,
+      formacaoSupervisor:    _supDados.formacao,
+      telefoneSupervisor:    _supDados.telefone,
+      instituicaoSupervisor: _supDados.instituicao,
+      tempoExpSupervisor:    _supDados.tempoExp,
+      descExpSupervisor:     _supDados.descExp,
       // ── Estágio ──
       tipoEstagio:      String(r[COL.TIPO_ESTAGIO]      || ''),
       status:           String(r[COL.STATUS]            || ''),

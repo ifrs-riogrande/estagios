@@ -1066,7 +1066,7 @@ function listarMeusEstagios_(e) {
       return vazio;
     };
     var _supAln = function(email) {
-      var vazio = { cargo: '', telefone: '', formacao: '' };
+      var vazio = { cargo: '', telefone: '', formacao: '', instituicao: '', tempoExp: '', descExp: '' };
       if (!email) return vazio;
       var em = email.toLowerCase().trim();
       for (var k = 1; k < _rowsSupAln.length; k++) {
@@ -1074,9 +1074,12 @@ function listarMeusEstagios_(e) {
         var nf = String(_rowsSupAln[k][COL_SUP.NIVEL_FORMACAO] || '').trim();
         var af = String(_rowsSupAln[k][COL_SUP.AREA_FORMACAO]  || '').trim();
         return {
-          cargo:    String(_rowsSupAln[k][COL_SUP.CARGO]   || '').trim(),
-          telefone: String(_rowsSupAln[k][COL_SUP.TEL_SUP] || '').trim(),
-          formacao: nf && af ? nf + ' em ' + af : (nf || af),
+          cargo:      String(_rowsSupAln[k][COL_SUP.CARGO]       || '').trim(),
+          telefone:   String(_rowsSupAln[k][COL_SUP.TEL_SUP]     || '').trim(),
+          formacao:   nf && af ? nf + ' em ' + af : (nf || af),
+          instituicao: String(_rowsSupAln[k][COL_SUP.INSTITUICAO] || '').trim(),
+          tempoExp:   String(_rowsSupAln[k][COL_SUP.TEMPO_EXP]   || '').trim(),
+          descExp:    String(_rowsSupAln[k][COL_SUP.DESC_EXP]    || '').trim(),
         };
       }
       return vazio;
@@ -1140,9 +1143,12 @@ function listarMeusEstagios_(e) {
         // ── Supervisor ──
         nomeSupervisor:       String(r[COL_SOL.NOME_SUPERVISOR]    || ''),
         emailSupervisor:      _emailSupAln,
-        cargoSupervisor:      _supDadosAln.cargo,
-        formacaoSupervisor:   _supDadosAln.formacao,
-        telefoneSupervisor:   _supDadosAln.telefone,
+        cargoSupervisor:         _supDadosAln.cargo,
+        formacaoSupervisor:      _supDadosAln.formacao,
+        telefoneSupervisor:      _supDadosAln.telefone,
+        instituicaoSupervisor:   _supDadosAln.instituicao,
+        tempoExpSupervisor:      _supDadosAln.tempoExp,
+        descExpSupervisor:       _supDadosAln.descExp,
         // ── Estágio ──
         tipoEstagio:          String(r[COL_SOL.TIPO_ESTAGIO]       || ''),
         dataInicio:           formatarData_(r[COL_SOL.DATA_INICIO]),
