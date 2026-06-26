@@ -592,7 +592,8 @@
         : null;
 
       var blocks =
-          block(1, 'Solicitação enviada',  'Dados e documentos submetidos ao sistema', st1, null)
+          block(1, 'Solicitação enviada',  'Dados e documentos submetidos ao sistema', st1,
+                   s.dataSolicitacao ? 'Solicitação enviada em <strong>' + escapeHtml(s.dataSolicitacao) + '</strong>.' : null)
         + block(2, st2==='error' ? 'Aceite recusado' : st2==='active' ? 'Orientador indicado — aguardando aceite' : 'Orientador indicado',
                    st2==='done' ? 'Aceitou a orientação deste estágio' : 'O orientador deve aceitar a indicação por e-mail', st2, b2body)
         + block(3, 'Checklist',            'Orientador, coordenador, supervisor e setor validam os dados',        st3, b3body)
