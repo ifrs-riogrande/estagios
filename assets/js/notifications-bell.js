@@ -232,11 +232,12 @@
     var wrap = _buildBell();
     area.parentNode.insertBefore(wrap, area);
 
-    // Iguala a altura ao elemento de usuário ao lado
-    requestAnimationFrame(function () {
+    // Iguala a altura ao elemento de usuário assim que ele for preenchido pelo auth
+    var ro = new ResizeObserver(function () {
       var h = area.offsetHeight;
       if (h) wrap.style.height = h + 'px';
     });
+    ro.observe(area);
 
     // Eventos
     document.getElementById('sge-bell-btn').addEventListener('click', function (e) {
