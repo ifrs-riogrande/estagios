@@ -333,7 +333,8 @@
       if (wrapAvulsos)     wrapAvulsos.innerHTML     = buildHistoricoAvulsos(_historico);
       if (wrapAdendos)     wrapAdendos.innerHTML     = buildHistoricoAdendos(_historico);
       if (wrapAval)        wrapAval.innerHTML        = buildAvaliacoesContent(_atual);
-      document.getElementById('tab-parecer').innerHTML = buildTabParecer(_historico);
+      document.getElementById('tab-andamento').innerHTML = buildTabAndamento(_atual, _historico, _avaliacoes);
+      document.getElementById('tab-parecer').innerHTML   = buildTabParecer(_historico);
       _atualizarContadores();
     }
 
@@ -385,19 +386,167 @@
     /* ════════════════════════════════════════
        ABA: ANDAMENTO
     ════════════════════════════════════════ */
-    function buildTabAndamento(s) {
-      const passos   = buildTimeline(s.status);
-      const cardAcao = buildCardAcao(s);
-      return `
-        <div class="main-cols">
-          <div>${cardAcao}</div>
-          <div>
-            <div class="action-card" style="padding:var(--space-5)">
-              <h2 style="margin-bottom:var(--space-5)">Etapas do Processo</h2>
-              <div class="timeline">${passos}</div>
-            </div>
-          </div>
-        </div>`;
+    function buildTabAndamento(s, hist, avals) {
+      // Old-flow statuses keep the two-column layout
+      var NEW_SET = {'Aguardando aceite orientador':1,'Aceite recusado':1,'Em Checklist':1,
+                     'Em Assinaturas':1,'Ativo':1,'Em execução':1,'Encerrado':1,'Concluído':1};
+      if (!NEW_SET[s.status]) {
+        return '<div class="main-cols">'
+          + '<div>' + buildCardAcao(s) + '</div>'
+          + '<div><div class="action-card" style="padding:var(--space-5)">'
+          + '<h2 style="margin-bottom:var(--space-5)">Etapas do Processo</h2>'
+          + '<div class="timeline">' + buildTimeline(s.status) + '</div>'
+          + '</div></div></div>';
+      }
+
+      // Determine active macro-step (1–7), 8 = all done
+      var BASE = {'Aguardando aceite orientador':2,'Aceite recusado':2,'Em Checklist':3,
+                  'Em Assinaturas':4,'Ativo':5,'Em execução':5,'Encerrado':7,'Concluído':8};
+      var step = BASE[s.status] || 1;
+      if (step === 5 && avals && avals.length) step = 6;
+      if (hist && hist.parecerFinal)                                          step = Math.max(step, 7);
+      if (hist && hist.parecerFinal && hist.parecerFinal.statusGeral === 'aprovado') step = 8;
+      var isErr = s.status === 'Aceite recusado';
+      var pct   = Math.min(100, Math.round((step - 1) / 7 * 100));
+
+      function stOf(n) {
+        if (n < step)  return 'done';
+        if (n === step) return (isErr && n === 2) ? 'error' : 'active';
+        return 'pending';
+      }
+
+      // ── Stepper ──────────────────────────────────────────────────────────────
+      var MACROS = ['Solicitação','Orientador','Checklist','Assinaturas','Estágio Ativo','Avaliações','Parecer Final'];
+      var DOT_CLR = {
+        done:    'background:var(--color-success);border-color:var(--color-success);color:#fff',
+        active:  'background:var(--color-primary);border-color:var(--color-primary);color:#fff',
+        error:   'background:var(--color-error);border-color:var(--color-error);color:#fff',
+        pending: 'background:var(--color-surface);border-color:var(--color-border);color:var(--color-text-muted)'
+      };
+      var LBL_CLR = {done:'var(--color-success)',active:'var(--color-primary)',error:'var(--color-error)',pending:'var(--color-text-muted)'};
+      var LBL_TXT = {done:'Concluído',active:'Em andamento',error:'Recusado',pending:'Pendente'};
+
+      var stepperHtml = MACROS.map(function(lbl, i) {
+        var n   = i + 1;
+        var st  = stOf(n);
+        var ico = st === 'done' ? '✓' : n;
+        var lineColor = (st === 'done' && n < 7) ? 'var(--color-success)' : 'var(--color-border)';
+        var line = n < 7
+          ? '<div style="position:absolute;top:13px;left:50%;right:-50%;height:2px;z-index:0;background:' + lineColor + '"></div>'
+          : '';
+        return '<div style="flex:1;min-width:60px;display:flex;flex-direction:column;align-items:center;position:relative">'
+          + line
+          + '<div style="width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;'
+          +   'font-size:11px;font-weight:600;position:relative;z-index:1;border:2px solid;flex-shrink:0;' + DOT_CLR[st] + '">' + ico + '</div>'
+          + '<div style="font-size:10px;font-weight:600;margin-top:4px;text-align:center">' + escapeHtml(lbl) + '</div>'
+          + '<span style="font-size:9px;color:' + LBL_CLR[st] + '">' + LBL_TXT[st] + '</span>'
+          + '</div>';
+      }).join('');
+
+      // ── Block builders ────────────────────────────────────────────────────────
+      var BADGE_S = {
+        done:    'background:#d1fae5;color:#065f46',
+        active:  'background:var(--color-info-light);color:var(--color-info)',
+        error:   'background:var(--color-error-light);color:var(--color-error)',
+        pending: 'background:var(--color-bg);color:var(--color-text-muted)'
+      };
+
+      function block(n, title, sub, st, body) {
+        var brd   = st === 'active' ? 'border-color:var(--color-primary)'
+                  : st === 'error'  ? 'border-color:var(--color-error)' : '';
+        var hBg   = st === 'done'   ? 'background:var(--color-bg)'
+                  : st === 'active' ? 'background:var(--color-info-light)'
+                  : st === 'error'  ? 'background:var(--color-error-light)' : '';
+        var tClr  = st === 'active' ? 'color:var(--color-info)'
+                  : st === 'error'  ? 'color:var(--color-error)' : '';
+        var dSt   = st === 'done'   ? 'background:var(--color-success);border:2px solid var(--color-success);color:#fff'
+                  : st === 'active' ? 'background:var(--color-primary);border:2px solid var(--color-primary);color:#fff'
+                  : st === 'error'  ? 'background:var(--color-error);border:2px solid var(--color-error);color:#fff'
+                  : 'border:1.5px solid var(--color-border);color:var(--color-text-muted)';
+        var dIco  = st === 'done' ? '✓' : n;
+        var bdg   = '<span style="font-size:10px;padding:2px 9px;border-radius:9999px;font-weight:600;white-space:nowrap;' + BADGE_S[st] + '">' + LBL_TXT[st] + '</span>';
+        return '<div style="border-radius:var(--radius-lg);border:1px solid var(--color-border);overflow:hidden;' + brd + '">'
+          + '<div style="display:flex;align-items:center;gap:var(--space-3);padding:var(--space-3) var(--space-4);' + hBg + '">'
+          +   '<div style="width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;flex-shrink:0;' + dSt + '">' + dIco + '</div>'
+          +   '<div style="flex:1">'
+          +     '<div style="font-size:var(--font-size-sm);font-weight:600;' + tClr + '">' + n + '. ' + escapeHtml(title) + '</div>'
+          +     '<div style="font-size:var(--font-size-xs);color:var(--color-text-muted);margin-top:2px">' + escapeHtml(sub) + '</div>'
+          +   '</div>'
+          +   bdg
+          + '</div>'
+          + (body ? '<div style="padding:var(--space-3) var(--space-4) var(--space-4) 46px;border-top:1px solid var(--color-border);'
+          +         'font-size:var(--font-size-sm);color:var(--color-text-muted);line-height:1.6;background:var(--color-surface)">' + body + '</div>' : '')
+          + '</div>';
+      }
+
+      function btns(html) { return '<div style="display:flex;flex-wrap:wrap;gap:var(--space-2);margin-top:var(--space-3)">' + html + '</div>'; }
+      function sdot(n)    { return '<div style="width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:600;flex-shrink:0;border:1.5px solid var(--color-border);color:var(--color-text-muted)">' + n + '</div>'; }
+
+      // ── Per-step content ──────────────────────────────────────────────────────
+      var st1=stOf(1), st2=stOf(2), st3=stOf(3), st4=stOf(4), st5=stOf(5), st6=stOf(6), st7=stOf(7);
+      var SIGS = ['Você (estudante)','Empresa concedente','Supervisor','Orientador acadêmico','Coordenador de curso','Setor de estágios','Direção Geral'];
+      var avalD = avals ? avals.filter(function(a){return a.status==='concluido';}).length : 0;
+      var avalT = avals ? avals.length : 0;
+      var pf    = hist && hist.parecerFinal;
+
+      var b2body = st2 === 'active'
+        ? '<strong>' + escapeHtml(s.nomeOrientador || 'O orientador selecionado') + '</strong> receberá um e-mail para confirmar a orientação. Você será notificado quando houver resposta.<br>'
+          + '<span style="font-size:var(--font-size-xs);display:inline-block;margin-top:4px">Caso não haja resposta em até 5 dias úteis, entre em contato com o setor de estágios.</span>'
+        : st2 === 'error'
+        ? '<strong>' + escapeHtml(s.nomeOrientador || 'O orientador selecionado') + '</strong> recusou a orientação. Você precisa selecionar outro orientador para prosseguir.'
+        : null;
+
+      var b3body = st3 === 'active'
+        ? 'Orientador, coordenador, supervisor e setor de estágios estão validando os dados. Você receberá um e-mail quando concluído.'
+          + btns('<a href="../checklist/?id=' + encodeURIComponent(s.id) + '" target="_blank" class="btn btn-secondary btn-sm">Ver Checklist ↗</a>')
+        : null;
+
+      var b4subs = st4 === 'active'
+        ? '<div style="margin-top:var(--space-2)">'
+          + SIGS.map(function(sg,i){return '<div style="display:flex;align-items:center;gap:var(--space-2);padding:3px 0;font-size:var(--font-size-xs)">' + sdot(i+1) + '<span>' + escapeHtml(sg) + '</span></div>';}).join('')
+          + '</div>'
+          + btns('<a href="../assinaturas/?id=' + encodeURIComponent(s.id) + '" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">Acompanhar Assinaturas ↗</a>')
+        : null;
+
+      var b5body = st5 === 'active'
+        ? 'Seu estágio está em andamento. Acompanhe avaliações e documentos nas abas acima.'
+        : null;
+
+      var b6body = st6 === 'active'
+        ? (avalD > 0
+            ? avalD + ' avaliação(ões) concluída(s)' + (avalT > avalD ? ' · ' + (avalT - avalD) + ' pendente(s)' : '') + '.'
+            : 'As avaliações parciais serão solicitadas ao longo do estágio.')
+        : null;
+
+      var b7body = st7 === 'active'
+        ? (pf && pf.statusGeral === 'aprovado'
+            ? 'Parecer final aprovado' + (pf.dataAprov ? ' em ' + escapeHtml(pf.dataAprov) : '') + '.'
+              + btns('<button class="btn btn-secondary btn-sm" data-estagio="' + escapeHtml(s.id) + '" data-tipo="parecer" data-ref="" onclick="enviarDocBtn(this)">✉ Enviar para mim</button>')
+            : 'O coordenador de curso e o diretor da área estão analisando o seu estágio.')
+        : null;
+
+      var blocks =
+          block(1, 'Solicitação enviada',  'Dados e documentos submetidos ao sistema', st1, null)
+        + block(2, st2==='error' ? 'Aceite recusado' : st2==='active' ? 'Aguardando orientador' : 'Orientador confirmado',
+                   'Aceite e validação dos dados do estágio', st2, b2body)
+        + block(3, 'Checklist',            'Validação pelos atores do processo',        st3, b3body)
+        + block(4, st4==='done' ? 'Assinaturas concluídas' : 'Assinaturas do TCE',
+                   '7 assinaturas eletrônicas via gov.br',                              st4, b4subs)
+        + block(5, 'Estágio ativo',        'TCE assinado, estágio em execução',         st5, b5body)
+        + block(6, 'Avaliações',           'Parciais e final pelo orientador',          st6, b6body)
+        + block(7, 'Parecer Final',        'Aprovação pelo coordenador e diretoria',    st7, b7body);
+
+      return '<div style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:var(--space-5);margin-bottom:var(--space-4)">'
+        + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-2)">'
+        +   '<span style="font-size:var(--font-size-sm);font-weight:600">Progresso do Estágio</span>'
+        +   '<span style="font-size:var(--font-size-sm);font-weight:600;color:var(--color-primary)">' + pct + '%</span>'
+        + '</div>'
+        + '<div style="height:5px;background:var(--color-border);border-radius:3px;margin:var(--space-2) 0 var(--space-5)">'
+        +   '<div style="height:5px;background:var(--color-primary);border-radius:3px;width:' + pct + '%"></div>'
+        + '</div>'
+        + '<div style="display:flex;overflow-x:auto;gap:0;padding-bottom:2px">' + stepperHtml + '</div>'
+        + '</div>'
+        + '<div style="display:flex;flex-direction:column;gap:var(--space-2)">' + blocks + '</div>';
     }
 
     /* ════════════════════════════════════════
