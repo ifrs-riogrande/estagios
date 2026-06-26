@@ -793,8 +793,8 @@
         const n   = i + 1;
         const st  = stOf(n);
         const ico = st === 'done' ? '✓' : n;
-        const lineColor = (st === 'done' && n < 7) ? 'var(--color-success)' : 'var(--color-border)';
-        const line = n < 7
+        const lineColor = (st === 'done' && n < 8) ? 'var(--color-success)' : 'var(--color-border)';
+        const line = n < 8
           ? `<div style="position:absolute;top:13px;left:50%;right:-50%;height:2px;z-index:0;background:${lineColor}"></div>`
           : '';
         return `<div style="flex:1;min-width:60px;display:flex;flex-direction:column;align-items:center;position:relative">
