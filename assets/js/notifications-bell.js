@@ -23,8 +23,8 @@
     var style = document.createElement('style');
     style.id  = 'sge-bell-styles';
     style.textContent = [
-      '.sge-bell-wrap{position:relative;display:inline-flex;align-items:center;margin-right:4px}',
-      '.sge-bell-btn{position:relative;background:none;border:none;cursor:pointer;padding:8px;border-radius:8px;color:var(--color-text-secondary,#6b7280);display:flex;align-items:center;justify-content:center;transition:background .15s,color .15s}',
+      '.sge-bell-wrap{position:relative;display:inline-flex;align-items:stretch;align-self:stretch;margin-right:4px}',
+      '.sge-bell-btn{position:relative;background:none;border:none;cursor:pointer;padding:6px 9px;border-radius:8px;color:var(--color-text-secondary,#6b7280);display:flex;align-items:center;justify-content:center;height:100%;transition:background .15s,color .15s}',
       '.sge-bell-btn:hover{background:var(--color-surface,#f3f4f6);color:var(--color-text,#111827)}',
       '.sge-bell-btn svg{width:20px;height:20px;flex-shrink:0}',
       '.sge-bell-badge{position:absolute;top:2px;right:2px;min-width:16px;height:16px;background:#ef4444;color:#fff;border-radius:99px;font-size:10px;font-weight:700;line-height:16px;text-align:center;padding:0 4px;pointer-events:none;display:none}',
