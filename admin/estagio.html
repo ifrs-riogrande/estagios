@@ -48,6 +48,18 @@
     }
     .detail-item p { font-size: var(--font-size-sm); word-break: break-word; margin-bottom: var(--space-2); }
     .detail-full { grid-column: 1 / -1; }
+    /* ── Dados do Estágio — cards ── */
+    .d-wrap{display:flex;flex-direction:column;gap:var(--space-4);}
+    .d-row{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4);}
+    @media(max-width:680px){.d-row{grid-template-columns:1fr;}}
+    .d-card{background:var(--color-surface,#fff);border:1px solid var(--color-border);border-radius:var(--radius-lg,8px);padding:var(--space-5);}
+    .d-card-hdr{display:flex;align-items:center;gap:10px;margin-bottom:var(--space-4);padding-bottom:var(--space-3);border-bottom:1px solid var(--color-border);}
+    .d-icon{width:32px;height:32px;min-width:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;}
+    .d-card-ttl{font-size:var(--font-size-sm);font-weight:700;color:var(--color-text);}
+    .d-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:0 var(--space-5);}
+    .d-field label{font-size:var(--font-size-xs);color:var(--color-primary);font-weight:600;text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:2px;}
+    .d-field p{font-size:var(--font-size-sm);word-break:break-word;margin-bottom:var(--space-3);margin-top:0;}
+    .d-full{grid-column:1/-1;}
 
     /* ── Dados sensíveis ── */
     .dado-oculto { font-family: monospace; color: var(--color-text-muted); letter-spacing: 2px; user-select: none; }
@@ -531,116 +543,125 @@
           </div>
         </div>
 
-        <div class="detail-grid">
         ${(function() {
           function dr(label, val) {
-            return `<div class="detail-item"><label>${label}</label><p>${val || '—'}</p></div>`;
+            return `<div class="d-field"><label>${label}</label><p>${val || '—'}</p></div>`;
           }
           function drS(label, val) {
-            if (!val) return `<div class="detail-item"><label>${label} <span class="sensivel-badge">sensível</span></label><p>—</p></div>`;
-            return `<div class="detail-item"><label>${label} <span class="sensivel-badge">sensível</span></label><p><span class="dado-sensivel dado-oculto" data-valor="${escapeHtml(val)}">••••••••••</span></p></div>`;
+            if (!val) return `<div class="d-field"><label>${label} <span class="sensivel-badge">sensível</span></label><p>—</p></div>`;
+            return `<div class="d-field"><label>${label} <span class="sensivel-badge">sensível</span></label><p><span class="dado-sensivel dado-oculto" data-valor="${escapeHtml(val)}">••••••••••</span></p></div>`;
           }
           function drSCpf(label, val) {
             return drS(label, formatarCPF(val || '') || val || '');
           }
-          function sec(n, titulo) {
-            return `<div class="detail-full" style="margin-top:var(--space-5);padding-top:var(--space-3);border-top:1px solid var(--color-border);font-size:var(--font-size-xs);font-weight:700;color:var(--color-primary);text-transform:uppercase;letter-spacing:.07em">${n}. ${titulo}</div>`;
+          const icoP = `<svg viewBox="0 0 24 24" fill="white" width="16" height="16"><path d="M12 12c2.7 0 5-2.2 5-5s-2.3-5-5-5-5 2.2-5 5 2.3 5 5 5zm0 2c-3.3 0-10 1.7-10 5v2h20v-2c0-3.3-6.7-5-10-5z"/></svg>`;
+          const icoG = `<svg viewBox="0 0 24 24" fill="white" width="16" height="16"><path d="M5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82zM12 3L1 9l11 6 9-4.91V17h2V9L12 3z"/></svg>`;
+          const icoB = `<svg viewBox="0 0 24 24" fill="white" width="16" height="16"><path d="M12 7V3H2v18h20V7H12zM6 19H4v-2h2v2zm0-4H4v-2h2v2zm0-4H4V9h2v2zm0-4H4V5h2v2zm4 12H8v-2h2v2zm0-4H8v-2h2v2zm0-4H8V9h2v2zm0-4H8V5h2v2zm10 12h-8v-2h2v-2h-2v-2h2v-2h-2V9h8v10zm-2-8h-2v2h2v-2zm0 4h-2v2h2v-2z"/></svg>`;
+          const icoD = `<svg viewBox="0 0 24 24" fill="white" width="16" height="16"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm4 18H6V4h7v5h5v11z"/></svg>`;
+          const icoL = `<svg viewBox="0 0 24 24" fill="white" width="16" height="16"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg>`;
+          function card(ico, bg, n, titulo, content) {
+            return `<div class="d-card"><div class="d-card-hdr"><span class="d-icon" style="background:${bg}">${ico}</span><span class="d-card-ttl">${n}. ${titulo}</span></div><div class="d-grid">${content}</div></div>`;
           }
-          let h = '';
 
           // 1. Estudante
-          h += sec(1, 'Estudante');
-          h += dr('Nome', escapeHtml(s.nomeEstudante || '—'));
-          h += drS('Data de Nascimento', s.dataNasc);
-          h += drSCpf('CPF', s.cpfEstudante);
-          h += dr('E-mail', escapeHtml(s.emailEstudante || '—'));
-          h += dr('Telefone', escapeHtml(s.telefoneEstudante || '—'));
+          let c1 = '';
+          c1 += dr('Nome', escapeHtml(s.nomeEstudante || '—'));
+          c1 += drSCpf('CPF', s.cpfEstudante);
+          c1 += drS('Data de Nascimento', s.dataNasc);
+          c1 += dr('Telefone', escapeHtml(s.telefoneEstudante || '—'));
+          c1 += dr('E-mail', escapeHtml(s.emailEstudante || '—'));
           if (s.nomeResp) {
-            h += `<div class="detail-item detail-full" style="border-top:1px dashed var(--color-border);padding-top:var(--space-3);margin-top:var(--space-2)">
-              <label>Responsável Legal</label>
-              <p>${[s.nomeResp && escapeHtml(s.nomeResp),
-                    s.cpfResp  && `<span class="dado-sensivel dado-oculto" data-valor="${escapeHtml(formatarCPF(s.cpfResp) || s.cpfResp)}">••••••••••</span>`,
-                    s.telResp  && escapeHtml(s.telResp)
-                   ].filter(Boolean).join(' · ') || '—'}</p></div>`;
+            c1 += `<div class="d-field d-full"><label>Responsável Legal</label><p>${
+              [s.nomeResp && escapeHtml(s.nomeResp),
+               s.cpfResp  && `<span class="dado-sensivel dado-oculto" data-valor="${escapeHtml(formatarCPF(s.cpfResp) || s.cpfResp)}">••••••••••</span>`,
+               s.telResp  && escapeHtml(s.telResp)
+              ].filter(Boolean).join(' · ') || '—'}</p></div>`;
           }
 
           // 2. Curso
-          h += sec(2, 'Curso');
-          h += drS('Matrícula', s.matricula);
-          h += dr('Nome do Curso', escapeHtml(s.curso || '—'));
+          let c2 = '';
+          c2 += drS('Matrícula', s.matricula);
+          c2 += dr('Nome do Curso', escapeHtml(s.curso || '—'));
           const _mod = s.curso ? (s.curso.indexOf('Integrado') !== -1 ? 'Integrado' : s.curso.indexOf('Subsequente') !== -1 ? 'Subsequente' : 'Superior') : '—';
-          h += dr('Modalidade', _mod);
-          h += dr('Semestre', escapeHtml(s.semestre || '—'));
-          h += dr('Turno de Aula', escapeHtml(s.turno || '—'));
-          h += dr('Formando', escapeHtml(s.formando || '—'));
+          c2 += dr('Modalidade', _mod);
+          c2 += dr('Semestre', escapeHtml(s.semestre || '—'));
+          c2 += dr('Turno de Aula', escapeHtml(s.turno || '—'));
+          c2 += dr('Formando', escapeHtml(s.formando || '—'));
 
           // 3. Orientador
-          h += sec(3, 'Orientador');
-          h += dr('Nome', escapeHtml(s.nomeOrientador || '—'));
-          h += dr('E-mail', escapeHtml(s.emailOrientador || '—'));
-          h += dr('Vínculo', escapeHtml(s.vinculoOrientador || '—'));
+          let c3 = '';
+          c3 += dr('Nome', escapeHtml(s.nomeOrientador || '—'));
+          c3 += dr('E-mail', escapeHtml(s.emailOrientador || '—'));
+          c3 += dr('Vínculo', escapeHtml(s.vinculoOrientador || '—'));
           const _formOri = [s.titulacaoOrientador, s.areaOrientador].filter(Boolean).join(' — ');
-          h += dr('Formação', escapeHtml(_formOri || '—'));
+          c3 += dr('Formação', escapeHtml(_formOri || '—'));
 
           // 4. Coordenador de Curso
-          h += sec(4, 'Coordenador de Curso');
-          h += dr('Nome', escapeHtml(s.nomeCoordenador || '—'));
-          h += dr('E-mail', escapeHtml(s.emailCoordenador || '—'));
+          let c4 = '';
+          c4 += dr('Nome', escapeHtml(s.nomeCoordenador || '—'));
+          c4 += dr('E-mail', escapeHtml(s.emailCoordenador || '—'));
 
           // 5. Concedente
-          h += sec(5, 'Concedente');
-          h += dr('Razão Social', escapeHtml(s.empresa || '—'));
-          h += drS('CNPJ', formatarCNPJ(s.cnpjEmpresa || '') || s.cnpjEmpresa || '');
-          h += dr('Endereço', escapeHtml(s.enderecoEmpresa || '—'));
-          h += dr('Telefone', escapeHtml(s.telefoneEmpresa || '—'));
-          h += dr('E-mail', escapeHtml(s.emailEmpresa || '—'));
-          h += `<div class="detail-item detail-full"><label>Representante Legal</label><p>${
+          let c5 = '';
+          c5 += dr('Razão Social', escapeHtml(s.empresa || '—'));
+          c5 += drS('CNPJ', formatarCNPJ(s.cnpjEmpresa || '') || s.cnpjEmpresa || '');
+          c5 += dr('Endereço', escapeHtml(s.enderecoEmpresa || '—'));
+          c5 += dr('Telefone', escapeHtml(s.telefoneEmpresa || '—'));
+          c5 += dr('E-mail', escapeHtml(s.emailEmpresa || '—'));
+          c5 += `<div class="d-field"><label>Representante Legal</label><p>${
             [s.nomeRepEmpresa  && escapeHtml(s.nomeRepEmpresa),
              s.cargoRepEmpresa && escapeHtml(s.cargoRepEmpresa)].filter(Boolean).join(' · ') || '—'
           }</p></div>`;
-          h += drSCpf('CPF do Representante', s.cpfRepEmpresa);
+          c5 += drSCpf('CPF do Representante', s.cpfRepEmpresa);
 
           // 6. Supervisor
-          h += sec(6, 'Supervisor');
-          h += dr('Nome', escapeHtml(s.nomeSupervisor || '—'));
-          h += dr('Cargo', escapeHtml(s.cargoSupervisor || '—'));
-          h += dr('Formação', escapeHtml(s.formacaoSupervisor || '—'));
-          h += dr('Telefone', escapeHtml(s.telefoneSupervisor || '—'));
-          h += dr('E-mail', escapeHtml(s.emailSupervisor || '—'));
+          let c6 = '';
+          c6 += dr('Nome', escapeHtml(s.nomeSupervisor || '—'));
+          c6 += dr('Cargo', escapeHtml(s.cargoSupervisor || '—'));
+          c6 += dr('Formação', escapeHtml(s.formacaoSupervisor || '—'));
+          c6 += dr('Telefone', escapeHtml(s.telefoneSupervisor || '—'));
+          c6 += dr('E-mail', escapeHtml(s.emailSupervisor || '—'));
 
           // 7. Dados do Estágio
-          h += sec(7, 'Dados do Estágio');
-          h += dr('ID', `<code style="font-size:12px">${escapeHtml(s.id || '—')}</code>`);
-          h += dr('Tipo', escapeHtml(s.tipoEstagio || '—'));
-          h += dr('Status', badgeStatus(s.status));
-          h += dr('Início', escapeHtml(s.dataInicio || '—'));
-          h += dr('Término', escapeHtml(s.dataTermino || '—'));
           const _chNum = (s.cargaHorariaSemanal || '').replace(/[^\d.,]/g, '').trim();
-          h += dr('CH Semanal', _chNum ? _chNum + 'h/semana' : (s.cargaHorariaSemanal ? escapeHtml(s.cargaHorariaSemanal) : '—'));
-          h += dr('CH Total', escapeHtml(s.cargaHorariaTotal || '—'));
+          let c7 = '';
+          c7 += dr('ID', `<code style="font-size:12px">${escapeHtml(s.id || '—')}</code>`);
+          c7 += dr('Tipo', escapeHtml(s.tipoEstagio || '—'));
+          c7 += dr('Status', badgeStatus(s.status));
+          c7 += dr('Data da Solicitação', escapeHtml(s.dataSolicitacao || '—'));
+          c7 += dr('Início', escapeHtml(s.dataInicio || '—'));
+          c7 += dr('Término', escapeHtml(s.dataTermino || '—'));
+          c7 += dr('CH Semanal', _chNum ? _chNum + 'h/semana' : (s.cargaHorariaSemanal ? escapeHtml(s.cargaHorariaSemanal) : '—'));
+          c7 += dr('CH Total', escapeHtml(s.cargaHorariaTotal || '—'));
           if (s.horario) {
             const _hor = s.horario.split('\n').filter(l => !/^Total semanal:/i.test(l.trim())).join('\n').trim();
-            h += `<div class="detail-item detail-full"><label>Dias e Horários</label><p style="white-space:pre-line">${escapeHtml(_hor)}</p></div>`;
+            c7 += `<div class="d-field d-full"><label>Dias e Horários</label><p style="white-space:pre-line">${escapeHtml(_hor)}</p></div>`;
           } else {
-            h += dr('Dias e Horários', '—');
+            c7 += dr('Dias e Horários', '—');
           }
-          h += dr('Agente de Integração', escapeHtml(s.nomeAgente || '—'));
-          h += dr('Remuneração', escapeHtml(s.remuneracao || '—'));
-          h += dr('Bolsa', s.valorBolsa ? 'R$ ' + escapeHtml(s.valorBolsa) : '—');
-          h += dr('Auxílio-Transporte', s.valorTransporte ? 'R$ ' + escapeHtml(s.valorTransporte) : '—');
-          h += dr('Data da Solicitação', escapeHtml(s.dataSolicitacao || '—'));
+          c7 += dr('Agente de Integração', escapeHtml(s.nomeAgente || '—'));
+          c7 += dr('Remuneração', escapeHtml(s.remuneracao || '—'));
+          c7 += dr('Bolsa', s.valorBolsa ? 'R$ ' + escapeHtml(s.valorBolsa) : '—');
+          c7 += dr('Auxílio-Transporte', s.valorTransporte ? 'R$ ' + escapeHtml(s.valorTransporte) : '—');
 
           // 8. Plano de Atividades
-          h += sec(8, 'Plano de Atividades');
-          h += `<div class="detail-item detail-full"><div style="line-height:1.7">${s.planoAtividades ? renderAtividades(s.planoAtividades) : '<span style="color:var(--color-text-muted)">—</span>'}</div></div>`;
+          const c8 = `<div class="d-field d-full"><div style="line-height:1.7">${s.planoAtividades ? renderAtividades(s.planoAtividades) : '<span style="color:var(--color-text-muted)">—</span>'}</div></div>`;
+
+          let h = '<div class="d-wrap">';
+          h += `<div class="d-row">${card(icoP,'var(--color-primary)',1,'Estudante',c1)}${card(icoG,'#10b981',2,'Curso',c2)}</div>`;
+          h += `<div class="d-row">${card(icoP,'#8b5cf6',3,'Orientador',c3)}${card(icoP,'#f59e0b',4,'Coordenador de Curso',c4)}</div>`;
+          h += card(icoB,'#0ea5e9',5,'Concedente',c5);
+          h += card(icoP,'#ef4444',6,'Supervisor',c6);
+          h += card(icoD,'#6366f1',7,'Dados do Estágio',c7);
+          h += card(icoL,'#14b8a6',8,'Plano de Atividades',c8);
+          h += '</div>';
 
           if (s.observacaoSetor) {
-            h += `<div class="detail-item detail-full"><label>Observação do Setor</label><p style="white-space:pre-wrap">${escapeHtml(s.observacaoSetor)}</p></div>`;
+            h += `<div style="background:var(--color-warning-light);border:1px solid var(--color-warning-border);border-radius:var(--radius-md);padding:var(--space-3) var(--space-4);font-size:var(--font-size-sm);margin-top:var(--space-4)"><strong>Observação do Setor:</strong> ${escapeHtml(s.observacaoSetor)}</div>`;
           }
 
           return h;
         })()}
-        </div>
 
         ${_renderNapneAdmin()}
 
