@@ -554,6 +554,7 @@
           h += drS('Data de Nascimento', s.dataNasc);
           h += drSCpf('CPF', s.cpfEstudante);
           h += dr('E-mail', escapeHtml(s.emailEstudante || '—'));
+          h += dr('Telefone', escapeHtml(s.telefoneEstudante || '—'));
           if (s.nomeResp) {
             h += `<div class="detail-item detail-full" style="border-top:1px dashed var(--color-border);padding-top:var(--space-3);margin-top:var(--space-2)">
               <label>Responsável Legal</label>
@@ -567,6 +568,8 @@
           h += sec(2, 'Curso');
           h += drS('Matrícula', s.matricula);
           h += dr('Nome do Curso', escapeHtml(s.curso || '—'));
+          const _mod = s.curso ? (s.curso.indexOf('Integrado') !== -1 ? 'Integrado' : s.curso.indexOf('Subsequente') !== -1 ? 'Subsequente' : 'Superior') : '—';
+          h += dr('Modalidade', _mod);
           h += dr('Semestre', escapeHtml(s.semestre || '—'));
           h += dr('Turno de Aula', escapeHtml(s.turno || '—'));
           h += dr('Formando', escapeHtml(s.formando || '—'));

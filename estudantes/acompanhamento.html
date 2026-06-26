@@ -795,6 +795,7 @@
       h += dr('Data de Nascimento', escapeHtml(s.dataNasc || '—'));
       h += drMask('CPF', s.cpf);
       h += dr('E-mail', escapeHtml(s.emailEstudante || '—'));
+      h += dr('Telefone', escapeHtml(s.telefoneEstudante || '—'));
       if (s.nomeResponsavel) {
         h += `<div class="detail-item detail-full" style="border-top:1px dashed var(--color-border);padding-top:var(--space-3);margin-top:var(--space-2)">
           <label>Responsável Legal</label>
@@ -808,6 +809,8 @@
       h += sec(2, 'Curso');
       h += dr('Matrícula', escapeHtml(s.matricula || '—'));
       h += dr('Nome do Curso', escapeHtml(s.curso || '—'));
+      var _mod = s.curso ? (s.curso.indexOf('Integrado') !== -1 ? 'Integrado' : s.curso.indexOf('Subsequente') !== -1 ? 'Subsequente' : 'Superior') : '—';
+      h += dr('Modalidade', _mod);
       h += dr('Semestre', escapeHtml(s.semestreAtual || '—'));
       h += dr('Turno de Aula', escapeHtml(s.turno || '—'));
       h += dr('Formando', escapeHtml(s.formando || '—'));
@@ -867,6 +870,7 @@
       h += dr('Remuneração', escapeHtml(s.remuneracao || '—'));
       h += dr('Bolsa', s.valorBolsa ? 'R$ ' + escapeHtml(s.valorBolsa) : '—');
       h += dr('Auxílio-Transporte', s.valorTransporte ? 'R$ ' + escapeHtml(s.valorTransporte) : '—');
+      h += dr('Data da Solicitação', escapeHtml(s.dataSolicitacao || '—'));
 
       // 8. Plano de Atividades
       h += sec(8, 'Plano de Atividades');

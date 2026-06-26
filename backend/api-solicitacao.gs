@@ -1107,6 +1107,7 @@ function listarMeusEstagios_(e) {
         dataNasc:             formatarData_(r[COL_SOL.DATA_NASC]),
         cpf:                  mascararCPF_(r[COL_SOL.CPF]),
         emailEstudante:       String(r[COL_SOL.EMAIL_ESTUDANTE]     || ''),
+        telefoneEstudante:    String(r[COL_SOL.TELEFONE]            || ''),
         nomeResponsavel:      String(r[COL_SOL.NOME_RESP]           || ''),
         cpfResponsavel:       mascararCPF_(r[COL_SOL.CPF_RESP]),
         telResponsavel:       String(r[COL_SOL.TEL_RESP]            || ''),
@@ -1153,6 +1154,7 @@ function listarMeusEstagios_(e) {
         valorTransporte:      String(r[COL_SOL.VALOR_TRANSPORTE]    || ''),
         planoAtividades:      String(r[COL_SOL.PLANO_ATIVIDADES]    || ''),
         // ── Meta ──
+        dataSolicitacao:      formatarData_(r[COL_SOL.TIMESTAMP]),
         motivoReprovacao:     String(r[COL_SOL.MOTIVO_REPROVACAO]   || ''),
         observacaoSetor:      String(r[COL_SOL.OBS_SETOR]           || ''),
         driveUrl:             String(r[COL_SOL.DRIVE_URL]           || ''),
