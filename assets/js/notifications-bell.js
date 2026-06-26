@@ -23,7 +23,7 @@
     var style = document.createElement('style');
     style.id  = 'sge-bell-styles';
     style.textContent = [
-      '.sge-bell-wrap{position:relative;display:inline-flex;align-items:stretch;align-self:stretch;margin-right:4px}',
+      '.sge-bell-wrap{position:relative;display:inline-flex;align-items:stretch;margin-right:4px}',
       '.sge-bell-btn{position:relative;background:none;border:none;cursor:pointer;padding:0 9px;border-radius:8px;color:var(--color-text-secondary,#6b7280);display:flex;align-items:center;justify-content:center;transition:background .15s,color .15s}',
       '.sge-bell-btn:hover{background:var(--color-surface,#f3f4f6);color:var(--color-text,#111827)}',
       '.sge-bell-btn svg{width:20px;height:20px;flex-shrink:0}',
@@ -231,6 +231,12 @@
 
     var wrap = _buildBell();
     area.parentNode.insertBefore(wrap, area);
+
+    // Iguala a altura ao elemento de usuário ao lado
+    requestAnimationFrame(function () {
+      var h = area.offsetHeight;
+      if (h) wrap.style.height = h + 'px';
+    });
 
     // Eventos
     document.getElementById('sge-bell-btn').addEventListener('click', function (e) {
