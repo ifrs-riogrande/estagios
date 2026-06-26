@@ -856,7 +856,7 @@
       const assEtapas = (_fluxoTCE && _fluxoTCE.etapas) ? _fluxoTCE.etapas : null;
       const assCount  = assEtapas ? assEtapas.length : ASS_DEF.length;
 
-      function assRow(label, status) {
+      function assRow(label, status, isoData) {
         const done   = status === 'concluido';
         const active = status === 'aguardando';
         const error  = status === 'rejeitado';
@@ -865,7 +865,8 @@
                   : error  ? 'background:var(--color-error);border:1.5px solid var(--color-error);color:#fff'
                   :          'border:1.5px solid var(--color-border);color:var(--color-text-muted)';
         const ico = done ? '✓' : active ? '!' : error ? '✗' : '·';
-        const lbl = done   ? `<span style="color:var(--color-success);font-size:9px">Concluído</span>`
+        const dateStr = done && isoData ? ` <span style="color:var(--color-text-muted);font-size:9px;margin-left:4px">· ${fmtIso(isoData)}</span>` : '';
+        const lbl = done   ? `<span style="color:var(--color-success);font-size:9px">Concluído</span>${dateStr}`
                   : active ? `<span style="color:var(--color-primary);font-size:9px">Em andamento</span>`
                   : error  ? `<span style="color:var(--color-error);font-size:9px">Rejeitado</span>`
                   :          `<span style="color:var(--color-text-muted);font-size:9px">Aguardando</span>`;
@@ -876,7 +877,7 @@
         </div>`;
       }
       function buildAssRows(forceStatus) {
-        if (assEtapas) return assEtapas.map(et => assRow(et.label, forceStatus || et.status)).join('');
+        if (assEtapas) return assEtapas.map(et => assRow(et.label, forceStatus || et.status, et.data)).join('');
         return ASS_DEF.map(l => assRow(l, forceStatus || 'pendente')).join('');
       }
       const avalD = _avaliacoes.filter(a => a.status === 'concluido').length;
