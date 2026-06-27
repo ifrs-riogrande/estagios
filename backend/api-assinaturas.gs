@@ -1246,7 +1246,7 @@ function enviarPdfFinalParaTodos_(idEstagio, fluxo, driveUrl) {
  * @param {string} emailAtor    E-mail do ator que está enviando (auditoria + validação)
  * @returns {Object} jsonOk_ / jsonError_
  */
-function uploadPdfAssinado_(idEstagio, numeroEtapa, pdfBase64, token) {
+function uploadPdfAssinado_(idEstagio, numeroEtapa, pdfBase64, token, authToken) {
   if (!idEstagio || !numeroEtapa || !pdfBase64) {
     return jsonError_('Parâmetros obrigatórios: idEstagio, numeroEtapa, pdfBase64.', 'MISSING_PARAM');
   }
@@ -1254,8 +1254,7 @@ function uploadPdfAssinado_(idEstagio, numeroEtapa, pdfBase64, token) {
   var fluxo = obterFluxoAssinaturas_(idEstagio);
   if (!fluxo) return jsonError_('Fluxo de assinaturas não encontrado.', 'NOT_FOUND');
 
-  // Valida pelo token
-  var etapaDoToken = _validarTokenFluxo_(fluxo, token);
+  var etapaDoToken = _validarAcessoSignatario_(fluxo, token, authToken);
   if (!etapaDoToken) return jsonError_('Token inválido ou não autorizado.', 'AUTH_ERROR');
 
   var etapa = fluxo.etapas[numeroEtapa - 1];
@@ -1341,6 +1340,27 @@ function _validarTokenFluxo_(fluxo, token) {
   if (!token || !fluxo || !fluxo.etapas) return null;
   for (var i = 0; i < fluxo.etapas.length; i++) {
     if (fluxo.etapas[i].token === token) return fluxo.etapas[i];
+  }
+  return null;
+}
+
+/**
+ * Valida acesso de signatário via magic-link token OU authToken OAuth de estudante.
+ * Retorna a etapa correspondente ou null se inválido.
+ */
+function _validarAcessoSignatario_(fluxo, token, authToken) {
+  // 1. magic-link
+  if (token) return _validarTokenFluxo_(fluxo, token);
+  // 2. OAuth estudante
+  if (authToken) {
+    var info;
+    try { info = validarTokenEstudante_(authToken); } catch(e) { return null; }
+    var email = (info.email || '').toLowerCase();
+    for (var i = 0; i < fluxo.etapas.length; i++) {
+      if (fluxo.etapas[i].ator === 'estudante' && (fluxo.etapas[i].email || '').toLowerCase() === email) {
+        return fluxo.etapas[i];
+      }
+    }
   }
   return null;
 }
@@ -1531,22 +1551,20 @@ function doPostAssinaturas(e) {
 
   switch (action) {
     case 'uploadPdfAssinado':
-      return uploadPdfAssinado_(body.idEstagio, body.numeroEtapa, body.pdfBase64, body.token);
+      return uploadPdfAssinado_(body.idEstagio, body.numeroEtapa, body.pdfBase64, body.token, body.authToken);
 
     case 'concluirEtapa': {
-      // Valida token antes de concluir
       var fluxoCon = obterFluxoAssinaturas_(body.idEstagio);
       if (!fluxoCon) return jsonError_('Fluxo não encontrado.', 'NOT_FOUND');
-      var etaTk = _validarTokenFluxo_(fluxoCon, body.token);
+      var etaTk = _validarAcessoSignatario_(fluxoCon, body.token, body.authToken);
       if (!etaTk) return jsonError_('Token inválido.', 'AUTH_ERROR');
       return concluirEtapaAssinatura_(body.idEstagio, body.numeroEtapa, body.driveUrl || null, etaTk.email || body.token);
     }
 
     case 'rejeitarEtapa': {
-      // Valida token antes de rejeitar
       var fluxoRej = obterFluxoAssinaturas_(body.idEstagio);
       if (!fluxoRej) return jsonError_('Fluxo não encontrado.', 'NOT_FOUND');
-      var etaRej = _validarTokenFluxo_(fluxoRej, body.token);
+      var etaRej = _validarAcessoSignatario_(fluxoRej, body.token, body.authToken);
       if (!etaRej) return jsonError_('Token inválido.', 'AUTH_ERROR');
       return rejeitarEtapaAssinatura_(body.idEstagio, body.numeroEtapa, body.motivo, body.retornoParaEtapa, etaRej.email || body.token);
     }

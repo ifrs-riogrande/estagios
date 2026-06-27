@@ -924,7 +924,8 @@
         idEstagio:   id,
         numeroEtapa: etapa.numero,
         pdfBase64:   base64,
-        token:       meuToken,
+        token:       meuToken || null,
+        authToken:   meuToken ? null : getAccessToken(),
       });
 
       mostrarSucesso('PDF enviado com sucesso! A próxima etapa foi notificada.');
@@ -953,7 +954,8 @@
           idEstagio:   id,
           numeroEtapa: etapa.numero,
           pdfBase64:   base64,
-          token:       meuToken,
+          token:       meuToken || null,
+          authToken:   meuToken ? null : getAccessToken(),
         });
       } else {
         await API.post('concluirEtapa', {
@@ -961,7 +963,8 @@
           idEstagio:   id,
           numeroEtapa: etapa.numero,
           driveUrl:    null,
-          token:       meuToken,
+          token:       meuToken || null,
+          authToken:   meuToken ? null : getAccessToken(),
         });
       }
 
