@@ -360,7 +360,7 @@
 
       document.getElementById('tab-andamento').innerHTML  = buildTabAndamento(s);
       document.getElementById('tab-dados').innerHTML      = buildTabDados(s);
-      document.getElementById('tab-documentos').innerHTML = buildTabDocumentos(s);
+      document.getElementById('tab-documentos').innerHTML = buildTabDocumentos(s, _ckInfoAluno);
       document.getElementById('tab-adendos').innerHTML    = buildTabAdendos(s);
       document.getElementById('tab-avaliacoes').innerHTML = buildTabAvaliacoes(s);
 
@@ -654,7 +654,7 @@
     /* ════════════════════════════════════════
        ABA: DOCUMENTOS (leitura — espelho do admin)
     ════════════════════════════════════════ */
-    function buildTabDocumentos(s) {
+    function buildTabDocumentos(s, ckInfo) {
       const sec = (titulo, conteudo) =>
         `<div style="margin-bottom:var(--space-6)">
            <h3 style="font-size:var(--font-size-sm);font-weight:600;margin-bottom:var(--space-4);
@@ -706,7 +706,8 @@
       {
         const statusesComFluxo = ['Em Assinaturas','Ativo','Em execução','Encerrado','Concluído',
                                    'Docs Enviados','Aguardando DG','Aguardando Validação Final'];
-        const temFluxo = statusesComFluxo.includes(s.status);
+        const ckAprovado = ckInfo && ckInfo.statusGeral === 'aprovado';
+        const temFluxo = statusesComFluxo.includes(s.status) || ckAprovado;
         const emAss    = s.status === 'Em Assinaturas';
 
         let fluxoHtml = '';
