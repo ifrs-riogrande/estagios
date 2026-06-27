@@ -1188,12 +1188,13 @@
           var cel = m[2]+'–'+m[3]+(m[4]?'\n('+m[4]+')':'');
           tbl[pI][dI] = tbl[pI][dI].trim() ? tbl[pI][dI]+'\n'+cel : cel;
         });
-        var sTH ='padding:5px 8px;font-size:11px;font-weight:600;background:var(--color-primary-light,#eff6ff);color:var(--color-primary);text-align:center;width:calc((100% - 60px)/7);';
-        var sTH0='padding:5px 8px;font-size:11px;font-weight:600;background:var(--color-primary);color:#fff;text-align:left;width:60px;';
+        var _bg ='background:var(--color-primary-light,#eff6ff);color:var(--color-primary);';
+        var sTH ='padding:5px 8px;font-size:11px;font-weight:600;'+_bg+'text-align:center;';
+        var sTH0='padding:5px 8px;font-size:11px;font-weight:600;'+_bg+'text-align:left;';
         var sTD0='padding:5px 8px;font-size:11px;font-weight:600;color:var(--color-text-muted);background:#f9fafb;border:1px solid var(--color-border);white-space:nowrap;';
         var sTDe='padding:5px 8px;font-size:11px;border:1px solid var(--color-border);text-align:center;color:#ccc;';
         var sTDf='padding:5px 8px;font-size:11px;border:1px solid var(--color-border);text-align:center;white-space:pre-line;vertical-align:top;';
-        var ht='<div class="d-field d-full" style="margin-top:var(--space-2)"><label>Dias e Horários</label><div style="overflow-x:auto;margin-top:var(--space-2)"><table style="width:100%;border-collapse:collapse"><thead><tr><th style="'+sTH0+'">Turno</th>';
+        var ht='<div class="d-field d-full" style="margin-top:var(--space-2)"><label>Dias e Horários</label><div style="overflow-x:auto;margin-top:var(--space-2)"><table style="width:100%;border-collapse:collapse;table-layout:fixed"><thead><tr><th style="'+sTH0+';width:60px">Turno</th>';
         DIAS.forEach(function(d){ht+='<th style="'+sTH+'">'+d+'</th>';});
         ht+='</tr></thead><tbody>';
         PERS.forEach(function(p,pi){
