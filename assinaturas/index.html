@@ -444,8 +444,9 @@
 
   // ── Estado ────────────────────────────────────────────────────
   let fluxo    = null;
-  let meuAtor  = null;   // identificador da etapa onde o usuário age
-  let meuEmail = null;
+  let meuAtor    = null;   // identificador da etapa onde o usuário age
+  let meuEmail   = null;
+  let podeVerPdf = false;  // true se magic-link ou estudante OAuth dono do estágio
   let meuToken = null;   // magic-link token (substitui OAuth para não-admin)
   let pdfFile  = null;   // arquivo selecionado para upload
 
@@ -488,6 +489,9 @@
       fluxo = data;
       // _meuAtor vem do backend (quando token) ou detecta por email (OAuth)
       meuAtor = data._meuAtor || (meuEmail ? detectarAtor(meuEmail, fluxo) : null);
+      // Pode ver/baixar PDF se veio por magic-link OU é o estudante dono do estágio (OAuth)
+      const etEstudante = fluxo.etapas ? fluxo.etapas.find(et => et.ator === 'estudante') : null;
+      podeVerPdf = !!meuToken || !!(meuEmail && etEstudante && (etEstudante.email || '').toLowerCase() === meuEmail.toLowerCase());
       renderizar();
     } catch (err) {
       mostrarErro(err.message || 'Não foi possível carregar o fluxo.');
@@ -579,7 +583,7 @@
         <span class="ass-info-value">${escapeHtml(val)}</span>
       </div>`;
     });
-    if (fluxo.temPdfOriginal && meuToken) {
+    if (fluxo.temPdfOriginal && podeVerPdf) {
       html += `<div class="ass-info-item">
         <span class="ass-info-label">TCE original</span>
         <button type="button" onclick="downloadPdf()" class="tl-pdf-link" style="background:none;border:none;padding:0;cursor:pointer;">
@@ -1043,7 +1047,7 @@
           <div class="tl-card-meta">
             ${dataStr  ? `<span>📅 ${dataStr}</span>` : ''}
             ${prazoStr ? `<span>⏰ ${prazoStr}</span>` : ''}
-            ${temPdf && meuToken ? `<button type="button" onclick="downloadPdf(${etapa.numero})" class="tl-pdf-link" style="background:none;border:none;padding:0;cursor:pointer;">
+            ${temPdf && podeVerPdf ? `<button type="button" onclick="downloadPdf(${etapa.numero})" class="tl-pdf-link" style="background:none;border:none;padding:0;cursor:pointer;">
               📄 Abrir PDF
             </button>` : ''}
             ${etapa.obs ? `<span title="${escapeHtml(etapa.obs)}">📝 Obs: ${escapeHtml(etapa.obs.substring(0,50))}${etapa.obs.length>50?'…':''}</span>` : ''}
