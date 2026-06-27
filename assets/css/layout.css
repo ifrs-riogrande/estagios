@@ -503,7 +503,7 @@ main {
 }
 
 .form-wrapper {
-  max-width: 760px;
+  max-width: var(--container-xl);
   margin: 0 auto;
 }
 
