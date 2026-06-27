@@ -1456,18 +1456,38 @@ function doGetAssinaturas(e) {
       var etapaParam = e.parameter && e.parameter.etapa ? parseInt(e.parameter.etapa, 10) : 0;
 
       if (authTkDl) {
-        // Caminho admin (OAuth): valida authToken e entrega o PDF mais recente disponível
-        try { validarTokenAdmin_(authTkDl); } catch(eAdm) { return jsonError_('Não autorizado: ' + eAdm.message, 'AUTH_ERROR'); }
-        if (etapaParam > 0 && etapaParam <= fluxoDl.etapas.length) {
-          var etAdm = fluxoDl.etapas[etapaParam - 1];
-          if (etAdm && etAdm.driveUrl) fileIdDl = _extrairFileIdDoUrl_(etAdm.driveUrl);
-        } else {
-          // Percorre etapas do fim para o início buscando PDF já gerado
-          for (var ka = fluxoDl.etapas.length - 1; ka >= 0; ka--) {
-            if (fluxoDl.etapas[ka].driveUrl) { fileIdDl = _extrairFileIdDoUrl_(fluxoDl.etapas[ka].driveUrl); break; }
+        // Tenta admin primeiro; se falhar, tenta estudante
+        var isAdmin = false;
+        var emailOAuth = '';
+        try { validarTokenAdmin_(authTkDl); isAdmin = true; } catch(eAdm) {}
+        if (!isAdmin) {
+          // Caminho OAuth estudante: valida token e confere se o email bate com a etapa do estudante
+          var tokenInfoDl;
+          try { tokenInfoDl = validarTokenEstudante_(authTkDl); } catch(eEst) {
+            return jsonError_('Não autorizado: ' + eEst.message, 'AUTH_ERROR');
           }
+          emailOAuth = (tokenInfoDl.email || '').toLowerCase();
+          var etapaEstudante = null;
+          for (var ke = 0; ke < fluxoDl.etapas.length; ke++) {
+            if (fluxoDl.etapas[ke].ator === 'estudante') { etapaEstudante = fluxoDl.etapas[ke]; break; }
+          }
+          if (!etapaEstudante || (etapaEstudante.email || '').toLowerCase() !== emailOAuth) {
+            return jsonError_('Não autorizado: este e-mail não corresponde ao estudante deste estágio.', 'AUTH_ERROR');
+          }
+          // Entrega o PDF original (antes de qualquer assinatura) para o estudante assinar
+          fileIdDl = _extrairFileIdDoUrl_(fluxoDl.pdfOriginalUrl);
+        } else {
+          // Caminho admin (OAuth): entrega o PDF mais recente disponível
+          if (etapaParam > 0 && etapaParam <= fluxoDl.etapas.length) {
+            var etAdm = fluxoDl.etapas[etapaParam - 1];
+            if (etAdm && etAdm.driveUrl) fileIdDl = _extrairFileIdDoUrl_(etAdm.driveUrl);
+          } else {
+            for (var ka = fluxoDl.etapas.length - 1; ka >= 0; ka--) {
+              if (fluxoDl.etapas[ka].driveUrl) { fileIdDl = _extrairFileIdDoUrl_(fluxoDl.etapas[ka].driveUrl); break; }
+            }
+          }
+          if (!fileIdDl) fileIdDl = _extrairFileIdDoUrl_(fluxoDl.pdfOriginalUrl);
         }
-        if (!fileIdDl) fileIdDl = _extrairFileIdDoUrl_(fluxoDl.pdfOriginalUrl);
       } else {
         // Caminho magic-link (signatário)
         if (!token) return jsonError_('Parâmetro token obrigatório.', 'MISSING_PARAM');

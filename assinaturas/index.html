@@ -1093,10 +1093,10 @@
   async function downloadPdf(etapaNumero) {
     const id    = new URLSearchParams(window.location.search).get('id');
     const token = meuToken;
-    // Sem magic-link: tenta com authToken OAuth (funciona apenas para admins)
+    // Sem magic-link: tenta com authToken OAuth (admin ou estudante logado)
     const authTk = !token ? getAccessToken() : null;
     if (!token && !authTk) {
-      mostrarToast('Use o link enviado por e-mail para baixar o documento.', 'warning');
+      mostrarToast('Faça login para baixar o documento.', 'warning');
       return;
     }
     try {
@@ -1121,7 +1121,7 @@
     } catch (err) {
       // Se veio pelo caminho OAuth e não tem permissão de admin, orienta o usuário
       if (!token && err.message && err.message.includes('Não autorizado')) {
-        mostrarToast('Use o link enviado por e-mail para baixar o documento.', 'warning');
+        mostrarToast('Acesso negado: ' + err.message, 'error');
       } else {
         mostrarToast('Erro ao baixar PDF: ' + (err.message || 'tente novamente.'), 'error');
       }
