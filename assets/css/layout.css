@@ -186,8 +186,8 @@ main {
 }
 
 /* ── Sino de notificações ── */
-.sge-bell-wrap { height: 38px; }
-.sge-bell-btn  { height: 38px; box-sizing: border-box; }
+.sge-bell-wrap { height: 40px !important; display: inline-flex !important; align-items: stretch !important; }
+.sge-bell-btn  { height: 100% !important; }
 
 /* ── Badge do usuário logado (pill-botão com dropdown) ── */
 .header-user-wrap {
