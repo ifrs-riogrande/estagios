@@ -1099,10 +1099,12 @@
       var icoD = `<svg viewBox="0 0 24 24" fill="white" width="16" height="16"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm4 18H6V4h7v5h5v11z"/></svg>`;
       var icoL = `<svg viewBox="0 0 24 24" fill="white" width="16" height="16"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg>`;
       function card(ico, bg, n, titulo, content) {
-        return `<div class="d-card"><div class="d-card-hdr"><span class="d-icon" style="background:${bg}">${ico}</span><span class="d-card-ttl">${n}. ${titulo}</span></div><div class="d-grid">${content}</div></div>`;
+        var icoC = ico.replace(/fill="white"/g, 'fill="' + bg + '"');
+        return `<div class="d-card"><div class="d-card-hdr"><span class="d-icon" style="background:${bg}1a">${icoC}</span><span class="d-card-ttl">${n}. ${titulo}</span></div><div class="d-grid">${content}</div></div>`;
       }
       function cardRaw(ico, bg, n, titulo, content) {
-        return `<div class="d-card"><div class="d-card-hdr"><span class="d-icon" style="background:${bg}">${ico}</span><span class="d-card-ttl">${n}. ${titulo}</span></div>${content}</div>`;
+        var icoC = ico.replace(/fill="white"/g, 'fill="' + bg + '"');
+        return `<div class="d-card"><div class="d-card-hdr"><span class="d-icon" style="background:${bg}1a">${icoC}</span><span class="d-card-ttl">${n}. ${titulo}</span></div>${content}</div>`;
       }
 
       // 1. Estudante
