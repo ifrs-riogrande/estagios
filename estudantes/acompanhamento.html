@@ -705,15 +705,15 @@
 
       // ── 3. Documentos do Fluxo ────────────────────────────────────────────────
       {
-        const statusesComFluxo = ['Em Assinaturas','Ativo','Em execução','Encerrado','Concluído',
+        const statusesComTCE  = ['Ativo','Em execução','Encerrado','Concluído',
                                    'Docs Enviados','Aguardando DG','Aguardando Validação Final'];
         const ckAprovado = ckInfo && ckInfo.statusGeral === 'aprovado';
-        const temFluxo = statusesComFluxo.includes(s.status) || ckAprovado;
-        const emAss    = s.status === 'Em Assinaturas';
+        const temSolicitacao = statusesComTCE.includes(s.status) || s.status === 'Em Assinaturas' || ckAprovado;
+        const temTCE         = statusesComTCE.includes(s.status);
 
         let fluxoHtml = '';
-        if (temFluxo) {
-          // 3.1 Solicitação
+        if (temSolicitacao) {
+          // 2.1 Solicitação
           const solBtnHtml = s.checklistPdfUrl
             ? `<button type="button" class="btn btn-secondary btn-sm"
                  data-estagio="${escapeHtml(s.id)}" data-tipo="solicitacao" data-ref=""
@@ -734,16 +734,10 @@
               </div>
             </div>
           </div>`;
+        }
 
-          // 3.2 TCE
-          const tceMeta = emAss
-            ? '🔏 Fluxo de assinaturas em andamento'
-            : 'Todas as assinaturas concluídas · ✓ Concluído';
-          const tceBtnHtml = emAss
-            ? `<a href="../assinaturas/?id=${encodeURIComponent(s.id)}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">Ir para Assinaturas ↗</a>`
-            : `<button type="button" class="btn btn-secondary btn-sm"
-                 data-estagio="${escapeHtml(s.id)}" data-tipo="tce" data-ref=""
-                 onclick="enviarDocBtn(this)">✉ Enviar para mim</button>`;
+        if (temTCE) {
+          // 2.2 TCE — só após fluxo de assinaturas completo
           fluxoHtml += `<div>
             <div style="font-size:var(--font-size-xs);font-weight:600;text-transform:uppercase;
                         color:var(--color-text-muted);letter-spacing:.04em;margin-bottom:var(--space-3)">
@@ -753,16 +747,18 @@
               <div class="avulso-item">
                 <div class="avulso-item-info">
                   <div class="avulso-item-title">📄 Termo de Compromisso de Estágio (TCE)</div>
-                  <div class="avulso-item-meta">${escapeHtml(tceMeta)}</div>
+                  <div class="avulso-item-meta">Todas as assinaturas concluídas · ✓ Concluído</div>
                 </div>
-                ${tceBtnHtml}
+                <button type="button" class="btn btn-secondary btn-sm"
+                  data-estagio="${escapeHtml(s.id)}" data-tipo="tce" data-ref=""
+                  onclick="enviarDocBtn(this)">✉ Enviar para mim</button>
               </div>
             </div>
           </div>`;
         }
 
         html += sec('2. 📄 Documentos do Fluxo',
-          temFluxo ? fluxoHtml : vazio('Os documentos do fluxo estarão disponíveis após aprovação da solicitação.')
+          temSolicitacao ? fluxoHtml : vazio('Os documentos do fluxo estarão disponíveis após aprovação da solicitação.')
         );
       }
 
