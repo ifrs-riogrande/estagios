@@ -348,6 +348,7 @@
       if (wrapAdendos)     wrapAdendos.innerHTML     = buildHistoricoAdendos(_historico);
       if (wrapAval)        wrapAval.innerHTML        = buildAvaliacoesContent(_atual);
       document.getElementById('tab-andamento').innerHTML = buildTabAndamento(_atual, _historico, _avaliacoes, _ckInfoAluno, _fluxoAluno);
+      document.getElementById('tab-documentos').innerHTML = buildTabDocumentos(_atual, _ckInfoAluno);
       document.getElementById('tab-parecer').innerHTML   = buildTabParecer(_historico);
       _atualizarContadores();
     }
