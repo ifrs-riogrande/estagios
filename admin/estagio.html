@@ -216,6 +216,7 @@
       <div class="container">
         <h1 id="hero-titulo">Carregando…</h1>
         <div id="hero-sub"></div>
+        <div id="hero-meta" style="margin-top:4px;font-size:var(--font-size-xs);color:var(--color-text-muted);display:flex;align-items:center;gap:var(--space-3);flex-wrap:wrap"></div>
       </div>
     </section>
 
@@ -469,6 +470,14 @@
         escapeHtml(s.empresa || '—') +
         '<span class="hero-sep">·</span>' +
         badgeStatus(s.status);
+      const meta = document.getElementById('hero-meta');
+      if (meta) {
+        const sep = '<span class="hero-sep">·</span>';
+        meta.innerHTML =
+          ((s.dataInicio && s.dataTermino) ? '📅 ' + escapeHtml(s.dataInicio) + ' a ' + escapeHtml(s.dataTermino) + sep : '') +
+          (s.tipoEstagio ? escapeHtml(s.tipoEstagio) + sep : '') +
+          (s.dataSolicitacao ? 'Solicitado em ' + escapeHtml(s.dataSolicitacao) : '');
+      }
     }
 
     /* ─── Seção NAPNE (exibida na aba Dados quando aluno é NEE) ─── */
@@ -699,29 +708,7 @@
           // 8. Plano de Atividades
           const c8 = `<div class="d-field d-full"><div style="line-height:1.7">${s.planoAtividades ? renderAtividades(s.planoAtividades) : '<span style="color:var(--color-text-muted)">—</span>'}</div></div>`;
 
-          const _modH = s.curso ? (s.curso.indexOf('Integrado') !== -1 ? 'Integrado' : s.curso.indexOf('Subsequente') !== -1 ? 'Subsequente' : 'Superior') : '—';
-          const _heroCard = `<div class="d-card" style="display:flex;flex-wrap:wrap;align-items:center;gap:var(--space-4)">
-            <div style="display:flex;align-items:center;gap:var(--space-3);flex:1;min-width:200px">
-              <div style="width:44px;height:44px;border-radius:50%;background:var(--color-primary-light,#eff6ff);display:flex;align-items:center;justify-content:center;flex-shrink:0">
-                <svg viewBox="0 0 24 24" fill="var(--color-primary)" width="24" height="24"><path d="M12 12c2.7 0 5-2.2 5-5s-2.3-5-5-5-5 2.2-5 5 2.3 5 5 5zm0 2c-3.3 0-10 1.7-10 5v2h20v-2c0-3.3-6.7-5-10-5z"/></svg>
-              </div>
-              <div>
-                <div style="font-size:var(--font-size-xs);color:var(--color-text-muted);margin-bottom:2px">Aluno</div>
-                <div style="font-size:var(--font-size-base);font-weight:700;color:var(--color-text)">${escapeHtml(s.nomeEstudante || '—')}</div>
-                <div style="font-size:var(--font-size-sm);color:var(--color-text-muted)">${escapeHtml(s.curso || '—')}</div>
-              </div>
-            </div>
-            <div style="display:flex;flex-wrap:wrap;gap:var(--space-5);align-items:flex-start">
-              <div><div style="font-size:var(--font-size-xs);color:var(--color-text-muted);margin-bottom:4px">Situação</div>${badgeStatus(s.status)}</div>
-              <div><div style="font-size:var(--font-size-xs);color:var(--color-text-muted);margin-bottom:4px">Período</div><div style="font-size:var(--font-size-sm);white-space:nowrap">📅 ${escapeHtml(s.dataInicio || '—')} a ${escapeHtml(s.dataTermino || '—')}</div></div>
-              <div><div style="font-size:var(--font-size-xs);color:var(--color-text-muted);margin-bottom:4px">ID</div><div style="font-size:var(--font-size-sm)"><code style="font-size:11px">${escapeHtml(s.id || '—')}</code></div></div>
-              <div><div style="font-size:var(--font-size-xs);color:var(--color-text-muted);margin-bottom:4px">Modalidade</div><div style="font-size:var(--font-size-sm)">${_modH}</div></div>
-              <div><div style="font-size:var(--font-size-xs);color:var(--color-text-muted);margin-bottom:4px">Solicitado em</div><div style="font-size:var(--font-size-sm)">${escapeHtml(s.dataSolicitacao || '—')}</div></div>
-            </div>
-          </div>`;
-
           let h = '<div class="d-wrap">';
-          h += _heroCard;
           h += `<div class="d-row">${card(icoP,'var(--color-primary)',1,'Estudante',c1)}${card(icoG,'#10b981',2,'Curso',c2)}</div>`;
           h += `<div class="d-row">${card(icoP,'#8b5cf6',3,'Orientador',c3)}${card(icoP,'#f59e0b',4,'Coordenador de Curso',c4)}</div>`;
           h += _sec5;
