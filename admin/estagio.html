@@ -1003,9 +1003,9 @@
 
       let html = '';
 
-      // ── 1. Pasta do Estágio no Drive ─────────────────────────────────────────
+      // ── Pasta do Estágio no Drive (sem numeração) ────────────────────────────
       if (_estagio && _estagio.driveUrl) {
-        html += sec('1. 📁 Pasta do Estágio no Drive',
+        html += sec('📁 Pasta do Estágio no Drive',
           `<div class="avulso-list">
             <div class="avulso-item">
               <div class="avulso-item-info">
@@ -1018,7 +1018,7 @@
         );
       }
 
-      // ── 2. Documentos de Admissão ─────────────────────────────────────────────
+      // ── 1. Documentos de Admissão ─────────────────────────────────────────────
       if (_estagio) {
         const docs = [
           { label: 'Comprovante de Matrícula', url: _estagio.linkDocMatricula },
@@ -1029,20 +1029,20 @@
           const itens = docs.map((d, i) => `
             <div class="avulso-item">
               <div class="avulso-item-info">
-                <div class="avulso-item-title">📄 2.${i+1}. ${escapeHtml(d.label)}</div>
+                <div class="avulso-item-title">📄 1.${i+1}. ${escapeHtml(d.label)}</div>
                 <div class="avulso-item-meta">Enviado pelo estudante na solicitação</div>
               </div>
               <a href="${escapeHtml(d.url)}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">Abrir ↗</a>
             </div>`).join('');
-          html += sec('2. 📄 Documentos de Admissão', `<div class="avulso-list">${itens}</div>`);
+          html += sec('1. 📄 Documentos de Admissão', `<div class="avulso-list">${itens}</div>`);
         }
       }
 
-      // ── 3. Documentos do Fluxo ────────────────────────────────────────────────
+      // ── 2. Documentos do Fluxo ────────────────────────────────────────────────
       {
         let fluxoHtml = '';
 
-        // 3.1 Solicitação de Estágio (checklist + docs do fluxo)
+        // 2.1 Solicitação de Estágio (checklist + docs do fluxo)
         let solHtml = '';
         if (temChecklist) solHtml += buildDocCardChecklist(_checklistInfo);
         _docsEnviados.forEach((s,i)   => { solHtml += buildDocCard(s, 'docs-enviados',  'd'+i); });
@@ -1052,13 +1052,13 @@
           fluxoHtml += `<div style="margin-bottom:var(--space-4)">
             <div style="font-size:var(--font-size-xs);font-weight:600;text-transform:uppercase;
                         color:var(--color-text-muted);letter-spacing:.04em;margin-bottom:var(--space-3)">
-              📄 3.1 Solicitação de Estágio
+              📄 2.1 Solicitação de Estágio
             </div>
             <div class="avulso-list">${solHtml}</div>
           </div>`;
         }
 
-        // 3.2 TCE
+        // 2.2 TCE
         let tceHtml = '';
         if (temTCE) tceHtml += buildDocCardTCE(_fluxoTCE);
         _fluxoDigital.forEach((item, i) => { tceHtml += buildDocCardDigital(item, i); });
@@ -1066,18 +1066,18 @@
           fluxoHtml += `<div>
             <div style="font-size:var(--font-size-xs);font-weight:600;text-transform:uppercase;
                         color:var(--color-text-muted);letter-spacing:.04em;margin-bottom:var(--space-3)">
-              📄 3.2 TCE — Termo de Compromisso de Estágio
+              📄 2.2 TCE — Termo de Compromisso de Estágio
             </div>
             <div class="avulso-list">${tceHtml}</div>
           </div>`;
         }
 
-        html += sec('3. 📄 Documentos do Fluxo',
+        html += sec('2. 📄 Documentos do Fluxo',
           fluxoHtml || vazio('Nenhum documento do fluxo de aprovação para este estágio.')
         );
       }
 
-      // ── 4. Avaliações ─────────────────────────────────────────────────────────
+      // ── 3. Avaliações ─────────────────────────────────────────────────────────
       {
         const subsec = (titulo, conteudo) =>
           `<div style="margin-bottom:var(--space-5)">
@@ -1113,18 +1113,18 @@
         const parciaisHtml = parciais.length
           ? `<div class="avulso-list">${parciais.map(buildAvalItem).join('')}</div>`
           : vazio('Nenhuma avaliação parcial concluída.');
-        avalHtml += subsec('4.1 Avaliações Parciais', parciaisHtml);
+        avalHtml += subsec('3.1 Avaliações Parciais', parciaisHtml);
 
         // 4.2 Avaliação Final
         const finaisHtml = finais.length
           ? `<div class="avulso-list">${finais.map(buildAvalItem).join('')}</div>`
           : vazio('Avaliação final ainda não concluída.');
-        avalHtml += subsec('4.2 Avaliação Final', finaisHtml);
+        avalHtml += subsec('3.2 Avaliação Final', finaisHtml);
 
-        html += sec('4. 📄 Avaliações de Estágio', avalHtml);
+        html += sec('3. 📄 Avaliações de Estágio', avalHtml);
       }
 
-      // ── 5. Parecer Final ──────────────────────────────────────────────────────
+      // ── 4. Parecer Final ──────────────────────────────────────────────────────
       {
         let parecerHtml = '';
         if (temParecer) {
@@ -1132,7 +1132,7 @@
           parecerHtml = `<div class="avulso-list">
             <div class="avulso-item">
               <div class="avulso-item-info">
-                <div class="avulso-item-title">📄 5.1. Parecer Final de Estágio</div>
+                <div class="avulso-item-title">📄 4.1. Parecer Final de Estágio</div>
                 <div class="avulso-item-meta">${escapeHtml(_parecer.tipoDiretoria||'')} · Aprovado em: ${escapeHtml(dtConc)}</div>
               </div>
               <div style="display:flex;gap:var(--space-2)">
@@ -1144,10 +1144,10 @@
         } else {
           parecerHtml = vazio('Parecer final ainda não concluído.');
         }
-        html += sec('5. 📄 Parecer Final', parecerHtml);
+        html += sec('4. 📄 Parecer Final', parecerHtml);
       }
 
-      // ── 6. Demais Documentos ──────────────────────────────────────────────────
+      // ── 5. Demais Documentos ──────────────────────────────────────────────────
       {
         let demaisHtml = '';
         if (_docsAvulsos.length) {
@@ -1155,7 +1155,7 @@
             _docsAvulsos.map((d, i) => `
               <div class="avulso-item">
                 <div class="avulso-item-info">
-                  <div class="avulso-item-title">📄 6.${i+1}. ${escapeHtml(d.titulo||'—')}</div>
+                  <div class="avulso-item-title">📄 5.${i+1}. ${escapeHtml(d.titulo||'—')}</div>
                   <div class="avulso-item-meta">
                     ${escapeHtml(d.data||'—')} · Por: ${escapeHtml(d.perfil==='Admin'?'Setor de Estágios':'Estudante')}
                     ${d.nomeArquivo ? ' · ' + escapeHtml(d.nomeArquivo) : ''}
@@ -1168,7 +1168,7 @@
           demaisHtml = vazio('Nenhum documento adicional enviado ainda.');
         }
 
-        html += sec('6. 📄 Demais Documentos',
+        html += sec('5. 📄 Demais Documentos',
           demaisHtml +
           `<div style="margin-top:var(--space-5);background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:var(--space-5)">
             <h4 style="font-size:var(--font-size-sm);font-weight:600;margin-bottom:var(--space-4)">Enviar documento para este estágio</h4>
