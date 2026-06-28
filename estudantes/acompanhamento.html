@@ -595,7 +595,9 @@
         ? 'Todos os atores validaram os dados do estágio.' + ckListConcluido
         : null;
 
-      var assLink = btns('<a href="../assinaturas/?id=' + encodeURIComponent(s.id) + '" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">Acompanhar Assinaturas ↗</a>');
+      var etEstudante = assEtapas ? assEtapas.find(function(et) { return et.ator === 'estudante'; }) : null;
+      var alunoJaAssinou = etEstudante && etEstudante.status === 'concluido';
+      var assLink = !alunoJaAssinou ? btns('<a href="../assinaturas/?id=' + encodeURIComponent(s.id) + '" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">Acompanhar Assinaturas ↗</a>') : '';
       var b4subs = (st4 === 'active' || st4 === 'done')
         ? '<div style="margin-top:var(--space-2)">' + assRows(st4 === 'done' ? 'concluido' : null) + '</div>'
           + (st4 === 'active' ? assLink : '')
