@@ -245,13 +245,6 @@
           ${item.tipoEstagio ? `<span>📋 ${escapeHtml(item.tipoEstagio)}</span>` : ''}
         </div>
         <div class="dg-card-actions">
-          ${item.pdfUrl ? `
-            <button type="button" class="btn btn-secondary btn-sm" onclick="downloadPdf('${escapeHtml(item.idEstagio)}')">
-              📄 Abrir PDF ↗
-            </button>` : ''}
-          <a href="https://assinador.iti.br" target="_blank" rel="noopener" class="btn btn-ghost btn-sm">
-            assinador.iti.br ↗
-          </a>
           <a href="${escapeHtml(assUrl)}" class="btn btn-primary btn-sm" style="margin-left:auto;">
             <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
               <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
