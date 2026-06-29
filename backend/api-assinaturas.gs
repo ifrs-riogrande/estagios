@@ -1351,15 +1351,24 @@ function _validarTokenFluxo_(fluxo, token) {
 function _validarAcessoSignatario_(fluxo, token, authToken) {
   // 1. magic-link
   if (token) return _validarTokenFluxo_(fluxo, token);
-  // 2. OAuth estudante
-  if (authToken) {
-    var info;
-    try { info = validarTokenEstudante_(authToken); } catch(e) { return null; }
-    var email = (info.email || '').toLowerCase();
-    for (var i = 0; i < fluxo.etapas.length; i++) {
-      if (fluxo.etapas[i].ator === 'estudante' && (fluxo.etapas[i].email || '').toLowerCase() === email) {
-        return fluxo.etapas[i];
+  if (!authToken) return null;
+  // 2. OAuth admin: pode agir em qualquer etapa interna aguardando
+  try {
+    validarTokenAdmin_(authToken);
+    for (var a = 0; a < fluxo.etapas.length; a++) {
+      if (fluxo.etapas[a].tipo === 'interno' && fluxo.etapas[a].status === 'aguardando') {
+        return fluxo.etapas[a];
       }
+    }
+    return null;
+  } catch(eAdm) {}
+  // 3. OAuth estudante
+  var info;
+  try { info = validarTokenEstudante_(authToken); } catch(e) { return null; }
+  var email = (info.email || '').toLowerCase();
+  for (var i = 0; i < fluxo.etapas.length; i++) {
+    if (fluxo.etapas[i].ator === 'estudante' && (fluxo.etapas[i].email || '').toLowerCase() === email) {
+      return fluxo.etapas[i];
     }
   }
   return null;
