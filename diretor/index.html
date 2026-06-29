@@ -153,8 +153,7 @@
   <script>
   'use strict';
 
-  // A Direção-Geral é a etapa 7 do fluxo de assinaturas
-  const ETAPA_DG = 7;
+  const ATOR_DG = 'direcao';
 
   document.addEventListener('DOMContentLoaded', async () => {
     // Diretor Geral é um servidor — requer domínio @riogrande.ifrs.edu.br
@@ -169,7 +168,7 @@
     lista.innerHTML = '<div class="dg-empty"><p>Carregando…</p></div>';
 
     try {
-      const itens = await API.get('listarFluxosPendentesEtapa', { etapa: ETAPA_DG });
+      const itens = await API.get('listarFluxosPendentesAtor', { ator: ATOR_DG });
 
       if (!itens || itens.length === 0) {
         badge.textContent = 'Nenhuma pendência';

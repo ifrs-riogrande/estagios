@@ -113,6 +113,7 @@ var GET_ROUTES = {
   'obterFluxoAssinaturas':        doGetAssinaturas,
   'obterFluxoAssinaturasAdmin':   doGetAssinaturas,
   'listarFluxosPendentesEtapa':   doGetAssinaturas,
+  'listarFluxosPendentesAtor':    doGetAssinaturas,
   'baixarPdfAssinatura':          doGetAssinaturas,
 
   // Assinaturas Adendo

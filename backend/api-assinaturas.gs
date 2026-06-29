@@ -1293,44 +1293,72 @@ function uploadPdfAssinado_(idEstagio, numeroEtapa, pdfBase64, token, authToken)
  * @returns {Array<Object>}
  */
 function listarFluxosPendentesEtapa_(numEtapa) {
+  return _listarFluxosPendentes_(null, numEtapa);
+}
+
+function listarFluxosPendentesAtor_(ator) {
+  return _listarFluxosPendentes_(ator, null);
+}
+
+function _listarFluxosPendentes_(ator, numEtapa) {
   try {
     var sheet = SpreadsheetApp.openById(SS_ID).getSheetByName(ASSINATURAS_SHEET);
     if (!sheet) return [];
-    var dados   = sheet.getDataRange().getValues();
-    var statusCol = 4 + (numEtapa - 1) * 3; // 0-based
+    var dados = sheet.getDataRange().getValues();
+
+    // Se busca por número fixo, calcula coluna de status na planilha
+    var statusCol = numEtapa ? (4 + (numEtapa - 1) * 3) : null;
 
     var resultado = [];
     for (var i = 1; i < dados.length; i++) {
       var row = dados[i];
       if (!row[0]) continue;
       if (String(row[1]).toLowerCase() !== 'em_andamento') continue;
-      if (String(row[statusCol]).toLowerCase() !== ASS_STATUS.AGUARDANDO) continue;
+
+      // Para busca por número: filtra pela coluna de status fixa
+      if (statusCol !== null && String(row[statusCol]).toLowerCase() !== ASS_STATUS.AGUARDANDO) continue;
 
       var id    = String(row[0]);
       var fluxo = obterFluxoAssinaturas_(id);
-      if (!fluxo) continue;
+      if (!fluxo || !fluxo.etapas) continue;
+
+      // Encontra a etapa pendente
+      var etapa = null;
+      var etIdx = -1;
+      if (ator) {
+        for (var a = 0; a < fluxo.etapas.length; a++) {
+          if (fluxo.etapas[a].ator === ator && fluxo.etapas[a].status === ASS_STATUS.AGUARDANDO) {
+            etapa = fluxo.etapas[a];
+            etIdx = a;
+            break;
+          }
+        }
+        if (!etapa) continue;
+      } else {
+        etIdx = numEtapa - 1;
+        etapa = fluxo.etapas[etIdx] || null;
+      }
 
       var sol = {};
       try { sol = _obterDadosSolicitacaoCompleto_(id); } catch (_) {}
 
-      var etapa   = fluxo.etapas && fluxo.etapas[numEtapa - 1];
-      var prevEt  = fluxo.etapas && numEtapa > 1 ? fluxo.etapas[numEtapa - 2] : null;
-      var pdfUrl  = (prevEt && prevEt.driveUrl) || fluxo.pdfOriginalUrl || '';
+      var prevEt = etIdx > 0 ? fluxo.etapas[etIdx - 1] : null;
+      var pdfUrl = (prevEt && prevEt.driveUrl) || fluxo.pdfOriginalUrl || '';
 
       resultado.push({
-        idEstagio:      id,
-        nomeEstudante:  sol.nomeEstudante  || '',
-        nomeEmpresa:    sol.nomeEmpresa    || '',
-        curso:          sol.curso          || '',
-        tipoEstagio:    sol.tipoEstagio    || '',
-        pdfUrl:         pdfUrl,
+        idEstagio:       id,
+        nomeEstudante:   sol.nomeEstudante  || '',
+        nomeEmpresa:     sol.nomeEmpresa    || '',
+        curso:           sol.curso          || '',
+        tipoEstagio:     sol.tipoEstagio    || '',
+        pdfUrl:          pdfUrl,
         prazoVencimento: etapa ? (etapa.prazoVencimento || '') : '',
-        tsFluxo:        fluxo.timestampCriacao || '',
+        tsFluxo:         fluxo.timestampCriacao || '',
       });
     }
     return resultado;
   } catch (e) {
-    logErro_('listarFluxosPendentesEtapa_', e);
+    logErro_('_listarFluxosPendentes_', e);
     return [];
   }
 }
@@ -1395,6 +1423,12 @@ function doGetAssinaturas(e) {
       if (!numEt || numEt < 1 || numEt > 8)
         return jsonError_('Parâmetro etapa deve ser 1–8.', 'MISSING_PARAM');
       return jsonOk_(listarFluxosPendentesEtapa_(numEt));
+    }
+
+    case 'listarFluxosPendentesAtor': {
+      var atorParam = (e.parameter.ator || '').trim();
+      if (!atorParam) return jsonError_('Parâmetro ator obrigatório.', 'MISSING_PARAM');
+      return jsonOk_(listarFluxosPendentesAtor_(atorParam));
     }
 
     case 'obterFluxoAssinaturas': {
