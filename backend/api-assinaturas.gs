@@ -1519,34 +1519,43 @@ function doGetAssinaturas(e) {
       var etapaParam = e.parameter && e.parameter.etapa ? parseInt(e.parameter.etapa, 10) : 0;
 
       if (authTkDl) {
-        // Tenta admin primeiro; se falhar, tenta estudante
-        var isAdmin = false;
-        var emailOAuth = '';
-        try { validarTokenAdmin_(authTkDl); isAdmin = true; } catch(eAdm) {}
-        if (!isAdmin) {
-          // Caminho OAuth estudante: valida token e confere se o email bate com a etapa do estudante
-          var tokenInfoDl;
-          try { tokenInfoDl = validarTokenEstudante_(authTkDl); } catch(eEst) {
-            return jsonError_('Não autorizado: ' + eEst.message, 'AUTH_ERROR');
-          }
-          emailOAuth = (tokenInfoDl.email || '').toLowerCase();
-          var etapaEstudante = null;
-          for (var ke = 0; ke < fluxoDl.etapas.length; ke++) {
-            if (fluxoDl.etapas[ke].ator === 'estudante') { etapaEstudante = fluxoDl.etapas[ke]; break; }
-          }
-          if (!etapaEstudante || (etapaEstudante.email || '').toLowerCase() !== emailOAuth) {
-            return jsonError_('Não autorizado: este e-mail não corresponde ao estudante deste estágio.', 'AUTH_ERROR');
-          }
-          // Entrega o PDF original (antes de qualquer assinatura) para o estudante assinar
-          fileIdDl = _extrairFileIdDoUrl_(fluxoDl.pdfOriginalUrl);
-        } else {
-          // Caminho admin (OAuth): entrega o PDF mais recente disponível
+        // 1. Tenta admin
+        var isAdminDl = false;
+        try { validarTokenAdmin_(authTkDl); isAdminDl = true; } catch(eAdm) {}
+
+        if (isAdminDl) {
+          // Admin: entrega o PDF mais recente disponível
           if (etapaParam > 0 && etapaParam <= fluxoDl.etapas.length) {
             var etAdm = fluxoDl.etapas[etapaParam - 1];
             if (etAdm && etAdm.driveUrl) fileIdDl = _extrairFileIdDoUrl_(etAdm.driveUrl);
           } else {
             for (var ka = fluxoDl.etapas.length - 1; ka >= 0; ka--) {
               if (fluxoDl.etapas[ka].driveUrl) { fileIdDl = _extrairFileIdDoUrl_(fluxoDl.etapas[ka].driveUrl); break; }
+            }
+          }
+          if (!fileIdDl) fileIdDl = _extrairFileIdDoUrl_(fluxoDl.pdfOriginalUrl);
+        } else {
+          // 2. Valida token genérico e verifica se email bate com alguma etapa do fluxo
+          var tokenInfoDl;
+          try { tokenInfoDl = AUTH.validarToken(authTkDl); } catch(eEst) {
+            return jsonError_('Não autorizado: ' + eEst.message, 'AUTH_ERROR');
+          }
+          var emailOAuth = (tokenInfoDl.email || '').toLowerCase();
+          var etapaSignatario = null;
+          for (var ke = 0; ke < fluxoDl.etapas.length; ke++) {
+            if ((fluxoDl.etapas[ke].email || '').toLowerCase() === emailOAuth) {
+              etapaSignatario = fluxoDl.etapas[ke];
+              break;
+            }
+          }
+          if (!etapaSignatario) {
+            return jsonError_('Não autorizado: este e-mail não é signatário deste estágio.', 'AUTH_ERROR');
+          }
+          // Signatário não-admin recebe o PDF da etapa anterior à sua (ou o original)
+          var etapaSignNum = etapaSignatario.numero || 1;
+          for (var ks = etapaSignNum - 2; ks >= 0; ks--) {
+            if (fluxoDl.etapas[ks] && fluxoDl.etapas[ks].driveUrl) {
+              fileIdDl = _extrairFileIdDoUrl_(fluxoDl.etapas[ks].driveUrl); break;
             }
           }
           if (!fileIdDl) fileIdDl = _extrairFileIdDoUrl_(fluxoDl.pdfOriginalUrl);
