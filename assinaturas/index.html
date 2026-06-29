@@ -387,7 +387,7 @@
     </section>
 
     <div class="container" style="padding-top:var(--space-8);padding-bottom:var(--space-12);">
-      <div style="max-width:720px;margin:0 auto;">
+      <div style="max-width:var(--container-xl,1280px);margin:0 auto;">
 
         <!-- Loading -->
         <div id="ass-loading">
@@ -805,14 +805,14 @@
           : 'Revise o documento e aprove ou rejeite para retornar a uma etapa anterior.'}</p>
 
         <div style="display:flex;gap:var(--space-3);flex-wrap:wrap;margin-bottom:var(--space-4);">
-          <button type="button" class="btn btn-secondary" onclick="downloadPdf()">
+          <button type="button" class="btn btn-secondary" onclick="downloadPdf()" style="min-width:160px;justify-content:center">
             <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
               <path fill-rule="evenodd" d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7.414A2 2 0 0015.414 6L12 2.586A2 2 0 0010.586 2H6zm5 6a1 1 0 10-2 0v3.586l-1.293-1.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V8z" clip-rule="evenodd"/>
             </svg>
             📄 Abrir PDF ↗
           </button>
           <a href="https://validar.iti.gov.br/" target="_blank" rel="noopener noreferrer"
-             class="btn btn-secondary" title="Validar assinatura digital no portal ITI Gov.br">
+             class="btn btn-secondary" title="Validar assinatura digital no portal ITI Gov.br" style="min-width:160px;justify-content:center">
             <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
               <path fill-rule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
             </svg>
@@ -838,13 +838,13 @@
           </div>` : ''}
 
         <div style="display:flex;gap:var(--space-3);flex-wrap:wrap;margin-bottom:var(--space-3);">
-          <button class="btn btn-success" id="btn-aprovar-interno">
+          <button class="btn btn-success" id="btn-aprovar-interno" style="min-width:160px;justify-content:center">
             <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
               <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
             </svg>
             ${ehFinal ? 'Concluir Fluxo' : 'Aprovar'}
           </button>
-          <button class="btn btn-error" id="btn-rejeitar-toggle">
+          <button class="btn btn-error" id="btn-rejeitar-toggle" style="min-width:160px;justify-content:center">
             <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
               <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
             </svg>
