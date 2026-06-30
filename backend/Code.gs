@@ -55,7 +55,8 @@ var GET_ROUTES = {
 
   // Solicitações (estudante + admin)
   'verificarIdEstagio':         doGetSolicitacao,
-  'verificarAceiteOrientador':  doGetSolicitacao,
+  'verificarAceiteOrientador':      doGetSolicitacao,
+  'verificarAceiteOrientadorOAuth': doGetSolicitacao,
   'listarHistoricoEstagio':     doGetSolicitacao,
   'listarDocumentosAvulsos':    doGetSolicitacao,
 
@@ -174,7 +175,8 @@ var POST_ROUTES = {
   'enviarAdendo':              doPostSolicitacao,
   'enviarDocumentosAssinados': doPostSolicitacao,
   'enviarDocumentoDG':         doPostSolicitacao,
-  'responderAceiteOrientador': doPostSolicitacao,
+  'responderAceiteOrientador':      doPostSolicitacao,
+  'responderAceiteOrientadorOAuth': doPostSolicitacao,
   'trocarOrientador':          doPostSolicitacao,
   'uploadDocumentoEstagio':      doPostSolicitacao,
   'marcarDocumentoRevisado':     doPostSolicitacao,
@@ -397,7 +399,8 @@ function doPostServidores(e) {
 function doGetSolicitacao(e) {
   var action = (e.parameter && e.parameter.action) || '';
   if (action === 'verificarIdEstagio')         return getVerificarIdEstagio_(e);
-  if (action === 'verificarAceiteOrientador')  return verificarAceiteOrientador_(e);
+  if (action === 'verificarAceiteOrientador')      return verificarAceiteOrientador_(e);
+  if (action === 'verificarAceiteOrientadorOAuth') return verificarAceiteOrientadorOAuth_(e);
   if (action === 'listarHistoricoEstagio')      return listarHistoricoEstagio_(e);
   if (action === 'listarDocumentosAvulsos')     return listarDocumentosAvulsos_(e);
   return jsonError_('Ação GET não reconhecida em solicitacao: ' + action, 'NOT_IMPLEMENTED');
@@ -411,7 +414,8 @@ function doPostSolicitacao(e) {
     case 'enviarAdendo':              return enviarAdendo_(body);
     case 'enviarDocumentosAssinados': return enviarDocumentosAssinados_(body);
     case 'enviarDocumentoDG':          return enviarDocumentoDG_(body);
-    case 'responderAceiteOrientador':  return responderAceiteOrientador_(body);
+    case 'responderAceiteOrientador':      return responderAceiteOrientador_(body);
+    case 'responderAceiteOrientadorOAuth': return responderAceiteOrientadorOAuth_(body);
     case 'trocarOrientador':           return trocarOrientador_(body);
     case 'uploadDocumentoEstagio':       return uploadDocumentoEstagio_(body);
     case 'marcarDocumentoRevisado':      return marcarDocumentoRevisado_(body);

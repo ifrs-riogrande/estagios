@@ -409,6 +409,7 @@
     var _aceitou   = null;
     var _dadosSol  = {};
     var _authToken = '';   // token Google do orientador autenticado (preenchido no fluxo de cadastro)
+    var _modoOAuth = false; // true quando acessado sem magic-link, via OAuth direto
 
     var PAINEIS = ['painel-carregando', 'painel-erro', 'painel-info', 'painel-confirmacao'];
 
@@ -430,64 +431,27 @@
       _token     = params.get('token') || '';
       _idEstagio = params.get('id')    || '';
 
-      if (!_token) { mostrarErro('Link inválido — token não encontrado na URL.'); return; }
-
       mostrarPainel('painel-carregando');
-      carregarSolicitacao();
+
+      if (_token) {
+        // Caminho normal: magic-link
+        carregarSolicitacao();
+      } else if (_idEstagio) {
+        // Caminho OAuth: acessado de meus-orientandos sem token
+        _modoOAuth = true;
+        carregarSolicitacaoOAuth();
+      } else {
+        mostrarErro('Link inválido — token ou ID do estágio não encontrado na URL.');
+      }
     });
 
-    // ── Carrega dados ──────────────────────────────────────────────
+    // ── Carrega dados (magic-link) ─────────────────────────────────
     async function carregarSolicitacao() {
       try {
         var dados  = await apiVerificarAceiteOrientador(_token);
         _idEstagio = dados.idEstagio || _idEstagio;
         _dadosSol  = dados;
-
-        // Hero
-        var hero   = document.getElementById('ck-hero');
-        hero.hidden = false;
-        var partes = [];
-        if (dados.nomeEstudante) partes.push(escapeHtml(dados.nomeEstudante));
-        if (dados.curso)         partes.push(escapeHtml(dados.curso));
-        if (dados.nomeEmpresa)   partes.push(escapeHtml(dados.nomeEmpresa));
-        document.getElementById('ck-hero-desc').textContent =
-          partes.length ? partes.join(' · ') : 'Verifique os itens abaixo e registre sua resposta.';
-
-        // Timeline simples
-        renderizarTimeline(dados);
-
-        // Dados da solicitação
-        renderizarSolicitacao(dados);
-
-        // Itens (somente documentos)
-        _itensRaw = (dados.checklistItens || []).filter(function (it) {
-          return it.id !== 'aceite_orientacao';
-        });
-        renderizarItensChecklist(_itensRaw);
-
-        // Se o orientador ainda não completou o cadastro, mostra o formulário de registro
-        if (dados.orientadorPrecisaCadastro) {
-          mostrarPainelCadastro(dados);
-        }
-
-        // Listener obs-geral → bloqueia confirmar
-        document.getElementById('obs-geral').addEventListener('input', function () {
-          var temObs = this.value.trim().length > 0;
-          var btn    = document.getElementById('btn-submeter');
-          btn.disabled      = temObs;
-          btn.style.opacity = temObs ? '0.5' : '';
-          btn.style.cursor  = temObs ? 'not-allowed' : '';
-        });
-
-        // Listeners botões
-        document.getElementById('btn-ajuste').addEventListener('click', function () {
-          submeterChecklist('ajuste');
-        });
-        document.getElementById('btn-submeter').addEventListener('click', function () {
-          submeterChecklist('aprovado');
-        });
-
-        mostrarPainel('painel-info');
+        _renderizarPaginaAceite(dados);
       } catch (err) {
         var msg = err.message || '';
         if (/expir|utiliz/i.test(msg))
@@ -497,6 +461,76 @@
         else
           mostrarErro('Erro ao carregar solicitação: ' + msg);
       }
+    }
+
+    // ── Carrega via OAuth (sem magic-link) ────────────────────────
+    async function carregarSolicitacaoOAuth() {
+      try {
+        var authTok = (typeof getAccessToken === 'function') ? getAccessToken() : null;
+        if (!authTok) {
+          mostrarErro('Faça login com sua conta institucional para acessar esta página.');
+          return;
+        }
+        _authToken = authTok;
+        var dados = await apiVerificarAceiteOrientadorOAuth(authTok, _idEstagio);
+        _idEstagio = dados.idEstagio || _idEstagio;
+        _dadosSol  = dados;
+        _renderizarPaginaAceite(dados);
+      } catch (err) {
+        var msg = err.message || '';
+        if (/expir|utiliz/i.test(msg)) {
+          document.getElementById('msg-erro').innerHTML =
+            'O aceite já foi respondido para este estágio. '
+            + '<a href="../checklist/index.html?id=' + escapeHtml(_idEstagio) + '" style="color:var(--color-primary)">Ver checklist ↗</a>';
+          mostrarPainel('painel-erro');
+          return;
+        }
+        else if (/autorizado/i.test(msg))
+          mostrarErro('Acesso negado: ' + msg);
+        else
+          mostrarErro('Erro ao carregar: ' + msg);
+      }
+    }
+
+    // ── Lógica compartilhada de renderização ──────────────────────
+    function _renderizarPaginaAceite(dados) {
+      var hero = document.getElementById('ck-hero');
+      hero.hidden = false;
+      var partes = [];
+      if (dados.nomeEstudante) partes.push(escapeHtml(dados.nomeEstudante));
+      if (dados.curso)         partes.push(escapeHtml(dados.curso));
+      if (dados.nomeEmpresa)   partes.push(escapeHtml(dados.nomeEmpresa));
+      document.getElementById('ck-hero-desc').textContent =
+        partes.length ? partes.join(' · ') : 'Verifique os itens abaixo e registre sua resposta.';
+
+      renderizarTimeline(dados);
+      renderizarSolicitacao(dados);
+
+      _itensRaw = (dados.checklistItens || []).filter(function (it) {
+        return it.id !== 'aceite_orientacao';
+      });
+      renderizarItensChecklist(_itensRaw);
+
+      if (dados.orientadorPrecisaCadastro) {
+        mostrarPainelCadastro(dados);
+      }
+
+      document.getElementById('obs-geral').addEventListener('input', function () {
+        var temObs = this.value.trim().length > 0;
+        var btn    = document.getElementById('btn-submeter');
+        btn.disabled      = temObs;
+        btn.style.opacity = temObs ? '0.5' : '';
+        btn.style.cursor  = temObs ? 'not-allowed' : '';
+      });
+
+      document.getElementById('btn-ajuste').addEventListener('click', function () {
+        submeterChecklist('ajuste');
+      });
+      document.getElementById('btn-submeter').addEventListener('click', function () {
+        submeterChecklist('aprovado');
+      });
+
+      mostrarPainel('painel-info');
     }
 
     // ── Cadastro de orientador convidado ──────────────────────────
@@ -949,10 +983,12 @@
       btn.textContent = 'Enviando...';
 
       try {
-        await apiResponderAceiteOrientador({
-          token: _token, idEstagio: _idEstagio,
-          itens: [], decisao: 'recusado', obs: motivo,
-        });
+        if (_modoOAuth) {
+          var authTok = _authToken || ((typeof getAccessToken === 'function') ? getAccessToken() : null);
+          await apiResponderAceiteOrientadorOAuth({ authToken: authTok, idEstagio: _idEstagio, itens: [], decisao: 'recusado', obs: motivo });
+        } else {
+          await apiResponderAceiteOrientador({ token: _token, idEstagio: _idEstagio, itens: [], decisao: 'recusado', obs: motivo });
+        }
         mostrarConfirmacao('recusado');
       } catch (err) {
         btn.disabled    = false;
@@ -1024,10 +1060,12 @@
       btnSubmeter.textContent = 'Enviando...';
 
       try {
-        await apiResponderAceiteOrientador({
-          token: _token, idEstagio: _idEstagio,
-          itens: itensEnviados, decisao: decisao, obs: obs,
-        });
+        if (_modoOAuth) {
+          var authTok = _authToken || ((typeof getAccessToken === 'function') ? getAccessToken() : null);
+          await apiResponderAceiteOrientadorOAuth({ authToken: authTok, idEstagio: _idEstagio, itens: itensEnviados, decisao: decisao, obs: obs });
+        } else {
+          await apiResponderAceiteOrientador({ token: _token, idEstagio: _idEstagio, itens: itensEnviados, decisao: decisao, obs: obs });
+        }
         mostrarConfirmacao(decisao === 'aprovado' ? true : decisao);
       } catch (err) {
         btnSubmeter.disabled    = false;

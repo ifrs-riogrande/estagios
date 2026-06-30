@@ -593,6 +593,133 @@ function enviarAdendo_(dados) {
 // ---------------------------------------------------------------------------
 
 /**
+ * Versão OAuth de verificarAceiteOrientador_.
+ * Recebe authToken (Google OAuth) + idEstagio, valida pelo e-mail do orientador.
+ */
+function verificarAceiteOrientadorOAuth_(e) {
+  var authToken = (e.parameter && e.parameter.authToken) || '';
+  var idEstagio = sanitizar_((e.parameter && e.parameter.idEstagio) || '', 20);
+  if (!authToken) return jsonError_('authToken não informado.', 'VALIDATION');
+  if (!idEstagio) return jsonError_('idEstagio não informado.', 'VALIDATION');
+
+  var info;
+  try { info = AUTH.validarToken(authToken); } catch(eA) {
+    return jsonError_('Token OAuth inválido: ' + eA.message, 'AUTH_ERROR');
+  }
+  var emailOAuth = (info.email || '').toLowerCase().trim();
+
+  var ss    = SpreadsheetApp.openById(CFG_SOL.SS_ID);
+  var sheet = ss.getSheetByName(CFG_SOL.ABA_SOL);
+  if (!sheet) return jsonError_('Planilha não configurada.', 'NOT_FOUND');
+  var dados = sheet.getDataRange().getValues();
+
+  for (var i = 1; i < dados.length; i++) {
+    if (String(dados[i][COL_SOL.ID_ESTAGIO] || '') !== idEstagio) continue;
+
+    var emailOri = String(dados[i][COL_SOL.EMAIL_ORIENTADOR] || '').toLowerCase().trim();
+    if (emailOri !== emailOAuth)
+      return jsonError_('Não autorizado: este e-mail não é o orientador deste estágio.', 'AUTH_ERROR');
+
+    var ck = obterChecklist_(idEstagio);
+    if (!ck || !ck.orientador) return jsonError_('Checklist não encontrado.', 'NOT_FOUND');
+    if (ck.orientador.status !== 'pendente')
+      return jsonError_('O aceite já foi respondido.', 'EXPIRED');
+
+    var _curso    = String(dados[i][COL_SOL.CURSO]           || '');
+    var _cnpj     = String(dados[i][COL_SOL.CNPJ_EMPRESA]    || '');
+    var _emailSup = String(dados[i][COL_SOL.EMAIL_SUPERVISOR] || '');
+    var _oriPrecisaCadastro = false;
+    try {
+      var _oriEntry  = verificarOrientadorPorEmail_(emailOri);
+      var _oriStatus = _oriEntry ? String(_oriEntry.data[COL_ORI.STATUS] || '').trim() : '';
+      _oriPrecisaCadastro = (!_oriEntry || _oriStatus === 'Convidado');
+    } catch(_) {}
+
+    return jsonOk_({
+      idEstagio:          idEstagio,
+      nomeEstudante:      String(dados[i][COL_SOL.NOME_ESTUDANTE]   || ''),
+      emailEstudante:     String(dados[i][COL_SOL.EMAIL_ESTUDANTE]  || ''),
+      matricula:          String(dados[i][COL_SOL.MATRICULA]        || ''),
+      curso:              _curso,
+      modalidade:         _ckDerivarModalidade_(_curso),
+      turno:              String(dados[i][COL_SOL.TURNO]            || ''),
+      semestre:           String(dados[i][COL_SOL.SEMESTRE_SOL]     || ''),
+      formando:           String(dados[i][COL_SOL.FORMANDO]         || ''),
+      telefoneEstudante:  String(dados[i][COL_SOL.TELEFONE]         || ''),
+      nomeResp:           String(dados[i][COL_SOL.NOME_RESP]        || ''),
+      cpfResp:            mascararCPF_(dados[i][COL_SOL.CPF_RESP]),
+      nomeEmpresa:        String(dados[i][COL_SOL.NOME_EMPRESA]     || ''),
+      cnpjEmpresa:        _cnpj,
+      telEmpresa:         _ckObterTelEmpresa_(_cnpj),
+      tipoEstagio:        String(dados[i][COL_SOL.TIPO_ESTAGIO]     || ''),
+      nomeSupervisor:     String(dados[i][COL_SOL.NOME_SUPERVISOR]  || ''),
+      emailSupervisor:    _emailSup,
+      formacaoSupervisor: _ckObterFormacaoSupervisor_(_emailSup),
+      nomeOrientador:     String(dados[i][COL_SOL.NOME_ORIENTADOR]  || ''),
+      nomeCoordenador:    _ckObterNomeCoordenador_(_curso),
+      dataInicio:         formatarData_(String(dados[i][COL_SOL.DATA_INICIO]  || '')),
+      dataTermino:        formatarData_(String(dados[i][COL_SOL.DATA_TERMINO] || '')),
+      cargaHoraria:       String(dados[i][COL_SOL.CARGA_HOR]        || ''),
+      horario:            String(dados[i][COL_SOL.HORARIO]          || ''),
+      planoAtividades:    String(dados[i][COL_SOL.PLANO_ATIVIDADES] || ''),
+      checklistItens:         ck.orientador.itens || [],
+      prazoVencimento:        ck.orientador.prazoVencimento || '',
+      orientadorPrecisaCadastro: _oriPrecisaCadastro,
+      emailOrientador:           emailOri,
+      modoOAuth:                 true,
+    });
+  }
+  return jsonError_('Estágio não encontrado.', 'NOT_FOUND');
+}
+
+/**
+ * Versão OAuth de responderAceiteOrientador_.
+ * Body: { authToken, idEstagio, itens, decisao, obs }
+ */
+function responderAceiteOrientadorOAuth_(body) {
+  var authToken = String(body.authToken || '').trim();
+  var idEstagio = sanitizar_(body.idEstagio || '', 20);
+  var itens     = Array.isArray(body.itens) ? body.itens : [];
+  var decisao   = String(body.decisao || '').trim();
+  var obs       = sanitizar_(body.obs || '', 500);
+
+  if (!authToken) return jsonError_('authToken não informado.', 'VALIDATION');
+  if (!idEstagio) return jsonError_('idEstagio não informado.', 'VALIDATION');
+  if (!decisao)   return jsonError_('Decisão não informada.', 'VALIDATION');
+
+  var info;
+  try { info = AUTH.validarToken(authToken); } catch(eA) {
+    return jsonError_('Token OAuth inválido: ' + eA.message, 'AUTH_ERROR');
+  }
+  var emailOAuth = (info.email || '').toLowerCase().trim();
+
+  var ss    = SpreadsheetApp.openById(CFG_SOL.SS_ID);
+  var sheet = ss.getSheetByName(CFG_SOL.ABA_SOL);
+  if (!sheet) return jsonError_('Planilha não configurada.', 'INTERNAL');
+  var dados = sheet.getDataRange().getValues();
+
+  for (var i = 1; i < dados.length; i++) {
+    if (String(dados[i][COL_SOL.ID_ESTAGIO] || '') !== idEstagio) continue;
+    var emailOri = String(dados[i][COL_SOL.EMAIL_ORIENTADOR] || '').toLowerCase().trim();
+    if (emailOri !== emailOAuth)
+      return jsonError_('Não autorizado: e-mail não corresponde ao orientador.', 'AUTH_ERROR');
+
+    var statusAtual = String(dados[i][COL_SOL.STATUS] || '').trim();
+    if (statusAtual && statusAtual !== 'Em Checklist')
+      return jsonError_('Este estágio não está mais aguardando resposta do orientador.', 'INVALID_STATE');
+
+    // Usa token do checklist como identificador interno (salvarRespostaAtor_ valida por ele)
+    var ck = obterChecklist_(idEstagio);
+    if (!ck || !ck.orientador) return jsonError_('Checklist não encontrado.', 'NOT_FOUND');
+    if (ck.orientador.status !== 'pendente')
+      return jsonError_('O aceite já foi respondido.', 'EXPIRED');
+
+    return salvarRespostaAtor_(idEstagio, 'orientador', itens, decisao, obs, emailOri, ck.orientador.token);
+  }
+  return jsonError_('Estágio não encontrado.', 'NOT_FOUND');
+}
+
+/**
  * Valida o token de aceite e retorna os dados da solicitação (sem dados sensíveis).
  * Chamado pela página orientadores/aceite-orientacao.html via ?token=UUID
  */

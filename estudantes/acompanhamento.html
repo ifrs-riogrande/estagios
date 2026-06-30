@@ -425,7 +425,12 @@
       var isErr = s.status === 'Aceite recusado';
       var pct   = Math.min(100, Math.round((step - 1) / 7 * 100));
 
+      // Etapa 2 "Orientador indicado" só é concluída quando o orientador formalmente aceitou
+      var ckOrientadorAceitou = ckInfo && ckInfo.etapaAtiva && ckInfo.etapaAtiva !== 'orientador';
+
       function stOf(n) {
+        // Etapa 2 depende do aceite explícito do orientador, não só do status geral
+        if (n === 2 && step >= 3 && !ckOrientadorAceitou) return 'active';
         if (n < step)           return 'done';
         if (n === step && n === 8) return 'done';
         if (n === step) return (isErr && n === 2) ? 'error' : 'active';

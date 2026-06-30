@@ -287,9 +287,17 @@ async function apiVerificarAceiteOrientador(token) {
   return API.get('verificarAceiteOrientador', { token: token });
 }
 
+async function apiVerificarAceiteOrientadorOAuth(authToken, idEstagio) {
+  return API.get('verificarAceiteOrientadorOAuth', { authToken: authToken, idEstagio: idEstagio });
+}
+
 /** Orientador aceita ou recusa a orientação. */
 async function apiResponderAceiteOrientador(dados) {
   return API.post('responderAceiteOrientador', dados);
+}
+
+async function apiResponderAceiteOrientadorOAuth(dados) {
+  return API.post('responderAceiteOrientadorOAuth', dados);
 }
 
 /** Estudante troca o orientador após recusa. Requer authToken. */
