@@ -431,8 +431,8 @@
     function buildLinks(s) {
       var links = '';
 
-      if (s.id) {
-        var precisaAceitar = s.status === 'Em Checklist' && s.ckOrientadorStatus !== 'aprovado';
+      if (s.id && s.status === 'Em Checklist') {
+        var precisaAceitar = s.ckOrientadorStatus !== 'aprovado';
         var checklistUrl = precisaAceitar
           ? '../orientadores/aceite-orientacao.html?id=' + escapeHtml(s.id)
           : '../checklist/index.html?id=' + escapeHtml(s.id);
