@@ -329,11 +329,6 @@
         }
 
         var links = '';
-        if (s.driveUrl && safeUrl(s.driveUrl)) {
-          links += '<a href="' + escapeHtml(safeUrl(s.driveUrl)) + '" target="_blank" rel="noopener" title="Pasta no Drive">📁 Abrir pasta ↗</a>';
-        } else {
-          links += '<a class="disabled" title="Pasta no Drive não disponível">📁 Pasta</a>';
-        }
         if (s.id) {
           links += '<a href="../checklist/index.html?id=' + escapeHtml(s.id) + '" target="_blank" rel="noopener" title="Checklist">Checklist ↗</a>';
         }
