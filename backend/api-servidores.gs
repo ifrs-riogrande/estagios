@@ -608,20 +608,36 @@ function listarEstagiosCoordenador_(e) {
 
   var ss = SpreadsheetApp.openById(CFG_SRV.SS_ID);
 
-  // Localiza o curso do coordenador pela coluna E-mail (índice 3) na aba Coordenadores
+  // 1) Coordenador cadastrado e Ativo na aba Coordenadores
   var sheetCoord = obterOuCriarAbaCoord_(ss);
   var dadosCoord = sheetCoord.getDataRange().getValues();
   var curso = '';
   for (var i = 1; i < dadosCoord.length; i++) {
     var emailCoord = String(dadosCoord[i][COL_COORD.EMAIL] || '').toLowerCase().trim();
-    if (emailCoord === email) {
+    var statusCoord = String(dadosCoord[i][COL_COORD.STATUS] || '').trim();
+    if (emailCoord === email && statusCoord === 'Ativo') {
       curso = String(dadosCoord[i][COL_COORD.CURSO] || '').trim();
       break;
     }
   }
 
+  // 2) E-mail fixo de coordenação cadastrado pelo admin em Configurações > Cursos
   if (!curso) {
-    return jsonError_('Coordenador não encontrado ou sem curso vinculado.', 'NOT_FOUND');
+    var listaCursos = obterListaCursos_();
+    var cursosEmail = [];
+    for (var c = 0; c < listaCursos.length; c++) {
+      var emailFixo = String(listaCursos[c].emailCoordenacao || '').trim().toLowerCase();
+      if (emailFixo === email && listaCursos[c].status === 'Ativo') {
+        cursosEmail.push(listaCursos[c].nome);
+      }
+    }
+    if (cursosEmail.length > 0) {
+      curso = cursosEmail.join(', ');
+    }
+  }
+
+  if (!curso) {
+    throw new ErroAutenticacao('Acesso restrito a coordenadores cadastrados e aprovados.');
   }
 
   // Normaliza: coordenador pode ter vários cursos separados por vírgula
