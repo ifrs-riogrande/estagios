@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" type="image/png" href="../assets/img/fav.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aproveitamento de Experiência Profissional — Central de Estágios IFRS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/base.css">
+  <link rel="stylesheet" href="../assets/css/components.css">
+  <link rel="stylesheet" href="../assets/css/layout.css">
+</head>
+<body>
+
+  <header id="app-header">
+    <div class="container">
+      <div class="header-inner">
+        <a href="../index.html" class="header-brand">
+          <span class="header-logo-wrap"><img src="../assets/img/logo-ifrs.png" alt="IFRS" class="header-logo"></span>
+        </a>
+        <div style="display:flex;align-items:center;gap:var(--space-3);">
+          <div id="header-user-area"></div>
+          <a href="index.html" class="back-link">
+            <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd"/>
+            </svg>
+            Voltar
+          </a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main id="main-content">
+    <section class="page-hero">
+      <div class="container">
+        <h1 class="page-hero-title">Aproveitamento de Experiência Profissional</h1>
+        <p class="page-hero-desc">
+          Substituição de parte ou da totalidade da carga horária de estágio por equivalência de
+          atividades profissionais já exercidas, conforme art. da IN 01/2022, § 5º.
+        </p>
+      </div>
+    </section>
+
+    <div class="container" style="padding:var(--space-10) 0;">
+      <div style="max-width:560px;margin:0 auto;text-align:center;">
+        <p style="color:var(--color-text-muted);">
+          Esta funcionalidade está em construção. O fluxo de solicitação e validação será
+          disponibilizado em breve.
+        </p>
+      </div>
+    </div>
+  </main>
+
+  <footer id="app-footer">
+    <div class="container">
+      <div class="footer-inner">
+        <span class="footer-copy">&copy; <script>document.write(new Date().getFullYear())</script> Central de Estágios — IFRS Campus Rio Grande</span>
+        <nav class="footer-links">
+          <a href="mailto:estagios@riogrande.ifrs.edu.br">estagios@riogrande.ifrs.edu.br</a>
+        </nav>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Google Identity Services -->
+  <script src="https://accounts.google.com/gsi/client" async></script>
+  <script src="../assets/js/utils.js"></script>
+  <script src="../assets/js/notifications-bell.js"></script>
+  <script src="../assets/js/auth.js"></script>
+  <script>
+    'use strict';
+    document.addEventListener('DOMContentLoaded', function () {
+      requireStudentAuth();
+    });
+  </script>
+</body>
+</html>
