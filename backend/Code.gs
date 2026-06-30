@@ -145,6 +145,13 @@ var GET_ROUTES = {
   'listarDeclaracoesAdmin':       doGetDeclaracoes,
   'validarDeclaracao':            doGetDeclaracoes,  // público — sem auth
 
+  // Aproveitamento de Experiência Profissional
+  'obterMeuAproveitamento':              doGetAproveitamento,
+  'listarAproveitamentosCoordenador':    doGetAproveitamento,
+  'listarAproveitamentosAdmin':          doGetAproveitamento,
+  'listarAproveitamentosDEN':            doGetAproveitamento,
+  'obterAproveitamento':                 doGetAproveitamento,
+
 };
 
 // â”€â”€ Mapeamento action â†’ mÃ³dulo (POST) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -303,6 +310,14 @@ var POST_ROUTES = {
   'gerarDeclaracaoAdmin':             doPostDeclaracoes,
   'reenviarDeclaracao':               doPostDeclaracoes,
   'deletarDeclaracao':                doPostDeclaracoes,
+
+  // Aproveitamento de Experiência Profissional
+  'salvarRascunhoAproveitamento':          doPostAproveitamento,
+  'enviarAproveitamento':                  doPostAproveitamento,
+  'responderAproveitamentoCoordenador':    doPostAproveitamento,
+  'devolverAproveitamento':                doPostAproveitamento,
+  'encaminharAproveitamentoDEN':           doPostAproveitamento,
+  'responderAproveitamentoDEN':            doPostAproveitamento,
 };
 
 // â”€â”€ Ponto de entrada GET â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€

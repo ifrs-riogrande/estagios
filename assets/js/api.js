@@ -382,6 +382,42 @@ async function apiListarEstagiosCoordenador() {
   return API.get('listarEstagiosCoordenador', { authToken: getAccessToken() });
 }
 
+// ── Aproveitamento de Experiência Profissional ───────────────────────────────
+
+async function apiObterMeuAproveitamento() {
+  return API.get('obterMeuAproveitamento', { authToken: getAccessToken() });
+}
+async function apiSalvarRascunhoAproveitamento(dados) {
+  return API.post('salvarRascunhoAproveitamento', { ...dados, authToken: getAccessToken() });
+}
+async function apiEnviarAproveitamento(dados) {
+  return API.post('enviarAproveitamento', { ...dados, _timeoutMs: 90000 });
+}
+async function apiListarAproveitamentosCoordenador() {
+  return API.get('listarAproveitamentosCoordenador', { authToken: getAccessToken() });
+}
+async function apiObterAproveitamento(id) {
+  return API.get('obterAproveitamento', { id, authToken: getAccessToken() });
+}
+async function apiResponderAproveitamentoCoordenador(dados) {
+  return API.post('responderAproveitamentoCoordenador', { ...dados, authToken: getAccessToken() });
+}
+async function apiDevolverAproveitamento(dados) {
+  return API.post('devolverAproveitamento', { ...dados, authToken: getAccessToken() });
+}
+async function apiListarAproveitamentosAdmin() {
+  return API.get('listarAproveitamentosAdmin', { authToken: getAccessToken() });
+}
+async function apiEncaminharAproveitamentoDEN(dados) {
+  return API.post('encaminharAproveitamentoDEN', { ...dados, authToken: getAccessToken() });
+}
+async function apiListarAproveitamentosDEN() {
+  return API.get('listarAproveitamentosDEN', { authToken: getAccessToken() });
+}
+async function apiResponderAproveitamentoDEN(dados) {
+  return API.post('responderAproveitamentoDEN', { ...dados, authToken: getAccessToken() });
+}
+
 /**
  * Retorna histórico completo de um estágio:
  * relatórios parciais, relatório final, adendos e documentos avulsos.
