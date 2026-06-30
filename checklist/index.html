@@ -639,15 +639,27 @@
     // Admin tem prioridade
     if (AUTH_CONFIG.ADMIN_EMAILS.includes(emailLower)) return 'admin';
 
-    // Compara com e-mails dos atores
-    if (ck._emailAtores) {
-      const atores = ['orientador', 'supervisor', 'coordenador'];
-      for (const ator of atores) {
-        const e = (ck._emailAtores[ator] || '').toLowerCase();
-        if (e && e === emailLower) return ator;
-      }
-    }
-    return null;
+    if (!ck._emailAtores) return null;
+
+    const atores = ['orientador', 'supervisor', 'coordenador'];
+
+    // Coleta todos os atores cujo e-mail coincide com o usuário logado
+    const matches = atores.filter(a => (ck._emailAtores[a] || '').toLowerCase() === emailLower);
+
+    if (matches.length === 0) return null;
+    if (matches.length === 1) return matches[0];
+
+    // Quando há coincidência de e-mail em múltiplos atores (mesma pessoa em papéis diferentes),
+    // prioriza o ator que está pendente e é o etapaAtiva atual; caso contrário, o primeiro pendente.
+    const etapaAtiva = ck.etapaAtiva || '';
+    const ativoMatch = matches.find(a => a === etapaAtiva && ck[a] && ck[a].status === 'pendente');
+    if (ativoMatch) return ativoMatch;
+
+    const pendenteMatch = matches.find(a => ck[a] && ck[a].status === 'pendente');
+    if (pendenteMatch) return pendenteMatch;
+
+    // Todos já responderam — retorna o etapaAtiva se coincide, senão o primeiro
+    return matches.find(a => a === etapaAtiva) || matches[0];
   }
 
   // ── Renderizar página ─────────────────────────────────────────
