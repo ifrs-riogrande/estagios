@@ -29,6 +29,7 @@ var PARECER_ST = {
   APROVADO:               'aprovado',
 };
 
+var EMAIL_DEX = 'dex@riogrande.ifrs.edu.br'; // temporário para testes
 
 // ── PropertiesService ─────────────────────────────────────────────────────────
 
