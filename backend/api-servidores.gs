@@ -471,6 +471,17 @@ function listarMeusOrientandos_(e) {
   var tokenInfo = validarTokenServidor_(authToken);
   var email = tokenInfo.email.toLowerCase().trim();
 
+  // Verifica se o servidor é orientador cadastrado e ativo
+  var sheetOri = abrirAba_(CFG_SRV.SS_ID, CFG_SRV.ABA);
+  var dadosOri = sheetOri.getDataRange().getValues();
+  var orientadorAtivo = dadosOri.slice(1).some(function(l) {
+    return String(l[COL_ORI.EMAIL] || '').toLowerCase().trim() === email
+        && String(l[COL_ORI.STATUS] || '').trim() === 'Ativo';
+  });
+  if (!orientadorAtivo) {
+    throw new ErroAutenticacao('Acesso restrito a orientadores cadastrados e aprovados.');
+  }
+
   var ss    = SpreadsheetApp.openById(CFG_SRV.SS_ID);
   var sheet = ss.getSheetByName('Solicitações');
   if (!sheet) return jsonOk_([]);
