@@ -49,9 +49,10 @@ class ApiError extends Error {
  * @param {string} url
  * @param {RequestInit} options
  */
-async function fetchWithTimeout(url, options = {}) {
+async function fetchWithTimeout(url, options = {}, timeoutMs) {
+  const ms = timeoutMs || API_CONFIG.TIMEOUT_MS;
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), API_CONFIG.TIMEOUT_MS);
+  const timeoutId = setTimeout(() => controller.abort(), ms);
 
   try {
     const resp = await fetch(url, {
@@ -61,7 +62,7 @@ async function fetchWithTimeout(url, options = {}) {
     return resp;
   } catch (err) {
     if (err.name === 'AbortError') {
-      throw new ApiError('A requisição demorou mais de 30 segundos. Tente novamente.', 'TIMEOUT');
+      throw new ApiError('A requisição demorou mais de ' + Math.round(ms / 1000) + ' segundos. Tente novamente.', 'TIMEOUT');
     }
     throw new ApiError('Falha na conexão. Verifique sua internet e tente novamente.', 'NETWORK');
   } finally {
@@ -115,9 +116,11 @@ const API = {
     // Inclui token OAuth automaticamente se o usuário estiver logado
     const token = typeof getAccessToken === 'function' ? getAccessToken() : null;
 
+    const { _timeoutMs, ...dataClean } = data;
+
     const body = {
       action,
-      ...data,
+      ...dataClean,
       ...(token ? { authToken: token } : {}),
     };
 
@@ -127,7 +130,7 @@ const API = {
       // O body continua sendo JSON stringify — o GAS parseia e.postData.contents normalmente.
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify(body),
-    });
+    }, _timeoutMs);
 
     return this._parseResponse(resp);
   },
@@ -322,7 +325,7 @@ async function apiCadastrarEstudante(dados) {
 
 /** Envia solicitação de estágio. */
 async function apiSolicitarEstagio(dados) {
-  return API.post('solicitarEstagio', dados);
+  return API.post('solicitarEstagio', { ...dados, _timeoutMs: 90000 });
 }
 
 /** Envia relatório parcial. */
