@@ -483,8 +483,17 @@ function listarMeusOrientandos_(e) {
     var emailOri = String(linha[COL_SOL.EMAIL_ORIENTADOR] || '').toLowerCase().trim();
     if (emailOri !== email) continue;
 
+    var statusLinha = String(linha[COL_SOL.STATUS] || '');
+    var idEstagioLinha = String(linha[COL_SOL.ID_ESTAGIO] || '');
+    var ckOrientadorStatus = '';
+    if (statusLinha === 'Em Checklist') {
+      try {
+        var ck = obterChecklist_(idEstagioLinha);
+        ckOrientadorStatus = ck && ck.orientador ? String(ck.orientador.status || '') : '';
+      } catch(_) {}
+    }
     lista.push({
-      id:                  String(linha[COL_SOL.ID_ESTAGIO]      || ''),
+      id:                  idEstagioLinha,
       nomeEstudante:       String(linha[COL_SOL.NOME_ESTUDANTE]  || ''),
       matricula:           String(linha[COL_SOL.MATRICULA]       || ''),
       curso:               String(linha[COL_SOL.CURSO]           || ''),
@@ -494,10 +503,11 @@ function listarMeusOrientandos_(e) {
       dataInicio:          normalizarDataISO_(linha[COL_SOL.DATA_INICIO]),
       dataTermino:         normalizarDataISO_(linha[COL_SOL.DATA_TERMINO]),
       cargaHorariaSemanal: String(linha[COL_SOL.CARGA_HOR]       || ''),
-      status:              String(linha[COL_SOL.STATUS]          || ''),
+      status:              statusLinha,
       obsSetor:            String(linha[COL_SOL.OBS_SETOR]       || ''),
       driveUrl:            String(linha[COL_SOL.DRIVE_URL]       || ''),
       neeDeclarado:        String(linha[COL_SOL.NEE]             || '').trim() === 'Sim',
+      ckOrientadorStatus:  ckOrientadorStatus,
     });
   }
 

@@ -432,12 +432,12 @@
       var links = '';
 
       if (s.id) {
-        // Se ainda em checklist, orientador pode não ter aceitado: vai para a página de aceite
-        // (que também funciona via OAuth e exibe mensagem apropriada se já respondido)
-        var checklistUrl = s.status === 'Em Checklist'
+        var precisaAceitar = s.status === 'Em Checklist' && s.ckOrientadorStatus !== 'aprovado';
+        var checklistUrl = precisaAceitar
           ? '../orientadores/aceite-orientacao.html?id=' + escapeHtml(s.id)
           : '../checklist/index.html?id=' + escapeHtml(s.id);
-        links += '<a href="' + checklistUrl + '" target="_blank" rel="noopener" title="Checklist">Checklist ↗</a>';
+        var checklistLabel = precisaAceitar ? 'Aceitar orientação ↗' : 'Ver checklist ↗';
+        links += '<a href="' + checklistUrl + '" target="_blank" rel="noopener">' + checklistLabel + '</a>';
       }
 
       // Botão NAPNE — visível apenas para estudantes que declararam NEE
