@@ -650,16 +650,17 @@
     if (matches.length === 1) return matches[0];
 
     // Quando há coincidência de e-mail em múltiplos atores (mesma pessoa em papéis diferentes),
-    // prioriza o ator que está pendente e é o etapaAtiva atual; caso contrário, o primeiro pendente.
+    // prioriza o ator que é a etapaAtiva atual (independente de status — null = ainda não liberado).
     const etapaAtiva = ck.etapaAtiva || '';
-    const ativoMatch = matches.find(a => a === etapaAtiva && ck[a] && ck[a].status === 'pendente');
+    const ativoMatch = matches.find(a => a === etapaAtiva);
     if (ativoMatch) return ativoMatch;
 
-    const pendenteMatch = matches.find(a => ck[a] && ck[a].status === 'pendente');
+    // Fallback: primeiro ator com status pendente ou ainda não liberado (null)
+    const pendenteMatch = matches.find(a => !ck[a] || ck[a].status === 'pendente');
     if (pendenteMatch) return pendenteMatch;
 
-    // Todos já responderam — retorna o etapaAtiva se coincide, senão o primeiro
-    return matches.find(a => a === etapaAtiva) || matches[0];
+    // Todos já responderam — retorna o primeiro
+    return matches[0];
   }
 
   // ── Renderizar página ─────────────────────────────────────────
