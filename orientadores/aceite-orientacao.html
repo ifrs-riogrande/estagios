@@ -465,10 +465,16 @@
 
     // ── Carrega via OAuth (sem magic-link) ────────────────────────
     async function carregarSolicitacaoOAuth() {
+      // Garante que o orientador está logado (qualquer conta Google)
+      if (typeof requireExternalAuth === 'function') {
+        if (!requireExternalAuth(window.location.href,
+              'Login necessário',
+              'Entre com sua conta Google para acessar a página de aceite de orientação.')) return;
+      }
       try {
         var authTok = (typeof getAccessToken === 'function') ? getAccessToken() : null;
         if (!authTok) {
-          mostrarErro('Faça login com sua conta institucional para acessar esta página.');
+          mostrarErro('Não foi possível obter o token de autenticação. Recarregue a página.');
           return;
         }
         _authToken = authTok;
