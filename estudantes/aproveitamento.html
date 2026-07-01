@@ -499,12 +499,10 @@
   async function iniciar() {
     mostrarPainel('painel-carregando');
     try {
-      // Carrega perfil e solicitação em paralelo
-      const [perfil, solicitacao] = await Promise.all([
-        API.get('obterMeuCadastro', { authToken: getAccessToken() }),
-        apiObterMeuAproveitamento(),
-      ]);
-      _perfil      = perfil;
+      // Carrega perfil primeiro para ter o curso antes de verificar habilitação
+      const perfil = await API.get('obterMeuCadastro', { authToken: getAccessToken() });
+      _perfil = perfil;
+      const solicitacao = await apiObterMeuAproveitamento({ curso: (perfil && perfil.curso) || '' });
       _solicitacao = solicitacao;
       _renderizar();
     } catch (err) {
@@ -523,6 +521,19 @@
 
   // ── Renderização ─────────────────────────────────────────────────
   function _renderizar() {
+    // Verifica se o curso está habilitado (flag vem do backend)
+    if (_solicitacao && _solicitacao.cursoHabilitado === false) {
+      mostrarPainel('painel-formulario');
+      var main = document.getElementById('painel-formulario');
+      main.innerHTML =
+        '<div class="status-banner indeferido" style="margin-top:var(--space-6);">' +
+        '<strong>Curso não habilitado.</strong><br>' +
+        'O seu curso não está habilitado para Aproveitamento de Experiência Profissional. ' +
+        'Entre em contato com a coordenação de curso para mais informações.' +
+        '</div>';
+      return;
+    }
+
     _preencherPerfil();
     _configurarEventos();
 

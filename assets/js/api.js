@@ -384,8 +384,8 @@ async function apiListarEstagiosCoordenador() {
 
 // ── Aproveitamento de Experiência Profissional ───────────────────────────────
 
-async function apiObterMeuAproveitamento() {
-  return API.get('obterMeuAproveitamento', { authToken: getAccessToken() });
+async function apiObterMeuAproveitamento(extra) {
+  return API.get('obterMeuAproveitamento', Object.assign({ authToken: getAccessToken() }, extra || {}));
 }
 async function apiSalvarRascunhoAproveitamento(dados) {
   return API.post('salvarRascunhoAproveitamento', { ...dados, authToken: getAccessToken() });

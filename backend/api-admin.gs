@@ -2513,10 +2513,12 @@ function deletarCurso_(body) {
 function obterConfigCursos_() {
   try {
     var raw = PropertiesService.getScriptProperties().getProperty('config_cursos');
-    if (!raw) return jsonOk_({ obrigatorio: null, naoObrigatorio: null });
-    return jsonOk_(JSON.parse(raw));
+    if (!raw) return jsonOk_({ obrigatorio: null, naoObrigatorio: null, aproveitamento: null });
+    var cfg = JSON.parse(raw);
+    if (!('aproveitamento' in cfg)) cfg.aproveitamento = null; // retrocompatibilidade
+    return jsonOk_(cfg);
   } catch (e) {
-    return jsonOk_({ obrigatorio: null, naoObrigatorio: null }); // fail-open
+    return jsonOk_({ obrigatorio: null, naoObrigatorio: null, aproveitamento: null }); // fail-open
   }
 }
 
@@ -2531,6 +2533,7 @@ function salvarConfigCursos_(body) {
   var config = {
     obrigatorio:    Array.isArray(body.obrigatorio)    ? body.obrigatorio    : [],
     naoObrigatorio: Array.isArray(body.naoObrigatorio) ? body.naoObrigatorio : [],
+    aproveitamento: Array.isArray(body.aproveitamento) ? body.aproveitamento : [],
   };
   PropertiesService.getScriptProperties().setProperty('config_cursos', JSON.stringify(config));
   return jsonOk_({ mensagem: 'Configuração salva com sucesso!' });

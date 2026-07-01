@@ -250,6 +250,29 @@ function _validarEstudanteAprov_(authToken) {
   return info.email.toLowerCase().trim();
 }
 
+/** Retorna true se o curso está habilitado para Aproveitamento (fail-open: true quando sem config). */
+function _isCursoHabilitadoAprov_(curso) {
+  try {
+    var raw = PropertiesService.getScriptProperties().getProperty('config_cursos');
+    if (!raw) return true;
+    var cfg   = JSON.parse(raw);
+    var lista = cfg.aproveitamento;
+    if (lista === null || lista === undefined) return true;
+    if (!Array.isArray(lista) || lista.length === 0) return true;
+    var cursoNorm = String(curso || '').trim().toLowerCase();
+    return lista.some(function(n) { return String(n).trim().toLowerCase() === cursoNorm; });
+  } catch (e) { return true; }
+}
+
+/** Lança erro com código CURSO_NAO_HABILITADO se o curso não estiver habilitado. */
+function _verificarCursoHabilitadoAprov_(curso) {
+  if (!_isCursoHabilitadoAprov_(curso)) {
+    var err = new Error('O curso "' + curso + '" não está habilitado para Aproveitamento de Experiência Profissional. Entre em contato com a coordenação de curso.');
+    err.code = 'CURSO_NAO_HABILITADO';
+    throw err;
+  }
+}
+
 /** Valida coordenador ativo e retorna {email, curso}. */
 function _validarCoordenadorAprov_(authToken) {
   var info  = AUTH.validarToken(authToken);
@@ -301,8 +324,14 @@ function doGetAproveitamento(e) {
       case 'obterMeuAproveitamento': {
         var emailEst = _validarEstudanteAprov_(authToken);
         var rec = _buscarAprovPorEmail_(emailEst);
-        if (!rec) return jsonOk_(null);
-        return jsonOk_(_buildRespostaEstudante_(rec.linha));
+        // Inclui flag de habilitação do curso (lida da solicitação existente ou do parâmetro curso)
+        var cursoParam = (e.parameter && e.parameter.curso) || '';
+        var cursoVerif = rec ? String(rec.linha[COL_APROV.CURSO] || '') : cursoParam;
+        var habilitado = _isCursoHabilitadoAprov_(cursoVerif);
+        if (!rec) return jsonOk_({ cursoHabilitado: habilitado });
+        var resp = _buildRespostaEstudante_(rec.linha);
+        resp.cursoHabilitado = habilitado;
+        return jsonOk_(resp);
       }
 
       // Coordenador: lista solicitações do próprio curso aguardando ou devolvidas
@@ -447,6 +476,7 @@ function doPostAproveitamento(e) {
     }
   } catch (err) {
     if (err instanceof ErroAutenticacao) return jsonError_(err.message, 'AUTH_ERROR');
+    if (err && err.code === 'CURSO_NAO_HABILITADO') return jsonError_(err.message, 'CURSO_NAO_HABILITADO');
     logErro_('api-aproveitamento.doPostAproveitamento', err);
     return jsonError_('Erro interno.', 'INTERNAL');
   }
@@ -455,6 +485,7 @@ function doPostAproveitamento(e) {
 // ── Operações ────────────────────────────────────────────────────────────────
 
 function _salvarRascunho_(emailEst, body) {
+  _verificarCursoHabilitadoAprov_(body.curso || '');
   var sheet = _abrirAbaAprov_();
   var dados = sheet.getDataRange().getValues();
 
@@ -518,6 +549,7 @@ function _salvarRascunho_(emailEst, body) {
 
 function _enviarSolicitacao_(emailEst, body) {
   checkRateLimit_('enviarAproveitamento', 3);
+  _verificarCursoHabilitadoAprov_(body.curso || '');
 
   var rec = _buscarAprovPorEmail_(emailEst);
   // Aceita envio tanto de rascunho quanto de devolvido

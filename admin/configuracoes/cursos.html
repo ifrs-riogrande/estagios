@@ -208,7 +208,7 @@
       <div class="tab-panel" id="tab-habilitados" role="tabpanel" aria-labelledby="btn-tab-hab">
 
         <div class="info-banner" role="note" style="margin-bottom:var(--space-5);">
-          <strong>Padrão:</strong> enquanto nenhuma configuração for salva, todos os cursos são considerados habilitados para ambas as modalidades. Ao salvar pela primeira vez, somente os cursos marcados estarão habilitados.
+          <strong>Padrão:</strong> enquanto nenhuma configuração for salva, todos os cursos são considerados habilitados para todas as modalidades. Ao salvar pela primeira vez, somente os cursos marcados estarão habilitados.
         </div>
 
         <div id="loading-hab" style="text-align:center;padding:var(--space-12);color:var(--color-text-muted);">
@@ -233,6 +233,13 @@
                 <button type="button" class="btn btn-ghost btn-sm" onclick="marcarTodos('nao', false)">Desmarcar todos</button>
               </div>
             </div>
+            <div style="flex:1;min-width:220px;">
+              <p style="font-size:var(--font-size-xs);font-weight:600;text-transform:uppercase;color:var(--color-text-muted);margin-bottom:var(--space-2);">Aproveitamento de Experiência</p>
+              <div class="check-all-row">
+                <button type="button" class="btn btn-ghost btn-sm" onclick="marcarTodos('aprov', true)">Marcar todos</button>
+                <button type="button" class="btn btn-ghost btn-sm" onclick="marcarTodos('aprov', false)">Desmarcar todos</button>
+              </div>
+            </div>
           </div>
 
           <div style="overflow-x:auto;border:1px solid var(--color-border);border-radius:var(--radius-md);">
@@ -242,6 +249,7 @@
                   <th>Curso</th>
                   <th class="check-col">Obrigatório</th>
                   <th class="check-col">Não Obrigatório</th>
+                  <th class="check-col">Aproveitamento</th>
                 </tr>
               </thead>
               <tbody id="tabela-hab"></tbody>
@@ -592,30 +600,33 @@
   function renderTabelaHab(config) {
     var obrigSet    = config.obrigatorio    === null ? null : new Set(config.obrigatorio);
     var naoObrigSet = config.naoObrigatorio === null ? null : new Set(config.naoObrigatorio);
+    var aprovSet    = config.aproveitamento  === null || config.aproveitamento === undefined ? null : new Set(config.aproveitamento);
     var tbody = document.getElementById('tabela-hab');
     var html = '';
     var grupoAtual = '';
     CURSOS_HAB.forEach(function (c, idx) {
       if (c.grupo !== grupoAtual) {
         grupoAtual = c.grupo;
-        html += '<tr><td colspan="3" class="group-label">' + escapeHtml(c.grupo) + '</td></tr>';
+        html += '<tr><td colspan="4" class="group-label">' + escapeHtml(c.grupo) + '</td></tr>';
       }
       var chkObrig    = (obrigSet    === null || obrigSet.has(c.nome))    ? 'checked' : '';
       var chkNaoObrig = (naoObrigSet === null || naoObrigSet.has(c.nome)) ? 'checked' : '';
+      var chkAprov    = (aprovSet    === null || aprovSet.has(c.nome))    ? 'checked' : '';
       html += '<tr>' +
         '<td>' + escapeHtml(c.nome) + '</td>' +
         '<td class="check-col"><label class="form-check" style="justify-content:center;margin:0;"><input type="checkbox" class="cb-obrig" data-idx="' + idx + '" ' + chkObrig + ' aria-label="Obrigatório para ' + escapeHtml(c.nome) + '"></label></td>' +
         '<td class="check-col"><label class="form-check" style="justify-content:center;margin:0;"><input type="checkbox" class="cb-nao" data-idx="' + idx + '" ' + chkNaoObrig + ' aria-label="Não Obrigatório para ' + escapeHtml(c.nome) + '"></label></td>' +
+        '<td class="check-col"><label class="form-check" style="justify-content:center;margin:0;"><input type="checkbox" class="cb-aprov" data-idx="' + idx + '" ' + chkAprov + ' aria-label="Aproveitamento para ' + escapeHtml(c.nome) + '"></label></td>' +
         '</tr>';
     });
-    tbody.innerHTML = html || '<tr><td colspan="3" style="text-align:center;padding:var(--space-8);color:var(--color-text-muted);">Nenhum curso ativo cadastrado. Adicione cursos na aba <strong>Lista de Cursos</strong>.</td></tr>';
+    tbody.innerHTML = html || '<tr><td colspan="4" style="text-align:center;padding:var(--space-8);color:var(--color-text-muted);">Nenhum curso ativo cadastrado. Adicione cursos na aba <strong>Lista de Cursos</strong>.</td></tr>';
     if (config.obrigatorio === null && config.naoObrigatorio === null) {
-      document.getElementById('ultima-atualizacao').textContent = 'Nenhuma configuração salva ainda — todos os cursos estão habilitados para ambas as modalidades.';
+      document.getElementById('ultima-atualizacao').textContent = 'Nenhuma configuração salva ainda — todos os cursos estão habilitados para todas as modalidades.';
     }
   }
 
   function marcarTodos(tipo, marcar) {
-    var cls = tipo === 'obrig' ? '.cb-obrig' : '.cb-nao';
+    var cls = tipo === 'obrig' ? '.cb-obrig' : (tipo === 'nao' ? '.cb-nao' : '.cb-aprov');
     document.querySelectorAll(cls).forEach(function (cb) { cb.checked = marcar; });
   }
 
@@ -627,10 +638,11 @@
     try {
       var obrigatorio    = Array.from(document.querySelectorAll('.cb-obrig:checked')).map(function (cb) { return CURSOS_HAB[+cb.dataset.idx].nome; });
       var naoObrigatorio = Array.from(document.querySelectorAll('.cb-nao:checked')).map(function (cb) { return CURSOS_HAB[+cb.dataset.idx].nome; });
-      await API.post('salvarConfigCursos', { obrigatorio: obrigatorio, naoObrigatorio: naoObrigatorio, authToken: getAccessToken() });
+      var aproveitamento = Array.from(document.querySelectorAll('.cb-aprov:checked')).map(function (cb) { return CURSOS_HAB[+cb.dataset.idx].nome; });
+      await API.post('salvarConfigCursos', { obrigatorio: obrigatorio, naoObrigatorio: naoObrigatorio, aproveitamento: aproveitamento, authToken: getAccessToken() });
       if (fb) {
         fb.style.display = 'block';
-        fb.innerHTML = '<div class="alert alert-success"><svg class="alert-icon" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg><div class="alert-content"><strong>Configuração salva com sucesso!</strong> ' + obrigatorio.length + ' cursos habilitados para Obrigatório · ' + naoObrigatorio.length + ' para Não Obrigatório.</div></div>';
+        fb.innerHTML = '<div class="alert alert-success"><svg class="alert-icon" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg><div class="alert-content"><strong>Configuração salva com sucesso!</strong> ' + obrigatorio.length + ' para Obrigatório · ' + naoObrigatorio.length + ' para Não Obrigatório · ' + aproveitamento.length + ' para Aproveitamento.</div></div>';
       }
       var agora = new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });
       var spanAtu = document.getElementById('ultima-atualizacao');
