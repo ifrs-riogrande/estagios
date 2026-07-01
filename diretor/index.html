@@ -191,7 +191,7 @@
     lista.innerHTML = '<div class="dg-empty"><p>Carregando…</p></div>';
 
     try {
-      const itens = await API.get('listarFluxosPendentesAtor', { ator: ATOR_DG });
+      const itens = await API.get('listarFluxosPendentesAtor', { ator: ATOR_DG, authToken: getAccessToken() });
 
       if (!itens || itens.length === 0) {
         badge.textContent = 'Nenhuma pendência';

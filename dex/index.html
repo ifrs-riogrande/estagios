@@ -64,13 +64,13 @@
   'use strict';
 
   document.addEventListener('DOMContentLoaded', async function () {
-    requireStaffAuth();
+    if (!requireStaffAuth()) return;
     await carregarPareceres();
   });
 
   async function carregarPareceres() {
     try {
-      const lista = await API.get('listarPareceresPendentes', { papel: 'diretoria', ref: 'DEX' });
+      const lista = await API.get('listarPareceresPendentes', { papel: 'diretoria', ref: 'DEX', authToken: getAccessToken() });
       renderLista(lista || []);
     } catch (err) {
       document.getElementById('estado-carregando').innerHTML =

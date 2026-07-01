@@ -904,10 +904,20 @@ function doGetParecer(e) {
       return obterParecer_Handler_(id, token, authTk);
 
     case 'listarPareceresPendentes': {
-      // Coordenador acessa autenticado — valida token de staff
-      var papel = (e.parameter && e.parameter.papel) || '';
-      var ref   = (e.parameter && e.parameter.ref)   || '';
+      var papel   = (e.parameter && e.parameter.papel)     || '';
+      var ref     = (e.parameter && e.parameter.ref)       || '';
+      var authTkL = (e.parameter && e.parameter.authToken) || '';
       if (!papel || !ref) return jsonError_('Parâmetros papel e ref obrigatórios.', 'MISSING_PARAM');
+      // Diretoria (DEX/DEN): valida token e verifica se o e-mail do chamador é o e-mail configurado
+      if (papel === 'diretoria') {
+        var tiL = validarTokenServidor_(authTkL);
+        var emailChamador = (tiL && tiL.email) ? tiL.email.toLowerCase() : '';
+        var cfgDir = _obterDiretoriaAdmin_(ref);
+        var emailConf = String(cfgDir.email || '').toLowerCase();
+        if (!emailConf || emailChamador !== emailConf) {
+          return jsonError_('Acesso não autorizado. Verifique se você está logado com o e-mail correto.', 'FORBIDDEN');
+        }
+      }
       return listarPareceresPendentes_(papel, ref);
     }
 

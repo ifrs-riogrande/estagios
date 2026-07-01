@@ -583,6 +583,54 @@ function adicionarColunaTokenAceite() {
  * Cria a aba "Pareceres" na planilha.
  * Execute manualmente no editor GAS: Executar → adicionarAbaPareceres
  */
+/**
+ * Cria a aba "Aproveitamento" e configura APROVEITAMENTO_FOLDER_ID.
+ * Execute UMA VEZ pelo editor do Apps Script.
+ * Antes de executar, substitua o valor de FOLDER_ID abaixo pelo ID real da pasta no Drive.
+ */
+function setupAproveitamento() {
+  var SS_ID     = '1zVyseifVC6xeMpNjqwYd6jCq9HTJ2NS8BlN1dtM4s7Y';
+  var FOLDER_ID = '1b2lD0Br77kyfUDKY1WJG65bhZbAWXmGX';
+
+  // 1. Cria a aba Aproveitamento
+  var ss   = SpreadsheetApp.openById(SS_ID);
+  var nome = 'Aproveitamento';
+  var sheet = ss.getSheetByName(nome);
+  if (sheet) {
+    Logger.log('⚠️  Aba "' + nome + '" já existe — cabeçalho não reescrito.');
+  } else {
+    sheet = ss.insertSheet(nome);
+    var cab = [
+      'ID','Timestamp','Status',
+      'E-mail Estudante','Nome Estudante','Matrícula','Curso','CPF','RG',
+      'Telefone','Endereço','Bairro','Cidade','Estado','Data Nasc.','Formando',
+      'Tipo Vínculo','Empresas JSON','Total Horas','Declaração Veracidade',
+      'Assinatura Estudante','Data Assinatura Est.',
+      'Relatório JSON',
+      'Doc Matrícula URL','Doc CTPS-ID URL','Doc CTPS-Reg URL',
+      'Doc Declaração URL','Doc Autônomo URL','Drive URL',
+      'E-mail Coordenador','Parecer Coord. JSON','Assinatura Coord.','Data Assinatura Coord.',
+      'Obs Admin','Data Encaminhamento',
+      'Parecer DEN JSON','Assinatura DEN','Data Assinatura DEN','Carga Homologada',
+      'Obs Devolução','Devolvido Por','Data Devolução',
+    ];
+    sheet.getRange(1, 1, 1, cab.length).setValues([cab]);
+    cab.forEach(function(_, i) { _formatarCelulaCabecalho_(sheet, i + 1); });
+    sheet.setFrozenRows(1);
+    sheet.setColumnWidth(1, 160);
+    Logger.log('✅ Aba "' + nome + '" criada com ' + cab.length + ' colunas.');
+  }
+
+  // 2. Configura APROVEITAMENTO_FOLDER_ID no PropertiesService
+  if (!FOLDER_ID) {
+    Logger.log('⚠️  FOLDER_ID não configurado.');
+    return;
+  }
+  PropertiesService.getScriptProperties().setProperty('APROVEITAMENTO_FOLDER_ID', FOLDER_ID);
+  Logger.log('✅ APROVEITAMENTO_FOLDER_ID configurado: ' + FOLDER_ID);
+  Logger.log('🎉 Setup de Aproveitamento concluído!');
+}
+
 function adicionarAbaPareceres() {
   var ss   = SpreadsheetApp.openById('1zVyseifVC6xeMpNjqwYd6jCq9HTJ2NS8BlN1dtM4s7Y');
   var nome = 'Pareceres';

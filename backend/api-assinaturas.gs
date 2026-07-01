@@ -1426,8 +1426,18 @@ function doGetAssinaturas(e) {
     }
 
     case 'listarFluxosPendentesAtor': {
-      var atorParam = (e.parameter.ator || '').trim();
+      var atorParam  = (e.parameter.ator      || '').trim();
+      var authTkAtor = (e.parameter.authToken || '').trim();
       if (!atorParam) return jsonError_('Parâmetro ator obrigatório.', 'MISSING_PARAM');
+      // Direção-Geral: valida que o chamador é o Diretor Geral cadastrado
+      if (atorParam === 'direcao') {
+        var tiAtor = validarTokenServidor_(authTkAtor);
+        var emailDiretorChamador = (tiAtor && tiAtor.email) ? tiAtor.email.toLowerCase() : '';
+        var emailDiretorConf = String(obterEmailDiretorGeral_() || '').toLowerCase();
+        if (!emailDiretorConf || emailDiretorChamador !== emailDiretorConf) {
+          return jsonError_('Acesso não autorizado. Verifique se você está logado com o e-mail correto.', 'FORBIDDEN');
+        }
+      }
       return jsonOk_(listarFluxosPendentesAtor_(atorParam));
     }
 

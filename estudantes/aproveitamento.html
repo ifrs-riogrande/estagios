@@ -11,6 +11,125 @@
   <link rel="stylesheet" href="../assets/css/base.css">
   <link rel="stylesheet" href="../assets/css/components.css">
   <link rel="stylesheet" href="../assets/css/layout.css">
+  <style>
+    .aprov-section {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-6);
+      margin-bottom: var(--space-6);
+    }
+    .aprov-section-title {
+      font-size: var(--font-size-base);
+      font-weight: 600;
+      color: var(--color-text);
+      margin: 0 0 var(--space-4) 0;
+      padding-bottom: var(--space-3);
+      border-bottom: 1px solid var(--color-border);
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+    }
+    .aprov-section-title .step-badge {
+      background: var(--color-primary);
+      color: #fff;
+      border-radius: 9999px;
+      font-size: 11px;
+      font-weight: 700;
+      width: 22px;
+      height: 22px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .field-readonly {
+      background: var(--color-bg);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      padding: var(--space-2) var(--space-3);
+      color: var(--color-text-muted);
+      font-size: var(--font-size-sm);
+      min-height: 38px;
+      display: flex;
+      align-items: center;
+    }
+    .empresa-card {
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      padding: var(--space-4);
+      margin-bottom: var(--space-3);
+      background: var(--color-bg);
+      position: relative;
+    }
+    .empresa-card .btn-remove {
+      position: absolute;
+      top: var(--space-3);
+      right: var(--space-3);
+      background: none;
+      border: none;
+      color: var(--color-error);
+      cursor: pointer;
+      font-size: var(--font-size-sm);
+      padding: 2px 8px;
+    }
+    .upload-field { margin-bottom: var(--space-4); }
+    .upload-label {
+      font-size: var(--font-size-sm);
+      font-weight: 500;
+      color: var(--color-text);
+      display: block;
+      margin-bottom: var(--space-1);
+    }
+    .upload-label .badge-obrigatorio {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--color-error);
+      background: var(--color-error-light, #fee2e2);
+      border-radius: 4px;
+      padding: 1px 5px;
+      margin-left: var(--space-1);
+    }
+    .upload-label .badge-condicional {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--color-warning);
+      background: var(--color-warning-light, #fef3c7);
+      border-radius: 4px;
+      padding: 1px 5px;
+      margin-left: var(--space-1);
+    }
+    .upload-hint { font-size: 11px; color: var(--color-text-muted); margin-top: 2px; }
+    .upload-ok { color: var(--color-success); font-size: var(--font-size-sm); margin-top: 2px; }
+    .relatorio-field textarea {
+      width: 100%;
+      min-height: 140px;
+      resize: vertical;
+      font-family: inherit;
+      font-size: var(--font-size-sm);
+      padding: var(--space-3);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      background: var(--color-surface);
+      color: var(--color-text);
+      box-sizing: border-box;
+    }
+    .relatorio-field textarea:focus { outline: none; border-color: var(--color-primary); }
+    .status-banner {
+      border-radius: var(--radius-md);
+      padding: var(--space-4);
+      margin-bottom: var(--space-6);
+      font-size: var(--font-size-sm);
+      font-weight: 500;
+    }
+    .status-banner.devolvido { background: var(--color-warning-light,#fef3c7); border: 1px solid var(--color-warning); color: var(--color-warning-dark,#92400e); }
+    .status-banner.aguardando { background: var(--color-info-light,#e0f2fe); border: 1px solid var(--color-info,#0284c7); color: var(--color-info-dark,#0c4a6e); }
+    .status-banner.deferido { background: var(--color-success-light); border: 1px solid var(--color-success); color: var(--color-success-dark,#14532d); }
+    .status-banner.indeferido { background: var(--color-error-light,#fee2e2); border: 1px solid var(--color-error); color: var(--color-error-dark,#7f1d1d); }
+    .char-counter { font-size: 11px; color: var(--color-text-muted); text-align: right; margin-top: 2px; }
+    .form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); }
+    @media (max-width: 600px) { .form-grid-2 { grid-template-columns: 1fr; } }
+  </style>
 </head>
 <body>
 
@@ -38,19 +157,254 @@
       <div class="container">
         <h1 class="page-hero-title">Aproveitamento de Experiência Profissional</h1>
         <p class="page-hero-desc">
-          Substituição de parte ou da totalidade da carga horária de estágio por equivalência de
-          atividades profissionais já exercidas, conforme art. da IN 01/2022, § 5º.
+          Solicitação de substituição de carga horária de estágio obrigatório por experiência
+          profissional já exercida, conforme IN 01/2022, § 5º.
         </p>
       </div>
     </section>
 
-    <div class="container" style="padding:var(--space-10) 0;">
-      <div style="max-width:560px;margin:0 auto;text-align:center;">
-        <p style="color:var(--color-text-muted);">
-          Esta funcionalidade está em construção. O fluxo de solicitação e validação será
-          disponibilizado em breve.
-        </p>
+    <div class="container" style="max-width:760px;margin:0 auto;padding-bottom:var(--space-16);">
+
+      <!-- Estado: carregando -->
+      <div id="painel-carregando" style="text-align:center;padding:var(--space-12) 0;">
+        <div class="spinner" aria-label="Carregando..."></div>
+        <p style="color:var(--color-text-muted);margin-top:var(--space-4);">Carregando seus dados...</p>
       </div>
+
+      <!-- Estado: erro -->
+      <div id="painel-erro" hidden style="text-align:center;padding:var(--space-12) 0;">
+        <p id="msg-erro" style="color:var(--color-error);">Erro ao carregar.</p>
+        <button class="btn btn-secondary" onclick="iniciar()" style="margin-top:var(--space-4);">Tentar novamente</button>
+      </div>
+
+      <!-- Estado: formulário -->
+      <div id="painel-formulario" hidden>
+
+        <!-- Banner de status (devolvido / aguardando / concluído) -->
+        <div id="status-banner" hidden></div>
+
+        <!-- Feedback do formulário -->
+        <div id="form-feedback" class="form-feedback-container"></div>
+
+        <form id="form-aproveitamento" novalidate>
+
+          <!-- SEÇÃO 1: Requerimento (dados do perfil) -->
+          <div class="aprov-section">
+            <h2 class="aprov-section-title">
+              <span class="step-badge">1</span>
+              Requerimento — Dados do Estudante
+            </h2>
+            <p style="font-size:var(--font-size-sm);color:var(--color-text-muted);margin-bottom:var(--space-4);">
+              Dados preenchidos automaticamente a partir do seu perfil.
+              <a href="perfil.html" style="color:var(--color-primary);">Atualizar perfil</a>
+            </p>
+            <div class="form-grid-2">
+              <div class="form-group">
+                <label class="form-label">Nome completo</label>
+                <div class="field-readonly" id="ro-nome">—</div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Matrícula</label>
+                <div class="field-readonly" id="ro-matricula">—</div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Curso</label>
+                <div class="field-readonly" id="ro-curso">—</div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">E-mail institucional</label>
+                <div class="field-readonly" id="ro-email">—</div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">CPF</label>
+                <div class="field-readonly" id="ro-cpf">—</div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">RG</label>
+                <div class="field-readonly" id="ro-rg">—</div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Telefone</label>
+                <div class="field-readonly" id="ro-telefone">—</div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Data de nascimento</label>
+                <div class="field-readonly" id="ro-nascimento">—</div>
+              </div>
+              <div class="form-group" style="grid-column:1/-1;">
+                <label class="form-label">Endereço completo</label>
+                <div class="field-readonly" id="ro-endereco">—</div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Formando</label>
+                <div class="field-readonly" id="ro-formando">—</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- SEÇÃO 2: Experiência profissional -->
+          <div class="aprov-section">
+            <h2 class="aprov-section-title">
+              <span class="step-badge">2</span>
+              Experiência Profissional
+            </h2>
+
+            <div class="form-group" style="margin-bottom:var(--space-4);">
+              <label class="form-label" for="tipo-vinculo">Tipo de vínculo <span style="color:var(--color-error)">*</span></label>
+              <select id="tipo-vinculo" class="form-select" required>
+                <option value="">Selecione...</option>
+                <option value="CLT">Empregado CLT / Carteira assinada</option>
+                <option value="Autonomo">Autônomo</option>
+                <option value="Empresario">Empresário / Sócio</option>
+              </select>
+            </div>
+
+            <p style="font-size:var(--font-size-sm);font-weight:500;margin-bottom:var(--space-3);">
+              Empresas / Experiências
+              <span style="color:var(--color-text-muted);font-weight:400;"> — mínimo 6 meses ou 600 horas no total (pode ser em mais de uma empresa)</span>
+            </p>
+
+            <div id="lista-empresas"></div>
+
+            <button type="button" class="btn btn-secondary" id="btn-add-empresa" style="margin-top:var(--space-2);">
+              + Adicionar empresa
+            </button>
+
+            <div class="form-group" style="margin-top:var(--space-4);">
+              <label class="form-label" for="total-horas">Carga horária total comprovada (horas) <span style="color:var(--color-error)">*</span></label>
+              <input type="number" id="total-horas" class="form-input" min="1" max="9999" placeholder="Ex.: 600" required>
+              <p class="form-hint">Some as horas de todas as empresas listadas acima.</p>
+            </div>
+          </div>
+
+          <!-- SEÇÃO 3: Relatório -->
+          <div class="aprov-section">
+            <h2 class="aprov-section-title">
+              <span class="step-badge">3</span>
+              Relatório de Aproveitamento
+            </h2>
+            <p style="font-size:var(--font-size-sm);color:var(--color-text-muted);margin-bottom:var(--space-5);">
+              Preencha todas as seções abaixo. Recomendado: mínimo 30 linhas no total, linguagem formal.
+            </p>
+
+            <div class="relatorio-field form-group">
+              <label class="form-label" for="rel-introducao">1. Introdução <span style="color:var(--color-error)">*</span></label>
+              <p class="form-hint" style="margin-bottom:var(--space-2);">Contextualize a importância da experiência profissional para sua formação técnica, o período e o local onde as atividades foram realizadas.</p>
+              <textarea id="rel-introducao" maxlength="5000" placeholder="Descreva aqui..."></textarea>
+              <div class="char-counter"><span id="cnt-introducao">0</span>/5000 caracteres</div>
+            </div>
+
+            <div class="relatorio-field form-group">
+              <label class="form-label" for="rel-empresa">2. Apresentação da Empresa <span style="color:var(--color-error)">*</span></label>
+              <p class="form-hint" style="margin-bottom:var(--space-2);">Breve histórico da empresa, descrição e principais áreas de atuação. Destaque o setor/departamento onde você desenvolveu seu trabalho.</p>
+              <textarea id="rel-empresa" maxlength="5000" placeholder="Descreva aqui..."></textarea>
+              <div class="char-counter"><span id="cnt-empresa">0</span>/5000 caracteres</div>
+            </div>
+
+            <div class="relatorio-field form-group">
+              <label class="form-label" for="rel-atividades">3. Programação das Atividades <span style="color:var(--color-error)">*</span></label>
+              <p class="form-hint" style="margin-bottom:var(--space-2);">Identifique e descreva as atividades desenvolvidas, o período em que foram realizadas. Inclua aspectos administrativos, relacionamento interpessoal e aspectos éticos.</p>
+              <textarea id="rel-atividades" maxlength="5000" placeholder="Descreva aqui..."></textarea>
+              <div class="char-counter"><span id="cnt-atividades">0</span>/5000 caracteres</div>
+            </div>
+
+            <div class="relatorio-field form-group">
+              <label class="form-label" for="rel-conclusao">4. Comentários e Conclusão <span style="color:var(--color-error)">*</span></label>
+              <p class="form-hint" style="margin-bottom:var(--space-2);">Comente experiências importantes, dificuldades encontradas, pontos positivos e negativos. Avalie o aproveitamento da experiência destacando conhecimentos que auxiliaram no desempenho.</p>
+              <textarea id="rel-conclusao" maxlength="5000" placeholder="Descreva aqui..."></textarea>
+              <div class="char-counter"><span id="cnt-conclusao">0</span>/5000 caracteres</div>
+            </div>
+          </div>
+
+          <!-- SEÇÃO 4: Documentos -->
+          <div class="aprov-section">
+            <h2 class="aprov-section-title">
+              <span class="step-badge">4</span>
+              Documentos (PDF)
+            </h2>
+            <p style="font-size:var(--font-size-sm);color:var(--color-text-muted);margin-bottom:var(--space-5);">
+              Envie apenas arquivos PDF. O sistema valida o formato antes de salvar.
+            </p>
+
+            <!-- Obrigatórios -->
+            <div class="upload-field">
+              <label class="upload-label" for="doc-matricula">
+                Atestado de matrícula atualizado
+                <span class="badge-obrigatorio">Obrigatório</span>
+              </label>
+              <input type="file" id="doc-matricula" accept=".pdf" class="form-input">
+              <p class="upload-hint">Emitido pela Secretaria, com assinatura. Formato PDF.</p>
+              <div id="ok-matricula" class="upload-ok" hidden>✓ Documento já enviado</div>
+            </div>
+
+            <div class="upload-field">
+              <label class="upload-label" for="doc-ctps-id">
+                Carteira de Trabalho — Identificação
+                <span class="badge-obrigatorio">Obrigatório</span>
+              </label>
+              <input type="file" id="doc-ctps-id" accept=".pdf" class="form-input">
+              <p class="upload-hint">Páginas de foto, filiação e data de nascimento. Física ou digital. PDF.</p>
+              <div id="ok-ctps-id" class="upload-ok" hidden>✓ Documento já enviado</div>
+            </div>
+
+            <div class="upload-field">
+              <label class="upload-label" for="doc-ctps-reg">
+                Carteira de Trabalho — Registros
+                <span class="badge-obrigatorio">Obrigatório</span>
+              </label>
+              <input type="file" id="doc-ctps-reg" accept=".pdf" class="form-input">
+              <p class="upload-hint">Páginas de registro da(s) empresa(s) e cargo(s) a comprovar. PDF.</p>
+              <div id="ok-ctps-reg" class="upload-ok" hidden>✓ Documento já enviado</div>
+            </div>
+
+            <!-- Condicional: cargo não autoexplicativo -->
+            <div class="upload-field">
+              <label class="upload-label" for="doc-declaracao">
+                Declaração de atividades da empresa
+                <span class="badge-condicional">Se necessário</span>
+              </label>
+              <input type="file" id="doc-declaracao" accept=".pdf" class="form-input">
+              <p class="upload-hint">Necessário quando o cargo não indica compatibilidade com o curso. Em papel timbrado e carimbado pela empresa. PDF.</p>
+              <div id="ok-declaracao" class="upload-ok" hidden>✓ Documento já enviado</div>
+            </div>
+
+            <!-- Condicional: autônomo/empresário -->
+            <div class="upload-field" id="bloco-autonomo" hidden>
+              <label class="upload-label" for="doc-autonomo">
+                Documentos de Autônomo / Empresário
+                <span class="badge-condicional">Condicional</span>
+              </label>
+              <input type="file" id="doc-autonomo" accept=".pdf" class="form-input">
+              <p class="upload-hint">Compile em um único PDF: comprovante de registro na prefeitura, ISSQN, INSS, contrato de prestação de serviço, recibo. Empresário: inclua cópia do Contrato Social.</p>
+              <div id="ok-autonomo" class="upload-ok" hidden>✓ Documento já enviado</div>
+            </div>
+          </div>
+
+          <!-- SEÇÃO 5: Declaração de veracidade -->
+          <div class="aprov-section">
+            <h2 class="aprov-section-title">
+              <span class="step-badge">5</span>
+              Declaração de Veracidade
+            </h2>
+            <label class="form-checkbox-label" style="display:flex;align-items:flex-start;gap:var(--space-3);cursor:pointer;">
+              <input type="checkbox" id="declaracao-veracidade" style="margin-top:3px;flex-shrink:0;">
+              <span style="font-size:var(--font-size-sm);">
+                Declaro, sob as penas da lei, que todas as informações e documentos fornecidos nesta
+                solicitação são verdadeiros e autênticos, e estou ciente de que a prestação de
+                informações falsas pode implicar em sanções disciplinares e legais.
+              </span>
+            </label>
+          </div>
+
+          <!-- Botões -->
+          <div style="display:flex;gap:var(--space-3);flex-wrap:wrap;justify-content:flex-end;" id="bloco-acoes">
+            <button type="button" class="btn btn-secondary" id="btn-rascunho">Salvar rascunho</button>
+            <button type="submit" class="btn btn-primary" id="btn-enviar">Enviar solicitação</button>
+          </div>
+
+        </form>
+      </div>
+
     </div>
   </main>
 
@@ -65,16 +419,456 @@
     </div>
   </footer>
 
-  <!-- Google Identity Services -->
   <script src="https://accounts.google.com/gsi/client" async></script>
   <script src="../assets/js/utils.js"></script>
   <script src="../assets/js/notifications-bell.js"></script>
   <script src="../assets/js/auth.js"></script>
+  <script src="../assets/js/api.js"></script>
   <script>
-    'use strict';
-    document.addEventListener('DOMContentLoaded', function () {
-      requireStudentAuth();
+  'use strict';
+
+  var _perfil       = null;  // dados do perfil do estudante
+  var _solicitacao  = null;  // solicitação existente (null se nova)
+  var _empresas     = [];    // array de empresas adicionadas
+  var _submitting   = false;
+
+  // ── Inicialização ────────────────────────────────────────────────
+  document.addEventListener('DOMContentLoaded', function () {
+    if (!requireStudentAuth()) return;
+    iniciar();
+  });
+
+  async function iniciar() {
+    mostrarPainel('painel-carregando');
+    try {
+      // Carrega perfil e solicitação em paralelo
+      const [perfil, solicitacao] = await Promise.all([
+        API.get('obterMeuCadastro', { authToken: getAccessToken() }),
+        apiObterMeuAproveitamento(),
+      ]);
+      _perfil      = perfil;
+      _solicitacao = solicitacao;
+      _renderizar();
+    } catch (err) {
+      document.getElementById('msg-erro').textContent =
+        'Não foi possível carregar: ' + (err && err.message ? err.message : 'tente novamente.');
+      mostrarPainel('painel-erro');
+    }
+  }
+
+  function mostrarPainel(id) {
+    ['painel-carregando','painel-erro','painel-formulario'].forEach(function(p) {
+      var el = document.getElementById(p);
+      if (el) el.hidden = (p !== id);
     });
+  }
+
+  // ── Renderização ─────────────────────────────────────────────────
+  function _renderizar() {
+    _preencherPerfil();
+    _configurarEventos();
+
+    var status = _solicitacao ? _solicitacao.status : null;
+
+    // Exibe banner de status quando não é rascunho/nova
+    _renderizarBanner(status);
+
+    // Bloqueia formulário quando não editável
+    var editavel = !status || status === 'Rascunho' || status === 'Devolvido';
+    _setFormEditavel(editavel);
+
+    // Pré-preenche campos se há solicitação existente
+    if (_solicitacao) {
+      _preencherFormulario(_solicitacao);
+    }
+
+    mostrarPainel('painel-formulario');
+  }
+
+  function _preencherPerfil() {
+    var p = _perfil || {};
+    setText('ro-nome',       p.nome       || '—');
+    setText('ro-matricula',  p.matricula  || '—');
+    setText('ro-curso',      p.curso      || '—');
+    setText('ro-email',      p.email      || getCurrentUserEmail() || '—');
+    setText('ro-cpf',        p.cpf        || '—');
+    setText('ro-rg',         p.rg         || '—');
+    setText('ro-telefone',   p.telefone   || '—');
+    setText('ro-nascimento', p.dataNascimento ? formatarDataBR(p.dataNascimento) : '—');
+    var endParts = [p.logradouro, p.numero, p.bairro, p.cidade, p.estado].filter(Boolean);
+    setText('ro-endereco',  endParts.length ? endParts.join(', ') : (p.endereco || '—'));
+    setText('ro-formando',  p.formando === 'Sim' || p.formando === true ? 'Sim' : 'Não');
+  }
+
+  function _preencherFormulario(s) {
+    setVal('tipo-vinculo', s.tipoVinculo || '');
+    setVal('total-horas',  s.totalHoras  || '');
+
+    // Relatório
+    var rel = s.relatorio || {};
+    setVal('rel-introducao', rel.introducao || '');
+    setVal('rel-empresa',    rel.empresa    || '');
+    setVal('rel-atividades', rel.atividades || '');
+    setVal('rel-conclusao',  rel.conclusao  || '');
+    _atualizarContadores();
+
+    // Empresas
+    _empresas = Array.isArray(s.empresas) ? s.empresas : [];
+    _renderizarEmpresas();
+
+    // Indicadores de documentos já enviados
+    _indicarDocEnviado('ok-matricula',  s.docMatriculaUrl);
+    _indicarDocEnviado('ok-ctps-id',    s.docCtpsIdUrl);
+    _indicarDocEnviado('ok-ctps-reg',   s.docCtpsRegUrl);
+    _indicarDocEnviado('ok-declaracao', s.docDeclaracaoUrl);
+    _indicarDocEnviado('ok-autonomo',   s.docAutonomoUrl);
+
+    // Declaração
+    if (s.declaracaoVeracidade === 'Sim') {
+      var cb = document.getElementById('declaracao-veracidade');
+      if (cb) cb.checked = true;
+    }
+
+    // Mostra bloco autônomo se tipo for autônomo/empresário
+    _atualizarBlocoAutonomo(s.tipoVinculo);
+  }
+
+  function _indicarDocEnviado(elId, url) {
+    if (!url) return;
+    var el = document.getElementById(elId);
+    if (el) el.hidden = false;
+  }
+
+  function _renderizarBanner(status) {
+    var banner = document.getElementById('status-banner');
+    if (!status || status === 'Rascunho') { banner.hidden = true; return; }
+
+    var cls = 'aguardando';
+    var msg = '';
+    if (status === 'Devolvido') {
+      cls = 'devolvido';
+      var obs  = (_solicitacao && _solicitacao.obsDevolucao) ? _solicitacao.obsDevolucao : '';
+      var por  = (_solicitacao && _solicitacao.devolvidoPor) ? ' pelo ' + _solicitacao.devolvidoPor : '';
+      msg = '<strong>Solicitação devolvida' + escapeHtml(por) + ' para ajuste.</strong>'
+          + (obs ? '<br>Motivo: ' + escapeHtml(obs) : '')
+          + '<br>Corrija as informações e reenvie.';
+    } else if (status === 'Deferido') {
+      cls = 'deferido';
+      var horas = (_solicitacao && _solicitacao.cargaHomologada) ? _solicitacao.cargaHomologada : '';
+      msg = '<strong>Solicitação deferida!</strong> Carga horária homologada: ' + escapeHtml(horas) + ' horas. O aproveitamento foi registrado como estágio obrigatório cumprido.';
+    } else if (status === 'Indeferido') {
+      cls = 'indeferido';
+      var just = (_solicitacao && _solicitacao.parecerDen && _solicitacao.parecerDen.justificativa)
+                 ? _solicitacao.parecerDen.justificativa : '';
+      msg = '<strong>Solicitação indeferida.</strong>'
+          + (just ? '<br>Justificativa: ' + escapeHtml(just) : '')
+          + '<br>Entre em contato com o setor de estágios para mais informações.';
+    } else {
+      var labels = {
+        'Aguardando Coordenador': 'Sua solicitação foi enviada e está aguardando análise do coordenador de curso.',
+        'Aguardando Admin':       'O coordenador emitiu o parecer. Aguardando verificação pelo setor de estágios.',
+        'Aguardando DEN':         'O setor de estágios encaminhou sua solicitação à DEN para parecer final.',
+      };
+      msg = '<strong>Status: ' + escapeHtml(status) + '.</strong> ' + escapeHtml(labels[status] || '');
+    }
+
+    banner.className = 'status-banner ' + cls;
+    banner.innerHTML = msg;
+    banner.hidden = false;
+  }
+
+  function _setFormEditavel(editavel) {
+    var inputs = document.querySelectorAll('#form-aproveitamento input, #form-aproveitamento select, #form-aproveitamento textarea');
+    inputs.forEach(function(el) { el.disabled = !editavel; });
+    var bloco = document.getElementById('bloco-acoes');
+    if (bloco) bloco.hidden = !editavel;
+  }
+
+  // ── Empresas ─────────────────────────────────────────────────────
+  function _renderizarEmpresas() {
+    var container = document.getElementById('lista-empresas');
+    container.innerHTML = '';
+    _empresas.forEach(function(emp, idx) {
+      container.appendChild(_criarCardEmpresa(emp, idx));
+    });
+  }
+
+  function _criarCardEmpresa(emp, idx) {
+    var card = document.createElement('div');
+    card.className = 'empresa-card';
+    card.innerHTML =
+      '<button type="button" class="btn-remove" data-idx="' + idx + '" aria-label="Remover empresa">✕ Remover</button>' +
+      '<div class="form-grid-2">' +
+        '<div class="form-group"><label class="form-label">Nome da empresa *</label>' +
+          '<input type="text" class="form-input emp-nome" value="' + escapeHtml(emp.nome || '') + '" maxlength="200" placeholder="Razão social"></div>' +
+        '<div class="form-group"><label class="form-label">CNPJ / CPF</label>' +
+          '<input type="text" class="form-input emp-cnpj" value="' + escapeHtml(emp.cnpj || '') + '" maxlength="30" placeholder="00.000.000/0001-00"></div>' +
+        '<div class="form-group" style="grid-column:1/-1"><label class="form-label">Cargo / Função *</label>' +
+          '<input type="text" class="form-input emp-cargo" value="' + escapeHtml(emp.cargo || '') + '" maxlength="200" placeholder="Ex.: Técnico em Informática"></div>' +
+        '<div class="form-group"><label class="form-label">Período — Início</label>' +
+          '<input type="date" class="form-input emp-inicio" value="' + escapeHtml(emp.periodoInicio || '') + '"></div>' +
+        '<div class="form-group"><label class="form-label">Período — Fim</label>' +
+          '<input type="date" class="form-input emp-fim" value="' + escapeHtml(emp.periodoFim || '') + '"></div>' +
+        '<div class="form-group"><label class="form-label">Carga horária (h)</label>' +
+          '<input type="number" class="form-input emp-horas" value="' + escapeHtml(String(emp.horas || '')) + '" min="1" max="9999" placeholder="Ex.: 440"></div>' +
+      '</div>';
+
+    card.querySelector('.btn-remove').addEventListener('click', function() {
+      var i = parseInt(this.getAttribute('data-idx'), 10);
+      _empresas.splice(i, 1);
+      _renderizarEmpresas();
+    });
+    return card;
+  }
+
+  function _coletarEmpresas() {
+    var cards = document.querySelectorAll('.empresa-card');
+    var lista = [];
+    cards.forEach(function(card) {
+      lista.push({
+        nome:         card.querySelector('.emp-nome').value.trim(),
+        cnpj:         card.querySelector('.emp-cnpj').value.trim(),
+        cargo:        card.querySelector('.emp-cargo').value.trim(),
+        periodoInicio:card.querySelector('.emp-inicio').value,
+        periodoFim:   card.querySelector('.emp-fim').value,
+        horas:        card.querySelector('.emp-horas').value,
+      });
+    });
+    return lista;
+  }
+
+  // ── Eventos ──────────────────────────────────────────────────────
+  function _configurarEventos() {
+    document.getElementById('btn-add-empresa').addEventListener('click', function() {
+      _empresas = _coletarEmpresas();
+      _empresas.push({ nome:'', cnpj:'', cargo:'', periodoInicio:'', periodoFim:'', horas:'' });
+      _renderizarEmpresas();
+    });
+
+    document.getElementById('tipo-vinculo').addEventListener('change', function() {
+      _atualizarBlocoAutonomo(this.value);
+    });
+
+    // Contadores de caracteres
+    ['introducao','empresa','atividades','conclusao'].forEach(function(campo) {
+      var el = document.getElementById('rel-' + campo);
+      if (el) el.addEventListener('input', function() {
+        var cnt = document.getElementById('cnt-' + campo);
+        if (cnt) cnt.textContent = el.value.length;
+      });
+    });
+
+    // Salvar rascunho
+    document.getElementById('btn-rascunho').addEventListener('click', function() {
+      _salvarRascunho();
+    });
+
+    // Enviar
+    document.getElementById('form-aproveitamento').addEventListener('submit', function(e) {
+      e.preventDefault();
+      _enviar();
+    });
+  }
+
+  function _atualizarBlocoAutonomo(tipo) {
+    var bloco = document.getElementById('bloco-autonomo');
+    if (bloco) bloco.hidden = (tipo !== 'Autonomo' && tipo !== 'Empresario');
+  }
+
+  function _atualizarContadores() {
+    ['introducao','empresa','atividades','conclusao'].forEach(function(campo) {
+      var el  = document.getElementById('rel-' + campo);
+      var cnt = document.getElementById('cnt-' + campo);
+      if (el && cnt) cnt.textContent = el.value.length;
+    });
+  }
+
+  // ── Coleta de dados do formulário ────────────────────────────────
+  function _coletarDados() {
+    var p = _perfil || {};
+    return {
+      // Perfil (enviado para garantir consistência)
+      nomeEstudante:  p.nome       || '',
+      matricula:      p.matricula  || '',
+      curso:          p.curso      || '',
+      cpf:            p.cpf        || '',
+      rg:             p.rg         || '',
+      telefone:       p.telefone   || '',
+      endereco:       [p.logradouro, p.numero, p.bairro].filter(Boolean).join(', ') || p.endereco || '',
+      bairro:         p.bairro     || '',
+      cidade:         p.cidade     || '',
+      estado:         p.estado     || '',
+      dataNascimento: p.dataNascimento || '',
+      formando:       (p.formando === 'Sim' || p.formando === true) ? 'Sim' : 'Não',
+      // Experiência
+      tipoVinculo:    getVal('tipo-vinculo'),
+      empresas:       _coletarEmpresas(),
+      totalHoras:     getVal('total-horas'),
+      // Relatório
+      relatorio: {
+        introducao: getVal('rel-introducao'),
+        empresa:    getVal('rel-empresa'),
+        atividades: getVal('rel-atividades'),
+        conclusao:  getVal('rel-conclusao'),
+      },
+      declaracaoVeracidade: document.getElementById('declaracao-veracidade').checked,
+    };
+  }
+
+  // ── Salvar rascunho ──────────────────────────────────────────────
+  async function _salvarRascunho() {
+    if (_submitting) return;
+    _submitting = true;
+    var btn = document.getElementById('btn-rascunho');
+    btn.classList.add('is-loading');
+    btn.disabled = true;
+    hideFormFeedback('form-feedback');
+
+    try {
+      var dados = _coletarDados();
+      var res   = await apiSalvarRascunhoAproveitamento(dados);
+      if (_solicitacao) { _solicitacao.id = res.id; } else { _solicitacao = { id: res.id, status: 'Rascunho' }; }
+      showFormFeedback('form-feedback', 'success', 'Rascunho salvo', 'Suas informações foram salvas. Você pode continuar depois.');
+    } catch (err) {
+      showFormFeedback('form-feedback', 'error', 'Erro ao salvar', err && err.message ? err.message : 'Tente novamente.');
+    } finally {
+      btn.classList.remove('is-loading');
+      btn.disabled = false;
+      _submitting = false;
+    }
+  }
+
+  // ── Enviar solicitação ───────────────────────────────────────────
+  async function _enviar() {
+    if (_submitting) return;
+    hideFormFeedback('form-feedback');
+
+    // Validações básicas
+    var dados = _coletarDados();
+    if (!dados.tipoVinculo) {
+      showFormFeedback('form-feedback', 'error', 'Campo obrigatório', 'Selecione o tipo de vínculo.');
+      return;
+    }
+    var empresas = _coletarEmpresas();
+    if (empresas.length === 0) {
+      showFormFeedback('form-feedback', 'error', 'Empresa obrigatória', 'Adicione pelo menos uma empresa.');
+      return;
+    }
+    for (var i = 0; i < empresas.length; i++) {
+      if (!empresas[i].nome || !empresas[i].cargo) {
+        showFormFeedback('form-feedback', 'error', 'Dados incompletos', 'Preencha nome e cargo de todas as empresas.');
+        return;
+      }
+    }
+    if (!dados.totalHoras) {
+      showFormFeedback('form-feedback', 'error', 'Campo obrigatório', 'Informe a carga horária total.');
+      return;
+    }
+    var rel = dados.relatorio;
+    if (!rel.introducao || !rel.empresa || !rel.atividades || !rel.conclusao) {
+      showFormFeedback('form-feedback', 'error', 'Relatório incompleto', 'Preencha todas as seções do relatório.');
+      return;
+    }
+    if (!dados.declaracaoVeracidade) {
+      showFormFeedback('form-feedback', 'error', 'Declaração obrigatória', 'Você precisa confirmar a declaração de veracidade.');
+      return;
+    }
+
+    // Valida documentos obrigatórios (novo envio ou já salvos)
+    var temMatricula  = document.getElementById('doc-matricula').files[0]
+                        || (_solicitacao && _solicitacao.docMatriculaUrl);
+    var temCtpsId     = document.getElementById('doc-ctps-id').files[0]
+                        || (_solicitacao && _solicitacao.docCtpsIdUrl);
+    var temCtpsReg    = document.getElementById('doc-ctps-reg').files[0]
+                        || (_solicitacao && _solicitacao.docCtpsRegUrl);
+    if (!temMatricula) {
+      showFormFeedback('form-feedback', 'error', 'Documento obrigatório', 'Envie o atestado de matrícula.');
+      return;
+    }
+    if (!temCtpsId) {
+      showFormFeedback('form-feedback', 'error', 'Documento obrigatório', 'Envie a carteira de trabalho (identificação).');
+      return;
+    }
+    if (!temCtpsReg) {
+      showFormFeedback('form-feedback', 'error', 'Documento obrigatório', 'Envie a carteira de trabalho (registros).');
+      return;
+    }
+
+    _submitting = true;
+    var btn = document.getElementById('btn-enviar');
+    btn.classList.add('is-loading');
+    btn.disabled = true;
+
+    try {
+      // Lê arquivos em base64
+      var lerBase64 = function(file) {
+        return new Promise(function(resolve) {
+          if (!file) { resolve(null); return; }
+          var r = new FileReader();
+          r.onload  = function() { resolve({ nome: file.name, base64: r.result.split(',')[1] }); };
+          r.onerror = function() { resolve(null); };
+          r.readAsDataURL(file);
+        });
+      };
+
+      var arqMatricula  = await lerBase64(document.getElementById('doc-matricula').files[0]);
+      var arqCtpsId     = await lerBase64(document.getElementById('doc-ctps-id').files[0]);
+      var arqCtpsReg    = await lerBase64(document.getElementById('doc-ctps-reg').files[0]);
+      var arqDeclaracao = await lerBase64(document.getElementById('doc-declaracao').files[0]);
+      var arqAutonomo   = await lerBase64(document.getElementById('doc-autonomo').files[0]);
+
+      var payload = Object.assign({}, dados, {
+        authToken:     getAccessToken(),
+        docMatricula:  arqMatricula,
+        docCtpsId:     arqCtpsId,
+        docCtpsReg:    arqCtpsReg,
+        docDeclaracao: arqDeclaracao,
+        docAutonomo:   arqAutonomo,
+      });
+
+      await apiEnviarAproveitamento(payload);
+
+      showFormFeedback('form-feedback', 'success',
+        'Solicitação enviada!',
+        'Sua solicitação foi encaminhada ao coordenador do curso. Você receberá atualizações por e-mail.');
+
+      _setFormEditavel(false);
+      if (_solicitacao) _solicitacao.status = 'Aguardando Coordenador';
+      _renderizarBanner('Aguardando Coordenador');
+
+    } catch (err) {
+      var msg = err && err.message ? err.message : 'Tente novamente.';
+      if (err && err.code === 'TIMEOUT') {
+        msg = 'A solicitação pode já ter sido registrada. Aguarde alguns minutos e verifique seu e-mail de confirmação.';
+        showFormFeedback('form-feedback', 'warning', 'Tempo de resposta excedido', msg);
+      } else {
+        showFormFeedback('form-feedback', 'error', 'Erro ao enviar', msg);
+      }
+    } finally {
+      btn.classList.remove('is-loading');
+      btn.disabled = false;
+      _submitting = false;
+    }
+  }
+
+  // ── Helpers ──────────────────────────────────────────────────────
+  function setText(id, val) {
+    var el = document.getElementById(id);
+    if (el) el.textContent = val;
+  }
+  function setVal(id, val) {
+    var el = document.getElementById(id);
+    if (el) el.value = val;
+  }
+  function getVal(id) {
+    var el = document.getElementById(id);
+    return el ? el.value.trim() : '';
+  }
+  function formatarDataBR(iso) {
+    if (!iso) return '—';
+    var m = String(iso).match(/^(\d{4})-(\d{2})-(\d{2})/);
+    return m ? m[3] + '/' + m[2] + '/' + m[1] : iso;
+  }
   </script>
 </body>
 </html>
