@@ -79,6 +79,8 @@ var COL_APROV = {
   OBS_DEVOLUCAO:        39,
   DEVOLVIDO_POR:        40,  // 'coordenador' | 'admin'
   DATA_DEVOLUCAO:       41,
+  SEMESTRE_ATUAL:       42,  // período/semestre que está cursando
+  DOC_EXTRA_URL:        43,  // demais documentos (opcional)
 };
 
 var APROV_STATUS = {
@@ -212,6 +214,8 @@ function _buildRespostaEstudante_(linha) {
     obsDevolucao:         String(linha[COL_APROV.OBS_DEVOLUCAO]    || ''),
     devolvidoPor:         String(linha[COL_APROV.DEVOLVIDO_POR]    || ''),
     dataDevolucao:        normalizarDataISO_(linha[COL_APROV.DATA_DEVOLUCAO]),
+    semestreAtual:        String(linha[COL_APROV.SEMESTRE_ATUAL]   || ''),
+    docExtraUrl:          String(linha[COL_APROV.DOC_EXTRA_URL]    || ''),
   };
 }
 
@@ -491,6 +495,7 @@ function _salvarRascunho_(emailEst, body) {
     novaLinha[COL_APROV.ESTADO]          = sanitizar_(body.estado         || '', 2);
     novaLinha[COL_APROV.DATA_NASCIMENTO] = sanitizar_(body.dataNascimento || '', 30);
     novaLinha[COL_APROV.FORMANDO]        = sanitizar_(body.formando       || '', 10);
+    novaLinha[COL_APROV.SEMESTRE_ATUAL]  = sanitizar_(body.semestreAtual  || '', 30);
     novaLinha[COL_APROV.TIPO_VINCULO]    = sanitizar_(body.tipoVinculo    || '', 30);
     novaLinha[COL_APROV.EMPRESAS_JSON]   = empresas;
     novaLinha[COL_APROV.TOTAL_HORAS]     = sanitizar_(String(body.totalHoras || ''), 10);
@@ -500,12 +505,14 @@ function _salvarRascunho_(emailEst, body) {
   }
 
   // Atualiza rascunho existente (só campos editáveis)
-  var row = sheet.getRange(rowIdx, 1, 1, 42).getValues()[0];
+  var row = sheet.getRange(rowIdx, 1, 1, 44).getValues()[0];
   row[COL_APROV.TIPO_VINCULO]   = sanitizar_(body.tipoVinculo    || '', 30);
+  row[COL_APROV.SEMESTRE_ATUAL] = sanitizar_(body.semestreAtual  || '', 30);
+  row[COL_APROV.FORMANDO]       = sanitizar_(body.formando       || '', 10);
   row[COL_APROV.EMPRESAS_JSON]  = empresas;
   row[COL_APROV.TOTAL_HORAS]    = sanitizar_(String(body.totalHoras || ''), 10);
   row[COL_APROV.RELATORIO_JSON] = relatorio;
-  sheet.getRange(rowIdx, 1, 1, 42).setValues([row]);
+  sheet.getRange(rowIdx, 1, 1, 44).setValues([row]);
   return jsonOk_({ id: row[COL_APROV.ID], status: APROV_STATUS.RASCUNHO });
 }
 
@@ -565,9 +572,9 @@ function _enviarSolicitacao_(emailEst, body) {
   if (typeof empresas !== 'string') empresas = JSON.stringify(empresas || []);
   var relatorioStr = typeof body.relatorio === 'string' ? body.relatorio : JSON.stringify(body.relatorio || {});
 
-  var row = sheet.getRange ? rec.sheet.getRange(rec.rowIdx, 1, 1, 42).getValues()[0] : rec.linha;
+  var row = sheet.getRange ? rec.sheet.getRange(rec.rowIdx, 1, 1, 44).getValues()[0] : rec.linha;
   var sheet = rec.sheet;
-  row = sheet.getRange(rec.rowIdx, 1, 1, 42).getValues()[0];
+  row = sheet.getRange(rec.rowIdx, 1, 1, 44).getValues()[0];
 
   row[COL_APROV.STATUS]               = APROV_STATUS.AG_COORDENADOR;
   row[COL_APROV.TIPO_VINCULO]         = tipoVinculo;
@@ -583,13 +590,17 @@ function _enviarSolicitacao_(emailEst, body) {
   if (docDecl)    row[COL_APROV.DOC_DECLARACAO_URL] = docDecl;
   if (docAut)     row[COL_APROV.DOC_AUTONOMO_URL]   = docAut;
   if (driveInfo.url) row[COL_APROV.DRIVE_URL]       = driveInfo.url;
+  row[COL_APROV.SEMESTRE_ATUAL] = sanitizar_(body.semestreAtual || '', 30);
+  row[COL_APROV.FORMANDO]       = sanitizar_(body.formando      || '', 10);
+  var docExtra = body.docExtra ? _salvarArquivoAprov_(pasta, body.docExtra, 'DocExtra_' + idAprov + '.pdf') : '';
+  if (docExtra) row[COL_APROV.DOC_EXTRA_URL] = docExtra;
   row[COL_APROV.EMAIL_COORDENADOR]    = emailCoordenador;
   // Limpa campos de devolução ao reenviar
   row[COL_APROV.OBS_DEVOLUCAO]        = '';
   row[COL_APROV.DEVOLVIDO_POR]        = '';
   row[COL_APROV.DATA_DEVOLUCAO]       = '';
 
-  sheet.getRange(rec.rowIdx, 1, 1, 42).setValues([row]);
+  sheet.getRange(rec.rowIdx, 1, 1, 44).setValues([row]);
 
   // Notifica coordenador por e-mail
   if (emailCoordenador) {
@@ -643,12 +654,12 @@ function _responderCoordenador_(coord, body) {
   ).map(function(b) { return ('0' + (b & 0xff).toString(16)).slice(-2); }).join('');
 
   var sheet = rec.sheet;
-  var row   = sheet.getRange(rec.rowIdx, 1, 1, 42).getValues()[0];
+  var row   = sheet.getRange(rec.rowIdx, 1, 1, 44).getValues()[0];
   row[COL_APROV.STATUS]              = APROV_STATUS.AG_ADMIN;
   row[COL_APROV.PARECER_COORD_JSON]  = JSON.stringify(parecer);
   row[COL_APROV.ASSINATURA_COORD]    = hash;
   row[COL_APROV.DATA_ASSINATURA_COORD] = agora;
-  sheet.getRange(rec.rowIdx, 1, 1, 42).setValues([row]);
+  sheet.getRange(rec.rowIdx, 1, 1, 44).setValues([row]);
 
   // Notifica admin
   try {
@@ -685,12 +696,12 @@ function _devolverSolicitacao_(body, devolvidoPor) {
 
   var agora = new Date().toISOString();
   var sheet = rec.sheet;
-  var row   = sheet.getRange(rec.rowIdx, 1, 1, 42).getValues()[0];
+  var row   = sheet.getRange(rec.rowIdx, 1, 1, 44).getValues()[0];
   row[COL_APROV.STATUS]        = APROV_STATUS.DEVOLVIDO;
   row[COL_APROV.OBS_DEVOLUCAO] = obs;
   row[COL_APROV.DEVOLVIDO_POR] = devolvidoPor;
   row[COL_APROV.DATA_DEVOLUCAO]= agora;
-  sheet.getRange(rec.rowIdx, 1, 1, 42).setValues([row]);
+  sheet.getRange(rec.rowIdx, 1, 1, 44).setValues([row]);
 
   // Notifica estudante
   try {
@@ -719,11 +730,11 @@ function _encaminharDEN_(body) {
 
   var agora = new Date().toISOString();
   var sheet = rec.sheet;
-  var row   = sheet.getRange(rec.rowIdx, 1, 1, 42).getValues()[0];
+  var row   = sheet.getRange(rec.rowIdx, 1, 1, 44).getValues()[0];
   row[COL_APROV.STATUS]            = APROV_STATUS.AG_DEN;
   row[COL_APROV.OBS_ADMIN]         = sanitizar_(body.obs || '', 1000);
   row[COL_APROV.DATA_ENCAMINHAMENTO] = agora;
-  sheet.getRange(rec.rowIdx, 1, 1, 42).setValues([row]);
+  sheet.getRange(rec.rowIdx, 1, 1, 44).setValues([row]);
 
   // Notifica DEN
   try {
@@ -773,13 +784,13 @@ function _responderDEN_(emailDen, body) {
   ).map(function(b) { return ('0' + (b & 0xff).toString(16)).slice(-2); }).join('');
 
   var sheet = rec.sheet;
-  var row   = sheet.getRange(rec.rowIdx, 1, 1, 42).getValues()[0];
+  var row   = sheet.getRange(rec.rowIdx, 1, 1, 44).getValues()[0];
   row[COL_APROV.STATUS]           = decisao === 'Deferido' ? APROV_STATUS.DEFERIDO : APROV_STATUS.INDEFERIDO;
   row[COL_APROV.PARECER_DEN_JSON] = JSON.stringify(parecer);
   row[COL_APROV.ASSINATURA_DEN]   = hash;
   row[COL_APROV.DATA_ASSINATURA_DEN] = agora;
   row[COL_APROV.CARGA_HOMOLOGADA] = horasHomologadas;
-  sheet.getRange(rec.rowIdx, 1, 1, 42).setValues([row]);
+  sheet.getRange(rec.rowIdx, 1, 1, 44).setValues([row]);
 
   // Se deferido: registra na aba de estágios como estágio obrigatório cumprido
   if (decisao === 'Deferido') {

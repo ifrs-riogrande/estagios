@@ -613,6 +613,7 @@ function setupAproveitamento() {
       'Obs Admin','Data Encaminhamento',
       'Parecer DEN JSON','Assinatura DEN','Data Assinatura DEN','Carga Homologada',
       'Obs Devolução','Devolvido Por','Data Devolução',
+      'Semestre Atual','Doc Extra URL',
     ];
     sheet.getRange(1, 1, 1, cab.length).setValues([cab]);
     cab.forEach(function(_, i) { _formatarCelulaCabecalho_(sheet, i + 1); });

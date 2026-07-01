@@ -235,9 +235,28 @@
                 <label class="form-label">Endereço completo</label>
                 <div class="field-readonly" id="ro-endereco">—</div>
               </div>
+            </div>
+
+            <div class="form-grid-2" style="margin-top:var(--space-4);">
               <div class="form-group">
-                <label class="form-label">Formando</label>
-                <div class="field-readonly" id="ro-formando">—</div>
+                <label class="form-label" for="semestre-atual">Período/Semestre atual que está cursando <span style="color:var(--color-error)">*</span></label>
+                <select id="semestre-atual" class="form-select" required>
+                  <option value="">Carregando...</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">É formando(a) neste semestre/ano letivo? <span style="color:var(--color-error)">*</span></label>
+                <div class="radio-group" id="formando-group" role="radiogroup">
+                  <div class="radio-option">
+                    <input type="radio" id="formando-nao" name="formando" value="Não">
+                    <label for="formando-nao">Não</label>
+                  </div>
+                  <div class="radio-option">
+                    <input type="radio" id="formando-sim" name="formando" value="Sim">
+                    <label for="formando-sim">Sim</label>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -378,6 +397,17 @@
               <p class="upload-hint">Compile em um único PDF: comprovante de registro na prefeitura, ISSQN, INSS, contrato de prestação de serviço, recibo. Empresário: inclua cópia do Contrato Social.</p>
               <div id="ok-autonomo" class="upload-ok" hidden>✓ Documento já enviado</div>
             </div>
+
+            <!-- Demais documentos (opcional) -->
+            <div class="upload-field">
+              <label class="upload-label" for="doc-extra">
+                Demais documentos
+                <span style="font-size:10px;font-weight:600;color:var(--color-text-muted);background:var(--color-bg);border:1px solid var(--color-border);border-radius:4px;padding:1px 5px;margin-left:var(--space-1);">Opcional</span>
+              </label>
+              <input type="file" id="doc-extra" accept=".pdf" class="form-input">
+              <p class="upload-hint">Qualquer outro documento que julgue relevante para a análise (único PDF compilado).</p>
+              <div id="ok-extra" class="upload-ok" hidden>✓ Documento já enviado</div>
+            </div>
           </div>
 
           <!-- SEÇÃO 5: Declaração de veracidade -->
@@ -427,10 +457,38 @@
   <script>
   'use strict';
 
-  var _perfil       = null;  // dados do perfil do estudante
-  var _solicitacao  = null;  // solicitação existente (null se nova)
-  var _empresas     = [];    // array de empresas adicionadas
+  var _perfil       = null;
+  var _solicitacao  = null;
+  var _empresas     = [];
   var _submitting   = false;
+
+  var OPCOES_SEMESTRE = {
+    integrado:   ['1º Ano','2º Ano','3º Ano','4º Ano'],
+    subsequente: ['1º Semestre','2º Semestre','3º Semestre','4º Semestre'],
+    tecnologo:   ['1º Semestre','2º Semestre','3º Semestre','4º Semestre','5º Semestre','6º Semestre'],
+    bacharelado: ['1º Semestre','2º Semestre','3º Semestre','4º Semestre','5º Semestre',
+                  '6º Semestre','7º Semestre','8º Semestre','9º Semestre','10º Semestre'],
+  };
+
+  function tipoDoCurso(curso) {
+    if (!curso) return 'bacharelado';
+    if (curso.indexOf('Técnico Integrado')   === 0) return 'integrado';
+    if (curso.indexOf('Técnico Subsequente') === 0) return 'subsequente';
+    if (curso.indexOf('Tecnologia em')       === 0) return 'tecnologo';
+    if (curso.indexOf('Bacharelado em')      === 0) return 'bacharelado';
+    return 'bacharelado';
+  }
+
+  function _preencherOpcoesSemestre(curso, valorAtual) {
+    var sel = document.getElementById('semestre-atual');
+    if (!sel) return;
+    var tipo   = tipoDoCurso(curso);
+    var opcoes = OPCOES_SEMESTRE[tipo] || OPCOES_SEMESTRE.bacharelado;
+    sel.innerHTML = '<option value="">Selecione...</option>' +
+      opcoes.map(function(o) {
+        return '<option value="' + o + '"' + (o === valorAtual ? ' selected' : '') + '>' + o + '</option>';
+      }).join('');
+  }
 
   // ── Inicialização ────────────────────────────────────────────────
   document.addEventListener('DOMContentLoaded', function () {
@@ -497,7 +555,8 @@
     setText('ro-nascimento', (p.dataNasc || p.dataNascimento) ? formatarDataBR(p.dataNasc || p.dataNascimento) : '—');
     var endParts = [p.endereco, p.bairro, p.cidade, p.uf || p.estado].filter(Boolean);
     setText('ro-endereco',  endParts.length ? endParts.join(', ') : '—');
-    setText('ro-formando',  p.formando === 'Sim' || p.formando === true ? 'Sim' : 'Não');
+    // Popula opções de semestre baseado no curso do perfil
+    _preencherOpcoesSemestre(p.curso, '');
   }
 
   function _preencherFormulario(s) {
@@ -516,12 +575,20 @@
     _empresas = Array.isArray(s.empresas) ? s.empresas : [];
     _renderizarEmpresas();
 
+    // Semestre e formando
+    _preencherOpcoesSemestre((_perfil || {}).curso, s.semestreAtual || '');
+    if (s.formando) {
+      var rb = document.querySelector('input[name="formando"][value="' + s.formando + '"]');
+      if (rb) rb.checked = true;
+    }
+
     // Indicadores de documentos já enviados
     _indicarDocEnviado('ok-matricula',  s.docMatriculaUrl);
     _indicarDocEnviado('ok-ctps-id',    s.docCtpsIdUrl);
     _indicarDocEnviado('ok-ctps-reg',   s.docCtpsRegUrl);
     _indicarDocEnviado('ok-declaracao', s.docDeclaracaoUrl);
     _indicarDocEnviado('ok-autonomo',   s.docAutonomoUrl);
+    _indicarDocEnviado('ok-extra',      s.docExtraUrl);
 
     // Declaração
     if (s.declaracaoVeracidade === 'Sim') {
@@ -699,7 +766,8 @@
       cidade:         p.cidade      || '',
       estado:         p.uf || p.estado || '',
       dataNascimento: p.dataNasc || p.dataNascimento || '',
-      formando:       (p.formando === 'Sim' || p.formando === true) ? 'Sim' : 'Não',
+      semestreAtual:  getVal('semestre-atual'),
+      formando:       (document.querySelector('input[name="formando"]:checked') || {}).value || '',
       // Experiência
       tipoVinculo:    getVal('tipo-vinculo'),
       empresas:       _coletarEmpresas(),
@@ -745,6 +813,14 @@
 
     // Validações básicas
     var dados = _coletarDados();
+    if (!dados.semestreAtual) {
+      showFormFeedback('form-feedback', 'error', 'Campo obrigatório', 'Selecione o período/semestre atual.');
+      return;
+    }
+    if (!dados.formando) {
+      showFormFeedback('form-feedback', 'error', 'Campo obrigatório', 'Informe se é formando(a) neste semestre.');
+      return;
+    }
     if (!dados.tipoVinculo) {
       showFormFeedback('form-feedback', 'error', 'Campo obrigatório', 'Selecione o tipo de vínculo.');
       return;
@@ -816,6 +892,7 @@
       var arqCtpsReg    = await lerBase64(document.getElementById('doc-ctps-reg').files[0]);
       var arqDeclaracao = await lerBase64(document.getElementById('doc-declaracao').files[0]);
       var arqAutonomo   = await lerBase64(document.getElementById('doc-autonomo').files[0]);
+      var arqExtra      = await lerBase64(document.getElementById('doc-extra').files[0]);
 
       var payload = Object.assign({}, dados, {
         authToken:     getAccessToken(),
@@ -824,6 +901,7 @@
         docCtpsReg:    arqCtpsReg,
         docDeclaracao: arqDeclaracao,
         docAutonomo:   arqAutonomo,
+        docExtra:      arqExtra,
       });
 
       await apiEnviarAproveitamento(payload);
