@@ -129,9 +129,10 @@
                   <th>ID</th>
                   <th>Estudante</th>
                   <th>Curso</th>
-                  <th>Empresa</th>
+                  <th>Tipo</th>
+                  <th>Empresa / Carga</th>
                   <th>Orientador</th>
-                  <th>Período</th>
+                  <th>Período / Deferimento</th>
                   <th>Documentos</th>
                 </tr>
               </thead>
@@ -220,7 +221,7 @@
       var filtrados = _todos.filter(function (s) {
         if (curso && s.curso !== curso) return false;
         if (busca) {
-          var haystack = [s.nomeEstudante, s.matricula, s.empresa, s.nomeOrientador, s.id, s.curso].join(' ').toLowerCase();
+          var haystack = [s.nomeEstudante, s.matricula, s.empresa, s.nomeOrientador, s.id, s.curso, s.origem].join(' ').toLowerCase();
           if (haystack.indexOf(busca) === -1) return false;
         }
         return true;
@@ -241,7 +242,7 @@
         vazioEl.style.display = 'block';
         document.getElementById('msg-vazia').textContent =
           _todos.length === 0
-            ? 'Nenhum estágio obrigatório concluído encontrado.'
+            ? 'Nenhum registro encontrado.'
             : 'Nenhum resultado para os filtros aplicados.';
         return;
       }
@@ -249,17 +250,28 @@
       vazioEl.style.display = 'none';
 
       var html = lista.map(function (s) {
-        var periodo = '';
-        if (s.dataInicio || s.dataTermino) {
-          periodo = (s.dataInicio ? formatarData(s.dataInicio) : '?') + ' – ' + (s.dataTermino ? formatarData(s.dataTermino) : '?');
+        var isAprov = s.origem === 'aproveitamento';
+
+        var tipoBadge = isAprov
+          ? '<span style="display:inline-block;font-size:10px;font-weight:600;padding:2px 7px;border-radius:9999px;background:#fef3c7;color:#92400e;white-space:nowrap;">Aproveitamento</span>'
+          : '<span style="display:inline-block;font-size:10px;font-weight:600;padding:2px 7px;border-radius:9999px;background:#dbeafe;color:#1e40af;white-space:nowrap;">Estágio</span>';
+
+        var empresaOuCarga = isAprov
+          ? (s.cargaHomologada ? escapeHtml(s.cargaHomologada) + ' h homologadas' : '—')
+          : escapeHtml(s.empresa || '—');
+
+        var orientadorOuDash = isAprov ? '—' : escapeHtml(s.nomeOrientador || '—');
+
+        var periodoOuDef = '';
+        if (isAprov) {
+          periodoOuDef = s.dataDeferimento ? 'Deferido em ' + formatarData(s.dataDeferimento) : '—';
+        } else if (s.dataInicio || s.dataTermino) {
+          periodoOuDef = (s.dataInicio ? formatarData(s.dataInicio) : '?') + ' – ' + (s.dataTermino ? formatarData(s.dataTermino) : '?');
         }
 
-        var docLink = '';
-        if (s.driveUrl && safeUrl(s.driveUrl)) {
-          docLink = '<a href="' + escapeHtml(safeUrl(s.driveUrl)) + '" target="_blank" rel="noopener" title="Abrir pasta de documentos">📁 Abrir pasta ↗</a>';
-        } else {
-          docLink = '<a class="disabled" title="Pasta não disponível">📁 Pasta</a>';
-        }
+        var docLink = s.driveUrl && safeUrl(s.driveUrl)
+          ? '<a href="' + escapeHtml(safeUrl(s.driveUrl)) + '" target="_blank" rel="noopener" title="Abrir pasta de documentos">📁 Abrir pasta ↗</a>'
+          : '<a class="disabled" title="Pasta não disponível">📁 Pasta</a>';
 
         return '<tr>' +
           '<td><code style="font-size:11px;color:var(--color-text-muted)">' + escapeHtml(s.id || '—') + '</code></td>' +
@@ -268,9 +280,10 @@
             (s.matricula ? '<div style="font-size:11px;color:var(--color-text-muted)">Matr. ' + escapeHtml(s.matricula) + '</div>' : '') +
           '</td>' +
           '<td style="max-width:160px;white-space:normal">' + escapeHtml(s.curso || '—') + '</td>' +
-          '<td style="max-width:160px;white-space:normal">' + escapeHtml(s.empresa || '—') + '</td>' +
-          '<td style="max-width:140px;white-space:normal">' + escapeHtml(s.nomeOrientador || '—') + '</td>' +
-          '<td style="white-space:nowrap;font-size:12px">' + escapeHtml(periodo || '—') + '</td>' +
+          '<td>' + tipoBadge + '</td>' +
+          '<td style="max-width:160px;white-space:normal">' + empresaOuCarga + '</td>' +
+          '<td style="max-width:140px;white-space:normal">' + orientadorOuDash + '</td>' +
+          '<td style="white-space:nowrap;font-size:12px">' + escapeHtml(periodoOuDef || '—') + '</td>' +
           '<td><div class="action-links">' + docLink + '</div></td>' +
           '</tr>';
       }).join('');
