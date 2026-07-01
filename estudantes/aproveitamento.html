@@ -490,13 +490,13 @@
     setText('ro-nome',       p.nome       || '—');
     setText('ro-matricula',  p.matricula  || '—');
     setText('ro-curso',      p.curso      || '—');
-    setText('ro-email',      p.email      || getCurrentUserEmail() || '—');
+    setText('ro-email',      p.emailInst  || p.email || getCurrentUserEmail() || '—');
     setText('ro-cpf',        p.cpf        || '—');
     setText('ro-rg',         p.rg         || '—');
     setText('ro-telefone',   p.telefone   || '—');
-    setText('ro-nascimento', p.dataNascimento ? formatarDataBR(p.dataNascimento) : '—');
-    var endParts = [p.logradouro, p.numero, p.bairro, p.cidade, p.estado].filter(Boolean);
-    setText('ro-endereco',  endParts.length ? endParts.join(', ') : (p.endereco || '—'));
+    setText('ro-nascimento', (p.dataNasc || p.dataNascimento) ? formatarDataBR(p.dataNasc || p.dataNascimento) : '—');
+    var endParts = [p.endereco, p.bairro, p.cidade, p.uf || p.estado].filter(Boolean);
+    setText('ro-endereco',  endParts.length ? endParts.join(', ') : '—');
     setText('ro-formando',  p.formando === 'Sim' || p.formando === true ? 'Sim' : 'Não');
   }
 
@@ -688,17 +688,17 @@
     var p = _perfil || {};
     return {
       // Perfil (enviado para garantir consistência)
-      nomeEstudante:  p.nome       || '',
-      matricula:      p.matricula  || '',
-      curso:          p.curso      || '',
-      cpf:            p.cpf        || '',
-      rg:             p.rg         || '',
-      telefone:       p.telefone   || '',
-      endereco:       [p.logradouro, p.numero, p.bairro].filter(Boolean).join(', ') || p.endereco || '',
-      bairro:         p.bairro     || '',
-      cidade:         p.cidade     || '',
-      estado:         p.estado     || '',
-      dataNascimento: p.dataNascimento || '',
+      nomeEstudante:  p.nome        || '',
+      matricula:      p.matricula   || '',
+      curso:          p.curso       || '',
+      cpf:            p.cpf         || '',
+      rg:             p.rg          || '',
+      telefone:       p.telefone    || '',
+      endereco:       p.endereco    || '',
+      bairro:         p.bairro      || '',
+      cidade:         p.cidade      || '',
+      estado:         p.uf || p.estado || '',
+      dataNascimento: p.dataNasc || p.dataNascimento || '',
       formando:       (p.formando === 'Sim' || p.formando === true) ? 'Sim' : 'Não',
       // Experiência
       tipoVinculo:    getVal('tipo-vinculo'),
